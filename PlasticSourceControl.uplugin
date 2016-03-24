@@ -1,0 +1,25 @@
+{
+	"FileVersion" : 3,
+	"Version" : 1,
+	"VersionName" : "0.0",
+	"FriendlyName" : "Plastic",
+	"Description" : "Plastic source control management",
+	"Category" : "Source Control",
+	"CreatedBy" : "SRombauts for Codice Software.",
+	"CreatedByURL" : "http://srombauts.github.com",
+	"DocsURL" : "",
+	"MarketplaceURL" : "",
+	"SupportURL" : "",
+	"EnabledByDefault" : true,
+	"CanContainContent" : false,
+	"IsBetaVersion" : true,
+	"Installed" : false,
+	"Modules" :
+	[
+		{
+			"Name" : "PlasticSourceControl",
+			"Type" : "Editor",
+			"LoadingPhase" : "Default"
+		}
+	]
+}
