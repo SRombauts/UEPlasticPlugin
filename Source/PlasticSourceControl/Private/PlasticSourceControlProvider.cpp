@@ -5,6 +5,9 @@
 #include "PlasticSourceControlCommand.h"
 #include "ISourceControlModule.h"
 #include "PlasticSourceControlModule.h"
+#include "PlasticSourceControlSettings.h"
+#include "PlasticSourceControlOperations.h"
+#include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlSettings.h"
 #include "MessageLog.h"
 #include "ScopedSourceControlProgress.h"
@@ -22,7 +25,31 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 
 void FPlasticSourceControlProvider::CheckPlasticAvailability()
 {
-	// @todo
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
+	if(!PathToPlasticBinary.IsEmpty())
+	{
+		bPlasticAvailable = PlasticSourceControlUtils::CheckPlasticAvailability(PathToPlasticBinary);
+		if(bPlasticAvailable)
+		{
+			// Find the path to the root Plastic directory (if any)
+			const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
+			const bool bRepositoryFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToRepositoryRoot);
+			if (bRepositoryFound)
+			{
+				bPlasticRepositoryFound = true;
+			}
+			else
+			{
+				UE_LOG(LogSourceControl, Error, TEXT("'%s' is not part of a Plastic repository"), *FPaths::GameDir());
+				bPlasticRepositoryFound = false;
+			}
+		}
+	}
+	else
+	{
+		bPlasticAvailable = false;
+	}
 }
 
 void FPlasticSourceControlProvider::Close()
@@ -257,6 +284,7 @@ TArray< TSharedRef<ISourceControlLabel> > FPlasticSourceControlProvider::GetLabe
 {
 	TArray< TSharedRef<ISourceControlLabel> > Tags;
 
+	// TODO SRombauts : list labels
 	return Tags;
 }
 

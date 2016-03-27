@@ -3,6 +3,7 @@
 #include "PlasticSourceControlPrivatePCH.h"
 #include "SPlasticSourceControlSettings.h"
 #include "PlasticSourceControlModule.h"
+#include "PlasticSourceControlUtils.h"
 
 #define LOCTEXT_NAMESPACE "SPlasticSourceControlSettings"
 
@@ -38,9 +39,37 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 						.Font(Font)
 					]
 				]
+				+SHorizontalBox::Slot()
+				.FillWidth(2.0f)
+				[
+					SNew(SVerticalBox)
+					+SVerticalBox::Slot()
+					.FillHeight(1.0f)
+					.Padding(2.0f)
+					[
+						SNew(SEditableTextBox)
+						.Text(this, &SPlasticSourceControlSettings::GetBinaryPathText)
+						.ToolTipText(LOCTEXT("BinaryPathLabel_Tooltip", "Path to Plastic binary"))
+						.OnTextCommitted(this, &SPlasticSourceControlSettings::OnBinaryPathTextCommited)
+						.Font(Font)
+					]
+				]
 			]
 		]
 	];
+}
+
+FText SPlasticSourceControlSettings::GetBinaryPathText() const
+{
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	return FText::FromString(PlasticSourceControl.AccessSettings().GetBinaryPath());
+}
+
+void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText, ETextCommit::Type InCommitType) const
+{
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	PlasticSourceControl.AccessSettings().SetBinaryPath(InText.ToString());
+	PlasticSourceControl.SaveSettings();
 }
 
 #undef LOCTEXT_NAMESPACE

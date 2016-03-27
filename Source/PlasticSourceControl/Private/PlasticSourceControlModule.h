@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include "ISourceControlModule.h"
+#include "ModuleInterface.h"
+#include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlProvider.h"
 
 /**
@@ -17,6 +18,15 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
+	/** Access the Plastic source control settings */
+	FPlasticSourceControlSettings& AccessSettings()
+	{
+		return PlasticSourceControlSettings;
+	}
+
+	/** Save the Plastic source control settings */
+	void SaveSettings();
+
 	/** Access the Plastic source control provider */
 	FPlasticSourceControlProvider& GetProvider()
 	{
@@ -26,4 +36,7 @@ public:
 private:
 	/** The Plastic source control provider */
 	FPlasticSourceControlProvider PlasticSourceControlProvider;
+
+	/** The settings for Plastic source control */
+	FPlasticSourceControlSettings PlasticSourceControlSettings;
 };

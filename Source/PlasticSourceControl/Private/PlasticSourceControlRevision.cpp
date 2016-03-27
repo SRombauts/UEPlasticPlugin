@@ -4,14 +4,16 @@
 #include "PlasticSourceControlRevision.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
+#include "PlasticSourceControlUtils.h"
+#include "SPlasticSourceControlSettings.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
 bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FString PathToPlasticBinary; // @todo = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	const FString PathToRepositoryRoot = PlasticSourceControl.GetProvider().GetPathToRepositoryRoot();
+	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
+	const FString& PathToRepositoryRoot = PlasticSourceControl.GetProvider().GetPathToRepositoryRoot();
 
 	// if a filename for the temp file wasn't supplied generate a unique-ish one
 	if(InOutFilename.Len() == 0)

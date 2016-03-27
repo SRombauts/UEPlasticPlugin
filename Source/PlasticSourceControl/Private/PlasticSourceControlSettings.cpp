@@ -4,6 +4,7 @@
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
+#include "PlasticSourceControlUtils.h"
 #include "SourceControlHelpers.h"
 
 namespace PlasticSettingsConstants
@@ -34,7 +35,7 @@ void FPlasticSourceControlSettings::LoadSettings()
 	bool bLoaded = GConfig->GetString(*PlasticSettingsConstants::SettingsSection, TEXT("BinaryPath"), BinaryPath, IniFile);
 	if(!bLoaded || BinaryPath.IsEmpty())
 	{
-// @todo		BinaryPath = PlasticSourceControlUtils::FindPlasticBinaryPath();
+		BinaryPath = PlasticSourceControlUtils::FindPlasticBinaryPath();
 	}
 }
 

@@ -4,6 +4,7 @@
 #include "PlasticSourceControlModule.h"
 #include "ModuleManager.h"
 #include "ISourceControlModule.h"
+#include "PlasticSourceControlOperations.h"
 #include "Runtime/Core/Public/Features/IModularFeatures.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
@@ -17,7 +18,11 @@ static TSharedRef<IPlasticSourceControlWorker, ESPMode::ThreadSafe> CreateWorker
 void FPlasticSourceControlModule::StartupModule()
 {
 	// Register our operations
+	PlasticSourceControlProvider.RegisterWorker( "Connect", FGetPlasticSourceControlWorker::CreateStatic( &CreateWorker<FPlasticConnectWorker> ) );
 //	PlasticSourceControlProvider.RegisterWorker( "UpdateStatus", FGetPlasticSourceControlWorker::CreateStatic( &CreateWorker<FPlasticUpdateStatusWorker> ) );
+
+	// load our settings
+	PlasticSourceControlSettings.LoadSettings();
 
 	// Bind our source control provider to the editor
 	IModularFeatures::Get().RegisterModularFeature( "SourceControl", &PlasticSourceControlProvider );
@@ -32,6 +37,15 @@ void FPlasticSourceControlModule::ShutdownModule()
 	IModularFeatures::Get().UnregisterModularFeature("SourceControl", &PlasticSourceControlProvider);
 }
 
+void FPlasticSourceControlModule::SaveSettings()
+{
+	if (FApp::IsUnattended() || IsRunningCommandlet())
+	{
+		return;
+	}
+
+	PlasticSourceControlSettings.SaveSettings();
+}
 
 IMPLEMENT_MODULE(FPlasticSourceControlModule, PlasticSourceControl);
 
