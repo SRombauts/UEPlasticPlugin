@@ -18,6 +18,20 @@ public:
 	virtual bool UpdateStates() const override;
 };
 
+class FPlasticCheckOutWorker : public IPlasticSourceControlWorker
+{
+public:
+	virtual ~FPlasticCheckOutWorker() {}
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() const override;
+
+public:
+	/** Temporary states for results */
+	TArray<FPlasticSourceControlState> States;
+};
+
 /** @todo Commit (check-in) a set of file to the local depot.
 class FPlasticCheckInWorker : public IPlasticSourceControlWorker
 {
@@ -34,7 +48,7 @@ public:
 };
 */
 
-/** @todo Add an untraked file to source control (so only a subset of the Plastic add command).
+/** Add an untraked file to source control (so only a subset of the Plastic add command). */
 class FPlasticMarkForAddWorker : public IPlasticSourceControlWorker
 {
 public:
@@ -45,12 +59,11 @@ public:
 	virtual bool UpdateStates() const override;
 
 public:
-	// Temporary states for results
+	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
 };
-*/
 
-/** @todo Delete a file and remove it from source control.
+/** Delete a file and remove it from source control. */
 class FPlasticDeleteWorker : public IPlasticSourceControlWorker
 {
 public:
@@ -61,12 +74,11 @@ public:
 	virtual bool UpdateStates() const override;
 
 public:
-	// Map of filenames to Plastic state
+	/** Map of filenames to Plastic state */
 	TArray<FPlasticSourceControlState> States;
 };
-*/
 
-/** @todo Revert any change to a file to its state on the local depot.
+/** Revert any change to a file to its state on the local depot. */
 class FPlasticRevertWorker : public IPlasticSourceControlWorker
 {
 public:
@@ -77,10 +89,9 @@ public:
 	virtual bool UpdateStates() const override;
 
 public:
-	// Map of filenames to Plastic state
+	/** Map of filenames to Plastic state */
 	TArray<FPlasticSourceControlState> States;
 };
-*/
 
 /** @todo Plastic pull --rebase to update branch from its configure remote
 class FPlasticSyncWorker : public IPlasticSourceControlWorker
@@ -98,7 +109,7 @@ public:
 };
 */
 
-/** @todo Get source control status of files on local working copy.
+/** Get source control status of files on local working copy. */
 class FPlasticUpdateStatusWorker : public IPlasticSourceControlWorker
 {
 public:
@@ -109,13 +120,12 @@ public:
 	virtual bool UpdateStates() const override;
 
 public:
-	// Temporary states for results
+	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
 
-	// Map of filenames to history
+	/** Map of filenames to history */
 	TMap<FString, TPlasticSourceControlHistory> Histories;
 };
-*/
 
 /** @todo Copy or Move operation on a single file
 class FPlasticCopyWorker : public IPlasticSourceControlWorker

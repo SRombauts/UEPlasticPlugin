@@ -37,6 +37,8 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			const bool bRepositoryFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToRepositoryRoot);
 			if (bRepositoryFound)
 			{
+				// Get branch name
+				PlasticSourceControlUtils::GetBranchName(PathToPlasticBinary, PathToRepositoryRoot, BranchName);
 				bPlasticRepositoryFound = true;
 			}
 			else
@@ -81,7 +83,7 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	Args.Add( TEXT("RepositoryName"), FText::FromString(PathToRepositoryRoot) );
 	Args.Add( TEXT("BranchName"), FText::FromString(BranchName) );
 
-	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Repository: {RepositoryName}\nBranch: {BranchName}"), Args );
+	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Workspace: {RepositoryName}\n{BranchName}"), Args );
 }
 
 /** Quick check if source control is enabled */
@@ -201,12 +203,12 @@ void FPlasticSourceControlProvider::CancelOperation( const TSharedRef<ISourceCon
 
 bool FPlasticSourceControlProvider::UsesLocalReadOnlyState() const
 {
-	return false;
+	return false; // TODO: use configuration
 }
 
 bool FPlasticSourceControlProvider::UsesChangelists() const
 {
-	return false;
+	return true;
 }
 
 TSharedPtr<IPlasticSourceControlWorker, ESPMode::ThreadSafe> FPlasticSourceControlProvider::CreateWorker(const FName& InOperationName) const
@@ -299,6 +301,8 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 {
 	ECommandResult::Type Result = ECommandResult::Failed;
 
+	UE_LOG(LogSourceControl, Log, TEXT("ExecuteSynchronousCommand: %s"), *InCommand.Operation->GetName().ToString());
+
 	// Display the progress dialog if a string was provided
 	{
 		FScopedSourceControlProgress Progress(Task);
@@ -325,6 +329,10 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		{
 			Result = ECommandResult::Succeeded;
 		}
+		else
+		{
+			UE_LOG(LogSourceControl, Error, TEXT("ECommandResult::Failed !"));
+		}
 	}
 
 	// Delete the command now (asynchronous commands are deleted in the Tick() method)
@@ -342,6 +350,8 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 
 ECommandResult::Type FPlasticSourceControlProvider::IssueCommand(FPlasticSourceControlCommand& InCommand)
 {
+	UE_LOG(LogSourceControl, Log, TEXT("IssueCommand: %s"), *InCommand.Operation->GetName().ToString());
+
 	if(GThreadPool != nullptr)
 	{
 		// Queue this to our worker thread(s) for resolving

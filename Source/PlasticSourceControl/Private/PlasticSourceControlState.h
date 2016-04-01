@@ -10,17 +10,16 @@ namespace EWorkingCopyState
 	enum Type
 	{
 		Unknown,
-		Unchanged, // called "clean" in SVN, "Pristine" in Perforce
-		Added,
-		Deleted,
-		Modified,
-		Renamed,
-		Copied,
-		Missing,
-		Conflicted,
-		Merged,
-		NotControlled,
 		Ignored,
+		Controled, // called "Pristine" in Perforce, "Unchanged" in Git, "clean" in SVN
+		CheckedOut,
+		Added,
+		Moved, // Renamed
+		Copied,
+		Deleted,
+		Changed, // Modified but not CheckedOut
+		Conflicted,
+		NotControlled,
 	};
 }
 

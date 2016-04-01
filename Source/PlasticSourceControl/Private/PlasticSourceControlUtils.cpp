@@ -50,10 +50,11 @@ namespace PlasticSourceControlUtils
 static bool RunCommandInternalRaw(const FString& InCommand, const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
 {
 	int32 ReturnCode = 0;
-	// start with the Plastic command itself ("status", "log", "commit"...)
+	// start with the Plastic command itself ("status", "log", "chekin"...)
 	FString FullCommand = InCommand;
 
-	if(!InRepositoryRoot.IsEmpty())
+	// Platic only needs the workspace path if no list of files provided
+	if(!InRepositoryRoot.IsEmpty() && (0 == InFiles.Num()))
 	{
 		// Specify the Plastic workspace (the root)
 		FullCommand += TEXT(" \"");
@@ -75,9 +76,8 @@ static bool RunCommandInternalRaw(const FString& InCommand, const FString& InPat
 	}
 	// TODO does Plastic have a "--non-interactive" option, or detects when there are no connected standard input/output streams
 
-	UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalRaw: 'cm %s'"), *FullCommand);
 // @todo: temporary debug logs
-	UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalRaw: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
+	UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternalRaw: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
 	FPlatformProcess::ExecProcess(*InPathToPlasticBinary, *FullCommand, &ReturnCode, &OutResults, &OutErrors);
 	UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalRaw: ExecProcess ReturnCode=%d OutResults='%s'"), ReturnCode, *OutResults);
 	if (!OutErrors.IsEmpty())
@@ -96,8 +96,14 @@ static bool RunCommandInternal(const FString& InCommand, const FString& InPathTo
 	FString Errors;
 
 	bResult = RunCommandInternalRaw(InCommand, InPathToPlasticBinary, InRepositoryRoot, InParameters, InFiles, Results, Errors);
-	Results.ParseIntoArray(OutResults, TEXT("\n"), true);
-	Errors.ParseIntoArray(OutErrorMessages, TEXT("\n"), true);
+
+#if PLATFORM_WINDOWS
+	const TCHAR* pchDelim = TEXT("\r\n");
+#else
+	const TCHAR* pchDelim = TEXT("\n");
+#endif
+	Results.ParseIntoArray(OutResults, pchDelim, true);
+	Errors.ParseIntoArray(OutErrorMessages, pchDelim, true);
 
 	return bResult;
 }
@@ -151,6 +157,23 @@ bool FindRootDirectory(const FString& InPathToGameDir, FString& OutRepositoryRoo
 	return bFound;
 }
 
+
+void GetBranchName(const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, FString& OutBranchName)
+{
+	bool bResults;
+	TArray<FString> InfoMessages;
+	TArray<FString> ErrorMessages;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("--wkconfig"));
+	Parameters.Add(TEXT("--nochanges"));
+	Parameters.Add(TEXT("--nostatus"));
+	bResults = RunCommandInternal(TEXT("status"), InPathToPlasticBinary, InRepositoryRoot, Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	if(bResults && InfoMessages.Num() > 0)
+	{
+		OutBranchName = InfoMessages[0];
+	}
+}
+
 bool RunCommand(const FString& InCommand, const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
 {
 	bool bResult = true;
@@ -177,6 +200,124 @@ bool RunCommand(const FString& InCommand, const FString& InPathToPlasticBinary, 
 	else
 	{
 		bResult &= RunCommandInternal(InCommand, InPathToPlasticBinary, InRepositoryRoot, InParameters, InFiles, OutResults, OutErrorMessages);
+	}
+
+	return bResult;
+}
+
+
+
+/**
+ * Extract and interpret the file state from the given Plastic status result.
+ * "controled" = unmodified
+ * 'M' = modified
+ * 'A' = added
+ * 'D' = deleted
+ * 'R' = renamed
+ * 'C' = copied
+ * 'U' = updated but unmerged
+ * '?' = unknown/untracked
+ * '!' = ignored
+*/
+class FPlasticStatusParser
+{
+public:
+	FPlasticStatusParser(const FString& InResult)
+	{
+		UE_LOG(LogSourceControl, Log, TEXT("FPlasticStatusParser('%s'[%d])"), *InResult, InResult.Len());
+
+		if(InResult == "ignored")
+		{
+			State = EWorkingCopyState::Ignored;
+		}
+		else if(InResult == "controlled") // Unchanged / Pristine / Clean
+		{
+			State = EWorkingCopyState::Controled;
+		}
+		else if (InResult == "checked-out") // Checked-Out for modification
+		{
+			State = EWorkingCopyState::CheckedOut;
+		}
+		else if(InResult == "added")
+		{
+			State = EWorkingCopyState::Added;
+		}
+		else if(InResult == "deleted")
+		{
+			State = EWorkingCopyState::Deleted;
+		}
+		else if(InResult == "moved")
+		{
+			State = EWorkingCopyState::Moved;
+		}
+		else if (InResult == "changed") // Modified but not Checked-Out
+		{
+			State = EWorkingCopyState::Changed;
+		}
+		else if (InResult == "conflited") // TODO
+		{
+			// "Unmerged" conflict cases are generally marked with a "U",
+			// but there are also the special cases of both "A"dded, or both "D"eleted
+			State = EWorkingCopyState::Conflicted;
+		}
+		else if (InResult == "private")
+		{
+			State = EWorkingCopyState::NotControlled;
+		}
+		else
+		{
+			UE_LOG(LogSourceControl, Warning, TEXT("Unknown"));
+			State = EWorkingCopyState::Unknown;
+		}
+	}
+
+	EWorkingCopyState::Type State;
+};
+
+/** Parse the array of strings results of a 'cm fileinfo --format="{RelativePath} {status}"' command
+ *
+ * Example cm fileinfo results:
+ /Content/Blueprints/MyActor_BP.uasset controlled
+ /Content/Blueprints/MyBlueprint.uasset moved
+ /Content/Blueprints/NewBlueprint.uasset added
+ /Content/Blueprints/NewBlueprint2.uasset private
+ */
+static void ParseStatusResults(const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, const TArray<FString>& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
+{
+	// Iterate on all files and all status of the result (assuming at no more line of results than number of files
+	for (int32 IdxResult = 0; IdxResult < InResults.Num(); IdxResult++)
+	{
+		const FString& File = InFiles[IdxResult];
+		const FString& Status = InResults[IdxResult];
+		const FPlasticStatusParser StatusParser(Status);
+		FPlasticSourceControlState FileState(File);
+		FileState.WorkingCopyState = StatusParser.State;
+
+		UE_LOG(LogSourceControl, Log, TEXT("%s: %s = %d"), *File, *Status, static_cast<uint32>(StatusParser.State));
+
+		if(FileState.IsConflicted())
+		{
+			// In case of a conflict (unmerged file) get the base revision to merge
+// TODO				RunGetConflictStatus(InPathToPlasticBinary, InRepositoryRoot, File, FileState);
+		}
+		FileState.TimeStamp.Now();
+		OutStates.Add(FileState);
+	}
+}
+
+// Run a Plastic "fileinfo" (similar to "status") command to update status of given files.
+bool RunUpdateStatus(const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
+{
+	TArray<FString> Results;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("--format=\"{status}\""));
+
+	TArray<FString> ErrorMessages;
+	const bool bResult = RunCommand(TEXT("fileinfo"), InPathToPlasticBinary, InRepositoryRoot, Parameters, InFiles, Results, ErrorMessages);
+	OutErrorMessages.Append(ErrorMessages);
+	if (bResult)
+	{
+		ParseStatusResults(InPathToPlasticBinary, InRepositoryRoot, InFiles, Results, OutStates);
 	}
 
 	return bResult;
