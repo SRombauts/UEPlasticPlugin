@@ -56,7 +56,7 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 	return nullptr;
 }
 
-// @todo add Slate icons for Plastic specific states (Added vs Changed, Copied vs Conflicted...)
+// @todo add Slate icons for Plastic specific states (Changed, Copied, Replaced...)
 FName FPlasticSourceControlState::GetIconName() const
 {
 	switch(WorkingCopyState)
@@ -66,6 +66,7 @@ FName FPlasticSourceControlState::GetIconName() const
 	case EWorkingCopyState::Added:
 	case EWorkingCopyState::Moved:
 	case EWorkingCopyState::Copied:
+	case EWorkingCopyState::Replaced:
 		return FName("Perforce.OpenForAdd");
 	case EWorkingCopyState::Deleted:
 		return FName("Perforce.MarkedForDelete");
@@ -91,6 +92,7 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	case EWorkingCopyState::Added:
 	case EWorkingCopyState::Moved:
 	case EWorkingCopyState::Copied:
+	case EWorkingCopyState::Replaced:
 		return FName("Perforce.OpenForAdd_Small");
 	case EWorkingCopyState::Deleted:
 		return FName("Perforce.MarkedForDelete_Small");
@@ -125,6 +127,8 @@ FText FPlasticSourceControlState::GetDisplayName() const
 		return LOCTEXT("Moved", "Moved");
 	case EWorkingCopyState::Copied:
 		return LOCTEXT("Copied", "Copied");
+	case EWorkingCopyState::Replaced:
+		return LOCTEXT("Replaced", "Replaced");
 	case EWorkingCopyState::Deleted:
 		return LOCTEXT("Deleted", "Deleted");
 	case EWorkingCopyState::Changed:
@@ -205,7 +209,8 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 	const bool bIsCheckedOut = WorkingCopyState == EWorkingCopyState::CheckedOut
 							|| WorkingCopyState == EWorkingCopyState::Added
 							|| WorkingCopyState == EWorkingCopyState::Moved
-							|| WorkingCopyState == EWorkingCopyState::Copied;
+							|| WorkingCopyState == EWorkingCopyState::Copied
+							|| WorkingCopyState == EWorkingCopyState::Replaced;
 
 	UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOut(%s)=%d"), *LocalFilename, bIsCheckedOut);
 
@@ -261,6 +266,7 @@ bool FPlasticSourceControlState::CanEdit() const
 						|| WorkingCopyState == EWorkingCopyState::Added
 						|| WorkingCopyState == EWorkingCopyState::Moved
 						|| WorkingCopyState == EWorkingCopyState::Copied
+						|| WorkingCopyState == EWorkingCopyState::Replaced
 						|| WorkingCopyState == EWorkingCopyState::Ignored
 						|| WorkingCopyState == EWorkingCopyState::NotControlled;
 
@@ -295,6 +301,7 @@ bool FPlasticSourceControlState::IsModified() const
 							|| WorkingCopyState == EWorkingCopyState::Changed
 							|| WorkingCopyState == EWorkingCopyState::Moved
 							|| WorkingCopyState == EWorkingCopyState::Copied
+							|| WorkingCopyState == EWorkingCopyState::Replaced
 							|| WorkingCopyState == EWorkingCopyState::Conflicted;
 
 	UE_LOG(LogSourceControl, Log, TEXT("CanEdit(%s)=%d"), *LocalFilename, bIsModified);

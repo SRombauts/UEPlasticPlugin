@@ -74,7 +74,7 @@ void GetBranchName(const FString& InPathToPlasticBinary, const FString& InReposi
 bool RunCommand(const FString& InCommand, const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages);
 
 /**
- * Run a Plastic "fileinfo" (similar to "status") command and parse it.
+ * Run a Plastic "status" command and parse it.
  *
  * @param	InPathToPlasticBinary	The path to the Plastic binary
  * @param	InRepositoryRoot	The Plastic repository from where to run the command - usually the Game directory (can be empty)

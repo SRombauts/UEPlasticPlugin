@@ -208,116 +208,144 @@ bool RunCommand(const FString& InCommand, const FString& InPathToPlasticBinary, 
 
 
 /**
- * Extract and interpret the file state from the given Plastic status result.
- * "controled" = unmodified
- * 'M' = modified
- * 'A' = added
- * 'D' = deleted
- * 'R' = renamed
- * 'C' = copied
- * 'U' = updated but unmerged
- * '?' = unknown/untracked
- * '!' = ignored
+ * Extract and interpret the file state from the given Plastic "status" result.
+ * empty string = unmodified or hidden changes
+ CH Content\Changed_BP.uasset
+ CO Content\CheckedOut_BP.uasset
+ CP Content\Copied_BP.uasset
+ RP Content\Replaced_BP.uasset
+ AD Content\Added_BP.uasset
+ PR Content\Private_BP.uasset
+ IG Content\Ignored_BP.uasset
+ DE Content\Deleted_BP.uasset
+ LD Content\Deleted2_BP.uasset
+ MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
+ LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
 */
 class FPlasticStatusParser
 {
 public:
 	FPlasticStatusParser(const FString& InResult)
 	{
-		UE_LOG(LogSourceControl, Log, TEXT("FPlasticStatusParser('%s'[%d])"), *InResult, InResult.Len());
-
-		if(InResult == "ignored")
-		{
-			State = EWorkingCopyState::Ignored;
-		}
-		else if(InResult == "controlled") // Unchanged / Pristine / Clean
+		if (0 == InResult.Len()) // Empty result for "Controled" file (ie. Unchanged / Pristine / Clean)
 		{
 			State = EWorkingCopyState::Controled;
 		}
-		else if (InResult == "checked-out") // Checked-Out for modification
-		{
-			State = EWorkingCopyState::CheckedOut;
-		}
-		else if(InResult == "added")
-		{
-			State = EWorkingCopyState::Added;
-		}
-		else if(InResult == "deleted")
-		{
-			State = EWorkingCopyState::Deleted;
-		}
-		else if(InResult == "moved")
-		{
-			State = EWorkingCopyState::Moved;
-		}
-		else if (InResult == "changed") // Modified but not Checked-Out
-		{
-			State = EWorkingCopyState::Changed;
-		}
-		else if (InResult == "conflited") // TODO
-		{
-			// "Unmerged" conflict cases are generally marked with a "U",
-			// but there are also the special cases of both "A"dded, or both "D"eleted
-			State = EWorkingCopyState::Conflicted;
-		}
-		else if (InResult == "private")
-		{
-			State = EWorkingCopyState::NotControlled;
-		}
 		else
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("Unknown"));
-			State = EWorkingCopyState::Unknown;
+			const FString FileStatus = InResult.Mid(1, 2);
+
+			UE_LOG(LogSourceControl, Log, TEXT("FPlasticStatusParser('%s'[%d]): '%s'"), *InResult, InResult.Len(), *FileStatus);
+
+			if (FileStatus == "CH") // Modified but not Checked-Out
+			{
+				State = EWorkingCopyState::Changed;
+			}
+			else if (FileStatus == "CO") // Checked-Out for modification
+			{
+				State = EWorkingCopyState::CheckedOut;
+			}
+			else if (FileStatus == "CP")
+			{
+				State = EWorkingCopyState::Copied;
+			}
+			else if (FileStatus == "RP")
+			{
+				State = EWorkingCopyState::Replaced;
+			}
+			else if (FileStatus == "AD")
+			{
+				State = EWorkingCopyState::Added;
+			}
+			else if (FileStatus == "PR")
+			{
+				State = EWorkingCopyState::NotControlled;
+			}
+			else if (FileStatus == "IG")
+			{
+				State = EWorkingCopyState::Ignored;
+			}
+			else if ((FileStatus == "DE") || (FileStatus == "LD"))
+			{
+				State = EWorkingCopyState::Deleted;
+			}
+			else if ((FileStatus == "MV") || (FileStatus == "LM")) // Renamed
+			{
+				State = EWorkingCopyState::Moved;
+			}
+			else if (FileStatus == "conflited") // TODO
+			{
+				// "Unmerged" conflict cases are generally marked with a "U",
+				// but there are also the special cases of both "A"dded, or both "D"eleted
+				State = EWorkingCopyState::Conflicted;
+			}
+			else
+			{
+				UE_LOG(LogSourceControl, Warning, TEXT("Unknown"));
+				State = EWorkingCopyState::Unknown;
+			}
 		}
 	}
 
 	EWorkingCopyState::Type State;
 };
 
-/** Parse the array of strings results of a 'cm fileinfo --format="{RelativePath} {status}"' command
+/** Parse the array of strings results of a 'cm status --nostatus --noheaders --all --ignore' command
  *
  * Example cm fileinfo results:
- /Content/Blueprints/MyActor_BP.uasset controlled
- /Content/Blueprints/MyBlueprint.uasset moved
- /Content/Blueprints/NewBlueprint.uasset added
- /Content/Blueprints/NewBlueprint2.uasset private
+ CH Content\Changed_BP.uasset
+ CO Content\CheckedOut_BP.uasset
+ CP Content\Copied_BP.uasset
+ RP Content\Replaced_BP.uasset
+ AD Content\Added_BP.uasset
+ PR Content\Private_BP.uasset
+ IG Content\Ignored_BP.uasset
+ DE Content\Deleted_BP.uasset
+ LD Content\Deleted2_BP.uasset
+ MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
+ LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
  */
-static void ParseStatusResults(const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, const TArray<FString>& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
+static void ParseStatusResult(const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, const FString& InFile, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
-	// Iterate on all files and all status of the result (assuming at no more line of results than number of files
-	for (int32 IdxResult = 0; IdxResult < InResults.Num(); IdxResult++)
+	// Assuming one line of results for one file
+	const FString& Status = InResults[0];
+	const FPlasticStatusParser StatusParser(Status);
+	FPlasticSourceControlState FileState(InFile);
+	FileState.WorkingCopyState = StatusParser.State;
+
+	UE_LOG(LogSourceControl, Log, TEXT("%s: %s = %d"), *InFile, *Status, static_cast<uint32>(StatusParser.State));
+
+	if(FileState.IsConflicted())
 	{
-		const FString& File = InFiles[IdxResult];
-		const FString& Status = InResults[IdxResult];
-		const FPlasticStatusParser StatusParser(Status);
-		FPlasticSourceControlState FileState(File);
-		FileState.WorkingCopyState = StatusParser.State;
-
-		UE_LOG(LogSourceControl, Log, TEXT("%s: %s = %d"), *File, *Status, static_cast<uint32>(StatusParser.State));
-
-		if(FileState.IsConflicted())
-		{
-			// In case of a conflict (unmerged file) get the base revision to merge
+		// In case of a conflict (unmerged file) get the base revision to merge
 // TODO				RunGetConflictStatus(InPathToPlasticBinary, InRepositoryRoot, File, FileState);
-		}
-		FileState.TimeStamp.Now();
-		OutStates.Add(FileState);
 	}
+	FileState.TimeStamp.Now();
+	OutStates.Add(FileState);
 }
 
-// Run a Plastic "fileinfo" (similar to "status") command to update status of given files.
+// Run a Plastic "status" command to update status of given files.
 bool RunUpdateStatus(const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
 {
 	TArray<FString> Results;
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--format=\"{status}\""));
+	Parameters.Add(TEXT("--nostatus --noheaders --all --ignored"));
 
-	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("fileinfo"), InPathToPlasticBinary, InRepositoryRoot, Parameters, InFiles, Results, ErrorMessages);
-	OutErrorMessages.Append(ErrorMessages);
-	if (bResult)
+	bool bResult = true;
+	for(const FString& File : InFiles)
 	{
-		ParseStatusResults(InPathToPlasticBinary, InRepositoryRoot, InFiles, Results, OutStates);
+		TArray<FString> ErrorMessages;
+		TArray<FString> OneFile;
+		OneFile.Add(File);
+		const bool bStatusOk = RunCommand(TEXT("status"), InPathToPlasticBinary, InRepositoryRoot, Parameters, OneFile, Results, ErrorMessages);
+		if (bStatusOk && (0 < Results.Num()))
+		{
+			ParseStatusResult(InPathToPlasticBinary, InRepositoryRoot, File, Results, OutStates);
+		}
+		else
+		{
+			OutErrorMessages.Append(ErrorMessages);
+		}
 	}
 
 	return bResult;
