@@ -22,8 +22,10 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--nochanges"));
+	TArray<FString> Files;
+	Files.Add(InCommand.PathToRepositoryRoot);
 
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("status"), InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("status"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 	if(!InCommand.bCommandSuccessful || InCommand.ErrorMessages.Num() > 0 || InCommand.InfoMessages.Num() == 0)
 	{
 		StaticCastSharedRef<FConnect>(InCommand.Operation)->SetErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic source control. You need to initialize the project as a Plastic repository first."));
@@ -49,10 +51,10 @@ bool FPlasticCheckOutWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	UE_LOG(LogSourceControl, Log, TEXT("checkout"));
 
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkout"), InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkout"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 
 	// now update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, InCommand.Files, InCommand.ErrorMessages, States);
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
 
 	return InCommand.bCommandSuccessful;
 }
@@ -77,7 +79,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 
 	if (InCommand.Files.Num() > 0)
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, InCommand.Files, InCommand.ErrorMessages, States);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
 		PlasticSourceControlUtils::RemoveRedundantErrors(InCommand, TEXT("' is not in a workspace"));
 
 		if (Operation->ShouldUpdateHistory())
@@ -90,10 +92,10 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 				if (States[Index].IsConflicted())
 				{
 					// In case of a merge conflict, we first need to get the tip of the "remote branch" (MERGE_HEAD)
-// TODO					PlasticSourceControlUtils::RunGetHistory(InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, File, true, InCommand.ErrorMessages, History);
+// TODO					PlasticSourceControlUtils::RunGetHistory(File, true, InCommand.ErrorMessages, History);
 				}
 				// Get the history of the file in the current branch
-// TODO				InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, File, false, InCommand.ErrorMessages, History);
+// TODO				InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, false, InCommand.ErrorMessages, History);
 				Histories.Add(*File, History);
 			}
 		}
@@ -105,7 +107,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		{
 			TArray<FString> Files;
 			Files.Add(FPaths::ConvertRelativePathToFull(FPaths::GameDir()));
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, Files, InCommand.ErrorMessages, States);
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Files, InCommand.ErrorMessages, States);
 		}
 	}
 
@@ -146,10 +148,10 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--parents"));
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 
 	// now update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, InCommand.Files, InCommand.ErrorMessages, States);
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
 
 	return InCommand.bCommandSuccessful;
 }
@@ -170,10 +172,10 @@ bool FPlasticDeleteWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	UE_LOG(LogSourceControl, Log, TEXT("Delete"));
 
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("remove"), InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("remove"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 
 	// now update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, InCommand.Files, InCommand.ErrorMessages, States);
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
 
 	return InCommand.bCommandSuccessful;
 }
@@ -196,11 +198,11 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	// revert any changes in working copy
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undochange"), InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
 
 	// now update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(InCommand.PathToPlasticBinary, InCommand.PathToRepositoryRoot, InCommand.Files, InCommand.ErrorMessages, States);
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
 
 	return InCommand.bCommandSuccessful;
 }

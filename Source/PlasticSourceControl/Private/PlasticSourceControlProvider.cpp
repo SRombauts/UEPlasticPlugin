@@ -20,7 +20,7 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {
 	CheckPlasticAvailability();
 
-	// @todo bForceConnection
+	// TODO bForceConnection
 }
 
 void FPlasticSourceControlProvider::CheckPlasticAvailability()
@@ -38,7 +38,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			if (bRepositoryFound)
 			{
 				// Get branch name
-				PlasticSourceControlUtils::GetBranchName(PathToPlasticBinary, PathToRepositoryRoot, BranchName);
+				PlasticSourceControlUtils::GetBranchName(BranchName);
 				bPlasticRepositoryFound = true;
 			}
 			else
@@ -58,6 +58,8 @@ void FPlasticSourceControlProvider::Close()
 {
 	// clear the cache
 	StateCache.Empty();
+	// terminate the background 'cm shell' process and associated pipes
+	PlasticSourceControlUtils::Terminate();
 }
 
 TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlProvider::GetStateInternal(const FString& Filename)
@@ -161,6 +163,7 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute( const TSharedRef<IS
 		return ECommandResult::Failed;
 	}
 
+	// TODO Use relative filenames? With appropriate Working dir!
 	TArray<FString> AbsoluteFiles = SourceControlHelpers::AbsoluteFilenames(InFiles);
 
 	// Query to see if we allow this operation

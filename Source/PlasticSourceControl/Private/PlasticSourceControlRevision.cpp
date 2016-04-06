@@ -35,7 +35,7 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 	}
 	else
 	{
-// @todo
+// TODO
 //		bCommandSuccessful = PlasticSourceControlUtils::RunDumpToFile(PathToPlasticBinary, PathToRepositoryRoot, Parameter, InOutFilename);
 		bCommandSuccessful = false;
 	}
@@ -90,7 +90,7 @@ const FString& FPlasticSourceControlRevision::GetAction() const
 
 TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlRevision::GetBranchSource() const
 {
-	// @todo if this revision was copied from some other revision, then that source revision should
+	// TODO if this revision was copied from some other revision, then that source revision should
 	//       be returned here (this should be determined when history is being fetched)
 	return nullptr;
 }

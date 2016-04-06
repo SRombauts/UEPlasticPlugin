@@ -32,9 +32,6 @@ public:
 	virtual void DoThreadedWork() override;
 
 public:
-	/** Path to the Plastic binary */
-	FString PathToPlasticBinary;
-
 	/** Path to the root of the Plastic repository: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */
 	FString PathToRepositoryRoot;
 

@@ -43,6 +43,9 @@ FString FindPlasticBinaryPath();
  */
 bool CheckPlasticAvailability(const FString& InPathToPlasticBinary);
 
+/** Terminate the background 'cm shell' process and associated pipes */
+void Terminate();
+
 /**
  * Find the root of the Plastic repository, looking from the GameDir and upward in its parent directories
  * @param InPathToGameDir		The path to the Game Directory
@@ -53,36 +56,30 @@ bool FindRootDirectory(const FString& InPathToGameDir, FString& OutRepositoryRoo
 
 /**
  * Get Plastic current checked-out branch
- * @param	InPathToPlasticBinary	The path to the Plastic binary
- * @param	InRepositoryRoot		The Plastic repository from where to run the command - usually the Game directory (can be empty)
  * @param	OutBranchName			Name of the current checked-out branch (if any, ie. not in detached HEAD)
  */
-void GetBranchName(const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, FString& OutBranchName);
+void GetBranchName(FString& OutBranchName);
 
 /**
  * Run a Plastic command - output is a string TArray.
  *
  * @param	InCommand				The Plastic command - e.g. commit
- * @param	InPathToPlasticBinary	The path to the Plastic binary
- * @param	InRepositoryRoot		The Plastic repository from where to run the command - usually the Game directory (can be empty)
  * @param	InParameters			The parameters to the Plastic command
  * @param	InFiles					The files to be operated on
  * @param	OutResults				The results (from StdOut) as an array per-line
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
  * @returns true if the command succeeded and returned no errors
  */
-bool RunCommand(const FString& InCommand, const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages);
+bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages);
 
 /**
  * Run a Plastic "status" command and parse it.
  *
- * @param	InPathToPlasticBinary	The path to the Plastic binary
- * @param	InRepositoryRoot	The Plastic repository from where to run the command - usually the Game directory (can be empty)
  * @param	InFiles				The files to be operated on
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  * @returns true if the command succeeded and returned no errors
  */
-bool RunUpdateStatus(const FString& InPathToPlasticBinary, const FString& InRepositoryRoot, const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates);
+bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates);
 
 /**
  * Helper function for various commands to update cached states.
