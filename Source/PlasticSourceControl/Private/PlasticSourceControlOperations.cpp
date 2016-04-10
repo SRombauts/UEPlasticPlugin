@@ -64,6 +64,72 @@ bool FPlasticCheckOutWorker::UpdateStates() const
 	return PlasticSourceControlUtils::UpdateCachedStates(States);
 }
 
+
+static FText ParseCheckInResults(const TArray<FString>& InResults)
+{
+	if (InResults.Num() >= 1)
+	{
+		const FString& LastLine = InResults[InResults.Num()-1];
+		return FText::FromString(LastLine);
+	}
+	return LOCTEXT("CommitMessageUnknown", "Submitted revision.");
+}
+
+FName FPlasticCheckInWorker::GetName() const
+{
+	return "CheckIn";
+}
+
+bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	check(InCommand.Operation->GetName() == GetName());
+
+	TSharedRef<FCheckIn, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCheckIn>(InCommand.Operation);
+
+	// make a temp file to place our commit message in
+	FScopedTempFile CommitMsgFile(Operation->GetDescription());
+	if (CommitMsgFile.GetFilename().Len() > 0)
+	{
+		TArray<FString> Parameters;
+		Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Localy
+		FString ParamCommitMsgFilename = TEXT("--commentsfile=\"");
+		ParamCommitMsgFilename += FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename());
+		ParamCommitMsgFilename += TEXT("\"");
+		Parameters.Add(ParamCommitMsgFilename);
+
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		if (InCommand.bCommandSuccessful)
+		{
+			// Remove any deleted files from status cache
+			FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+			FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+
+			TArray<TSharedRef<ISourceControlState, ESPMode::ThreadSafe>> LocalStates;
+			Provider.GetState(InCommand.Files, LocalStates, EStateCacheUsage::Use);
+			for (const auto& State : LocalStates)
+			{
+				if (State->IsDeleted())
+				{
+					Provider.RemoveFileFromCache(State->GetFilename());
+				}
+			}
+			Operation->SetSuccessMessage(ParseCheckInResults(InCommand.InfoMessages));
+			UE_LOG(LogSourceControl, Log, TEXT("FPlasticCheckInWorker: CheckIn successful"));
+		}
+	}
+
+	// now update the status of our files
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticCheckInWorker::UpdateStates() const
+{
+	return PlasticSourceControlUtils::UpdateCachedStates(States);
+}
+
+
 FName FPlasticUpdateStatusWorker::GetName() const
 {
 	return "UpdateStatus";

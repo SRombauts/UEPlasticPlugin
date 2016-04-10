@@ -32,7 +32,7 @@ public:
 	TArray<FPlasticSourceControlState> States;
 };
 
-/** @todo Commit (check-in) a set of file to the local depot.
+/** Check-in a set of file to the local depot. */
 class FPlasticCheckInWorker : public IPlasticSourceControlWorker
 {
 public:
@@ -43,10 +43,9 @@ public:
 	virtual bool UpdateStates() const override;
 
 public:
-	// Temporary states for results
+	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
 };
-*/
 
 /** Add an untraked file to source control (so only a subset of the Plastic add command). */
 class FPlasticMarkForAddWorker : public IPlasticSourceControlWorker

@@ -56,7 +56,6 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 	return nullptr;
 }
 
-// @todo add Slate icons for Plastic specific states (Changed, Copied, Replaced...)
 FName FPlasticSourceControlState::GetIconName() const
 {
 	switch(WorkingCopyState)
@@ -182,11 +181,12 @@ const FDateTime& FPlasticSourceControlState::GetTimeStamp() const
 // Deleted and Missing assets cannot appear in the Content Browser
 bool FPlasticSourceControlState::CanCheckIn() const
 {
+	// TODO: cf. CanCheckout Moved/Copied? Also Localy Moved?
 	const bool bCanCheckIn = WorkingCopyState == EWorkingCopyState::Added
 		|| WorkingCopyState == EWorkingCopyState::Deleted
 		|| WorkingCopyState == EWorkingCopyState::Changed
 		|| WorkingCopyState == EWorkingCopyState::Moved
-		|| WorkingCopyState == EWorkingCopyState::CheckedOut; // TODO ?
+		|| WorkingCopyState == EWorkingCopyState::CheckedOut;
 
 	UE_LOG(LogSourceControl, Log, TEXT("CanCheckIn(%s)=%d"), *LocalFilename, bCanCheckIn);
 
@@ -195,7 +195,7 @@ bool FPlasticSourceControlState::CanCheckIn() const
 
 bool FPlasticSourceControlState::CanCheckout() const
 {
-// TODO
+	// TODO: Moved/Copied? Also Localy Moved?
 	const bool bCanCheckout  = WorkingCopyState == EWorkingCopyState::Controled	// In source control, Unmodified
 							|| WorkingCopyState == EWorkingCopyState::Changed;	// In source control, but not checked-out
 
@@ -206,6 +206,7 @@ bool FPlasticSourceControlState::CanCheckout() const
 
 bool FPlasticSourceControlState::IsCheckedOut() const
 {
+	// TODO: cf. CanCheckout Moved/Copied? Also Localy Moved?
 	const bool bIsCheckedOut = WorkingCopyState == EWorkingCopyState::CheckedOut
 							|| WorkingCopyState == EWorkingCopyState::Added
 							|| WorkingCopyState == EWorkingCopyState::Moved
@@ -219,13 +220,13 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 
 bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 {
-	return false; // Plastic does not lock checked-out files as Perforce does
+	return false; // TODO
 }
 
 bool FPlasticSourceControlState::IsCurrent() const
 {
 	UE_LOG(LogSourceControl, Log, TEXT("IsCurrent(%s)=1"), *LocalFilename);
-	return true; // @todo check the state of the HEAD versus the state of tracked branch on remote
+	return true; // TODO check the state of the HEAD versus the state of tracked branch on remote
 }
 
 bool FPlasticSourceControlState::IsSourceControlled() const
@@ -262,6 +263,7 @@ bool FPlasticSourceControlState::IsIgnored() const
 
 bool FPlasticSourceControlState::CanEdit() const
 {
+	// TODO: cf. CanCheckout Moved/Copied? Also Localy Moved?
 	const bool bCanEdit =  WorkingCopyState == EWorkingCopyState::CheckedOut
 						|| WorkingCopyState == EWorkingCopyState::Added
 						|| WorkingCopyState == EWorkingCopyState::Moved
@@ -284,9 +286,7 @@ bool FPlasticSourceControlState::IsUnknown() const
 
 bool FPlasticSourceControlState::IsModified() const
 {
-	// Warning: for Perforce, a checked-out file is locked for modification (whereas with Plastic all tracked files are checked-out),
-	// so for a clean "check-in" (commit) checked-out files unmodified should be removed from the changeset (the index)
-	// http://stackoverflow.com/questions/12357971/what-does-revert-unchanged-files-mean-in-perforce
+	// Warning: for a clean "check-in" (commit) checked-out files unmodified should be removed from the changeset (the index)
 	//
 	// Thus, before check-in UE4 Editor call RevertUnchangedFiles() in PromptForCheckin() and CheckinFiles().
 	//
@@ -296,15 +296,17 @@ bool FPlasticSourceControlState::IsModified() const
 	//  - Controled (Unchanged)
 	//  - NotControlled
 	//  - Ignored
-	const bool bIsModified =   WorkingCopyState == EWorkingCopyState::Added
-							|| WorkingCopyState == EWorkingCopyState::Deleted
-							|| WorkingCopyState == EWorkingCopyState::Changed
+	// TODO: is there a way to 
+	const bool bIsModified =   WorkingCopyState == EWorkingCopyState::CheckedOut
+							|| WorkingCopyState == EWorkingCopyState::Added
 							|| WorkingCopyState == EWorkingCopyState::Moved
 							|| WorkingCopyState == EWorkingCopyState::Copied
 							|| WorkingCopyState == EWorkingCopyState::Replaced
+							|| WorkingCopyState == EWorkingCopyState::Deleted
+							|| WorkingCopyState == EWorkingCopyState::Changed
 							|| WorkingCopyState == EWorkingCopyState::Conflicted;
 
-	UE_LOG(LogSourceControl, Log, TEXT("CanEdit(%s)=%d"), *LocalFilename, bIsModified);
+	UE_LOG(LogSourceControl, Log, TEXT("IsModified(%s)=%d"), *LocalFilename, bIsModified);
 
 	return bIsModified;
 }

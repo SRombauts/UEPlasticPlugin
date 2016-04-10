@@ -322,6 +322,8 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
  LD Content\Deleted2_BP.uasset
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
+
+ TODO: Conflicted files?
 */
 class FPlasticStatusParser
 {
@@ -360,11 +362,11 @@ public:
 		{
 			State = EWorkingCopyState::Ignored;
 		}
-		else if ((FileStatus == "DE") || (FileStatus == "LD"))
+		else if ((FileStatus == "DE") || (FileStatus == "LD")) // TODO: need to differentiate for CanEdit/CanCheckout/CanCheckIn?
 		{
 			State = EWorkingCopyState::Deleted;
 		}
-		else if ((FileStatus == "MV") || (FileStatus == "LM")) // Renamed
+		else if ((FileStatus == "MV") || (FileStatus == "LM")) // Renamed  // TODO: need to differentiate for CanEdit/CanCheckout/CanCheckIn?
 		{
 			State = EWorkingCopyState::Moved;
 		}
