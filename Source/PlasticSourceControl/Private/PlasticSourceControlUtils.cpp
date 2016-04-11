@@ -258,7 +258,6 @@ bool FindRootDirectory(const FString& InPathToGameDir, FString& OutRepositoryRoo
 	return bFound;
 }
 
-
 void GetBranchName(FString& OutBranchName)
 {
 	bool bResults;
@@ -306,8 +305,6 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 	return bResult;
 }
 
-
-
 /**
  * Extract and interpret the file state from the given Plastic "status" result.
  * empty string = unmodified or hidden changes
@@ -331,8 +328,6 @@ public:
 	FPlasticStatusParser(const FString& InResult)
 	{
 		const FString FileStatus = InResult.Mid(1, 2);
-
-		UE_LOG(LogSourceControl, Log, TEXT("FPlasticStatusParser('%s'[%d]): '%s'"), *InResult, InResult.Len(), *FileStatus);
 
 		if (FileStatus == "CH") // Modified but not Checked-Out
 		{
@@ -366,7 +361,7 @@ public:
 		{
 			State = EWorkingCopyState::Deleted;
 		}
-		else if ((FileStatus == "MV") || (FileStatus == "LM")) // Renamed  // TODO: need to differentiate for CanEdit/CanCheckout/CanCheckIn?
+		else if ((FileStatus == "MV") || (FileStatus == "LM")) // Renamed TODO: need to differentiate for CanEdit/CanCheckout/CanCheckIn?
 		{
 			State = EWorkingCopyState::Moved;
 		}
@@ -388,7 +383,7 @@ public:
 
 /** Parse the array of strings results of a 'cm status --nostatus --noheaders --all --ignore' command
  *
- * Example cm fileinfo results:
+ * Example cm status results:
  CH Content\Changed_BP.uasset
  CO Content\CheckedOut_BP.uasset
  CP Content\Copied_BP.uasset
@@ -401,61 +396,147 @@ public:
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
  */
-static void ParseStatusResult(const FString& InFile, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
+static void ParseStatusResult(const FString& InFile, const TArray<FString>& InResults, FPlasticSourceControlState& OutFileState)
 {
 	// Assuming one line of results for one file.
-	FPlasticSourceControlState FileState(InFile);
 	static const FString EmptyString;
 	if (0 < InResults.Num())
 	{
 		const FString& Status = InResults[0];
 		const FPlasticStatusParser StatusParser(Status);
-		FileState.WorkingCopyState = StatusParser.State;
+		OutFileState.WorkingCopyState = StatusParser.State;
 
-		UE_LOG(LogSourceControl, Log, TEXT("%s = %d"), *Status, static_cast<uint32>(FileState.WorkingCopyState));
+		// TODO debug log
+		UE_LOG(LogSourceControl, Log, TEXT("%s = %d"), *Status, static_cast<uint32>(OutFileState.WorkingCopyState));
 	}
 	else
 	{
 		// No result means Controled/Unchanged file
-		FileState.WorkingCopyState = EWorkingCopyState::Controled;
+		OutFileState.WorkingCopyState = EWorkingCopyState::Controled;
 
-		UE_LOG(LogSourceControl, Log, TEXT("%s = %d"), *InFile, static_cast<uint32>(FileState.WorkingCopyState));
+		// TODO debug log
+		UE_LOG(LogSourceControl, Log, TEXT("%s = %d"), *InFile, static_cast<uint32>(OutFileState.WorkingCopyState));
 	}
-	// TODO check Lock status
-	// TODO check Local Revision vs Repository status
-
-	if (FileState.IsConflicted())
-	{
-		// In case of a conflict (unmerged file) get the base revision to merge
-// TODO				RunGetConflictStatus(File, FileState);
-	}
-	FileState.TimeStamp.Now();
-	OutStates.Add(FileState);
+	OutFileState.TimeStamp.Now();
 }
 
-// Run a Plastic "status" command to update status of given files.
-bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
+// Run a "status" command for each file to get workspace states
+static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
 {
-	TArray<FString> Results;
-	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--nostatus --noheaders --all --ignored"));
-
 	bool bResult = true;
-	for(const FString& File : InFiles)
+
+	TArray<FString> Status;
+	Status.Add(TEXT("--nostatus"));
+	Status.Add(TEXT("--noheaders"));
+	Status.Add(TEXT("--all"));
+	Status.Add(TEXT("--ignored"));
+
+	for (const FString& File : InFiles)
 	{
-		TArray<FString> ErrorMessages;
+		OutStates.Add(FPlasticSourceControlState(File));
+		FPlasticSourceControlState& FileState = OutStates.Last();
+
 		TArray<FString> OneFile;
 		OneFile.Add(File);
-		const bool bStatusOk = RunCommand(TEXT("status"), Parameters, OneFile, Results, ErrorMessages);
+		TArray<FString> Results;
+		TArray<FString> ErrorMessages;
+		const bool bStatusOk = RunCommand(TEXT("status"), Status, OneFile, Results, ErrorMessages);
 		if (bStatusOk)
 		{
-			ParseStatusResult(File, Results, OutStates);
+			ParseStatusResult(File, Results, FileState);
+			if (FileState.IsConflicted())
+			{
+				// TODO In case of a conflict (unmerged file) get the base revision to merge
+			}
 		}
 		else
 		{
 			OutErrorMessages.Append(ErrorMessages);
+			bResult = false;
 		}
 	}
+
+	return bResult;
+}
+
+// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{LockedBy}"
+class FPlasticFileinfoParser
+{
+public:
+	FPlasticFileinfoParser(const FString& InResult)
+	{
+		TArray<FString> Fileinfos;
+		const int32 NbElmts = InResult.ParseIntoArray(Fileinfos, TEXT(";"));
+		if (NbElmts >= 2)
+		{
+			RevisionChangeset = FCString::Atoi(*Fileinfos[0]);
+			RevisionHeadChangeset = FCString::Atoi(*Fileinfos[1]);
+			if (NbElmts >= 3)
+			{
+				LockedBy = MoveTemp(Fileinfos[2]);
+			}
+		}
+	}
+
+	int32 RevisionChangeset;
+	int32 RevisionHeadChangeset;
+	FString LockedBy;
+};
+
+/** Parse the array of strings results of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{LockedBy}"' command
+ *
+ * Example cm fileinfo results:
+16;16;False;;
+14;14;False;;
+16;16;False;;
+*/
+static void ParseFileinfoResults(const TArray<FString>& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& InOutStates)
+{
+	// Iterate on all files and all status of the result (assuming no more line of results than number of files)
+	for (int32 IdxResult = 0; IdxResult < InResults.Num(); IdxResult++)
+	{
+		const FString& File = InFiles[IdxResult];
+		const FString& Fileinfo = InResults[IdxResult];
+		FPlasticSourceControlState& FileState = InOutStates[IdxResult];
+		FPlasticFileinfoParser FileinfoParser(Fileinfo);
+
+		FileState.LocalRevisionChangeset = FileinfoParser.RevisionChangeset;
+		FileState.DepotRevisionChangeset = FileinfoParser.RevisionHeadChangeset;
+		FileState.LockedBy = MoveTemp(FileinfoParser.LockedBy);
+
+		// TODO debug log
+		UE_LOG(LogSourceControl, Log, TEXT("%s: %d;%d '%s'"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.LockedBy);
+	}
+}
+
+// Run a Plastic "fileinfo" (similar to "status") command to update status of given files.
+static bool RunFileinfo(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
+{
+	TArray<FString> Results;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{LockedBy}\""));
+
+	TArray<FString> ErrorMessages;
+	const bool bResult = RunCommand(TEXT("fileinfo"), Parameters, InFiles, Results, ErrorMessages);
+	OutErrorMessages.Append(ErrorMessages);
+	if (bResult)
+	{
+		ParseFileinfoResults(InFiles, Results, OutStates);
+	}
+
+	return bResult;
+}
+
+// Run a Plastic "status" and "fileinfo" commands to update status of given files.
+bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
+{
+	bool bResult;
+	
+	// Run a "status" command for each file to get workspace states
+	bResult = RunStatus(InFiles, OutErrorMessages, OutStates);
+
+	// Run a Plastic "fileinfo" (similar to "status") command to update status of given files.
+	bResult &= RunFileinfo(InFiles, OutErrorMessages, OutStates);
 
 	return bResult;
 }

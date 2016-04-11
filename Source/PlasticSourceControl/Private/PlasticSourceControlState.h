@@ -71,8 +71,20 @@ public:
 	/** File Id with which our local revision diverged from the remote revision */
 	FString PendingMergeBaseFileHash;
 
+	/** If another user has this file checked out, this contains his name. */
+	FString LockedBy;
+
 	/** State of the working copy */
 	EWorkingCopyState::Type WorkingCopyState;
+
+	/** Latest revision number of the file in the depot */
+	int DepotRevisionChangeset;
+
+	/** Latest revision number at which a file was synced to before being edited */
+	int LocalRevisionChangeset;
+
+	/** Whether the file is a binary file or not */
+	bool bBinary;
 
 	/** The timestamp of the last update */
 	FDateTime TimeStamp;

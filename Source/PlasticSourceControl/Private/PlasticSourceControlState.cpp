@@ -220,13 +220,22 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 
 bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 {
-	return false; // TODO
+	if (Who != NULL)
+	{
+		*Who = LockedBy;
+	}
+	// TODO	return State == EPerforceState::CheckedOutOther;  Does Plastic uses a specific state?
+	if(0 < LockedBy.Len()) UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOutOther(%s)=%s"), *LocalFilename, *LockedBy);
+	return (0 < LockedBy.Len());
 }
 
 bool FPlasticSourceControlState::IsCurrent() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsCurrent(%s)=1"), *LocalFilename);
-	return true; // TODO check the state of the HEAD versus the state of tracked branch on remote
+	const bool bIsCurrent = (LocalRevisionChangeset == DepotRevisionChangeset);
+
+	UE_LOG(LogSourceControl, Log, TEXT("IsCurrent(%s)=%d"), *LocalFilename, bIsCurrent);
+	
+	return bIsCurrent;
 }
 
 bool FPlasticSourceControlState::IsSourceControlled() const
