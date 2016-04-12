@@ -108,7 +108,7 @@ public:
 };
 */
 
-/** Get source control status of files on local working copy. */
+/** Get source control status of files on local workspace. */
 class FPlasticUpdateStatusWorker : public IPlasticSourceControlWorker
 {
 public:

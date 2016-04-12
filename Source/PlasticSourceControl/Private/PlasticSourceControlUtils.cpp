@@ -331,54 +331,54 @@ public:
 
 		if (FileStatus == "CH") // Modified but not Checked-Out
 		{
-			State = EWorkingCopyState::Changed;
+			State = EWorkspaceState::Changed;
 		}
 		else if (FileStatus == "CO") // Checked-Out for modification
 		{
-			State = EWorkingCopyState::CheckedOut;
+			State = EWorkspaceState::CheckedOut;
 		}
 		else if (FileStatus == "CP")
 		{
-			State = EWorkingCopyState::Copied;
+			State = EWorkspaceState::Copied;
 		}
 		else if (FileStatus == "RP")
 		{
-			State = EWorkingCopyState::Replaced;
+			State = EWorkspaceState::Replaced;
 		}
 		else if (FileStatus == "AD")
 		{
-			State = EWorkingCopyState::Added;
+			State = EWorkspaceState::Added;
 		}
-		else if (FileStatus == "PR")
+		else if (FileStatus == "PR") // Not Controled/Not in Depot/Untraked
 		{
-			State = EWorkingCopyState::NotControlled;
+			State = EWorkspaceState::Private;
 		}
 		else if (FileStatus == "IG")
 		{
-			State = EWorkingCopyState::Ignored;
+			State = EWorkspaceState::Ignored;
 		}
 		else if ((FileStatus == "DE") || (FileStatus == "LD")) // TODO: need to differentiate for CanEdit/CanCheckout/CanCheckIn?
 		{
-			State = EWorkingCopyState::Deleted;
+			State = EWorkspaceState::Deleted; // Deleted or Locally Deleleted (ie. missing)
 		}
 		else if ((FileStatus == "MV") || (FileStatus == "LM")) // Renamed TODO: need to differentiate for CanEdit/CanCheckout/CanCheckIn?
 		{
-			State = EWorkingCopyState::Moved;
+			State = EWorkspaceState::Moved; // Moved/Renamed or Locally Moved
 		}
 		else if (FileStatus == "conflited") // TODO: what is the appropriate status?
 		{
 			// "Unmerged" conflict cases are generally marked with a "U",
 			// but there are also the special cases of both "A"dded, or both "D"eleted
-			State = EWorkingCopyState::Conflicted;
+			State = EWorkspaceState::Conflicted;
 		}
 		else
 		{
 			UE_LOG(LogSourceControl, Warning, TEXT("Unknown"));
-			State = EWorkingCopyState::Unknown;
+			State = EWorkspaceState::Unknown;
 		}
 	}
 
-	EWorkingCopyState::Type State;
+	EWorkspaceState::Type State;
 };
 
 /** Parse the array of strings results of a 'cm status --nostatus --noheaders --all --ignore' command
@@ -404,18 +404,18 @@ static void ParseStatusResult(const FString& InFile, const TArray<FString>& InRe
 	{
 		const FString& Status = InResults[0];
 		const FPlasticStatusParser StatusParser(Status);
-		OutFileState.WorkingCopyState = StatusParser.State;
+		OutFileState.WorkspaceState = StatusParser.State;
 
 		// TODO debug log
-		UE_LOG(LogSourceControl, Log, TEXT("%s = %d"), *Status, static_cast<uint32>(OutFileState.WorkingCopyState));
+		UE_LOG(LogSourceControl, Log, TEXT("%s = %d"), *Status, static_cast<uint32>(OutFileState.WorkspaceState));
 	}
 	else
 	{
 		// No result means Controled/Unchanged file
-		OutFileState.WorkingCopyState = EWorkingCopyState::Controled;
+		OutFileState.WorkspaceState = EWorkspaceState::Controled;
 
 		// TODO debug log
-		UE_LOG(LogSourceControl, Log, TEXT("%s = %d"), *InFile, static_cast<uint32>(OutFileState.WorkingCopyState));
+		UE_LOG(LogSourceControl, Log, TEXT("%s = %d"), *InFile, static_cast<uint32>(OutFileState.WorkspaceState));
 	}
 	OutFileState.TimeStamp.Now();
 }
@@ -550,9 +550,9 @@ bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 	for(const auto& InState : InStates)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(InState.LocalFilename);
-		if(State->WorkingCopyState != InState.WorkingCopyState)
+		if(State->WorkspaceState != InState.WorkspaceState)
 		{
-			State->WorkingCopyState = InState.WorkingCopyState;
+			State->WorkspaceState = InState.WorkspaceState;
 			State->PendingMergeBaseFileHash = InState.PendingMergeBaseFileHash;
 		//	State->TimeStamp = InState.TimeStamp; // TODO Bug report: Workaround a bug with the Source Control Module not updating file state after a "Save"
 			NbStatesUpdated++;

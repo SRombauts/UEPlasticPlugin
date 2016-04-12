@@ -5,13 +5,13 @@
 #include "ISourceControlState.h"
 #include "PlasticSourceControlRevision.h"
 
-namespace EWorkingCopyState
+namespace EWorkspaceState
 {
 	enum Type
 	{
 		Unknown,
 		Ignored,
-		Controled, // called "Pristine" in Perforce, "Unchanged" in Git, "clean" in SVN
+		Controled, // called "Pristine" in Perforce, "Unchanged" in Git, "Clean" in SVN
 		CheckedOut,
 		Added,
 		Moved, // Renamed
@@ -20,7 +20,7 @@ namespace EWorkingCopyState
 		Deleted,
 		Changed, // Modified but not CheckedOut
 		Conflicted,
-		NotControlled,
+		Private, // "Not Controlled"/"Not In Depot"/"Untraked"
 	};
 }
 
@@ -29,7 +29,7 @@ class FPlasticSourceControlState : public ISourceControlState, public TSharedFro
 public:
 	FPlasticSourceControlState( const FString& InLocalFilename )
 		: LocalFilename(InLocalFilename)
-		, WorkingCopyState(EWorkingCopyState::Unknown)
+		, WorkspaceState(EWorkspaceState::Unknown)
 		, TimeStamp(0)
 	{
 	}
@@ -74,8 +74,8 @@ public:
 	/** If another user has this file checked out, this contains his name. */
 	FString LockedBy;
 
-	/** State of the working copy */
-	EWorkingCopyState::Type WorkingCopyState;
+	/** State of the workspace */
+	EWorkspaceState::Type WorkspaceState;
 
 	/** Latest revision number of the file in the depot */
 	int DepotRevisionChangeset;

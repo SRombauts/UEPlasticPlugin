@@ -262,7 +262,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	UE_LOG(LogSourceControl, Log, TEXT("Revert"));
 
-	// revert any changes in working copy
+	// revert any changes in workspace
 	{
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}

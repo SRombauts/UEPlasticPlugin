@@ -58,25 +58,25 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 
 FName FPlasticSourceControlState::GetIconName() const
 {
-	switch(WorkingCopyState)
+	switch(WorkspaceState)
 	{
-	case EWorkingCopyState::CheckedOut:
+	case EWorkspaceState::CheckedOut:
 		return FName("Perforce.CheckedOut");
-	case EWorkingCopyState::Added:
-	case EWorkingCopyState::Moved:
-	case EWorkingCopyState::Copied:
-	case EWorkingCopyState::Replaced:
+	case EWorkspaceState::Added:
+	case EWorkspaceState::Moved:
+	case EWorkspaceState::Copied:
+	case EWorkspaceState::Replaced:
 		return FName("Perforce.OpenForAdd");
-	case EWorkingCopyState::Deleted:
+	case EWorkspaceState::Deleted:
 		return FName("Perforce.MarkedForDelete");
-	case EWorkingCopyState::Changed:
-	case EWorkingCopyState::Conflicted:
+	case EWorkspaceState::Changed:
+	case EWorkspaceState::Conflicted:
 		return FName("Perforce.NotAtHeadRevision");
-	case EWorkingCopyState::NotControlled:
+	case EWorkspaceState::Private:
 		return FName("Perforce.NotInDepot");
-	case EWorkingCopyState::Unknown:
-	case EWorkingCopyState::Ignored:
-	case EWorkingCopyState::Controled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
+	case EWorkspaceState::Unknown:
+	case EWorkspaceState::Ignored:
+	case EWorkspaceState::Controled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
 	default:
 		return NAME_None;
 	}
@@ -84,25 +84,25 @@ FName FPlasticSourceControlState::GetIconName() const
 
 FName FPlasticSourceControlState::GetSmallIconName() const
 {
-	switch(WorkingCopyState)
+	switch(WorkspaceState)
 	{
-	case EWorkingCopyState::CheckedOut:
+	case EWorkspaceState::CheckedOut:
 		return FName("Perforce.CheckedOut_Small");
-	case EWorkingCopyState::Added:
-	case EWorkingCopyState::Moved:
-	case EWorkingCopyState::Copied:
-	case EWorkingCopyState::Replaced:
+	case EWorkspaceState::Added:
+	case EWorkspaceState::Moved:
+	case EWorkspaceState::Copied:
+	case EWorkspaceState::Replaced:
 		return FName("Perforce.OpenForAdd_Small");
-	case EWorkingCopyState::Deleted:
+	case EWorkspaceState::Deleted:
 		return FName("Perforce.MarkedForDelete_Small");
-	case EWorkingCopyState::Changed:
-	case EWorkingCopyState::Conflicted:
+	case EWorkspaceState::Changed:
+	case EWorkspaceState::Conflicted:
 		return FName("Perforce.NotAtHeadRevision_Small");
-	case EWorkingCopyState::NotControlled:
+	case EWorkspaceState::Private:
 		return FName("Perforce.NotInDepot_Small");
-	case EWorkingCopyState::Unknown:
-	case EWorkingCopyState::Ignored:
-	case EWorkingCopyState::Controled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
+	case EWorkspaceState::Unknown:
+	case EWorkspaceState::Ignored:
+	case EWorkspaceState::Controled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
 	default:
 		return NAME_None;
 	}
@@ -110,31 +110,31 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 
 FText FPlasticSourceControlState::GetDisplayName() const
 {
-	switch(WorkingCopyState)
+	switch(WorkspaceState)
 	{
-	case EWorkingCopyState::Unknown:
+	case EWorkspaceState::Unknown:
 		return LOCTEXT("Unknown", "Unknown");
-	case EWorkingCopyState::Ignored:
+	case EWorkspaceState::Ignored:
 		return LOCTEXT("Ignored", "Ignored");
-	case EWorkingCopyState::Controled:
+	case EWorkspaceState::Controled:
 		return LOCTEXT("Controled", "Controled");
-	case EWorkingCopyState::CheckedOut:
+	case EWorkspaceState::CheckedOut:
 		return LOCTEXT("CheckedOut", "CheckedOut");
-	case EWorkingCopyState::Added:
+	case EWorkspaceState::Added:
 		return LOCTEXT("Added", "Added");
-	case EWorkingCopyState::Moved:
+	case EWorkspaceState::Moved:
 		return LOCTEXT("Moved", "Moved");
-	case EWorkingCopyState::Copied:
+	case EWorkspaceState::Copied:
 		return LOCTEXT("Copied", "Copied");
-	case EWorkingCopyState::Replaced:
+	case EWorkspaceState::Replaced:
 		return LOCTEXT("Replaced", "Replaced");
-	case EWorkingCopyState::Deleted:
+	case EWorkspaceState::Deleted:
 		return LOCTEXT("Deleted", "Deleted");
-	case EWorkingCopyState::Changed:
+	case EWorkspaceState::Changed:
 		return LOCTEXT("Changed", "Changed");
-	case EWorkingCopyState::Conflicted:
+	case EWorkspaceState::Conflicted:
 		return LOCTEXT("ContentsConflict", "Contents Conflict");
-	case EWorkingCopyState::NotControlled:
+	case EWorkspaceState::Private:
 		return LOCTEXT("NotControlled", "Not Under Source Control");
 	}
 
@@ -143,25 +143,25 @@ FText FPlasticSourceControlState::GetDisplayName() const
 
 FText FPlasticSourceControlState::GetDisplayTooltip() const
 {
-	switch(WorkingCopyState)
+	switch(WorkspaceState)
 	{
-	case EWorkingCopyState::Unknown:
+	case EWorkspaceState::Unknown:
 		return LOCTEXT("Unknown_Tooltip", "Unknown source control state");
-	case EWorkingCopyState::Ignored:
+	case EWorkspaceState::Ignored:
 		return LOCTEXT("Ignored_Tooltip", "Item is being ignored.");
-	case EWorkingCopyState::Controled:
+	case EWorkspaceState::Controled:
 		return LOCTEXT("Pristine_Tooltip", "There are no modifications");
-	case EWorkingCopyState::CheckedOut:
+	case EWorkspaceState::CheckedOut:
 		return LOCTEXT("CheckedOut_Tooltip", "The file(s) are checked out");
-	case EWorkingCopyState::Added:
+	case EWorkspaceState::Added:
 		return LOCTEXT("Added_Tooltip", "Item is scheduled for addition");
-	case EWorkingCopyState::Deleted:
+	case EWorkspaceState::Deleted:
 		return LOCTEXT("Deleted_Tooltip", "Item is scheduled for deletion");
-	case EWorkingCopyState::Changed:
+	case EWorkspaceState::Changed:
 		return LOCTEXT("Modified_Tooltip", "Item has been modified");
-	case EWorkingCopyState::Conflicted:
+	case EWorkspaceState::Conflicted:
 		return LOCTEXT("ContentsConflict_Tooltip", "The contents (as opposed to the properties) of the item conflict with updates received from the repository.");
-	case EWorkingCopyState::NotControlled:
+	case EWorkspaceState::Private:
 		return LOCTEXT("NotControlled_Tooltip", "Item is not under version control.");
 	}
 
@@ -182,11 +182,11 @@ const FDateTime& FPlasticSourceControlState::GetTimeStamp() const
 bool FPlasticSourceControlState::CanCheckIn() const
 {
 	// TODO: cf. CanCheckout Moved/Copied? Also Localy Moved?
-	const bool bCanCheckIn = WorkingCopyState == EWorkingCopyState::Added
-		|| WorkingCopyState == EWorkingCopyState::Deleted
-		|| WorkingCopyState == EWorkingCopyState::Changed
-		|| WorkingCopyState == EWorkingCopyState::Moved
-		|| WorkingCopyState == EWorkingCopyState::CheckedOut;
+	const bool bCanCheckIn = WorkspaceState == EWorkspaceState::Added
+		|| WorkspaceState == EWorkspaceState::Deleted
+		|| WorkspaceState == EWorkspaceState::Changed
+		|| WorkspaceState == EWorkspaceState::Moved
+		|| WorkspaceState == EWorkspaceState::CheckedOut;
 
 	UE_LOG(LogSourceControl, Log, TEXT("CanCheckIn(%s)=%d"), *LocalFilename, bCanCheckIn);
 
@@ -196,8 +196,8 @@ bool FPlasticSourceControlState::CanCheckIn() const
 bool FPlasticSourceControlState::CanCheckout() const
 {
 	// TODO: Moved/Copied? Also Localy Moved?
-	const bool bCanCheckout  = WorkingCopyState == EWorkingCopyState::Controled	// In source control, Unmodified
-							|| WorkingCopyState == EWorkingCopyState::Changed;	// In source control, but not checked-out
+	const bool bCanCheckout  = WorkspaceState == EWorkspaceState::Controled	// In source control, Unmodified
+							|| WorkspaceState == EWorkspaceState::Changed;	// In source control, but not checked-out
 
 	UE_LOG(LogSourceControl, Log, TEXT("CanCheckout(%s)=%d"), *LocalFilename, bCanCheckout);
 
@@ -207,11 +207,11 @@ bool FPlasticSourceControlState::CanCheckout() const
 bool FPlasticSourceControlState::IsCheckedOut() const
 {
 	// TODO: cf. CanCheckout Moved/Copied? Also Localy Moved?
-	const bool bIsCheckedOut = WorkingCopyState == EWorkingCopyState::CheckedOut
-							|| WorkingCopyState == EWorkingCopyState::Added
-							|| WorkingCopyState == EWorkingCopyState::Moved
-							|| WorkingCopyState == EWorkingCopyState::Copied
-							|| WorkingCopyState == EWorkingCopyState::Replaced;
+	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
+							|| WorkspaceState == EWorkspaceState::Added
+							|| WorkspaceState == EWorkspaceState::Moved
+							|| WorkspaceState == EWorkspaceState::Copied
+							|| WorkspaceState == EWorkspaceState::Replaced;
 
 	UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOut(%s)=%d"), *LocalFilename, bIsCheckedOut);
 
@@ -240,9 +240,9 @@ bool FPlasticSourceControlState::IsCurrent() const
 
 bool FPlasticSourceControlState::IsSourceControlled() const
 {
-	const bool bIsSourceControlled = WorkingCopyState != EWorkingCopyState::NotControlled
-								  && WorkingCopyState != EWorkingCopyState::Ignored
-								  && WorkingCopyState != EWorkingCopyState::Unknown;
+	const bool bIsSourceControlled = WorkspaceState != EWorkspaceState::Private
+								  && WorkspaceState != EWorkspaceState::Ignored
+								  && WorkspaceState != EWorkspaceState::Unknown;
 
 	UE_LOG(LogSourceControl, Log, TEXT("IsSourceControlled(%s)=%d"), *LocalFilename, bIsSourceControlled);
 
@@ -251,35 +251,35 @@ bool FPlasticSourceControlState::IsSourceControlled() const
 
 bool FPlasticSourceControlState::IsAdded() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, WorkingCopyState == EWorkingCopyState::Added);
+	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Added);
 
-	return WorkingCopyState == EWorkingCopyState::Added; // TODO Moved & Copie? 
+	return WorkspaceState == EWorkspaceState::Added; // TODO Moved & Copie? 
 }
 
 bool FPlasticSourceControlState::IsDeleted() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, WorkingCopyState == EWorkingCopyState::Deleted);
+	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Deleted);
 
-	return WorkingCopyState == EWorkingCopyState::Deleted;
+	return WorkspaceState == EWorkspaceState::Deleted;
 }
 
 bool FPlasticSourceControlState::IsIgnored() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, WorkingCopyState == EWorkingCopyState::Ignored);
+	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Ignored);
 
-	return WorkingCopyState == EWorkingCopyState::Ignored;
+	return WorkspaceState == EWorkspaceState::Ignored;
 }
 
 bool FPlasticSourceControlState::CanEdit() const
 {
 	// TODO: cf. CanCheckout Moved/Copied? Also Localy Moved?
-	const bool bCanEdit =  WorkingCopyState == EWorkingCopyState::CheckedOut
-						|| WorkingCopyState == EWorkingCopyState::Added
-						|| WorkingCopyState == EWorkingCopyState::Moved
-						|| WorkingCopyState == EWorkingCopyState::Copied
-						|| WorkingCopyState == EWorkingCopyState::Replaced
-						|| WorkingCopyState == EWorkingCopyState::Ignored
-						|| WorkingCopyState == EWorkingCopyState::NotControlled;
+	const bool bCanEdit =  WorkspaceState == EWorkspaceState::CheckedOut
+						|| WorkspaceState == EWorkspaceState::Added
+						|| WorkspaceState == EWorkspaceState::Moved
+						|| WorkspaceState == EWorkspaceState::Copied
+						|| WorkspaceState == EWorkspaceState::Replaced
+						|| WorkspaceState == EWorkspaceState::Ignored
+						|| WorkspaceState == EWorkspaceState::Private;
 
 	UE_LOG(LogSourceControl, Log, TEXT("CanEdit(%s)=%d"), *LocalFilename, bCanEdit);
 
@@ -288,9 +288,9 @@ bool FPlasticSourceControlState::CanEdit() const
 
 bool FPlasticSourceControlState::IsUnknown() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsUnknown(%s)=%d"), *LocalFilename, WorkingCopyState == EWorkingCopyState::Unknown);
+	UE_LOG(LogSourceControl, Log, TEXT("IsUnknown(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Unknown);
 
-	return WorkingCopyState == EWorkingCopyState::Unknown;
+	return WorkspaceState == EWorkspaceState::Unknown;
 }
 
 bool FPlasticSourceControlState::IsModified() const
@@ -299,21 +299,19 @@ bool FPlasticSourceControlState::IsModified() const
 	//
 	// Thus, before check-in UE4 Editor call RevertUnchangedFiles() in PromptForCheckin() and CheckinFiles().
 	//
-	// So here we must take care to enumerate all states that need to be commited,
-	// all other will be discarded :
+	// So here we must take care to enumerate all states that need to be commited, all other will be discarded:
 	//  - Unknown
 	//  - Controled (Unchanged)
-	//  - NotControlled
+	//  - Private
 	//  - Ignored
-	// TODO: is there a way to 
-	const bool bIsModified =   WorkingCopyState == EWorkingCopyState::CheckedOut
-							|| WorkingCopyState == EWorkingCopyState::Added
-							|| WorkingCopyState == EWorkingCopyState::Moved
-							|| WorkingCopyState == EWorkingCopyState::Copied
-							|| WorkingCopyState == EWorkingCopyState::Replaced
-							|| WorkingCopyState == EWorkingCopyState::Deleted
-							|| WorkingCopyState == EWorkingCopyState::Changed
-							|| WorkingCopyState == EWorkingCopyState::Conflicted;
+	const bool bIsModified =   WorkspaceState == EWorkspaceState::CheckedOut
+							|| WorkspaceState == EWorkspaceState::Added
+							|| WorkspaceState == EWorkspaceState::Moved
+							|| WorkspaceState == EWorkspaceState::Copied
+							|| WorkspaceState == EWorkspaceState::Replaced
+							|| WorkspaceState == EWorkspaceState::Deleted
+							|| WorkspaceState == EWorkspaceState::Changed
+							|| WorkspaceState == EWorkspaceState::Conflicted;
 
 	UE_LOG(LogSourceControl, Log, TEXT("IsModified(%s)=%d"), *LocalFilename, bIsModified);
 
@@ -323,16 +321,16 @@ bool FPlasticSourceControlState::IsModified() const
 
 bool FPlasticSourceControlState::CanAdd() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("CanAdd(%s)=%d"), *LocalFilename, WorkingCopyState == EWorkingCopyState::NotControlled);
+	UE_LOG(LogSourceControl, Log, TEXT("CanAdd(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Private);
 
-	return WorkingCopyState == EWorkingCopyState::NotControlled;
+	return WorkspaceState == EWorkspaceState::Private;
 }
 
 bool FPlasticSourceControlState::IsConflicted() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsConflicted(%s)=%d"), *LocalFilename, WorkingCopyState == EWorkingCopyState::Conflicted);
+	UE_LOG(LogSourceControl, Log, TEXT("IsConflicted(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Conflicted);
 
-	return WorkingCopyState == EWorkingCopyState::Conflicted;
+	return WorkspaceState == EWorkspaceState::Conflicted;
 }
 
 #undef LOCTEXT_NAMESPACE
