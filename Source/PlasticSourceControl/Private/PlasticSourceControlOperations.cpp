@@ -177,7 +177,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		}
 	}
 
-	// TODO don't use the ShouldUpdateModifiedState() hint here as it is specific to Perforce: the above normal Plastic status has already told us this information (like Plastic and Mercurial) ?
+	// TODO don't use the ShouldUpdateModifiedState() hint here as it is specific to Perforce: the above normal Plastic status has already told us this information (like Git and Mercurial) ?
 
 	return InCommand.bCommandSuccessful;
 }

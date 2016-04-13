@@ -20,7 +20,7 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {
 	CheckPlasticAvailability();
 
-	// TODO bForceConnection
+	// bForceConnection not used on a DVCS
 }
 
 void FPlasticSourceControlProvider::CheckPlasticAvailability()
@@ -289,7 +289,7 @@ TArray< TSharedRef<ISourceControlLabel> > FPlasticSourceControlProvider::GetLabe
 {
 	TArray< TSharedRef<ISourceControlLabel> > Tags;
 
-	// TODO SRombauts : list labels
+	// TODO list labels
 	return Tags;
 }
 

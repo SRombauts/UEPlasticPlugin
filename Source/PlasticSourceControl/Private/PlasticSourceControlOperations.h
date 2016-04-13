@@ -92,7 +92,7 @@ public:
 	TArray<FPlasticSourceControlState> States;
 };
 
-/** @todo Plastic pull --rebase to update branch from its configure remote
+/** @todo Plastic pull to update branch from its configure remote?
 class FPlasticSyncWorker : public IPlasticSourceControlWorker
 {
 public:
@@ -125,22 +125,6 @@ public:
 	/** Map of filenames to history */
 	TMap<FString, TPlasticSourceControlHistory> Histories;
 };
-
-/** @todo Copy or Move operation on a single file
-class FPlasticCopyWorker : public IPlasticSourceControlWorker
-{
-public:
-	virtual ~FPlasticCopyWorker() {}
-	// IPlasticSourceControlWorker interface
-	virtual FName GetName() const override;
-	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
-
-public:
-	// Temporary states for results
-	TArray<FPlasticSourceControlState> OutStates;
-};
-*/
 
 /** @todo Plastic add to mark a conflict as resolved
 class FPlasticResolveWorker : public IPlasticSourceControlWorker

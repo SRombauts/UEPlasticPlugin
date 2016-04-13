@@ -1,3 +1,4 @@
 /Binaries/*/*.pdb
+/Binaries/*/*.modules
 /Binaries/*/*Debug*
 /Intermediate
