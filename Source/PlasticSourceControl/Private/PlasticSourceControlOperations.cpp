@@ -263,9 +263,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	UE_LOG(LogSourceControl, Log, TEXT("Revert"));
 
 	// revert any changes in workspace
-	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
-	}
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 
 	// now update the status of our files
 	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
@@ -274,6 +272,31 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 }
 
 bool FPlasticRevertWorker::UpdateStates() const
+{
+	return PlasticSourceControlUtils::UpdateCachedStates(States);
+}
+
+FName FPlasticSyncWorker::GetName() const
+{
+	return "Sync";
+}
+
+bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	check(InCommand.Operation->GetName() == GetName());
+
+	UE_LOG(LogSourceControl, Log, TEXT("Sync"));
+
+	// revert any changes in workspace
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("update"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+
+	// now update the status of our files
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticSyncWorker::UpdateStates() const
 {
 	return PlasticSourceControlUtils::UpdateCachedStates(States);
 }

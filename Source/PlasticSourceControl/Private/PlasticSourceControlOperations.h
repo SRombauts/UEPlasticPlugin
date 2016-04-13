@@ -92,7 +92,7 @@ public:
 	TArray<FPlasticSourceControlState> States;
 };
 
-/** @todo Plastic pull to update branch from its configure remote?
+/** Plastic update the workspace to latest changes */
 class FPlasticSyncWorker : public IPlasticSourceControlWorker
 {
 public:
@@ -103,10 +103,9 @@ public:
 	virtual bool UpdateStates() const override;
 
 public:
-	// Map of filenames to Plastic state
+	/** Map of filenames to Plastic state */
 	TArray<FPlasticSourceControlState> States;
 };
-*/
 
 /** Get source control status of files on local workspace. */
 class FPlasticUpdateStatusWorker : public IPlasticSourceControlWorker
