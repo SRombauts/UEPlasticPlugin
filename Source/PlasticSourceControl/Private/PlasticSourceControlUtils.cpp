@@ -422,7 +422,7 @@ public:
 static void ParseStatusResult(const FString& InFile, const TArray<FString>& InResults, FPlasticSourceControlState& OutFileState)
 {
 	// Assuming one line of results for one file.
-	static const FString EmptyString;
+	static const FString EmptyString(TEXT(""));
 	if (0 < InResults.Num())
 	{
 		const FString& Status = InResults[0];
