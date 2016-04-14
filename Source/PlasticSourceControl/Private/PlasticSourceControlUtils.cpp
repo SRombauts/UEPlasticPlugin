@@ -450,28 +450,36 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 	Status.Add(TEXT("--all"));
 	Status.Add(TEXT("--ignored"));
 
-	for (const FString& File : InFiles)
+	if (1 == InFiles.Num() && !FPaths::FileExists(InFiles[0]))
 	{
-		OutStates.Add(FPlasticSourceControlState(File));
-		FPlasticSourceControlState& FileState = OutStates.Last();
+		// Special case for "status" of a non-existing file (newly created/deleted): Unknown state
+		OutStates.Add(FPlasticSourceControlState(InFiles[0]));
+	}
+	else
+	{
+		for (const FString& File : InFiles)
+		{
+			OutStates.Add(FPlasticSourceControlState(File));
+			FPlasticSourceControlState& FileState = OutStates.Last();
 
-		TArray<FString> OneFile;
-		OneFile.Add(File);
-		TArray<FString> Results;
-		TArray<FString> ErrorMessages;
-		const bool bStatusOk = RunCommand(TEXT("status"), Status, OneFile, Results, ErrorMessages);
-		if (bStatusOk)
-		{
-			ParseStatusResult(File, Results, FileState);
-			if (FileState.IsConflicted())
+			TArray<FString> OneFile;
+			OneFile.Add(File);
+			TArray<FString> Results;
+			TArray<FString> ErrorMessages;
+			const bool bStatusOk = RunCommand(TEXT("status"), Status, OneFile, Results, ErrorMessages);
+			if (bStatusOk)
 			{
-				// TODO In case of a conflict (unmerged file) get the base revision to merge
+				ParseStatusResult(File, Results, FileState);
+				if (FileState.IsConflicted())
+				{
+					// TODO In case of a conflict (unmerged file) get the base revision to merge
+				}
 			}
-		}
-		else
-		{
-			OutErrorMessages.Append(ErrorMessages);
-			bResult = false;
+			else
+			{
+				OutErrorMessages.Append(ErrorMessages);
+				bResult = false;
+			}
 		}
 	}
 
