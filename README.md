@@ -3,17 +3,27 @@ Unreal Engine 4 Plastic Source Control Plugin
 
 UE4PlasticPlugin is a simple Plastic Source Control Plugin for Unreal Engine
 
+### Quick setup
+
+1. Your Unreal Engine 4.11.1 Game Project folder should be initialized
+   into a workpace using the standard Plastic SCM GUI or cli.
+2. Unzip the content of the plugin ZIP in the root of the Unreal Engine 4.11.1 project folder.
+   That should create a "Plugins/" folder in it.
+3. Launch Unreal Engine 4.11.1, click on the Source Control icon "Connect to Source", select "Plastic".
+
 ### Status
 
-Alpha version :
+Alpha version 0.1.0 2016/04/14 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
 - display status icons to show controled/checked-out/added/deleted/private/changed/ignored files
-- add, delete, duplicate, move/rename a file
+- display locked files
+- add, duplicate, move/rename a file
 - revert modifications of a file
-- checkin/commit a file
+- checkin a set of files with a multiline UTF-8 comment
 - migrate an asset between two projects if both are using Plastic SCM
+- delete file (but no way to checkin them, see known issues bellow)
 
 #### What *cannot* be done presently (TODO list for v1.0, ordered by priority):
 - show history of a file
@@ -26,10 +36,10 @@ Alpha version :
 - should also permit late creation of the ignore.conf file
 - tags: implement ISourceControlLabel to manage Plastic labels
 - Branch is not in the current Editor workflow (but on Epic Roadmap)
-- Pull/Fetch/Push are not in the current Editor workflow
+- Push are not in the current Editor workflow
 
 #### Known issues:
-- the Editor does not show deleted files
+- the Editor does not show deleted files => no way to checkin them!
 - the Editor does not show missing files
 - the Editor does not show .uproject file
 - displaying states of 'Engine' assets (also needs management of 'out of tree' files)
