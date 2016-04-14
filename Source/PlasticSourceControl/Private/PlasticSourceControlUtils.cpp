@@ -258,16 +258,41 @@ bool FindRootDirectory(const FString& InPathToGameDir, FString& OutRepositoryRoo
 	return bFound;
 }
 
-void GetBranchName(FString& OutBranchName)
+void GetUserName(FString& OutUserName)
 {
-	bool bResults;
+	TArray<FString> InfoMessages;
+	TArray<FString> ErrorMessages;
+	const bool bResults = RunCommandInternal(TEXT("whoami"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
+	if (bResults && InfoMessages.Num() > 0)
+	{
+		OutUserName = InfoMessages[0];
+	}
+}
+
+void GetWorkspaceName(const FString& InRepositoryRoot, FString& OutWorkspaceName)
+{
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
+	Parameters.Add(InRepositoryRoot);
+	Parameters.Add(TEXT("--format={0}"));
+	const bool bResults = RunCommandInternal(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	if (bResults && InfoMessages.Num() > 0)
+	{
+		OutWorkspaceName = InfoMessages[0];
+	}
+}
+
+void GetBranchName(const FString& InRepositoryRoot, FString& OutBranchName)
+{
+	TArray<FString> InfoMessages;
+	TArray<FString> ErrorMessages;
+	TArray<FString> Parameters;
+	Parameters.Add(InRepositoryRoot);
 	Parameters.Add(TEXT("--wkconfig"));
 	Parameters.Add(TEXT("--nochanges"));
 	Parameters.Add(TEXT("--nostatus"));
-	bResults = RunCommandInternal(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	const bool bResults = RunCommandInternal(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
 	if(bResults && InfoMessages.Num() > 0)
 	{
 		OutBranchName = InfoMessages[0];
@@ -486,7 +511,7 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 	return bResult;
 }
 
-// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{LockedBy}"
+// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{LockedBy};{LockedWhere}"
 class FPlasticFileinfoParser
 {
 public:
@@ -501,6 +526,10 @@ public:
 			if (NbElmts >= 3)
 			{
 				LockedBy = MoveTemp(Fileinfos[2]);
+				if (NbElmts >=4)
+				{
+					LockedWhere = MoveTemp(Fileinfos[3]);
+				}
 			}
 		}
 	}
@@ -508,17 +537,21 @@ public:
 	int32 RevisionChangeset;
 	int32 RevisionHeadChangeset;
 	FString LockedBy;
+	FString LockedWhere;
 };
 
-/** Parse the array of strings results of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{LockedBy}"' command
+/** Parse the array of strings results of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{LockedBy};{LockedWhere}"' command
  *
  * Example cm fileinfo results:
-16;16;False;;
-14;14;False;;
-16;16;False;;
+16;16;;
+14;15;;
+17;17;srombauts;Workspace_2
 */
 static void ParseFileinfoResults(const TArray<FString>& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& InOutStates)
 {
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+
 	// Iterate on all files and all status of the result (assuming no more line of results than number of files)
 	for (int32 IdxResult = 0; IdxResult < InResults.Num(); IdxResult++)
 	{
@@ -530,9 +563,15 @@ static void ParseFileinfoResults(const TArray<FString>& InFiles, const TArray<FS
 		FileState.LocalRevisionChangeset = FileinfoParser.RevisionChangeset;
 		FileState.DepotRevisionChangeset = FileinfoParser.RevisionHeadChangeset;
 		FileState.LockedBy = MoveTemp(FileinfoParser.LockedBy);
+		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
+
+		if ((0 < FileState.LockedBy.Len()) && ((FileState.LockedBy != Provider.GetUserName()) || (FileState.LockedWhere != Provider.GetWorkspaceName())))
+		{
+			FileState.WorkspaceState = EWorkspaceState::LockedByOther;
+		}
 
 		// TODO debug log
-		UE_LOG(LogSourceControl, Log, TEXT("%s: %d;%d '%s'"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.LockedBy);
+		UE_LOG(LogSourceControl, Log, TEXT("%s: %d;%d '%s'(%s)"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.LockedBy, *FileState.LockedWhere);
 	}
 }
 
@@ -541,7 +580,7 @@ static bool RunFileinfo(const TArray<FString>& InFiles, TArray<FString>& OutErro
 {
 	TArray<FString> Results;
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{LockedBy}\""));
+	Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{LockedBy};{LockedWhere}\""));
 
 	TArray<FString> ErrorMessages;
 	const bool bResult = RunCommand(TEXT("fileinfo"), Parameters, InFiles, Results, ErrorMessages);
@@ -558,7 +597,7 @@ static bool RunFileinfo(const TArray<FString>& InFiles, TArray<FString>& OutErro
 bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
 {
 	bool bResult;
-	
+
 	// Run a "status" command for each file to get workspace states
 	bResult = RunStatus(InFiles, OutErrorMessages, OutStates);
 

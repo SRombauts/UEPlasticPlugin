@@ -35,10 +35,13 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			// Find the path to the root Plastic directory (if any)
 			const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
 			const bool bRepositoryFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToRepositoryRoot);
+			// Get user name (from the global Plastic SCM client config)
+			PlasticSourceControlUtils::GetUserName(UserName);
 			if (bRepositoryFound)
 			{
-				// Get branch name
-				PlasticSourceControlUtils::GetBranchName(BranchName);
+				// Get workspace name and branch name
+				PlasticSourceControlUtils::GetWorkspaceName(PathToRepositoryRoot, WorkspaceName);
+				PlasticSourceControlUtils::GetBranchName(PathToRepositoryRoot, BranchName);
 				bPlasticRepositoryFound = true;
 			}
 			else
@@ -82,10 +85,11 @@ TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceContro
 FText FPlasticSourceControlProvider::GetStatusText() const
 {
 	FFormatNamedArguments Args;
-	Args.Add( TEXT("RepositoryName"), FText::FromString(PathToRepositoryRoot) );
+	Args.Add( TEXT("WorkspacePath"), FText::FromString(PathToRepositoryRoot) );
 	Args.Add( TEXT("BranchName"), FText::FromString(BranchName) );
+	Args.Add( TEXT("UserName"), FText::FromString(UserName) );
 
-	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Workspace: {RepositoryName}\n{BranchName}"), Args );
+	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Workspace: {WorkspacePath}\n{BranchName}\nUser: {UserName}"), Args );
 }
 
 /** Quick check if source control is enabled */

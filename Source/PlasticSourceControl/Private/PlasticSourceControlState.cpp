@@ -58,6 +58,11 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 
 FName FPlasticSourceControlState::GetIconName() const
 {
+	if (!IsCurrent())
+	{
+		return FName("Perforce.NotAtHeadRevision");
+	}
+
 	switch(WorkspaceState)
 	{
 	case EWorkspaceState::CheckedOut:
@@ -72,6 +77,8 @@ FName FPlasticSourceControlState::GetIconName() const
 	case EWorkspaceState::Changed:
 	case EWorkspaceState::Conflicted:
 		return FName("Perforce.NotAtHeadRevision");
+	case EWorkspaceState::LockedByOther:
+		return FName("Perforce.CheckedOutByOtherUser");
 	case EWorkspaceState::Private:
 		return FName("Perforce.NotInDepot");
 	case EWorkspaceState::Unknown:
@@ -84,6 +91,11 @@ FName FPlasticSourceControlState::GetIconName() const
 
 FName FPlasticSourceControlState::GetSmallIconName() const
 {
+	if (!IsCurrent())
+	{
+		return FName("Perforce.NotAtHeadRevision_Small");
+	}
+
 	switch(WorkspaceState)
 	{
 	case EWorkspaceState::CheckedOut:
@@ -98,6 +110,8 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	case EWorkspaceState::Changed:
 	case EWorkspaceState::Conflicted:
 		return FName("Perforce.NotAtHeadRevision_Small");
+	case EWorkspaceState::LockedByOther:
+		return FName("Perforce.CheckedOutByOtherUser_Small");
 	case EWorkspaceState::Private:
 		return FName("Perforce.NotInDepot_Small");
 	case EWorkspaceState::Unknown:
@@ -134,6 +148,8 @@ FText FPlasticSourceControlState::GetDisplayName() const
 		return LOCTEXT("Changed", "Changed");
 	case EWorkspaceState::Conflicted:
 		return LOCTEXT("ContentsConflict", "Contents Conflict");
+	case EWorkspaceState::LockedByOther:
+		return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by: {0}"), FText::FromString(LockedBy));
 	case EWorkspaceState::Private:
 		return LOCTEXT("NotControlled", "Not Under Source Control");
 	}
@@ -224,9 +240,11 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 	{
 		*Who = LockedBy;
 	}
-	// TODO	return State == EPerforceState::CheckedOutOther;  Does Plastic uses a specific state?
-	if(0 < LockedBy.Len()) UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOutOther(%s)=%s"), *LocalFilename, *LockedBy);
-	return (0 < LockedBy.Len());
+	const bool bIsLockedByOther = WorkspaceState == EWorkspaceState::LockedByOther;
+
+	if (bIsLockedByOther) UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOutOther(%s)=%d '%s' '%s'"), *LocalFilename, bIsLockedByOther, *LockedBy, *LockedWhere);
+
+	return bIsLockedByOther;
 }
 
 bool FPlasticSourceControlState::IsCurrent() const

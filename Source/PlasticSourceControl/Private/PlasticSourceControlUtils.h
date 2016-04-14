@@ -55,10 +55,24 @@ void Terminate();
 bool FindRootDirectory(const FString& InPathToGameDir, FString& OutRepositoryRoot);
 
 /**
- * Get Plastic current checked-out branch
- * @param	OutBranchName			Name of the current checked-out branch (if any, ie. not in detached HEAD)
+ * Get Plastic SCM current user
+ * @param	OutUserName			Name of the Plastic SCM user configured globaly
  */
-void GetBranchName(FString& OutBranchName);
+void GetUserName(FString& OutUserName);
+
+/**
+ * Get Plastic workspace name
+ * @param	InRepositoryRoot	The workspace from where to run the command - usually the Game directory (can be empty)
+ * @param	OutWorkspaceName	Name of the current workspace
+ */
+void GetWorkspaceName(const FString& InRepositoryRoot, FString& OutWorkspaceName);
+
+/**
+ * Get Plastic current checked-out branch
+ * @param	InRepositoryRoot	The workspace from where to run the command - usually the Game directory (can be empty)
+ * @param	OutBranchName		Name of the current checked-out branch (if any, ie. not in detached HEAD)
+ */
+void GetBranchName(const FString& InRepositoryRoot, FString& OutBranchName);
 
 /**
  * Run a Plastic command - output is a string TArray.

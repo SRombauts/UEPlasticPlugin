@@ -57,6 +57,24 @@ public:
 		return PathToRepositoryRoot;
 	}
 
+	/** Get the Plastic current user */
+	inline const FString& GetUserName() const
+	{
+		return UserName;
+	}
+
+	/** Get the Plastic current workspace */
+	inline const FString& GetWorkspaceName() const
+	{
+		return WorkspaceName;
+	}
+
+	/** Get the Name of the current branch */
+	inline const FString& GetBranchName() const
+	{
+		return BranchName;
+	}
+
 	/** Helper function used to update state cache */
 	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> GetStateInternal(const FString& Filename);
 
@@ -89,7 +107,13 @@ private:
 	void OutputCommandMessages(const class FPlasticSourceControlCommand& InCommand) const;
 
 	/** Path to the root of the Plastic repository: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */
-	FString PathToRepositoryRoot;
+	FString PathToRepositoryRoot; // TODO rename to PathToWorkspaceRoot
+
+	/** Plastic current user */
+	FString UserName;
+
+	/** Plastic current workspace */
+	FString WorkspaceName;
 
 	/** Name of the current branch */
 	FString BranchName;

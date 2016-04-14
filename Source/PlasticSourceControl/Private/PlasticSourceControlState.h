@@ -20,6 +20,7 @@ namespace EWorkspaceState
 		Deleted,
 		Changed, // Modified but not CheckedOut
 		Conflicted,
+		LockedByOther, // LockedBy with name of someone else than cm whoami
 		Private, // "Not Controlled"/"Not In Depot"/"Untraked"
 	};
 }
@@ -71,8 +72,11 @@ public:
 	/** File Id with which our local revision diverged from the remote revision */
 	FString PendingMergeBaseFileHash;
 
-	/** If another user has this file checked out, this contains his name. */
+	/** If a user (another or ourself) has this file locked, this contains his name. */
 	FString LockedBy;
+
+	/** Location of the locked file. */
+	FString LockedWhere;
 
 	/** State of the workspace */
 	EWorkspaceState::Type WorkspaceState;
