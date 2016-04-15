@@ -24,6 +24,7 @@ Alpha version 0.1.0 2016/04/14 :
 - checkin a set of files with a multiline UTF-8 comment
 - migrate an asset between two projects if both are using Plastic SCM
 - delete file (but no way to checkin them, see known issues bellow)
+- update workspace to latest head (Sync command)
 
 #### What *cannot* be done presently (TODO list for v1.0, ordered by priority):
 - show history of a file

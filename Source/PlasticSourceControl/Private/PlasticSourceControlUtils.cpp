@@ -92,7 +92,7 @@ static bool LaunchBackgroundCommandLineShell(const FString& InPathToPlasticBinar
 		verify(FPlatformProcess::CreatePipe(OutputPipeRead, OutputPipeWrite));	// For reading from child process
 		verify(CreatePipeWrite(InputPipeRead, InputPipeWrite));	// For writing to child process
 
-		UE_LOG(LogSourceControl, Warning, TEXT("LaunchBackgroundCommandLineShell: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
+		UE_LOG(LogSourceControl, Log, TEXT("LaunchBackgroundCommandLineShell: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
 		ProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, nullptr, OutputPipeWrite, InputPipeRead);
 		if (!ProcessHandle.IsValid())
 		{
@@ -127,7 +127,7 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 			FullCommand += TEXT("\"");
 		}
 		// TODO: temporary debug logs (before end of line)
-		UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternalShell: '%s'"), *FullCommand);
+		UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell: '%s'"), *FullCommand);
 		FullCommand += TEXT('\n'); // Finalize the command line
 
 		// Send command to 'cm shell' process
@@ -160,7 +160,14 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 			}
 			FPlatformProcess::Sleep(0.0f); // 0.0 means release the current time slice to let other threads get some attention
 		}
-		UE_LOG(LogSourceControl, Log, TEXT("OutResults: '%s' bResult=%d Elapsed=%lf"), *OutResults, bResult, FPlatformTime::Seconds() - StartTime);
+		if (FPlatformTime::Seconds() - StartTime < Timeout)
+		{
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell: '%s' bResult=%d Elapsed=%lf"), *OutResults, bResult, FPlatformTime::Seconds() - StartTime);
+		}
+		else
+		{
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell: '%s' bResult=%d Elapsed=%lf TIMEOUT"), *OutResults, bResult, FPlatformTime::Seconds() - StartTime);
+		}
 		
 		// Return output as error if result code is an error
 		if (!bResult)
