@@ -167,7 +167,6 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute( const TSharedRef<IS
 		return ECommandResult::Failed;
 	}
 
-	// TODO Use relative filenames? With appropriate Working dir!
 	TArray<FString> AbsoluteFiles = SourceControlHelpers::AbsoluteFilenames(InFiles);
 
 	// Query to see if we allow this operation

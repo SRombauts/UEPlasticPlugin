@@ -133,8 +133,8 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		// Send command to 'cm shell' process
 		const bool bWriteOk = FPlatformProcess::WritePipe(InputPipeWrite, FullCommand);
 
-		// And wait up to ten seconds for its termination
-		const double Timeout = 10.0;
+		// And wait up to sixty seconds for its termination (TODO is enough in my testing and with batching by 50 files but will never hold for long "update" commands)
+		const double Timeout = 60.0;
 		const double StartTime = FPlatformTime::Seconds();
 		while (FPlatformProcess::IsProcRunning(ProcessHandle) && (FPlatformTime::Seconds() - StartTime < Timeout))
 		{
@@ -150,7 +150,7 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 					if (INDEX_NONE != IndexEndResult)
 					{
 						const FString Result = OutResults.Mid(IndexCommandResult + 14, IndexEndResult - IndexCommandResult - 14);
-						int32 ResultCode = FCString::Atoi(*Result);
+						const int32 ResultCode = FCString::Atoi(*Result);
 						bResult = (0 == ResultCode);
 						// remove the CommandResult line from the OutResults
 						OutResults.RemoveAt(IndexCommandResult, OutResults.Len() - IndexCommandResult);
@@ -503,6 +503,7 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 	{
 		for (const FString& File : InFiles)
 		{
+			// The "status" command only operate on one file at a time
 			OutStates.Add(FPlasticSourceControlState(File));
 			FPlasticSourceControlState& FileState = OutStates.Last();
 
@@ -674,11 +675,11 @@ struct FRemoveRedundantErrors
 void RemoveRedundantErrors(FPlasticSourceControlCommand& InCommand, const FString& InFilter)
 {
 	bool bFoundRedundantError = false;
-	for(auto Iter(InCommand.ErrorMessages.CreateConstIterator()); Iter; Iter++)
+	for(const FString& ErrorMessage : InCommand.ErrorMessages)
 	{
-		if(Iter->Contains(InFilter))
+		if(ErrorMessage.Contains(InFilter, ESearchCase::CaseSensitive, ESearchDir::FromEnd))
 		{
-			InCommand.InfoMessages.Add(*Iter);
+			InCommand.InfoMessages.Add(ErrorMessage);
 			bFoundRedundantError = true;
 		}
 	}
