@@ -13,7 +13,7 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	const FString& PathToRepositoryRoot = PlasticSourceControl.GetProvider().GetPathToRepositoryRoot();
+	const FString& PathToWorkspaceRoot = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
 
 	// if a filename for the temp file wasn't supplied generate a unique-ish one
 	if(InOutFilename.Len() == 0)
@@ -36,7 +36,7 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 	else
 	{
 // TODO
-//		bCommandSuccessful = PlasticSourceControlUtils::RunDumpToFile(PathToPlasticBinary, PathToRepositoryRoot, Parameter, InOutFilename);
+//		bCommandSuccessful = PlasticSourceControlUtils::RunDumpToFile(PathToPlasticBinary, PathToWorkspaceRoot, Parameter, InOutFilename);
 		bCommandSuccessful = false;
 	}
 	return bCommandSuccessful;
@@ -102,7 +102,7 @@ const FDateTime& FPlasticSourceControlRevision::GetDate() const
 
 int32 FPlasticSourceControlRevision::GetCheckInIdentifier() const
 {
-	// in Plastic, revisions apply to the whole repository so (in Perforce terms) the revision *is* the changelist
+	// TODO in Plastic, like in Perforce, revisions are not the changelists
 	return RevisionNumber;
 }
 

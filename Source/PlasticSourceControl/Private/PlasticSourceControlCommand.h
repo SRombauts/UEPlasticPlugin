@@ -32,8 +32,8 @@ public:
 	virtual void DoThreadedWork() override;
 
 public:
-	/** Path to the root of the Plastic repository: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */
-	FString PathToRepositoryRoot;
+	/** Path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */
+	FString PathToWorkspaceRoot;
 
 	/** Operation we want to perform - contains outward-facing parameters & results */
 	TSharedRef<class ISourceControlOperation, ESPMode::ThreadSafe> Operation;

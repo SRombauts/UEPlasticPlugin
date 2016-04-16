@@ -47,12 +47,12 @@ bool CheckPlasticAvailability(const FString& InPathToPlasticBinary);
 void Terminate();
 
 /**
- * Find the root of the Plastic repository, looking from the GameDir and upward in its parent directories
+ * Find the root of the Plastic workspace, looking from the GameDir and upward in its parent directories
  * @param InPathToGameDir		The path to the Game Directory
- * @param OutRepositoryRoot		The path to the root directory of the Plastic repository if found, else the path to the GameDir
+ * @param OutWorkspaceRoot		The path to the root directory of the Plastic workspace if found, else the path to the GameDir
  * @returns true if the command succeeded and returned no errors
  */
-bool FindRootDirectory(const FString& InPathToGameDir, FString& OutRepositoryRoot);
+bool FindRootDirectory(const FString& InPathToGameDir, FString& OutWorkspaceRoot);
 
 /**
  * Get Plastic SCM current user
@@ -62,17 +62,17 @@ void GetUserName(FString& OutUserName);
 
 /**
  * Get Plastic workspace name
- * @param	InRepositoryRoot	The workspace from where to run the command - usually the Game directory (can be empty)
+ * @param	InWorkspaceRoot	The workspace from where to run the command - usually the Game directory (can be empty)
  * @param	OutWorkspaceName	Name of the current workspace
  */
-void GetWorkspaceName(const FString& InRepositoryRoot, FString& OutWorkspaceName);
+void GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName);
 
 /**
  * Get Plastic current checked-out branch
- * @param	InRepositoryRoot	The workspace from where to run the command - usually the Game directory (can be empty)
+ * @param	InWorkspaceRoot	The workspace from where to run the command - usually the Game directory (can be empty)
  * @param	OutBranchName		Name of the current checked-out branch (if any, ie. not in detached HEAD)
  */
-void GetBranchName(const FString& InRepositoryRoot, FString& OutBranchName);
+void GetBranchName(const FString& InWorkspaceRoot, FString& OutBranchName);
 
 /**
  * Run a Plastic command - output is a string TArray.

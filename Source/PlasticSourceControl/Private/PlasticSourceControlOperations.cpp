@@ -23,7 +23,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--nochanges"));
 	TArray<FString> Files;
-	Files.Add(InCommand.PathToRepositoryRoot);
+	Files.Add(InCommand.PathToWorkspaceRoot);
 
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("status"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 	if(!InCommand.bCommandSuccessful || InCommand.ErrorMessages.Num() > 0 || InCommand.InfoMessages.Num() == 0)
@@ -252,7 +252,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		}
 	}
 
-	// TODO don't use the ShouldUpdateModifiedState() hint here as it is specific to Perforce: the above normal Plastic status has already told us this information (like Git and Mercurial) ?
+	// don't use the ShouldUpdateModifiedState() hint here as it is specific to Perforce: the above normal Plastic status has already told us this information (like Git and Mercurial)
 
 	return InCommand.bCommandSuccessful;
 }

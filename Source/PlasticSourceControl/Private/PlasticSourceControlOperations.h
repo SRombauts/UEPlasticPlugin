@@ -7,7 +7,7 @@
 #include "PlasticSourceControlRevision.h"
 
 /** Called when first activated on a project, and then at project load time.
- *  Look for the root directory of the Plastic repository (where the ".Plastic/" subdirectory is located). */
+ *  Look for the root directory of the Plastic workspace (where the ".Plastic/" subdirectory is located). */
 class FPlasticConnectWorker : public IPlasticSourceControlWorker
 {
 public:

@@ -34,20 +34,20 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		{
 			// Find the path to the root Plastic directory (if any)
 			const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
-			const bool bRepositoryFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToRepositoryRoot);
+			const bool bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToWorkspaceRoot);
 			// Get user name (from the global Plastic SCM client config)
 			PlasticSourceControlUtils::GetUserName(UserName);
-			if (bRepositoryFound)
+			if (bWorkspaceFound)
 			{
 				// Get workspace name and branch name
-				PlasticSourceControlUtils::GetWorkspaceName(PathToRepositoryRoot, WorkspaceName);
-				PlasticSourceControlUtils::GetBranchName(PathToRepositoryRoot, BranchName);
-				bPlasticRepositoryFound = true;
+				PlasticSourceControlUtils::GetWorkspaceName(PathToWorkspaceRoot, WorkspaceName);
+				PlasticSourceControlUtils::GetBranchName(PathToWorkspaceRoot, BranchName);
+				bPlasticWorkspaceFound = true;
 			}
 			else
 			{
-				UE_LOG(LogSourceControl, Error, TEXT("'%s' is not part of a Plastic repository"), *FPaths::GameDir());
-				bPlasticRepositoryFound = false;
+				UE_LOG(LogSourceControl, Error, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::GameDir());
+				bPlasticWorkspaceFound = false;
 			}
 		}
 	}
@@ -85,7 +85,7 @@ TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceContro
 FText FPlasticSourceControlProvider::GetStatusText() const
 {
 	FFormatNamedArguments Args;
-	Args.Add( TEXT("WorkspacePath"), FText::FromString(PathToRepositoryRoot) );
+	Args.Add( TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot) );
 	Args.Add( TEXT("BranchName"), FText::FromString(BranchName) );
 	Args.Add( TEXT("UserName"), FText::FromString(UserName) );
 
@@ -95,13 +95,13 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 /** Quick check if source control is enabled */
 bool FPlasticSourceControlProvider::IsEnabled() const
 {
-	return bPlasticRepositoryFound;
+	return bPlasticWorkspaceFound;
 }
 
 /** Quick check if source control is available for use (useful for server-based providers) */
 bool FPlasticSourceControlProvider::IsAvailable() const
 {
-	return bPlasticRepositoryFound;
+	return bPlasticWorkspaceFound;
 }
 
 const FName& FPlasticSourceControlProvider::GetName(void) const

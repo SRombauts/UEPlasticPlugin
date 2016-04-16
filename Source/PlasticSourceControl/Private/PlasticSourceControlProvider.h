@@ -14,7 +14,7 @@ public:
 	/** Constructor */
 	FPlasticSourceControlProvider() 
 		: bPlasticAvailable(false)
-		, bPlasticRepositoryFound(false)
+		, bPlasticWorkspaceFound(false)
 	{
 	}
 
@@ -51,10 +51,10 @@ public:
 		return bPlasticAvailable;
 	}
 
-	/** Get the path to the root of the Plastic repository: can be the GameDir itself, or any parent directory */
-	inline const FString& GetPathToRepositoryRoot() const
+	/** Get the path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory */
+	inline const FString& GetPathToWorkspaceRoot() const
 	{
-		return PathToRepositoryRoot;
+		return PathToWorkspaceRoot;
 	}
 
 	/** Get the Plastic current user */
@@ -92,8 +92,8 @@ private:
 	/** Is Plastic binary found and working. */
 	bool bPlasticAvailable;
 
-	/** Is Plastic repository found. */
-	bool bPlasticRepositoryFound;
+	/** Is Plastic workspace found. */
+	bool bPlasticWorkspaceFound;
 
 	/** Helper function for Execute() */
 	TSharedPtr<class IPlasticSourceControlWorker, ESPMode::ThreadSafe> CreateWorker(const FName& InOperationName) const;
@@ -106,8 +106,8 @@ private:
 	/** Output any messages this command holds */
 	void OutputCommandMessages(const class FPlasticSourceControlCommand& InCommand) const;
 
-	/** Path to the root of the Plastic repository: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */
-	FString PathToRepositoryRoot; // TODO rename to PathToWorkspaceRoot
+	/** Path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */
+	FString PathToWorkspaceRoot;
 
 	/** Plastic current user */
 	FString UserName;

@@ -232,12 +232,12 @@ FString FindPlasticBinaryPath()
 	return FString(TEXT("cm"));
 }
 
-// Find the root of the Plastic repository, looking from the provided path and upward in its parent directories.
-bool FindRootDirectory(const FString& InPath, FString& OutRepositoryRoot)
+// Find the root of the Plastic workspace, looking from the provided path and upward in its parent directories.
+bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 {
 	bool bFound = false;
 	FString PathToPlasticSubdirectory;
-	OutRepositoryRoot = InPath;
+	OutWorkspaceRoot = InPath;
 
 	auto TrimTrailing = [](FString& Str, const TCHAR Char)
 	{
@@ -249,30 +249,30 @@ bool FindRootDirectory(const FString& InPath, FString& OutRepositoryRoot)
 		}
 	};
 
-	TrimTrailing(OutRepositoryRoot, '\\');
-	TrimTrailing(OutRepositoryRoot, '/');
+	TrimTrailing(OutWorkspaceRoot, '\\');
+	TrimTrailing(OutWorkspaceRoot, '/');
 
-	while(!bFound && !OutRepositoryRoot.IsEmpty())
+	while(!bFound && !OutWorkspaceRoot.IsEmpty())
 	{
-		// Look for the ".plastic" subdirectory present at the root of every Plastic repository
-		PathToPlasticSubdirectory = OutRepositoryRoot / TEXT(".plastic");
+		// Look for the ".plastic" subdirectory present at the root of every Plastic workspace
+		PathToPlasticSubdirectory = OutWorkspaceRoot / TEXT(".plastic");
 		bFound = IFileManager::Get().DirectoryExists(*PathToPlasticSubdirectory);
 		if(!bFound)
 		{
 			int32 LastSlashIndex;
-			if(OutRepositoryRoot.FindLastChar('/', LastSlashIndex))
+			if(OutWorkspaceRoot.FindLastChar('/', LastSlashIndex))
 			{
-				OutRepositoryRoot = OutRepositoryRoot.Left(LastSlashIndex);
+				OutWorkspaceRoot = OutWorkspaceRoot.Left(LastSlashIndex);
 			}
 			else
 			{
-				OutRepositoryRoot.Empty();
+				OutWorkspaceRoot.Empty();
 			}
 		}
 	}
 	if (!bFound)
 	{
-		OutRepositoryRoot = InPath; // If not found, return the provided dir as best possible root.
+		OutWorkspaceRoot = InPath; // If not found, return the provided dir as best possible root.
 	}
 	return bFound;
 }
@@ -288,12 +288,12 @@ void GetUserName(FString& OutUserName)
 	}
 }
 
-void GetWorkspaceName(const FString& InRepositoryRoot, FString& OutWorkspaceName)
+void GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName)
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(InRepositoryRoot);
+	Parameters.Add(InWorkspaceRoot);
 	Parameters.Add(TEXT("--format={0}"));
 	const bool bResults = RunCommandInternal(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
 	if (bResults && InfoMessages.Num() > 0)
@@ -302,12 +302,12 @@ void GetWorkspaceName(const FString& InRepositoryRoot, FString& OutWorkspaceName
 	}
 }
 
-void GetBranchName(const FString& InRepositoryRoot, FString& OutBranchName)
+void GetBranchName(const FString& InWorkspaceRoot, FString& OutBranchName)
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(InRepositoryRoot);
+	Parameters.Add(InWorkspaceRoot);
 	Parameters.Add(TEXT("--wkconfig"));
 	Parameters.Add(TEXT("--nochanges"));
 	Parameters.Add(TEXT("--nostatus"));
