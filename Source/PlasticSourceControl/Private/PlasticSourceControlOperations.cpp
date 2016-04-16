@@ -221,7 +221,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	if (InCommand.Files.Num() > 0)
 	{
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
-		PlasticSourceControlUtils::RemoveRedundantErrors(InCommand, TEXT("' is not in a workspace"));
+		PlasticSourceControlUtils::RemoveRedundantErrors(InCommand, TEXT("is not in a workspace."));
 
 		if (Operation->ShouldUpdateHistory())
 		{
