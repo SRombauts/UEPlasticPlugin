@@ -14,7 +14,7 @@
 namespace PlasticSourceControlConstants
 {
 	/** The maximum number of files we submit in a single Plastic command */
-	const int32 MaxFilesPerBatch = 50;
+	const int32 MaxFilesPerBatch = 5000;
 #if PLATFORM_WINDOWS
 	const TCHAR* pchDelim = TEXT("\r\n");
 #else
@@ -115,12 +115,12 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		// Start with the Plastic command itself ("status", "log", "chekin"...)
 		FString FullCommand = InCommand;
 		// Append to the command all parameters, and then finally the files
-		for (const auto& Parameter : InParameters)
+		for (const FString& Parameter : InParameters)
 		{
 			FullCommand += TEXT(" ");
 			FullCommand += Parameter;
 		}
-		for (const auto& File : InFiles)
+		for (const FString& File : InFiles)
 		{
 			FullCommand += TEXT(" \"");
 			FullCommand += File;
@@ -162,11 +162,11 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		}
 		if (FPlatformTime::Seconds() - StartTime < Timeout)
 		{
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell: '%s' bResult=%d Elapsed=%lf"), *OutResults, bResult, FPlatformTime::Seconds() - StartTime);
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell(%s): '%s' bResult=%d Elapsed=%lf"), *InCommand, *OutResults, bResult, FPlatformTime::Seconds() - StartTime);
 		}
 		else
 		{
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell: '%s' bResult=%d Elapsed=%lf TIMEOUT"), *OutResults, bResult, FPlatformTime::Seconds() - StartTime);
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): '%s' bResult=%d Elapsed=%lf TIMEOUT"), *InCommand, *OutResults, bResult, FPlatformTime::Seconds() - StartTime);
 		}
 		
 		// Return output as error if result code is an error
@@ -324,7 +324,7 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 
 	if(InFiles.Num() > PlasticSourceControlConstants::MaxFilesPerBatch)
 	{
-		// Batch files up so we dont exceed command-line limits
+		// Batch files up so we dont exceed "cm shell" limits (@todo are there any limits?)
 		int32 FileCount = 0;
 		while(FileCount < InFiles.Num())
 		{
@@ -507,23 +507,25 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 			OutStates.Add(FPlasticSourceControlState(File));
 			FPlasticSourceControlState& FileState = OutStates.Last();
 
-			TArray<FString> OneFile;
-			OneFile.Add(File);
-			TArray<FString> Results;
-			TArray<FString> ErrorMessages;
-			const bool bStatusOk = RunCommand(TEXT("status"), Status, OneFile, Results, ErrorMessages);
-			if (bStatusOk)
+			// Do not run status commands anymore after the first failure (optimization, useful for global "submit to source control")
+			if (bResult)
 			{
-				ParseStatusResult(File, Results, FileState);
-				if (FileState.IsConflicted())
+				TArray<FString> OneFile;
+				OneFile.Add(File);
+				TArray<FString> Results;
+				const bool bStatusOk = RunCommand(TEXT("status"), Status, OneFile, Results, OutErrorMessages);
+				if (bStatusOk)
 				{
-					// TODO In case of a conflict (unmerged file) get the base revision to merge
+					ParseStatusResult(File, Results, FileState);
+					if (FileState.IsConflicted())
+					{
+						// TODO In case of a conflict (unmerged file) get the base revision to merge
+					}
 				}
-			}
-			else
-			{
-				OutErrorMessages.Append(ErrorMessages);
-				bResult = false;
+				else
+				{
+					bResult = false;
+				}
 			}
 		}
 	}
@@ -602,9 +604,7 @@ static bool RunFileinfo(const TArray<FString>& InFiles, TArray<FString>& OutErro
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{LockedBy};{LockedWhere}\""));
 
-	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("fileinfo"), Parameters, InFiles, Results, ErrorMessages);
-	OutErrorMessages.Append(ErrorMessages);
+	const bool bResult = RunCommand(TEXT("fileinfo"), Parameters, InFiles, Results, OutErrorMessages);
 	if (bResult)
 	{
 		ParseFileinfoResults(InFiles, Results, OutStates);
@@ -616,13 +616,38 @@ static bool RunFileinfo(const TArray<FString>& InFiles, TArray<FString>& OutErro
 // Run a Plastic "status" and "fileinfo" commands to update status of given files.
 bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
 {
-	bool bResult;
+	bool bResult = true;
 
-	// Run a "status" command for each file to get workspace states
-	bResult = RunStatus(InFiles, OutErrorMessages, OutStates);
+	// Plastic fileinfo does not return any results when called with at least on file not in a workspace
+	// 1) So here we group files by path (ie. by subdirectory)
+	TMap<FString, TArray<FString>> GroupOfFiles;
+	for (const FString& File : InFiles)
+	{
+		const FString Path = FPaths::GetPath(*File);
+		TArray<FString>* Group = GroupOfFiles.Find(Path);
+		if (Group != nullptr)
+		{
+			Group->Add(File);
+		}
+		else
+		{
+			TArray<FString> NewGroup;
+			NewGroup.Add(File);
+			GroupOfFiles.Add(Path, NewGroup);
+		}
+	}
 
-	// Run a Plastic "fileinfo" (similar to "status") command to update status of given files.
-	bResult &= RunFileinfo(InFiles, OutErrorMessages, OutStates);
+	// 2) then we can batch Plastic status operation by subdirectory
+	for (const auto& Files : GroupOfFiles)
+	{
+		// Run a "status" command for each file to get workspace states
+		const bool bGroupOk = RunStatus(Files.Value, OutErrorMessages, OutStates);
+		if (bGroupOk)
+		{
+			// Run a Plastic "fileinfo" (similar to "status") command to update status of given files.
+			bResult &= RunFileinfo(Files.Value, OutErrorMessages, OutStates);
+		}
+	}
 
 	return bResult;
 }
@@ -633,7 +658,7 @@ bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 	int NbStatesUpdated = 0;
 
-	for(const auto& InState : InStates)
+	for (const auto& InState : InStates)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(InState.LocalFilename);
 		if(State->WorkspaceState != InState.WorkspaceState)
