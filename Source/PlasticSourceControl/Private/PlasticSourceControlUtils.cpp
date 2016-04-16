@@ -232,25 +232,37 @@ FString FindPlasticBinaryPath()
 	return FString(TEXT("cm"));
 }
 
-// Find the root of the Plastic repository, looking from the GameDir and upward in its parent directories.
-bool FindRootDirectory(const FString& InPathToGameDir, FString& OutRepositoryRoot)
+// Find the root of the Plastic repository, looking from the provided path and upward in its parent directories.
+bool FindRootDirectory(const FString& InPath, FString& OutRepositoryRoot)
 {
 	bool bFound = false;
 	FString PathToPlasticSubdirectory;
-	OutRepositoryRoot = InPathToGameDir;
+	OutRepositoryRoot = InPath;
+
+	auto TrimTrailing = [](FString& Str, const TCHAR Char)
+	{
+		int32 Len = Str.Len();
+		while(Len && Str[Len - 1] == Char)
+		{
+			Str = Str.LeftChop(1);
+			Len = Str.Len();
+		}
+	};
+
+	TrimTrailing(OutRepositoryRoot, '\\');
+	TrimTrailing(OutRepositoryRoot, '/');
 
 	while(!bFound && !OutRepositoryRoot.IsEmpty())
 	{
-		PathToPlasticSubdirectory = OutRepositoryRoot;
-		PathToPlasticSubdirectory += TEXT(".plastic"); // Look for the ".plastic" subdirectory present at the root of every Plastic repository
+		// Look for the ".plastic" subdirectory present at the root of every Plastic repository
+		PathToPlasticSubdirectory = OutRepositoryRoot / TEXT(".plastic");
 		bFound = IFileManager::Get().DirectoryExists(*PathToPlasticSubdirectory);
 		if(!bFound)
 		{
 			int32 LastSlashIndex;
-			OutRepositoryRoot = OutRepositoryRoot.LeftChop(5);
 			if(OutRepositoryRoot.FindLastChar('/', LastSlashIndex))
 			{
-				OutRepositoryRoot = OutRepositoryRoot.Left(LastSlashIndex + 1);
+				OutRepositoryRoot = OutRepositoryRoot.Left(LastSlashIndex);
 			}
 			else
 			{
@@ -260,7 +272,7 @@ bool FindRootDirectory(const FString& InPathToGameDir, FString& OutRepositoryRoo
 	}
 	if (!bFound)
 	{
-		OutRepositoryRoot = InPathToGameDir; // If not found, return the GameDir as best possible root.
+		OutRepositoryRoot = InPath; // If not found, return the provided dir as best possible root.
 	}
 	return bFound;
 }
