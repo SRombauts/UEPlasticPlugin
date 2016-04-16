@@ -1,7 +1,11 @@
 Unreal Engine 4 Plastic Source Control Plugin
 ---------------------------------------------
 
-UE4PlasticPlugin is a simple Plastic Source Control Plugin for Unreal Engine
+UE4PlasticPlugin is a simple Plastic Source Control Plugin for Unreal Engine 4
+
+It is not intended to replace Plastic SCM GUI or command line.
+It is a complementary tool improving efficiency in daily workflow.
+It automates tracking of assets, bring common SCM tasks inside the Editor, and provide visual diffing of Blueprints.
 
 ### Quick setup
 
@@ -13,7 +17,7 @@ UE4PlasticPlugin is a simple Plastic Source Control Plugin for Unreal Engine
 
 ### Status
 
-Alpha version 0.1.0 2016/04/14 :
+Alpha version 0.1.1 2016/04/16 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
@@ -32,22 +36,17 @@ Alpha version 0.1.0 2016/04/14 :
 - solve a merge conflict on a blueprint
 - Windows, Mac and Linux
 - initialize a new workspace to manage your UE4 Game Project.
-- should create an appropriate ignore.conf file as part as initialization
-- should also make the initial commit
-- should also permit late creation of the ignore.conf file
-- tags: implement ISourceControlLabel to manage Plastic labels
-- Branch is not in the current Editor workflow (but on Epic Roadmap)
-- Push are not in the current Editor workflow
+- create an appropriate ignore.conf file as part as initialization
+- make the initial commit
+- also permit late creation of the ignore.conf file
+- tags: manage labels
 
 #### Known issues:
 - the Editor does not show deleted files => no way to checkin them!
 - the Editor does not show missing files
 - the Editor does not show .uproject file
-- displaying states of 'Engine' assets (also needs management of 'out of tree' files)
 - a Move/Rename leaves a redirector file behind:
   renaming a Blueprint in Editor leaves a tracker file, AND modify too much the asset to enable Plastic to track its history through renaming
-- improve the 'Init' window text, hide it if connection is already done, auto connect
-- reverting an asset does not seem to update content in Editor!
-- file history show Changelist as signed integer instead of hexadecimal SHA1
-- standard Editor commit dialog ask if user wants to "Keep Files Checked Out" => no use for 
- or Mercurial CanCheckOut()==false
+- reverting a Blueprint asset does not update content in Editor!
+- Branch is not in the current Editor workflow (but on Epic Roadmap)
+- Push are not in the current Editor workflow
