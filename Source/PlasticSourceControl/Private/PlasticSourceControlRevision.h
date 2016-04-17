@@ -9,7 +9,10 @@ class FPlasticSourceControlRevision : public ISourceControlRevision, public TSha
 {
 public:
 	FPlasticSourceControlRevision()
-		: RevisionNumber(0)
+		: ChangesetNumber(0)
+		, RevisionNumber(0)
+		, Date(0)
+		, FileSize(0)
 	{
 	}
 
@@ -34,17 +37,17 @@ public:
 	/** The filename this revision refers to */
 	FString Filename;
 
-	/** The full hexadecimal SHA1 id of the commit this revision refers to */
-	FString CommitId;
+	/** The changeset number of this revision */
+	int32 ChangesetNumber;
 
-	/** The short hexadecimal SHA1 id (8 first hex char out of 40) of the commit: the string to display */
-	FString ShortCommitId;
-
-	/** The numeric value of the short SHA1 (8 first hex char out of 40) */
+	/** The revision number of this file */
 	int32 RevisionNumber;
 
+	/** The revision to display to the user */
+	FString Revision;
+
 	/** The SHA1 identifier of the file at this revision */
-	FString FileHash;
+	FString FileHash; // TODO
 
 	/** The description of this revision */
 	FString Description;

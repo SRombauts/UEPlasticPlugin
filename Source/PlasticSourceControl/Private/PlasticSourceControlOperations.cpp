@@ -236,7 +236,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 // TODO					PlasticSourceControlUtils::RunGetHistory(File, true, InCommand.ErrorMessages, History);
 				}
 				// Get the history of the file in the current branch
-// TODO				InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, false, InCommand.ErrorMessages, History);
+				InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, InCommand.ErrorMessages, History);
 				Histories.Add(*File, History);
 			}
 		}

@@ -5,6 +5,7 @@
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlCommand.h"
+#include "XmlParser.h"
 
 #if PLATFORM_LINUX
 #include <sys/ioctl.h>
@@ -133,7 +134,7 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		// Send command to 'cm shell' process
 		const bool bWriteOk = FPlatformProcess::WritePipe(InputPipeWrite, FullCommand);
 
-		// And wait up to sixty seconds for its termination (TODO is enough in my testing and with batching by 50 files but will never hold for long "update" commands)
+		// And wait up to sixty seconds for its termination (TODO is enough in my testing and with batching by 5000 files but will never hold for long "update" commands)
 		const double Timeout = 60.0;
 		const double StartTime = FPlatformTime::Seconds();
 		while (FPlatformProcess::IsProcRunning(ProcessHandle) && (FPlatformTime::Seconds() - StartTime < Timeout))
@@ -281,25 +282,43 @@ void GetUserName(FString& OutUserName)
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
-	const bool bResults = RunCommandInternal(TEXT("whoami"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
-	if (bResults && InfoMessages.Num() > 0)
+	const bool bResult = RunCommandInternal(TEXT("whoami"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
+	if (bResult && InfoMessages.Num() > 0)
 	{
 		OutUserName = InfoMessages[0];
 	}
 }
 
-void GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName)
+bool GetWorkspaceSpecification(const FString& InWorkspaceRoot, FString& OutWorkspaceName, FString& OutRepositoryUrl) 
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
 	Parameters.Add(InWorkspaceRoot);
-	Parameters.Add(TEXT("--format={0}"));
-	const bool bResults = RunCommandInternal(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
-	if (bResults && InfoMessages.Num() > 0)
+	Parameters.Add(TEXT("--nochanges"));
+	// Get the workspace status, de la forme "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087"
+	bool bResult = RunCommandInternal(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	if (bResult && InfoMessages.Num() > 0)
 	{
-		OutWorkspaceName = InfoMessages[0];
+		static const FString Changeset(TEXT("cs:"));
+		static const FString Rep(TEXT("rep:"));
+		static const FString Server(TEXT("repserver:"));
+		const FString& WorkspaceStatus = InfoMessages[0];
+		TArray<FString> WorkspaceSpecs;
+ 		WorkspaceStatus.ParseIntoArray(WorkspaceSpecs, TEXT("@"));
+		if (3 >= WorkspaceSpecs.Num())
+		{
+//			OutChangeset     = WorkspaceSpecs[0].RightChop(Changeset.Len());
+			OutWorkspaceName = WorkspaceSpecs[1].RightChop(Rep.Len());
+			OutRepositoryUrl = WorkspaceSpecs[2].RightChop(Server.Len());
+		}
+		else
+		{
+			bResult = false;
+		}
 	}
+
+	return bResult;
 }
 
 void GetBranchName(const FString& InWorkspaceRoot, FString& OutBranchName)
@@ -311,8 +330,8 @@ void GetBranchName(const FString& InWorkspaceRoot, FString& OutBranchName)
 	Parameters.Add(TEXT("--wkconfig"));
 	Parameters.Add(TEXT("--nochanges"));
 	Parameters.Add(TEXT("--nostatus"));
-	const bool bResults = RunCommandInternal(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
-	if(bResults && InfoMessages.Num() > 0)
+	const bool bResult = RunCommandInternal(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	if(bResult && InfoMessages.Num() > 0)
 	{
 		OutBranchName = InfoMessages[0];
 	}
@@ -647,6 +666,205 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMe
 			// Run a Plastic "fileinfo" (similar to "status") command to update status of given files.
 			bResult &= RunFileinfo(Files.Value, OutErrorMessages, OutStates);
 		}
+	}
+
+	return bResult;
+}
+
+
+/**
+ * Parse the array of strings results of a 'cm log --xml' command
+ *
+ * Example cm log results:
+<?xml version="1.0" encoding="utf-8"?>
+<LogList>
+  <Changeset>
+    <ObjId>989</ObjId>
+    <ChangesetId>2</ChangesetId>
+    <Branch>/main</Branch>
+    <Comment>Ignore Collections and Developers content</Comment>
+    <Owner>dev</Owner>
+    <GUID>a985c487-0f54-45c5-b0ef-9b87c4c3c3f9</GUID>
+    <Changes>
+      <Item>
+        <Branch>/main</Branch>
+        <RevNo>2</RevNo>
+        <Owner>dev</Owner>
+        <RevId>985</RevId>
+        <ParentRevId>282</ParentRevId>
+        <SrcCmPath>/ignore.conf</SrcCmPath>
+        <SrcParentItemId>2</SrcParentItemId>
+        <DstCmPath>/ignore.conf</DstCmPath>
+        <DstParentItemId>2</DstParentItemId>
+        <Date>2016-04-18T10:44:49.0000000+02:00</Date>
+        <Type>Changed</Type>
+      </Item>
+    </Changes>
+    <Date>2016-04-18T10:44:49.0000000+02:00</Date>
+  </Changeset>
+</LogList>
+*/
+static void ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlRevision& OutSourceControlRevision)
+{
+	static const FString LogList(TEXT("LogList"));
+	static const FString Changeset(TEXT("Changeset"));
+	static const FString Comment(TEXT("Comment"));
+	static const FString Date(TEXT("Date"));
+	static const FString Owner(TEXT("Owner"));
+	static const FString Changes(TEXT("Changes"));
+	static const FString Item(TEXT("Item"));
+	static const FString RevId(TEXT("RevId"));
+	static const FString DstCmPath(TEXT("DstCmPath"));
+	static const FString Type(TEXT("Type"));
+
+	const FXmlNode* LogListNode = InXmlResult.GetRootNode();
+	if (LogListNode == nullptr || LogListNode->GetTag() != LogList)
+	{
+		return;
+	}
+
+	const FXmlNode* ChangesetNode = LogListNode->FindChildNode(Changeset);
+	if (ChangesetNode == nullptr)
+	{
+		return;
+	}
+
+	const FXmlNode* CommentNode = ChangesetNode->FindChildNode(Comment);
+	if (CommentNode != nullptr)
+	{
+		// TODO : multilines comments are destroyed by the XmlFile XmlParser
+		OutSourceControlRevision.Description = CommentNode->GetContent();
+	}
+	const FXmlNode* OwnerNode = ChangesetNode->FindChildNode(Owner);
+	if (CommentNode != nullptr)
+	{
+		OutSourceControlRevision.UserName = OwnerNode->GetContent();
+	}
+	const FXmlNode* DateNode = ChangesetNode->FindChildNode(Date);
+	if (DateNode != nullptr)
+	{	//                           |--|
+		//    2016-04-18T10:44:49.0000000+02:00
+		// => 2016-04-18T10:44:49.000+02:00
+		const FString DateIso = DateNode->GetContent().LeftChop(10) + DateNode->GetContent().RightChop(27);
+		FDateTime::ParseIso8601(*DateIso, OutSourceControlRevision.Date);
+	}
+
+	const FXmlNode* ChangesNode = ChangesetNode->FindChildNode(Changes);
+	if (ChangesNode == nullptr)
+	{
+		return;
+	}
+
+	// Iterate on files to find the one we are tracking
+	for (const FXmlNode* ItemNode : ChangesNode->GetChildrenNodes())
+	{
+		int32 RevisionNumber = -1;
+		const FXmlNode* RevIdNode = ItemNode->FindChildNode(RevId);
+		if (RevIdNode != nullptr)
+		{
+			RevisionNumber = FCString::Atoi(*RevIdNode->GetContent());
+		}
+		// Is this about the file we are looking for?
+		if (RevisionNumber == OutSourceControlRevision.RevisionNumber)
+		{
+			const FXmlNode* DstCmPathNode = ItemNode->FindChildNode(DstCmPath);
+			if (DstCmPathNode != nullptr)
+			{
+				OutSourceControlRevision.Filename = DstCmPathNode->GetContent().RightChop(1);
+			}
+			const FXmlNode* TypeNode = ItemNode->FindChildNode(Type);
+			if (TypeNode != nullptr)
+			{
+				OutSourceControlRevision.Action = TypeNode->GetContent();
+			}
+			break;
+		}
+	}
+}
+
+// Run "cm log" on the changeset
+static bool RunLogCommand(const FString& InChangeset, FPlasticSourceControlRevision& OutSourceControlRevision)
+{
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+	const FString WorkspaceSpecification = FString::Printf(TEXT("cs:%s@rep:%s@repserver:%s"), *InChangeset, *Provider.GetWorkspaceName(), *Provider.GetRepositoryName());
+
+	FString Results;
+	FString Errors;
+	TArray<FString> Parameters;
+	Parameters.Add(WorkspaceSpecification);
+	Parameters.Add(TEXT("--xml"));
+	Parameters.Add(TEXT("--encoding=\"utf-8\""));
+
+	bool bResult = RunCommandInternalShell(TEXT("log"), Parameters, TArray<FString>(), Results, Errors);
+	if (bResult)
+	{
+		FXmlFile XmlFile;
+		bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+		if (bResult)
+		{
+			ParseLogResults(XmlFile, OutSourceControlRevision);
+		}
+	}
+	return bResult;
+}
+
+/**
+ * Parse results of the 'cm history --format="{1};{6}"' command, then run "cm log" on each
+ * 
+ * Results of the history command are with one changeset number and revision id by line, like that:
+14;176
+17;220
+18;223
+*/
+static bool ParseHistoryResults(const TArray<FString>& InResults, TPlasticSourceControlHistory& OutHistory)
+{
+	bool bResult = true;
+
+	// parse history in reverse: needed to get most recent at the top (implied by the UI)
+	for (int32 Index = InResults.Num() - 1; Index >= 0; Index--)
+	{
+		const FString& Result = InResults[Index];
+		if (bResult)
+		{
+			TArray<FString> Infos;
+			const int32 NbElmts = Result.ParseIntoArray(Infos, TEXT(";"));
+			if (NbElmts == 2)
+			{
+				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShareable(new FPlasticSourceControlRevision);
+				const FString& Changeset = Infos[0];
+				const FString& RevisionId = Infos[1];
+				SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset);
+				SourceControlRevision->RevisionNumber = FCString::Atoi(*RevisionId);
+				SourceControlRevision->Revision = RevisionId;
+
+				// Run "cm log" on the changeset number
+				bResult = RunLogCommand(Changeset, *SourceControlRevision);
+				OutHistory.Add(SourceControlRevision);
+			}
+			else
+			{
+				bResult = false;
+			}
+		}
+	}
+
+	return bResult;
+}
+
+// Run a Plastic "history" command and multiple "log" commands and parse them.
+bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, TPlasticSourceControlHistory& OutHistory)
+{
+	TArray<FString> Results;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("--format=\"{1};{6}\"")); // Get Changeset number and revision Id of each revision of the asset
+	TArray<FString> OneFile;
+	OneFile.Add(*InFile);
+
+	bool bResult = RunCommandInternal(TEXT("history"), Parameters, OneFile, Results, OutErrorMessages);
+	if (bResult)
+	{
+		bResult = ParseHistoryResults(Results, OutHistory);
 	}
 
 	return bResult;

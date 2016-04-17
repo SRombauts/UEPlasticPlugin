@@ -17,7 +17,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Alpha version 0.1.1 2016/04/16 :
+Alpha version 0.2.0 2016/04/2x (coming soon) :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
@@ -29,17 +29,18 @@ Alpha version 0.1.1 2016/04/16 :
 - migrate an asset between two projects if both are using Plastic SCM
 - delete file (but no way to checkin them, see known issues bellow)
 - update workspace to latest head (Sync command)
-
-#### What *cannot* be done presently (TODO list for v1.0, ordered by priority):
 - show history of a file
 - visual diff of a blueprint against depot or between previous versions of a file
+
+#### What *cannot* be done presently (TODO list for v1.0, ordered by priority):
 - solve a merge conflict on a blueprint
-- Windows, Mac and Linux
 - initialize a new workspace to manage your UE4 Game Project.
 - create an appropriate ignore.conf file as part as initialization
 - make the initial commit
 - also permit late creation of the ignore.conf file
 - tags: manage labels
+- annotaged: blame?
+- Windows, Mac and Linux
 
 #### Known issues:
 - the Editor does not show deleted files => no way to checkin them!

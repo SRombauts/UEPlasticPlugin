@@ -61,15 +61,16 @@ bool FindRootDirectory(const FString& InPathToGameDir, FString& OutWorkspaceRoot
 void GetUserName(FString& OutUserName);
 
 /**
- * Get Plastic workspace name
- * @param	InWorkspaceRoot	The workspace from where to run the command - usually the Game directory (can be empty)
+ * Get Plastic workspace name and server URL
+ * @param	InWorkspaceRoot		The workspace from where to run the command - usually the Game directory (can be empty)
  * @param	OutWorkspaceName	Name of the current workspace
+ * @param	OutRepositoryUrl	Url/Port of the repository of this workspace
  */
-void GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName);
+bool GetWorkspaceSpecification(const FString& InWorkspaceRoot, FString& OutWorkspaceName, FString& OutRepositoryUrl);
 
 /**
  * Get Plastic current checked-out branch
- * @param	InWorkspaceRoot	The workspace from where to run the command - usually the Game directory (can be empty)
+ * @param	InWorkspaceRoot		The workspace from where to run the command - usually the Game directory (can be empty)
  * @param	OutBranchName		Name of the current checked-out branch (if any, ie. not in detached HEAD)
  */
 void GetBranchName(const FString& InWorkspaceRoot, FString& OutBranchName);
@@ -94,6 +95,15 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
  * @returns true if the command succeeded and returned no errors
  */
 bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates);
+
+/**
+ * Run a Plastic "history" and "log" commands and parse it.
+ *
+ * @param	InFile				The file to be operated on
+ * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+ * @param	OutHistory			The history of the file
+ */
+bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, TPlasticSourceControlHistory& OutHistory);
 
 /**
  * Helper function for various commands to update cached states.

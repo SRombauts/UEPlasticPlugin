@@ -39,8 +39,8 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			PlasticSourceControlUtils::GetUserName(UserName);
 			if (bWorkspaceFound)
 			{
-				// Get workspace name and branch name
-				PlasticSourceControlUtils::GetWorkspaceName(PathToWorkspaceRoot, WorkspaceName);
+				// Get workspace, repository and branch name
+				PlasticSourceControlUtils::GetWorkspaceSpecification(PathToWorkspaceRoot, WorkspaceName, RepositoryName);
 				PlasticSourceControlUtils::GetBranchName(PathToWorkspaceRoot, BranchName);
 				bPlasticWorkspaceFound = true;
 			}

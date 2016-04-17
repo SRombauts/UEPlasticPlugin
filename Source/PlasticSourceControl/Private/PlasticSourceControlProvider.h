@@ -69,6 +69,12 @@ public:
 		return WorkspaceName;
 	}
 
+	/** Get the Plastic current repository */
+	inline const FString& GetRepositoryName() const
+	{
+		return RepositoryName;
+	}
+
 	/** Get the Name of the current branch */
 	inline const FString& GetBranchName() const
 	{
@@ -114,6 +120,9 @@ private:
 
 	/** Plastic current workspace */
 	FString WorkspaceName;
+
+	/** Plastic current repository */
+	FString RepositoryName;
 
 	/** Name of the current branch */
 	FString BranchName;

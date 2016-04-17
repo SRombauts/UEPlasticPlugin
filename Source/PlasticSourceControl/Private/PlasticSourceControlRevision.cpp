@@ -21,12 +21,12 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 		// create the diff dir if we don't already have it (Plastic wont)
 		IFileManager::Get().MakeDirectory(*FPaths::DiffDir(), true);
 		// create a unique temp file name based on the unique commit Id
-		const FString TempFileName = FString::Printf(TEXT("%stemp-%s-%s"), *FPaths::DiffDir(), *CommitId, *FPaths::GetCleanFilename(Filename));
+		const FString TempFileName = FString::Printf(TEXT("%stemp-%d-%s"), *FPaths::DiffDir(), RevisionNumber, *FPaths::GetCleanFilename(Filename));
 		InOutFilename = FPaths::ConvertRelativePathToFull(TempFileName);
 	}
 
 	// Diff against the revision
-	const FString Parameter = FString::Printf(TEXT("%s:%s"), *CommitId, *Filename);
+	const FString Parameter = FString::Printf(TEXT("%d:%s"), RevisionNumber, *Filename);
 
 	bool bCommandSuccessful;
 	if(FPaths::FileExists(InOutFilename))
@@ -44,11 +44,13 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 
 bool FPlasticSourceControlRevision::GetAnnotated( TArray<FAnnotationLine>& OutLines ) const
 {
+	// TODO GetAnnotated
 	return false;
 }
 
 bool FPlasticSourceControlRevision::GetAnnotated( FString& InOutFilename ) const
 {
+	// TODO GetAnnotated
 	return false;
 }
 
@@ -64,7 +66,7 @@ int32 FPlasticSourceControlRevision::GetRevisionNumber() const
 
 const FString& FPlasticSourceControlRevision::GetRevision() const
 {
-	return ShortCommitId;
+	return Revision;
 }
 
 const FString& FPlasticSourceControlRevision::GetDescription() const
@@ -102,8 +104,7 @@ const FDateTime& FPlasticSourceControlRevision::GetDate() const
 
 int32 FPlasticSourceControlRevision::GetCheckInIdentifier() const
 {
-	// TODO in Plastic, like in Perforce, revisions are not the changelists
-	return RevisionNumber;
+	return ChangesetNumber;
 }
 
 int32 FPlasticSourceControlRevision::GetFileSize() const
