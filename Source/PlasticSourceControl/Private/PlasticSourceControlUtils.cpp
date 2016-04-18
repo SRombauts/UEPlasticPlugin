@@ -230,7 +230,11 @@ static bool RunCommandInternal(const FString& InCommand, const TArray<FString>& 
 
 FString FindPlasticBinaryPath()
 {
+#if PLATFORM_WINDOWS
 	return FString(TEXT("cm"));
+#else
+	return FString(TEXT("/usr/bin/cm"));
+#endif
 }
 
 // Find the root of the Plastic workspace, looking from the provided path and upward in its parent directories.
