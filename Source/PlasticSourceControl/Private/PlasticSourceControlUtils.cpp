@@ -675,6 +675,32 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMe
 	return bResult;
 }
 
+// Run a Plastic "cat" command to dump the binary content of a revision into a file.
+// cm cat revid:1230@rep:myrep@repserver:myserver:8084 --raw --file=Name124.tmp
+bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpec, const FString& InDumpFileName)
+{
+	int32	ReturnCode = 0;
+	FString Results;
+	FString Errors;
+
+	// start with the Plastic command itself, then add revspec and temp filename to dump
+	FString FullCommand = TEXT("cat ");
+	FullCommand += InRevSpec;
+	FullCommand += TEXT(" --raw --file=\"");
+	FullCommand += InDumpFileName;
+	FullCommand += TEXT("\"");
+
+	// @todo: temporary debug logs
+	UE_LOG(LogSourceControl, Log, TEXT("RunDumpToFile: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
+	const bool bResult = FPlatformProcess::ExecProcess(*InPathToPlasticBinary, *FullCommand, &ReturnCode, &Results, &Errors);
+	UE_LOG(LogSourceControl, Log, TEXT("RunDumpToFile: ExecProcess ReturnCode=%d Results='%s'"), ReturnCode, *Results);
+	if (!bResult || !Errors.IsEmpty())
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("RunDumpToFile: ExecProcess ReturnCode=%d Errors='%s'"), ReturnCode, *Errors);
+	}
+
+	return bResult;
+}
 
 /**
  * Parse the array of strings results of a 'cm log --xml' command

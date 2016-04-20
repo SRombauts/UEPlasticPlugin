@@ -97,6 +97,16 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates);
 
 /**
+ * Run a Plastic "cat" command to dump the binary content of a revision into a file.
+ *
+ * @param	InPathToPlasticBinary	The path to the Plastic binary
+ * @param	InRevSpec				The revision specification to get
+ * @param	InDumpFileName			The temporary file to dump the revision
+ * @returns true if the command succeeded and returned no errors
+*/
+bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpec, const FString& InDumpFileName);
+
+/**
  * Run a Plastic "history" and "log" commands and parse it.
  *
  * @param	InFile				The file to be operated on
