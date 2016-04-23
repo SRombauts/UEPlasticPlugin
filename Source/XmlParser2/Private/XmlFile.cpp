@@ -13,10 +13,9 @@ namespace
  * @param OutArray Array of strings to write lines to
  * @param InBuffer Memory containing text to split
  * @param EndOfBuffer Pointer to the byte after last byte of the buffer
- * @param Delim Character used to determine a line ending
  */
 template <typename CharType>
-void SplitLines(TArray<FString>& OutArray, const CharType* InBuffer, const void* EndOfBuffer, ANSICHAR Delim = '\n');
+void SplitLines(TArray<FString>& OutArray, const CharType* InBuffer, const void* EndOfBuffer);
 
 /**
  * Take an XML buffer, detect the size of character it uses and split into lines
@@ -176,19 +175,26 @@ bool FXmlFile::Save(const FString& Path)
 namespace
 {
 template <typename CharType>
-void SplitLines(TArray<FString>& OutArray, const CharType* Buffer, const void* EndOfBuffer, ANSICHAR Delim)
+void SplitLines(TArray<FString>& OutArray, const CharType* Buffer, const void* EndOfBuffer)
 {
 	uint32 CharacterCount = static_cast<const CharType*>(EndOfBuffer) - Buffer;
 	FString WorkingLine;
 	for(uint32 i = 0; i != CharacterCount; ++i)
 	{
-		if(Buffer[i] == Delim)
+		if(Buffer[i] == '\r')
 		{
-			if(WorkingLine.Len())
+			OutArray.Add(WorkingLine);
+			WorkingLine = TEXT("");
+			// Manages Windows \r\n as a unique line endings
+			if (i+1 < CharacterCount && Buffer[i+1] == '\n')
 			{
-				OutArray.Add(WorkingLine);
-				WorkingLine = TEXT("");
+				++i;
 			}
+		}
+		else if(Buffer[i] == '\n')
+		{
+			OutArray.Add(WorkingLine);
+			WorkingLine = TEXT("");
 		}
 		else
 		{
@@ -551,7 +557,7 @@ TArray<FString> FXmlFile::Tokenize(const FString& Input)
 	}
 
 	// Add working token if it still exists
-	if(WorkingToken.Len())
+	if(WorkingToken.Len() || 0 == Input.Len())
 	{
 		Tokens.Add(WorkingToken);
 	}
@@ -630,7 +636,7 @@ FXmlNode* FXmlFile::CreateNodeRecursive(const TArray<FString>& Tokens, int32 Sta
 			break;
 		}
 
-		if(Tokens[i].Len() == 0 || Tokens[i] == TEXT("\n") || Tokens[i] == TEXT("\r") || Tokens[i] == TEXT("\n\r"))
+		if(Tokens[i].Len() == 0)
 		{
 			continue;
 		}
@@ -716,8 +722,9 @@ FXmlNode* FXmlFile::CreateNodeRecursive(const TArray<FString>& Tokens, int32 Sta
 			break;
 		}
 
-		if(Tokens[i].Len() == 0 || Tokens[i] == TEXT("\n") || Tokens[i] == TEXT("\r") || Tokens[i] == TEXT("\n\r"))
+		if(Tokens[i].Len() == 0)
 		{
+			Content += TEXT("\n");
 			continue;
 		}
 
