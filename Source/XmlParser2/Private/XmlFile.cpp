@@ -439,7 +439,7 @@ static bool IsQuote(TCHAR Char)
 	return Char == TCHAR('\"');
 }
 
-TArray<FString> FXmlFile::Tokenize(FString Input)
+TArray<FString> FXmlFile::Tokenize(const FString& Input)
 {
 	TArray<FString> Tokens;
 

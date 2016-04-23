@@ -87,7 +87,7 @@ private:
 	/** Whites of the text at the specified locations in a passed-in array */
 	void WhiteOut(TArray<FString>& Input, int32 LineStart, int32 LineEnd, int32 IndexStart, int32 IndexEnd);
 	/** Converts the passed input into a list of tokens for parsing */
-	TArray<FString> Tokenize(FString Input);
+	TArray<FString> Tokenize(const FString& Input);
 	/** Converts the passed input into a list of tokens for parsing */
 	TArray<FString> Tokenize(TArray<FString>& Input);
 	/** 
