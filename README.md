@@ -17,7 +17,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Alpha version 0.2.0 2016/04/2x (coming soon) :
+Alpha version 0.2.0 2016/04/23 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
@@ -39,7 +39,7 @@ Alpha version 0.2.0 2016/04/2x (coming soon) :
 - make the initial commit
 - also permit late creation of the ignore.conf file
 - tags: manage labels
-- annotaged: blame?
+- annotate: blame?
 - Windows, Mac and Linux
 
 #### Known issues:
