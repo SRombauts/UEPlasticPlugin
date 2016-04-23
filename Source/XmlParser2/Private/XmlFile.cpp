@@ -447,9 +447,10 @@ TArray<FString> FXmlFile::Tokenize(const FString& Input)
 	enum TOKENTYPE { OPERATOR, STRING, NONE } Type = NONE;
 	bool bInToken = false;
 	bool bInQuote = false;
+	bool bInContent = true;
 	for(int32 i = 0; i < Input.Len(); ++i)
 	{
-		if(IsWhiteSpace(Input[i]) && !bInQuote)
+		if(IsWhiteSpace(Input[i]) && !bInQuote && !bInContent )
 		{
 			// End the current token 
 			if(WorkingToken.Len())
@@ -472,6 +473,7 @@ TArray<FString> FXmlFile::Tokenize(const FString& Input)
 			if(CheckTagOperator(Input, i))
 			{
 				Type = OPERATOR;
+				bInContent = false;
 			}
 			else
 			{
@@ -529,6 +531,7 @@ TArray<FString> FXmlFile::Tokenize(const FString& Input)
 					}
 					WorkingToken += Input[i];
 					Type = OPERATOR;
+					bInContent = false;
 				}
 			}
 		}
@@ -541,6 +544,7 @@ TArray<FString> FXmlFile::Tokenize(const FString& Input)
 				Tokens.Add(WorkingToken);
 				WorkingToken = TEXT("");
 				bInToken = false;
+				bInContent = true;
 				Type = NONE;
 			}
 		}
@@ -765,7 +769,7 @@ FXmlNode* FXmlFile::CreateNodeRecursive(const TArray<FString>& Tokens, int32 Sta
 			{
 				if(Content.Len() > 0)
 				{
-					Content += TEXT(" ");
+					Content += TEXT("\n");
 				}
 				Content += Tokens[i];
 			}
