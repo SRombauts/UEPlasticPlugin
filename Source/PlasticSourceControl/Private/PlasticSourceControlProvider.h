@@ -14,7 +14,8 @@ public:
 	/** Constructor */
 	FPlasticSourceControlProvider() 
 		: bPlasticAvailable(false)
-		, bPlasticWorkspaceFound(false)
+		, bWorkspaceFound(false)
+		, bServerAvailable(false)
 	{
 	}
 
@@ -41,15 +42,9 @@ public:
 #endif
 
 	/**
-	 * Run a Plastic "version" command to check the availability of the binary.
+	 * Run a Plastic "version" command to check the availability of the binary and of the workspace.
 	 */
-	void CheckPlasticAvailability();
-
-	/** Is Plastic binary found and working. */
-	inline bool IsPlasticAvailable() const
-	{
-		return bPlasticAvailable;
-	}
+	void CheckPlasticAvailability(bool bForceConnection = true);
 
 	/** Get the path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory */
 	inline const FString& GetPathToWorkspaceRoot() const
@@ -99,7 +94,10 @@ private:
 	bool bPlasticAvailable;
 
 	/** Is Plastic workspace found. */
-	bool bPlasticWorkspaceFound;
+	bool bWorkspaceFound;
+
+	/** Indicates if source control integration is available or not. */
+	bool bServerAvailable;
 
 	/** Helper function for Execute() */
 	TSharedPtr<class IPlasticSourceControlWorker, ESPMode::ThreadSafe> CreateWorker(const FName& InOperationName) const;

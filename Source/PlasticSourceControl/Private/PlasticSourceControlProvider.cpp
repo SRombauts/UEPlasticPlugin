@@ -18,12 +18,10 @@ static FName ProviderName("Plastic");
 
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {
-	CheckPlasticAvailability();
-
-	// bForceConnection not used on a DVCS
+	CheckPlasticAvailability(bForceConnection);
 }
 
-void FPlasticSourceControlProvider::CheckPlasticAvailability()
+void FPlasticSourceControlProvider::CheckPlasticAvailability(bool bForceConnection)
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
@@ -34,20 +32,19 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		{
 			// Find the path to the root Plastic directory (if any)
 			const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
-			const bool bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToWorkspaceRoot);
+			bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToWorkspaceRoot);
 			// Get user name (from the global Plastic SCM client config)
 			PlasticSourceControlUtils::GetUserName(UserName);
-			if (bWorkspaceFound)
+			if(bWorkspaceFound)
 			{
 				// Get workspace, repository and branch name
 				PlasticSourceControlUtils::GetWorkspaceSpecification(PathToWorkspaceRoot, WorkspaceName, RepositoryName);
 				PlasticSourceControlUtils::GetBranchName(PathToWorkspaceRoot, BranchName);
-				bPlasticWorkspaceFound = true;
+				// Note: no "checkconnection" at this stage, "Connect" is already the first operation executed by the Editor Toolbar at load time
 			}
 			else
 			{
 				UE_LOG(LogSourceControl, Error, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::GameDir());
-				bPlasticWorkspaceFound = false;
 			}
 		}
 	}
@@ -63,6 +60,8 @@ void FPlasticSourceControlProvider::Close()
 	StateCache.Empty();
 	// terminate the background 'cm shell' process and associated pipes
 	PlasticSourceControlUtils::Terminate();
+
+	bServerAvailable = false;
 }
 
 TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlProvider::GetStateInternal(const FString& Filename)
@@ -95,13 +94,13 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 /** Quick check if source control is enabled */
 bool FPlasticSourceControlProvider::IsEnabled() const
 {
-	return bPlasticWorkspaceFound;
+	return bPlasticAvailable;
 }
 
 /** Quick check if source control is available for use (useful for server-based providers) */
 bool FPlasticSourceControlProvider::IsAvailable() const
 {
-	return bPlasticWorkspaceFound;
+	return bServerAvailable;
 }
 
 const FName& FPlasticSourceControlProvider::GetName(void) const
@@ -162,7 +161,7 @@ void FPlasticSourceControlProvider::UnregisterSourceControlStateChanged_Handle( 
 
 ECommandResult::Type FPlasticSourceControlProvider::Execute( const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency, const FSourceControlOperationComplete& InOperationCompleteDelegate )
 {
-	if(!IsEnabled() && !(InOperation->GetName() == "Connect")) // Only Connect operation allowed while not Enabled (Connected)
+	if(!bWorkspaceFound && !(InOperation->GetName() == "Connect")) // Only Connect operation allowed while no workspace found
 	{
 		return ECommandResult::Failed;
 	}
@@ -258,6 +257,13 @@ void FPlasticSourceControlProvider::Tick()
 		{
 			// Remove command from the queue
 			CommandQueue.RemoveAt(CommandIndex);
+
+			// update connection state
+// TODO			bServerAvailable = !Command.bConnectionDropped;
+			if (Command.Operation->GetName() == "Connect")
+			{
+				bServerAvailable = Command.bCommandSuccessful;
+			}
 
 			// let command update the states of any files
 			bStatesUpdated |= Command.Worker->UpdateStates();

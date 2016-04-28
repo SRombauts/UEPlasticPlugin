@@ -18,8 +18,9 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	UE_LOG(LogSourceControl, Log, TEXT("status"));
+	UE_LOG(LogSourceControl, Log, TEXT("connect"));
 
+	// Execute a 'status' command to check for the workspace
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--nochanges"));
 	TArray<FString> Files;
@@ -30,6 +31,11 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	{
 		StaticCastSharedRef<FConnect>(InCommand.Operation)->SetErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic source control. You need to initialize the project as a Plastic repository first."));
 		InCommand.bCommandSuccessful = false;
+	}
+	else
+	{
+		// Execute a 'checkconnection' command to check the connectivity of the server.
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
 
 	return InCommand.bCommandSuccessful;
