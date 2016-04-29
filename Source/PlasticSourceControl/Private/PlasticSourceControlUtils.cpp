@@ -519,14 +519,17 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 
 	if (1 == InFiles.Num() && !FPaths::FileExists(InFiles[0]))
 	{
-		// Special case for "status" of a non-existing file (newly created/deleted): Unknown state
+		// Special case for "status" of a non-existing file (newly created/deleted)
+		// or the Engine Content folder (so not a regular file) : Unknown state
 		OutStates.Add(FPlasticSourceControlState(InFiles[0]));
+		UE_LOG(LogSourceControl, Error, TEXT("RunStatus() failed to find file: %s"), *InFiles[0]);
+		bResult = false; // false so that we do not try to get it's lock state with "fileinfo"
 	}
 	else
 	{
 		for (const FString& File : InFiles)
 		{
-			// The "status" command only operate on one file at a time
+			// The "status" command only operate on one file at a time (TODO or one Folder!)
 			OutStates.Add(FPlasticSourceControlState(File));
 			FPlasticSourceControlState& FileState = OutStates.Last();
 
@@ -536,18 +539,14 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 				TArray<FString> OneFile;
 				OneFile.Add(File);
 				TArray<FString> Results;
-				const bool bStatusOk = RunCommand(TEXT("status"), Status, OneFile, Results, OutErrorMessages);
-				if (bStatusOk)
+				bResult = RunCommand(TEXT("status"), Status, OneFile, Results, OutErrorMessages);
+				if (bResult)
 				{
 					ParseStatusResult(File, Results, FileState);
 					if (FileState.IsConflicted())
 					{
 						// TODO In case of a conflict (unmerged file) get the base revision to merge
 					}
-				}
-				else
-				{
-					bResult = false;
 				}
 			}
 		}
