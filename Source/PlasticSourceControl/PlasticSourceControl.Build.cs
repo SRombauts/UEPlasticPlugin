@@ -14,6 +14,7 @@ public class PlasticSourceControl : ModuleRules
 				"EditorStyle",
 				"SourceControl",
 				"XmlParser2",
+				"Projects",
 			}
 		);
 	}
