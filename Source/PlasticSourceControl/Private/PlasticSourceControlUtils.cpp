@@ -134,16 +134,17 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		// Send command to 'cm shell' process
 		const bool bWriteOk = FPlatformProcess::WritePipe(InputPipeWrite, FullCommand);
 
-		// And wait up to sixty seconds for its termination (TODO is enough in my testing and with batching by 5000 files but will never hold for long "update" commands)
-		const double Timeout = 60.0;
-		const double StartTime = FPlatformTime::Seconds();
-		while (FPlatformProcess::IsProcRunning(ProcessHandle) && (FPlatformTime::Seconds() - StartTime < Timeout))
+		// And wait up to 10 seconds for any kind of output: in case of lengthy operation, intermediate output is expected
+		const double Timeout = 10.0;
+		double LastActivity = FPlatformTime::Seconds();
+		while (FPlatformProcess::IsProcRunning(ProcessHandle) && (FPlatformTime::Seconds() - LastActivity < Timeout))
 		{
 			FString Output = FPlatformProcess::ReadPipe(OutputPipeRead);
 			if (0 < Output.Len())
 			{
+				LastActivity = FPlatformTime::Seconds(); // freshen the timestamp to prevent timeout while cm is still active
 				OutResults.Append(MoveTemp(Output));
-				// Search the ouptput for the line containing the result code, also indicating the end of the command
+				// Search the output for the line containing the result code, also indicating the end of the command
 				const uint32 IndexCommandResult = OutResults.Find(TEXT("CommandResult "), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
 				if (INDEX_NONE != IndexCommandResult)
 				{
@@ -161,13 +162,13 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 			}
 			FPlatformProcess::Sleep(0.0f); // 0.0 means release the current time slice to let other threads get some attention
 		}
-		if (FPlatformTime::Seconds() - StartTime < Timeout)
+		if (FPlatformTime::Seconds() - LastActivity < Timeout)
 		{
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell(%s): '%s' bResult=%d Elapsed=%lf"), *InCommand, *OutResults, bResult, FPlatformTime::Seconds() - StartTime);
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell(%s): '%s' bResult=%d Elapsed=%lf"), *InCommand, *OutResults, bResult, FPlatformTime::Seconds() - LastActivity);
 		}
 		else
 		{
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): '%s' bResult=%d Elapsed=%lf TIMEOUT"), *InCommand, *OutResults, bResult, FPlatformTime::Seconds() - StartTime);
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): '%s' bResult=%d Elapsed=%lf TIMEOUT"), *InCommand, *OutResults, bResult, FPlatformTime::Seconds() - LastActivity);
 		}
 		
 		// Return output as error if result code is an error
