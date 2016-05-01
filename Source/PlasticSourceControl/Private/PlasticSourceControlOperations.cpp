@@ -292,9 +292,11 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 
 	UE_LOG(LogSourceControl, Log, TEXT("Sync"));
+	TArray<FString> Files;
+	Files.Add(InCommand.PathToWorkspaceRoot); // Always update the Root of the Workspace
 
 	// revert any changes in workspace
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("update"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("update"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 
 	// now update the status of our files
 	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
