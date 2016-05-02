@@ -200,13 +200,13 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
 			// Shut-down and restart the connexion to 'cm shell' in case of timeout!
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): bResult=%d Elapsed=%lf TIMEOUT Out=\n%s"), *InCommand, bResult, FPlatformTime::Seconds() - LastActivity, *OutResults);
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s)=%d TIMEOUT Out=\n%s"), *InCommand, bResult, *OutResults);
 			RestartBackgroundCommandLineShell();
 		}
 		else
 		{
 			// @todo: temporary debug logs
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell(%s): bResult=%d Elapsed=%lf Out=\n%s"), *InCommand, bResult, FPlatformTime::Seconds() - LastActivity, *OutResults);
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell(%s)=%d Out=\n%s"), *InCommand, bResult, *OutResults);
 		}
 		
 		// Return output as error if result code is an error
@@ -560,7 +560,6 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 		// Special case for "status" of a non-existing file (newly created/deleted)
 		// or the Engine Content folder (so not a regular file) : Unknown state
 		OutStates.Add(FPlasticSourceControlState(InFiles[0]));
-		UE_LOG(LogSourceControl, Error, TEXT("RunStatus() failed to find file: %s"), *InFiles[0]);
 		bResult = false; // false so that we do not try to get it's lock state with "fileinfo"
 	}
 	else

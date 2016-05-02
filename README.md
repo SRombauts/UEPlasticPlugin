@@ -21,7 +21,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Alpha version 0.2.0 2016/04/23 :
+Alpha version 0.3.0 2016/05/02 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
@@ -37,21 +37,27 @@ Alpha version 0.2.0 2016/04/23 :
 - visual diff of a blueprint against depot or between previous versions of a file
 
 #### What *cannot* be done presently (TODO list for v1.0, ordered by priority):
-- solve a merge conflict on a blueprint
 - initialize a new workspace to manage your UE4 Game Project.
 - create an appropriate ignore.conf file as part as initialization
 - make the initial commit
 - also permit late creation of the ignore.conf file
+- solve a merge conflict on a blueprint
 - tags: manage labels
 - annotate: blame?
 - Windows, Mac and Linux
 
+#### Feature Requests (post v1.0)
+- improve "status" efficiency by batching requests by folders instead of file by file
+- add a global source control menu "Sync/Update" instead of "Sync" on folder's context menu
+- add a "clean directory" or "checkin deleted files" 
+
 #### Known issues:
+- Error messages with accents are not handled (for instance connection error in French)
 - the Editor does not show deleted files => no way to checkin them!
 - the Editor does not show missing files
 - the Editor does not show .uproject file
 - a Move/Rename leaves a redirector file behind:
   renaming a Blueprint in Editor leaves a tracker file, AND modify too much the asset to enable Plastic to track its history through renaming
+- the Editor does no show folder status and is not able to manage them
 - reverting a Blueprint asset does not update content in Editor!
 - Branch is not in the current Editor workflow (but on Epic Roadmap)
-- Push are not in the current Editor workflow
