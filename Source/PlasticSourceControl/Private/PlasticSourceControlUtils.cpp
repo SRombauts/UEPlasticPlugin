@@ -138,7 +138,7 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		// Detect previsous crash of cm.exe and restart 'cm shell'
 		if (!FPlatformProcess::IsProcRunning(ProcessHandle))
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternalShell: 'cm shell' stopped!"), FPlatformProcess::IsProcRunning(ProcessHandle));
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternalShell: 'cm shell' has stopped. Restarting!"), FPlatformProcess::IsProcRunning(ProcessHandle));
 			RestartBackgroundCommandLineShell();
 		}
 
@@ -193,18 +193,19 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		}
 		if (!InCommand.Equals(TEXT("exit")) && !FPlatformProcess::IsProcRunning(ProcessHandle))
 		{
-			// 'cm shell' normaly only terminates in case of 'exit' command
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternalShell(%s): 'cm shell' stopped!"), *InCommand, FPlatformProcess::IsProcRunning(ProcessHandle));
+			// 'cm shell' normaly only terminates in case of 'exit' command. Will restart on next command.
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): 'cm shell' stopped!"), *InCommand, FPlatformProcess::IsProcRunning(ProcessHandle));
 		}
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
-			// @todo: shut-down the connexion to 'cm shell' in case of timeout ! (see below)
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): '%s' bResult=%d Elapsed=%lf TIMEOUT"), *InCommand, *OutResults, bResult, FPlatformTime::Seconds() - LastActivity);
+			// Shut-down and restart the connexion to 'cm shell' in case of timeout!
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): bResult=%d Elapsed=%lf TIMEOUT Out=\n%s"), *InCommand, bResult, FPlatformTime::Seconds() - LastActivity, *OutResults);
+			RestartBackgroundCommandLineShell();
 		}
 		else
 		{
 			// @todo: temporary debug logs
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell(%s): '%s' bResult=%d Elapsed=%lf"), *InCommand, *OutResults, bResult, FPlatformTime::Seconds() - LastActivity);
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell(%s): bResult=%d Elapsed=%lf Out=\n%s"), *InCommand, bResult, FPlatformTime::Seconds() - LastActivity, *OutResults);
 		}
 		
 		// Return output as error if result code is an error
