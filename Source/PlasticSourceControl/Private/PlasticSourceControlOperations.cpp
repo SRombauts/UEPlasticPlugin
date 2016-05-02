@@ -228,6 +228,13 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	{
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
 		PlasticSourceControlUtils::RemoveRedundantErrors(InCommand, TEXT("is not in a workspace."));
+		if (!InCommand.bCommandSuccessful)
+		{
+			// In case of error, execute a 'checkconnection' command to check the connectivity of the server.
+			TArray<FString> Files;
+			Files.Add(InCommand.PathToWorkspaceRoot);
+			InCommand.bConnectionDropped = !PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
 
 		if (Operation->ShouldUpdateHistory())
 		{

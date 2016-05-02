@@ -30,6 +30,8 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability(bool bForceConnecti
 		bPlasticAvailable = PlasticSourceControlUtils::CheckPlasticAvailability(PathToPlasticBinary);
 		if(bPlasticAvailable)
 		{
+			// @todo: get the 'cm version'
+
 			// Find the path to the root Plastic directory (if any)
 			const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
 			bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToWorkspaceRoot);
@@ -259,10 +261,13 @@ void FPlasticSourceControlProvider::Tick()
 			CommandQueue.RemoveAt(CommandIndex);
 
 			// update connection state
-// TODO			bServerAvailable = !Command.bConnectionDropped;
 			if (Command.Operation->GetName() == "Connect")
 			{
 				bServerAvailable = Command.bCommandSuccessful;
+			}
+			else if (Command.bConnectionDropped)
+			{
+				bServerAvailable = false;
 			}
 
 			// let command update the states of any files

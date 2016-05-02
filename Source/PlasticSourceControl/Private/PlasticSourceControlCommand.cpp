@@ -12,6 +12,7 @@ FPlasticSourceControlCommand::FPlasticSourceControlCommand(const TSharedRef<clas
 	, OperationCompleteDelegate(InOperationCompleteDelegate)
 	, bExecuteProcessed(0)
 	, bCommandSuccessful(false)
+	, bConnectionDropped(false)
 	, bAutoDelete(true)
 	, Concurrency(EConcurrency::Synchronous)
 {
