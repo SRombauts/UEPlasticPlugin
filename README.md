@@ -49,7 +49,11 @@ Alpha version 0.3.0 2016/05/02 :
 #### Feature Requests (post v1.0)
 - improve "status" efficiency by batching requests by folders instead of file by file
 - add a global source control menu "Sync/Update" instead of "Sync" on folder's context menu
+- add a top-menu option to "undo all changes" in the project
 - add a "clean directory" or "checkin deleted files" 
+
+#### Bugs
+.6 Checkout in a not up-to-date workspace: checkin fails silently.
 
 #### Known issues:
 - Error messages with accents are not handled (for instance connection error in French)
