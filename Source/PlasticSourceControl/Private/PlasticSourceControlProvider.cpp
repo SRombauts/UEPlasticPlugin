@@ -14,7 +14,7 @@
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
-static FName ProviderName("Plastic");
+static FName ProviderName("Plastic SCM");
 
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {
