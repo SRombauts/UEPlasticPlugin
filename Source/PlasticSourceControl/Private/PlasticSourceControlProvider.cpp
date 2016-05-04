@@ -303,7 +303,7 @@ TArray< TSharedRef<ISourceControlLabel> > FPlasticSourceControlProvider::GetLabe
 {
 	TArray< TSharedRef<ISourceControlLabel> > Tags;
 
-	// TODO list labels
+	// TODO list labels? Called by GetLabel() that is not called!
 	return Tags;
 }
 

@@ -42,13 +42,13 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 
 bool FPlasticSourceControlRevision::GetAnnotated( TArray<FAnnotationLine>& OutLines ) const
 {
-	// TODO GetAnnotated
+	// TODO GetAnnotated: called only by SourceControlHelpers::AnnotateFile(), which is called only by ICrashDebugHelper::AddAnnotatedSourceToReport() using a changelist/check identifier
 	return false;
 }
 
 bool FPlasticSourceControlRevision::GetAnnotated( FString& InOutFilename ) const
 {
-	// TODO GetAnnotated
+	// NOTE: Unused, only the above method is called by the Editor
 	return false;
 }
 
@@ -79,7 +79,7 @@ const FString& FPlasticSourceControlRevision::GetUserName() const
 
 const FString& FPlasticSourceControlRevision::GetClientSpec() const
 {
-	static FString EmptyString(TEXT(""));
+	static FString EmptyString(TEXT("")); // NOTE Workspace/Clientspec of the submitter (Perforce only)
 	return EmptyString;
 }
 

@@ -798,7 +798,6 @@ static void ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlRe
 	const FXmlNode* CommentNode = ChangesetNode->FindChildNode(Comment);
 	if (CommentNode != nullptr)
 	{
-		// TODO : multilines comments are destroyed by the XmlFile XmlParser
 		OutSourceControlRevision.Description = CommentNode->GetContent();
 	}
 	const FXmlNode* OwnerNode = ChangesetNode->FindChildNode(Owner);
@@ -907,6 +906,8 @@ static bool ParseHistoryResults(const TArray<FString>& InResults, TPlasticSource
 				// Run "cm log" on the changeset number
 				bResult = RunLogCommand(Changeset, *SourceControlRevision);
 				OutHistory.Add(SourceControlRevision);
+
+				// TODO: test a 'getrevision' instead
 			}
 			else
 			{
@@ -949,7 +950,7 @@ bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 		{
 			State->WorkspaceState = InState.WorkspaceState;
 			State->PendingMergeBaseFileHash = InState.PendingMergeBaseFileHash;
-		//	State->TimeStamp = InState.TimeStamp; // TODO Bug report: Workaround a bug with the Source Control Module not updating file state after a "Save"
+			State->TimeStamp = InState.TimeStamp; // TODO: Bug report: Workaround a bug with the Source Control Module not updating file state after a "Save"
 			NbStatesUpdated++;
 		}
 	}
