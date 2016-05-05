@@ -593,7 +593,9 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 				TArray<FString> OneFile;
 				OneFile.Add(File);
 				TArray<FString> Results;
-				bResult = RunCommand(TEXT("status"), Status, OneFile, Results, OutErrorMessages);
+				TArray<FString> ErrorMessages;
+				bResult = RunCommand(TEXT("status"), Status, OneFile, Results, ErrorMessages);
+				OutErrorMessages.Append(ErrorMessages);
 				if (bResult)
 				{
 					ParseStatusResult(File, Results, FileState);
@@ -682,7 +684,9 @@ static bool RunFileinfo(const TArray<FString>& InFiles, TArray<FString>& OutErro
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{LockedBy};{LockedWhere}\""));
 
-	const bool bResult = RunCommand(TEXT("fileinfo"), Parameters, InFiles, Results, OutErrorMessages);
+	TArray<FString> ErrorMessages;
+	const bool bResult = RunCommand(TEXT("fileinfo"), Parameters, InFiles, Results, ErrorMessages);
+	OutErrorMessages.Append(ErrorMessages);
 	if (bResult)
 	{
 		ParseFileinfoResults(InFiles, Results, OutStates);
