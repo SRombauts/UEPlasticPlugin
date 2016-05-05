@@ -32,6 +32,8 @@ public:
 		: LocalFilename(InLocalFilename)
 		, WorkspaceState(EWorkspaceState::Unknown)
 		, TimeStamp(0)
+		, DepotRevisionChangeset(-1)
+		, LocalRevisionChangeset(-1)
 	{
 	}
 
@@ -88,7 +90,7 @@ public:
 	int LocalRevisionChangeset;
 
 	/** Whether the file is a binary file or not */
-	bool bBinary;
+//	bool bBinary;
 
 	/** The timestamp of the last update */
 	FDateTime TimeStamp;
