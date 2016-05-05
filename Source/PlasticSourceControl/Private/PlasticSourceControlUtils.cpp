@@ -331,14 +331,31 @@ void GetUserName(FString& OutUserName)
 	}
 }
 
-bool GetWorkspaceSpecification(const FString& InWorkspaceRoot, FString& OutWorkspaceName, FString& OutRepositoryUrl) 
+bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName)
+{
+	TArray<FString> InfoMessages;
+	TArray<FString> ErrorMessages;
+	TArray<FString> Parameters;
+	Parameters.Add(InWorkspaceRoot);
+	Parameters.Add(TEXT("--format={0}"));
+	// Get the workspace name
+	const bool bResult = RunCommandInternal(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	if (bResult && InfoMessages.Num() > 0)
+	{
+		OutWorkspaceName = MoveTemp(InfoMessages[0]);
+	}
+
+	return bResult;
+}
+
+bool GetRepositorySpecification(const FString& InWorkspaceRoot, FString& OutRepositoryName, FString& OutServerUrl) 
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
 	Parameters.Add(InWorkspaceRoot);
 	Parameters.Add(TEXT("--nochanges"));
-	// Get the workspace status, de la forme "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087"
+	// Get the workspace status, looking like "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087"
 	bool bResult = RunCommandInternal(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
@@ -346,13 +363,13 @@ bool GetWorkspaceSpecification(const FString& InWorkspaceRoot, FString& OutWorks
 		static const FString Rep(TEXT("rep:"));
 		static const FString Server(TEXT("repserver:"));
 		const FString& WorkspaceStatus = InfoMessages[0];
-		TArray<FString> WorkspaceSpecs;
- 		WorkspaceStatus.ParseIntoArray(WorkspaceSpecs, TEXT("@"));
-		if (3 >= WorkspaceSpecs.Num())
+		TArray<FString> RepositorySpecification;
+ 		WorkspaceStatus.ParseIntoArray(RepositorySpecification, TEXT("@"));
+		if (3 >= RepositorySpecification.Num())
 		{
-//			OutChangeset     = WorkspaceSpecs[0].RightChop(Changeset.Len());
-			OutWorkspaceName = WorkspaceSpecs[1].RightChop(Rep.Len());
-			OutRepositoryUrl = WorkspaceSpecs[2].RightChop(Server.Len());
+//			OutChangeset = RepositorySpecification[0].RightChop(Changeset.Len());
+			OutRepositoryName = RepositorySpecification[1].RightChop(Rep.Len());
+			OutServerUrl = RepositorySpecification[2].RightChop(Server.Len());
 		}
 		else
 		{
@@ -854,12 +871,12 @@ static bool RunLogCommand(const FString& InChangeset, FPlasticSourceControlRevis
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-	const FString WorkspaceSpecification = FString::Printf(TEXT("cs:%s@rep:%s@repserver:%s"), *InChangeset, *Provider.GetWorkspaceName(), *Provider.GetRepositoryName());
+	const FString RepositorySpecification = FString::Printf(TEXT("cs:%s@rep:%s@repserver:%s"), *InChangeset, *Provider.GetRepositoryName(), *Provider.GetServerUrl());
 
 	FString Results;
 	FString Errors;
 	TArray<FString> Parameters;
-	Parameters.Add(WorkspaceSpecification);
+	Parameters.Add(RepositorySpecification);
 	Parameters.Add(TEXT("--xml"));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 

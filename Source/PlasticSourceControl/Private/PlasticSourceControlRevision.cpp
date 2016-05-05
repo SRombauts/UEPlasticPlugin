@@ -13,8 +13,8 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	const FString& WorkspaceName = PlasticSourceControl.GetProvider().GetWorkspaceName();
 	const FString& RepositoryName = PlasticSourceControl.GetProvider().GetRepositoryName();
+	const FString& ServerUrl = PlasticSourceControl.GetProvider().GetServerUrl();
 
 	// if a filename for the temp file wasn't supplied generate a unique-ish one
 	if(InOutFilename.Len() == 0)
@@ -34,7 +34,7 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 	else
 	{
 		// Format the revision specification of the file, like revid:1230@rep:myrep@repserver:myserver:8084
-		const FString RevisionSpecification = FString::Printf(TEXT("revid:%d@rep:%s@repserver:%s"), RevisionNumber, *WorkspaceName, *RepositoryName);
+		const FString RevisionSpecification = FString::Printf(TEXT("revid:%d@rep:%s@repserver:%s"), RevisionNumber, *RepositoryName, *ServerUrl);
 		bCommandSuccessful = PlasticSourceControlUtils::RunDumpToFile(PathToPlasticBinary, RevisionSpecification, InOutFilename);
 	}
 	return bCommandSuccessful;

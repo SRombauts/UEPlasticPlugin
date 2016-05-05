@@ -61,12 +61,19 @@ bool FindRootDirectory(const FString& InPathToGameDir, FString& OutWorkspaceRoot
 void GetUserName(FString& OutUserName);
 
 /**
- * Get Plastic workspace name and server URL
+ * Get Plastic workspace name
  * @param	InWorkspaceRoot		The workspace from where to run the command - usually the Game directory (can be empty)
  * @param	OutWorkspaceName	Name of the current workspace
- * @param	OutRepositoryUrl	Url/Port of the repository of this workspace
  */
-bool GetWorkspaceSpecification(const FString& InWorkspaceRoot, FString& OutWorkspaceName, FString& OutRepositoryUrl);
+bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName);
+
+/**
+ * Get Plastic repository name and server URL
+ * @param	InWorkspaceRoot		The workspace from where to run the command - usually the Game directory (can be empty)
+ * @param	OutRepositoryName	Name of the repository of the current workspace
+ * @param	OutServerUrl		Url/Port of the server of the repository
+ */
+bool GetRepositorySpecification(const FString& InWorkspaceRoot, FString& OutRepositoryName, FString& OutServerUrl);
 
 /**
  * Get Plastic current checked-out branch

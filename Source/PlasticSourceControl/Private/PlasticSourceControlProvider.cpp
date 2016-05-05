@@ -39,8 +39,9 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability(bool bForceConnecti
 			PlasticSourceControlUtils::GetUserName(UserName);
 			if(bWorkspaceFound)
 			{
-				// Get workspace, repository and branch name
-				PlasticSourceControlUtils::GetWorkspaceSpecification(PathToWorkspaceRoot, WorkspaceName, RepositoryName);
+				// Get workspace, repository, server and branch name
+				PlasticSourceControlUtils::GetWorkspaceName(PathToWorkspaceRoot, WorkspaceName);
+				PlasticSourceControlUtils::GetRepositorySpecification(PathToWorkspaceRoot, RepositoryName, ServerUrl);
 				PlasticSourceControlUtils::GetBranchName(PathToWorkspaceRoot, BranchName);
 				// Note: no "checkconnection" at this stage, "Connect" is already the first operation executed by the Editor Toolbar at load time
 			}
@@ -87,10 +88,12 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 {
 	FFormatNamedArguments Args;
 	Args.Add( TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot) );
+	Args.Add( TEXT("WorkspaceName"), FText::FromString(WorkspaceName) );
+	Args.Add( TEXT("RepositoryName"), FText::FromString(RepositoryName) );
 	Args.Add( TEXT("BranchName"), FText::FromString(BranchName) );
 	Args.Add( TEXT("UserName"), FText::FromString(UserName) );
 
-	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Workspace: {WorkspacePath}\n{BranchName}\nUser: {UserName}"), Args );
+	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "{WorkspacePath}\nWorkspace: {WorkspaceName}\nRepository: {ServerName}\n{BranchName}\nUser: {UserName}"), Args );
 }
 
 /** Quick check if source control is enabled */

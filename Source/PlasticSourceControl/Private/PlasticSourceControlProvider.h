@@ -70,6 +70,12 @@ public:
 		return RepositoryName;
 	}
 
+	/** Get the Plastic current server URL */
+	inline const FString& GetServerUrl() const
+	{
+		return ServerUrl;
+	}
+
 	/** Get the Name of the current branch */
 	inline const FString& GetBranchName() const
 	{
@@ -121,6 +127,9 @@ private:
 
 	/** Plastic current repository */
 	FString RepositoryName;
+
+	/** Plastic current server URL */
+	FString ServerUrl;
 
 	/** Name of the current branch */
 	FString BranchName;
