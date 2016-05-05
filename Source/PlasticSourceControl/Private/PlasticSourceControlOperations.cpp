@@ -90,6 +90,8 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
+	UE_LOG(LogSourceControl, Log, TEXT("checkin"));
+
 	TSharedRef<FCheckIn, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCheckIn>(InCommand.Operation);
 
 	// make a temp file to place our commit message in

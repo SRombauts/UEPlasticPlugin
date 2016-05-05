@@ -211,7 +211,7 @@ bool FPlasticSourceControlState::CanCheckIn() const
 
 bool FPlasticSourceControlState::CanCheckout() const
 {
-	// TODO: Moved/Copied? Also Localy Moved?
+	// TODO: Moved/Copied?
 	const bool bCanCheckout  = WorkspaceState == EWorkspaceState::Controled	// In source control, Unmodified
 							|| WorkspaceState == EWorkspaceState::Changed;	// In source control, but not checked-out
 
@@ -276,14 +276,14 @@ bool FPlasticSourceControlState::IsAdded() const
 
 bool FPlasticSourceControlState::IsDeleted() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Deleted);
+	UE_LOG(LogSourceControl, Log, TEXT("IsDeleted(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Deleted);
 
 	return WorkspaceState == EWorkspaceState::Deleted;
 }
 
 bool FPlasticSourceControlState::IsIgnored() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Ignored);
+	UE_LOG(LogSourceControl, Log, TEXT("IsIgnored(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Ignored);
 
 	return WorkspaceState == EWorkspaceState::Ignored;
 }

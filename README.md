@@ -54,6 +54,7 @@ Alpha version 0.3.0 2016/05/02 :
 
 #### Bugs
 .6 Checkout in a not up-to-date workspace: checkin fails silently.
+.12 Revert "Unchanged only" does nothing.
 
 #### Known issues:
 - Error messages with accents are not handled (for instance connection error in French)
