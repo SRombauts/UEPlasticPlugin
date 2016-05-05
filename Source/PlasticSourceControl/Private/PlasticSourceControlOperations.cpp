@@ -250,9 +250,12 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 					// In case of a merge conflict, we first need to get the tip of the "remote branch" (MERGE_HEAD)
 // TODO					PlasticSourceControlUtils::RunGetHistory(File, true, InCommand.ErrorMessages, History);
 				}
-				// Get the history of the file in the current branch
-				InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, InCommand.ErrorMessages, History);
-				Histories.Add(*File, History);
+				else if (States[Index].IsSourceControlled())
+				{
+					// Get the history of the file in the current branch
+					InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, InCommand.ErrorMessages, History);
+					Histories.Add(*File, History);
+				}
 			}
 		}
 	}
