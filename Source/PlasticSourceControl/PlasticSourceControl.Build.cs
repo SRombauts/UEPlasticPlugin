@@ -13,6 +13,7 @@ public class PlasticSourceControl : ModuleRules
 				"SlateCore",
 				"EditorStyle",
 				"SourceControl",
+				"InputCore",
 				"XmlParser2",
 				"Projects",
 			}

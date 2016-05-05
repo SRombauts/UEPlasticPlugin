@@ -46,6 +46,12 @@ public:
 	 */
 	void CheckPlasticAvailability(bool bForceConnection = true);
 
+	/** Is Plastic workspace found. */
+	inline bool IsWorkspaceFound() const
+	{
+		return bWorkspaceFound;
+	}
+
 	/** Get the path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory */
 	inline const FString& GetPathToWorkspaceRoot() const
 	{

@@ -11,6 +11,11 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ![History Log window](Resources/UE4PlasticPlugin-History.png) 
 
+### References
+
+[Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
+[Source Control Inside Unreal Editor](https://docs.unrealengine.com/latest/INT/Engine/Basics/SourceControl/InEditor/
+
 ### Quick setup
 
 1. Your Unreal Engine 4.11.1 Game Project folder should be initialized
@@ -35,12 +40,13 @@ Alpha version 0.3.0 2016/05/02 :
 - update workspace to latest head (Sync command)
 - show history of a file
 - visual diff of a blueprint against depot or between previous versions of a file
-
-#### What *cannot* be done presently (TODO list for v1.0, ordered by priority):
 - initialize a new workspace to manage your UE4 Game Project.
 - create an appropriate ignore.conf file as part as initialization
+WIP:
 - make the initial commit
 - also permit late creation of the ignore.conf file
+
+#### What *cannot* be done presently (TODO list for v1.0, ordered by priority):
 - solve a merge conflict on a blueprint
 - tags: manage labels
 - annotate: blame?
@@ -50,7 +56,9 @@ Alpha version 0.3.0 2016/05/02 :
 - improve "status" efficiency by batching requests by folders instead of file by file
 - add a global source control menu "Sync/Update" instead of "Sync" on folder's context menu
 - add a top-menu option to "undo all changes" in the project
-- add a "clean directory" or "checkin deleted files" 
+- add a "clean directory" or "checkin deleted files"
+- add a setting to pass the --update option to "checkin"
+- add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
 
 #### Bugs
 .6 Checkout in a not up-to-date workspace: checkin fails silently.
