@@ -242,7 +242,7 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 	}
 	const bool bIsLockedByOther = WorkspaceState == EWorkspaceState::LockedByOther;
 
-	if (bIsLockedByOther) UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOutOther(%s)=%d '%s' '%s'"), *LocalFilename, bIsLockedByOther, *LockedBy, *LockedWhere);
+	if (bIsLockedByOther) UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOutOther(%s)=%d by '%s' (%s)"), *LocalFilename, bIsLockedByOther, *LockedBy, *LockedWhere);
 
 	return bIsLockedByOther;
 }

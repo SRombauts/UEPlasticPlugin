@@ -539,7 +539,7 @@ static void ParseStatusResult(const FString& InFile, const TArray<FString>& InRe
 		// No result means Controled/Unchanged file
 		OutFileState.WorkspaceState = EWorkspaceState::Controled;
 	}
-	// TODO debug log
+	// @todo: temporary debug log
 	UE_LOG(LogSourceControl, Log, TEXT("%s = %d:%s"), *InFile, static_cast<uint32>(OutFileState.WorkspaceState), ToString(OutFileState.WorkspaceState));
 	OutFileState.TimeStamp.Now();
 }
@@ -648,11 +648,13 @@ static void ParseFileinfoResults(const TArray<FString>& InFiles, const TArray<FS
 
 		if ((0 < FileState.LockedBy.Len()) && ((FileState.LockedBy != Provider.GetUserName()) || (FileState.LockedWhere != Provider.GetWorkspaceName())))
 		{
+			// @todo: temporary debug log
+			UE_LOG(LogSourceControl, Warning, TEXT("LockedByOther(%s) by '%s!=%s' (or %s!=%s)"), *File, *FileState.LockedBy, *Provider.GetUserName(), *FileState.LockedWhere, *Provider.GetWorkspaceName());
 			FileState.WorkspaceState = EWorkspaceState::LockedByOther;
 		}
 
-		// TODO debug log
-		UE_LOG(LogSourceControl, Log, TEXT("%s: %d;%d '%s'(%s)"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.LockedBy, *FileState.LockedWhere);
+		// @todo: temporary debug log
+		UE_LOG(LogSourceControl, Log, TEXT("%s: %d;%d by '%s' (%s)"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.LockedBy, *FileState.LockedWhere);
 	}
 }
 
@@ -906,8 +908,6 @@ static bool ParseHistoryResults(const TArray<FString>& InResults, TPlasticSource
 				// Run "cm log" on the changeset number
 				bResult = RunLogCommand(Changeset, *SourceControlRevision);
 				OutHistory.Add(SourceControlRevision);
-
-				// TODO: test a 'getrevision' instead
 			}
 			else
 			{
@@ -941,21 +941,17 @@ bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>( "PlasticSourceControl" );
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-	int NbStatesUpdated = 0;
 
 	for (const auto& InState : InStates)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(InState.LocalFilename);
-		if(State->WorkspaceState != InState.WorkspaceState)
-		{
-			State->WorkspaceState = InState.WorkspaceState;
-			State->PendingMergeBaseFileHash = InState.PendingMergeBaseFileHash;
-			State->TimeStamp = InState.TimeStamp; // TODO: Bug report: Workaround a bug with the Source Control Module not updating file state after a "Save"
-			NbStatesUpdated++;
-		}
+		auto History = MoveTemp(State->History);
+		*State = InState;
+		State->TimeStamp = FDateTime::Now();
+		State->History = MoveTemp(History);
 	}
 
-	return (NbStatesUpdated > 0);
+	return InStates.Num() > 0;
 }
 
 /**
