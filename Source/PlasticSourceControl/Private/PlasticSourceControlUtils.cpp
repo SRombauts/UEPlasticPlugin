@@ -164,9 +164,10 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		// Send command to 'cm shell' process
 		const bool bWriteOk = FPlatformProcess::WritePipe(ShellInputPipeWrite, FullCommand);
 
-		// And wait up to 10 seconds for any kind of output: in case of lengthy operation, intermediate output is expected
-		const double Timeout = 10.0;
-		double LastActivity = FPlatformTime::Seconds();
+		// And wait up to 600 seconds for any kind of output from cm shell: in case of lengthier operation, intermediate output (like percentage of progress) is expected, which would refresh the timout
+		const double Timeout = 600.0;
+		const double StartTimestamp = FPlatformTime::Seconds();
+		double LastActivity = StartTimestamp;
 		while (FPlatformProcess::IsProcRunning(ShellProcessHandle) && (FPlatformTime::Seconds() - LastActivity < Timeout))
 		{
 			FString Output = FPlatformProcess::ReadPipe(ShellOutputPipeRead);
@@ -195,18 +196,18 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		if (!InCommand.Equals(TEXT("exit")) && !FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			// 'cm shell' normaly only terminates in case of 'exit' command. Will restart on next command.
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): 'cm shell' stopped!"), *InCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle));
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): 'cm shell' stopped after '%lf's Out=\n%s"), *InCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
 		}
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
 			// Shut-down and restart the connexion to 'cm shell' in case of timeout!
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s)=%d TIMEOUT Out=\n%s"), *InCommand, bResult, *OutResults);
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s)=%d TIMEOUT after '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
 			RestartBackgroundCommandLineShell();
 		}
 		else
 		{
 			// @todo: temporary debug logs
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell(%s)=%d Out=\n%s"), *InCommand, bResult, *OutResults);
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell(%s)=%d in '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
 		}
 		
 		// Return output as error if result code is an error
