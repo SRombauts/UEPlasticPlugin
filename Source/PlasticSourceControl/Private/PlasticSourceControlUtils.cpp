@@ -337,10 +337,11 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName)
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(InWorkspaceRoot);
 	Parameters.Add(TEXT("--format={0}"));
+	TArray<FString> Files;
+	Files.Add(InWorkspaceRoot);
 	// Get the workspace name
-	const bool bResult = RunCommandInternal(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	const bool bResult = RunCommandInternal(TEXT("getworkspacefrompath"), Parameters, Files, InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		OutWorkspaceName = MoveTemp(InfoMessages[0]);
@@ -354,10 +355,11 @@ bool GetRepositorySpecification(const FString& InWorkspaceRoot, FString& OutRepo
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(InWorkspaceRoot);
 	Parameters.Add(TEXT("--nochanges"));
+	TArray<FString> Files;
+	Files.Add(InWorkspaceRoot);
 	// Get the workspace status, looking like "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087"
-	bool bResult = RunCommandInternal(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	bool bResult = RunCommandInternal(TEXT("status"), Parameters, Files, InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		static const FString Changeset(TEXT("cs:"));
@@ -386,11 +388,12 @@ void GetBranchName(const FString& InWorkspaceRoot, FString& OutBranchName)
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(InWorkspaceRoot);
 	Parameters.Add(TEXT("--wkconfig"));
 	Parameters.Add(TEXT("--nochanges"));
 	Parameters.Add(TEXT("--nostatus"));
-	const bool bResult = RunCommandInternal(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	TArray<FString> Files;
+	Files.Add(InWorkspaceRoot);
+	const bool bResult = RunCommandInternal(TEXT("status"), Parameters, Files, InfoMessages, ErrorMessages);
 	if(bResult && InfoMessages.Num() > 0)
 	{
 		OutBranchName = InfoMessages[0];
