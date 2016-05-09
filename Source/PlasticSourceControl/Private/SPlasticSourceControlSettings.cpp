@@ -566,7 +566,7 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace() cons
 EVisibility SPlasticSourceControlSettings::CanAddIgnoreFile() const
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const bool bPlasticWorkspaceFound = PlasticSourceControl.GetProvider().IsEnabled();
+	const bool bPlasticWorkspaceFound = PlasticSourceControl.GetProvider().IsWorkspaceFound();
 	const bool bIgnoreFileFound = FPaths::FileExists(GetIgnoreFileName());
 	return (bPlasticWorkspaceFound && !bIgnoreFileFound) ? EVisibility::Visible : EVisibility::Collapsed;
 }
