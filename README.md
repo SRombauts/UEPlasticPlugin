@@ -13,8 +13,8 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### References
 
-[Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
-[Source Control Inside Unreal Editor](https://docs.unrealengine.com/latest/INT/Engine/Basics/SourceControl/InEditor/
+- [Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
+- [Source Control Inside Unreal Editor](https://docs.unrealengine.com/latest/INT/Engine/Basics/SourceControl/InEditor/)
 
 ### Quick setup
 
