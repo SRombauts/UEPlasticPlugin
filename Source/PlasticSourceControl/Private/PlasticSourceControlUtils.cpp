@@ -431,29 +431,6 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 	return bResult;
 }
 
-// debug log utility
-static const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState)
-{
-	const TCHAR* pLabel = nullptr;
-	switch (InWorkspaceState)
-	{
-		case EWorkspaceState::Unknown: pLabel = TEXT("Unknown"); break;
-		case EWorkspaceState::Ignored: pLabel = TEXT("Ignored"); break;
-		case EWorkspaceState::Controled: pLabel = TEXT("Controled"); break;
-		case EWorkspaceState::CheckedOut: pLabel = TEXT("CheckedOut"); break;
-		case EWorkspaceState::Added: pLabel = TEXT("Added"); break;
-		case EWorkspaceState::Moved: pLabel = TEXT("Moved"); break;
-		case EWorkspaceState::Copied: pLabel = TEXT("Copied"); break;
-		case EWorkspaceState::Replaced: pLabel = TEXT("Replaced"); break;
-		case EWorkspaceState::Deleted: pLabel = TEXT("Deleted"); break;
-		case EWorkspaceState::Changed: pLabel = TEXT("Changed"); break;
-		case EWorkspaceState::Conflicted: pLabel = TEXT("Conflicted"); break;
-		case EWorkspaceState::Private: pLabel = TEXT("Private"); break;
-		default: pLabel = TEXT("???"); break;
-	}
-	return pLabel;
-}
-
 /**
  * Extract and interpret the file state from the given Plastic "status" result.
  * empty string = unmodified or hidden changes
@@ -561,7 +538,7 @@ static void ParseStatusResult(const FString& InFile, const TArray<FString>& InRe
 		OutFileState.WorkspaceState = EWorkspaceState::Controled;
 	}
 	// @todo: temporary debug log
-	UE_LOG(LogSourceControl, Log, TEXT("%s = %d:%s"), *InFile, static_cast<uint32>(OutFileState.WorkspaceState), ToString(OutFileState.WorkspaceState));
+	UE_LOG(LogSourceControl, Log, TEXT("%s = %d:%s"), *InFile, static_cast<uint32>(OutFileState.WorkspaceState), OutFileState.ToString());
 	OutFileState.TimeStamp.Now();
 }
 
@@ -966,14 +943,16 @@ bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>( "PlasticSourceControl" );
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+	const FDateTime Now = FDateTime::Now();
 
 	for (const auto& InState : InStates)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(InState.LocalFilename);
-		auto History = MoveTemp(State->History);
+		auto History = MoveTemp(State->History); // This avoids a copy in next operation
 		*State = InState;
-		State->TimeStamp = FDateTime::Now();
 		State->History = MoveTemp(History);
+		// Timestamp is used to throttle status requests, so update it to current time:
+		State->TimeStamp = Now;
 	}
 
 	return InStates.Num() > 0;

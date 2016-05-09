@@ -5,6 +5,33 @@
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl.State"
 
+namespace EWorkspaceState
+{
+static const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState)
+{
+	const TCHAR* WorkspaceStateStr = nullptr;
+	switch (InWorkspaceState)
+	{
+	case EWorkspaceState::Unknown: WorkspaceStateStr = TEXT("Unknown"); break;
+	case EWorkspaceState::Ignored: WorkspaceStateStr = TEXT("Ignored"); break;
+	case EWorkspaceState::Controled: WorkspaceStateStr = TEXT("Controled"); break;
+	case EWorkspaceState::CheckedOut: WorkspaceStateStr = TEXT("CheckedOut"); break;
+	case EWorkspaceState::Added: WorkspaceStateStr = TEXT("Added"); break;
+	case EWorkspaceState::Moved: WorkspaceStateStr = TEXT("Moved"); break;
+	case EWorkspaceState::Copied: WorkspaceStateStr = TEXT("Copied"); break;
+	case EWorkspaceState::Replaced: WorkspaceStateStr = TEXT("Replaced"); break;
+	case EWorkspaceState::Deleted: WorkspaceStateStr = TEXT("Deleted"); break;
+	case EWorkspaceState::Changed: WorkspaceStateStr = TEXT("Changed"); break;
+	case EWorkspaceState::Conflicted: WorkspaceStateStr = TEXT("Conflicted"); break;
+	case EWorkspaceState::LockedByOther: WorkspaceStateStr = TEXT("LockedByOther"); break;
+	case EWorkspaceState::Private: WorkspaceStateStr = TEXT("Private"); break;
+	default: WorkspaceStateStr = TEXT("???"); break;
+	}
+	return WorkspaceStateStr;
+}
+}
+
+
 int32 FPlasticSourceControlState::GetHistorySize() const
 {
 	return History.Num();

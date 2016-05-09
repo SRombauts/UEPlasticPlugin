@@ -23,6 +23,9 @@ namespace EWorkspaceState
 		LockedByOther, // LockedBy with name of someone else than cm whoami
 		Private, // "Not Controlled"/"Not In Depot"/"Untraked"
 	};
+
+	// debug log utility
+	static const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState);
 }
 
 class FPlasticSourceControlState : public ISourceControlState, public TSharedFromThis<FPlasticSourceControlState, ESPMode::ThreadSafe>
@@ -35,6 +38,12 @@ public:
 		, DepotRevisionChangeset(-1)
 		, LocalRevisionChangeset(-1)
 	{
+	}
+
+	// debug log utility
+	const TCHAR* ToString()
+	{
+		return EWorkspaceState::ToString(WorkspaceState);
 	}
 
 	/** ISourceControlState interface */
