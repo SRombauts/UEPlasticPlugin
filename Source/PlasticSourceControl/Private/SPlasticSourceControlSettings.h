@@ -47,9 +47,12 @@ private:
 	FText GetInitialCommitMessage() const;
 	FText InitialCommitMessage;
 
-	FReply OnClickedInitializePlasticWorkspace();
+	FReply OnClickedInitializePlasticWorkspace() const;
 
 	/** Delegate to add a Plastic ignore.conf file to an existing Plastic workspace */
 	EVisibility CanAddIgnoreFile() const;
-	FReply OnClickedAddIgnoreFile();
+	FReply OnClickedAddIgnoreFile() const;
+
+	const FString& GetIgnoreFileName() const;
+	bool CreateIgnoreFile() const;
 };

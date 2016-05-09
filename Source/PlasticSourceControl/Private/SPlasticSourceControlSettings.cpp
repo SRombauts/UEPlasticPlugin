@@ -368,6 +368,31 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					]
 				]
 			]
+			+SVerticalBox::Slot()
+			.FillHeight(2.0f)
+			.Padding(2.0f)
+			.VAlign(VAlign_Center)
+			[
+				SNew(SHorizontalBox)
+				.Visibility(this, &SPlasticSourceControlSettings::CanAddIgnoreFile)
+				+SHorizontalBox::Slot()
+				.FillWidth(1.0f)
+				[
+					SNew(SVerticalBox)
+					+SVerticalBox::Slot()
+					.FillHeight(2.0f)
+					.Padding(2.0f)
+					.VAlign(VAlign_Center)
+					.AutoHeight()
+					[
+						SNew(SButton)
+						.Text(LOCTEXT("CreateIgnoreFile", "Add a ignore.conf file"))
+						.ToolTipText(LOCTEXT("CreateIgnoreFile_Tooltip", "Create and add a standard 'ignore.conf' file"))
+						.OnClicked(this, &SPlasticSourceControlSettings::OnClickedAddIgnoreFile)
+						.HAlign(HAlign_Center)
+					]
+				]
+			]
 		]
 	];
 }
@@ -466,7 +491,7 @@ FText SPlasticSourceControlSettings::GetInitialCommitMessage() const
 }
 
 
-FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
+FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace() const
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
@@ -511,11 +536,9 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 		if (bAutoCreateIgnoreFile)
 		{
 			// Create a standard "ignore.conf" file with common patterns for a typical Blueprint & C++ project
-			const FString Filename = FPaths::Combine(*PathToGameDir, TEXT("ignore.conf"));
-			const FString IgnoreFileContent = TEXT("Binaries\nBuild\nDerivedDataCache\nIntermediate\nSaved\n*.VC.db\n*.opensdf\n*.opendb\n*.sdf\n*.sln\n*.suo\n*.xcodeproj\n*.xcworkspace");
-			if (FFileHelper::SaveStringToFile(IgnoreFileContent, *Filename, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
+			if (CreateIgnoreFile())
 			{
-				ProjectFiles.Add(Filename);
+				ProjectFiles.Add(GetIgnoreFileName());
 			}
 		}
 		// Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)
@@ -539,17 +562,47 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 }
 
 
-// TODO Delegate to add a Plastic ignore.conf file to an existing Plastic SCM workspace
+/** Delegate to check for presence of a Plastic ignore.conf file to an existing Plastic SCM workspace */
 EVisibility SPlasticSourceControlSettings::CanAddIgnoreFile() const
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const bool bPlasticWorkspaceFound = PlasticSourceControl.GetProvider().IsEnabled();
-	const bool bIgnoreFileFound = false; // TODO
+	const bool bIgnoreFileFound = FPaths::FileExists(GetIgnoreFileName());
 	return (bPlasticWorkspaceFound && !bIgnoreFileFound) ? EVisibility::Visible : EVisibility::Collapsed;
 }
-FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile()
+
+/** Delegate to add a Plastic ignore.conf file to an existing Plastic SCM workspace */
+FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 {
+	if (CreateIgnoreFile())
+	{
+		// Add ignore.conf to Plastic SCM
+		TArray<FString> InfoMessages;
+		TArray<FString> ErrorMessages;
+		TArray<FString> Parameters;
+		Parameters.Add(TEXT("-R"));
+		TArray<FString> Files;
+		Files.Add(GetIgnoreFileName());
+		PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, Files, InfoMessages, ErrorMessages);
+	}
 	return FReply::Handled();
 }
+
+
+/** Path to the "ignore.conf" file */
+const FString& SPlasticSourceControlSettings::GetIgnoreFileName() const
+{
+	static const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
+	static const FString IgnoreFileName = FPaths::Combine(*PathToGameDir, TEXT("ignore.conf"));
+	return IgnoreFileName;
+}
+
+/** Create a standard "ignore.conf" file with common patterns for a typical Blueprint & C++ project */
+bool SPlasticSourceControlSettings::CreateIgnoreFile() const
+{
+	const FString IgnoreFileContent = TEXT("Binaries\nBuild\nDerivedDataCache\nIntermediate\nSaved\n*.VC.db\n*.opensdf\n*.opendb\n*.sdf\n*.sln\n*.suo\n*.xcodeproj\n*.xcworkspace");
+	return FFileHelper::SaveStringToFile(IgnoreFileContent, *GetIgnoreFileName(), FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+}
+
 
 #undef LOCTEXT_NAMESPACE
