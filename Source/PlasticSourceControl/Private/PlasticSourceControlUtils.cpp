@@ -953,6 +953,8 @@ bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 		State->History = MoveTemp(History);
 		// Timestamp is used to throttle status requests, so update it to current time:
 		State->TimeStamp = Now;
+		// @todo: temporary debug logs
+//		UE_LOG(LogSourceControl, Log, TEXT("UpdateCachedStates(%s): %s (at %s)"), *(State->LocalFilename), State->ToString(), *(State->TimeStamp.ToString()));
 	}
 
 	return InStates.Num() > 0;

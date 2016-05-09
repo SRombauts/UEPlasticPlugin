@@ -26,7 +26,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Alpha version 0.3.0 2016/05/02 :
+Alpha version 0.4.0 2016/05/09 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
@@ -42,15 +42,14 @@ Alpha version 0.3.0 2016/05/02 :
 - visual diff of a blueprint against depot or between previous versions of a file
 - initialize a new workspace to manage your UE4 Game Project.
 - create an appropriate ignore.conf file as part as initialization
-WIP:
 - make the initial commit
 - also permit late creation of the ignore.conf file
 
 #### What *cannot* be done presently (TODO list for v1.0, ordered by priority):
 - solve a merge conflict on a blueprint
-- tags: manage labels
-- annotate: blame?
-- Windows, Mac and Linux
+- tags: get labels (used for crash when the full Engine is under Plastic SCM)
+- annotate: blame (used for crash when the full Engine is under Plastic SCM)
+- Mac and Linux
 
 #### Feature Requests (post v1.0)
 - improve "status" efficiency by batching requests by folders instead of file by file
