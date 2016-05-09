@@ -93,7 +93,7 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	Args.Add( TEXT("BranchName"), FText::FromString(BranchName) );
 	Args.Add( TEXT("UserName"), FText::FromString(UserName) );
 
-	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "{WorkspacePath}\nWorkspace: {WorkspaceName}\nRepository: {ServerName}\n{BranchName}\nUser: {UserName}"), Args );
+	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "{WorkspacePath}\nWorkspace: {WorkspaceName}\nRepository: {RepositoryName}\n{BranchName}\nUser: {UserName}"), Args );
 }
 
 /** Quick check if source control is enabled */
