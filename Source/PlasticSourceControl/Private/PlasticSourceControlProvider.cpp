@@ -351,7 +351,7 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		}
 		else
 		{
-			UE_LOG(LogSourceControl, Error, TEXT("ECommandResult::Failed !"));
+			UE_LOG(LogSourceControl, Error, TEXT("Command '%s' Failed!"), *InCommand.Operation->GetName().ToString());
 		}
 	}
 
