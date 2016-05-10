@@ -58,6 +58,7 @@ Alpha version 0.4.0 2016/05/09 :
 - add a "clean directory" or "checkin deleted files"
 - add a setting to pass the --update option to "checkin"
 - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
+- add support for partial checkin (like Gluon, for artists)
 
 #### Bugs
 .6 Checkout in a not up-to-date workspace: checkin fails silently.
