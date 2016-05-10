@@ -164,16 +164,17 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		// Send command to 'cm shell' process
 		const bool bWriteOk = FPlatformProcess::WritePipe(ShellInputPipeWrite, FullCommand);
 
-		// And wait up to 600 seconds for any kind of output from cm shell: in case of lengthier operation, intermediate output (like percentage of progress) is expected, which would refresh the timout
-		const double Timeout = 600.0;
+		// And wait up to 60 seconds for any kind of output from cm shell: in case of lengthier operation, intermediate output (like percentage of progress) is expected, which would refresh the timout
+		const double Timeout = 60.0;
 		const double StartTimestamp = FPlatformTime::Seconds();
 		double LastActivity = StartTimestamp;
-		while (FPlatformProcess::IsProcRunning(ShellProcessHandle) && (FPlatformTime::Seconds() - LastActivity < Timeout))
+		int32 PreviousLogLen = 0;
+		while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			FString Output = FPlatformProcess::ReadPipe(ShellOutputPipeRead);
 			if (0 < Output.Len())
 			{
-				LastActivity = FPlatformTime::Seconds(); // freshen the timestamp to prevent timeout while cm is still active
+				LastActivity = FPlatformTime::Seconds(); // freshen the timestamp while cm is still actively outputing information
 				OutResults.Append(MoveTemp(Output));
 				// Search the output for the line containing the result code, also indicating the end of the command
 				const uint32 IndexCommandResult = OutResults.Find(TEXT("CommandResult "), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
@@ -191,18 +192,20 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 					}
 				}
 			}
+			else if (FPlatformTime::Seconds() - LastActivity > Timeout)
+			{
+				// Shut-down and restart the connexion to 'cm shell' in case of timeout!
+				UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternalShell(%s)=%d TIMEOUT after '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+				PreviousLogLen = OutResults.Len();
+				LastActivity = FPlatformTime::Seconds(); // freshen the timestamp to reinit timeout warning
+			}
+
 			FPlatformProcess::Sleep(0.0f); // 0.0 means release the current time slice to let other threads get some attention
 		}
 		if (!InCommand.Equals(TEXT("exit")) && !FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			// 'cm shell' normaly only terminates in case of 'exit' command. Will restart on next command.
 			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): 'cm shell' stopped after '%lf's Out=\n%s"), *InCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
-		}
-		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
-		{
-			// Shut-down and restart the connexion to 'cm shell' in case of timeout!
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s)=%d TIMEOUT after '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
-			RestartBackgroundCommandLineShell();
 		}
 		else
 		{
