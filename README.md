@@ -26,7 +26,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Alpha version 0.4.0 2016/05/09 :
+Alpha version 0.4.1 2016/05/11 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
