@@ -52,9 +52,11 @@ Alpha version 0.4.1 2016/05/11 :
 - Mac and Linux
 
 #### Feature Requests (post v1.0)
-- improve "status" efficiency by batching requests by folders instead of file by file
-- add a global source control menu "Sync/Update" instead of "Sync" on folder's context menu
+- improve "status" efficiency by requesting status of the workspace root instead of file by file
+- fire a global "status" command at startup (to populate the cache) to fix wrong context menu on content folders ("Mark for Add")
+- add a top-menu "Sync/Update" instead of "Sync" on folder's context menu
 - add a top-menu option to "undo all changes" in the project
+- add a top-menu option to "undo unchanged only"
 - add a "clean directory" or "checkin deleted files"
 - add a setting to pass the --update option to "checkin"
 - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
