@@ -18,11 +18,14 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Quick setup
 
-1. Your Unreal Engine 4.11.1 Game Project folder should be initialized
-   into a workpace using the standard Plastic SCM GUI or cli.
-2. Unzip the content of the plugin ZIP in the root of the Unreal Engine 4.11.1 project folder.
-   That should create a "Plugins/" folder in it.
-3. Launch Unreal Engine 4.11.1, click on the Source Control icon "Connect to Source", select "Plastic".
+1.a. Either: Unzip the content of the ZIP in the root of the Unreal Engine 4.11.2 project folder.
+     That should create a "Plugins/" folder into your project.
+     This is the way to go to use Platic SCM only on a specific projetc.
+1.b. Else: Unzip the content of the ZIP in the Engine/ directory of UE4.11 directly for all your projects
+     (typically "C:\Program Files\Epic Games\4.11\Engine\")
+     That should create a "UE4PlasticPlugin" forlder into the "Plugins/" subidrectory.
+     This is the way to enable Plastic SCM for all Unreal Engine projects.
+2. Launch Unreal Engine 4.11.1, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
 ### Status
 
