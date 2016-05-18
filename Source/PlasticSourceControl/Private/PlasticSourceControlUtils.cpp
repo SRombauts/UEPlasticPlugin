@@ -14,8 +14,6 @@
 
 namespace PlasticSourceControlConstants
 {
-	/** The maximum number of files we submit in a single Plastic command */
-	const int32 MaxFilesPerBatch = 5000;
 #if PLATFORM_WINDOWS
 	const TCHAR* pchDelim = TEXT("\r\n");
 #else
@@ -130,7 +128,7 @@ bool CheckPlasticAvailability(const FString& InPathToPlasticBinary)
 	return LaunchBackgroundCommandLineShell(InPathToPlasticBinary);
 }
 
-bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
+bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
 {
 	bool bResult = false;
 
@@ -139,7 +137,7 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		// Detect previsous crash of cm.exe and restart 'cm shell'
 		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternalShell: 'cm shell' has stopped. Restarting!"), FPlatformProcess::IsProcRunning(ShellProcessHandle));
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternal: 'cm shell' has stopped. Restarting!"), FPlatformProcess::IsProcRunning(ShellProcessHandle));
 			RestartBackgroundCommandLineShell();
 		}
 
@@ -158,7 +156,7 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 			FullCommand += TEXT("\"");
 		}
 		// @todo: temporary debug logs (before end of line)
-		UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell: '%s'"), *FullCommand);
+		UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternal: '%s'"), *FullCommand);
 		FullCommand += TEXT('\n'); // Finalize the command line
 
 		// Send command to 'cm shell' process
@@ -195,7 +193,7 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 			else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 			{
 				// Shut-down and restart the connexion to 'cm shell' in case of timeout!
-				UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternalShell(%s)=%d TIMEOUT after '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+				UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternal(%s)=%d TIMEOUT after '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
 				PreviousLogLen = OutResults.Len();
 				LastActivity = FPlatformTime::Seconds(); // freshen the timestamp to reinit timeout warning
 			}
@@ -205,12 +203,12 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 		if (!InCommand.Equals(TEXT("exit")) && !FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			// 'cm shell' normaly only terminates in case of 'exit' command. Will restart on next command.
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): 'cm shell' stopped after '%lf's Out=\n%s"), *InCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternal(%s): 'cm shell' stopped after '%lf's Out=\n%s"), *InCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
 		}
 		else
 		{
 			// @todo: temporary debug logs
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternalShell(%s)=%d in '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternal(%s)=%d in '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
 		}
 		
 		// Return output as error if result code is an error
@@ -221,7 +219,7 @@ bool RunCommandInternalShell(const FString& InCommand, const TArray<FString>& In
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternalShell(%s): cm shell not running"), *InCommand);
+		UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternal(%s): cm shell not running"), *InCommand);
 		OutErrors = InCommand + ": Plastic SCM shell not running!";
 	}
 
@@ -234,7 +232,7 @@ static void ExitBackgroundCommandLineShell()
 	{
 		// Tell the 'cm shell' to exit
 		FString Results, Errors;
-		RunCommandInternalShell(TEXT("exit"), TArray<FString>(), TArray<FString>(), Results, Errors);
+		RunCommandInternal(TEXT("exit"), TArray<FString>(), TArray<FString>(), Results, Errors);
 		// And wait up to one seconde for its termination
 		int timeout = 100;
 		while (FPlatformProcess::IsProcRunning(ShellProcessHandle) && (0 < timeout--))
@@ -256,13 +254,13 @@ void Terminate()
 }
 
 // Basic parsing or results & errors from the Plastic command line process
-static bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
+bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
 {
 	bool bResult;
 	FString Results;
 	FString Errors;
 
-	bResult = RunCommandInternalShell(InCommand, InParameters, InFiles, Results, Errors);
+	bResult = RunCommandInternal(InCommand, InParameters, InFiles, Results, Errors);
 
 	Results.ParseIntoArray(OutResults, PlasticSourceControlConstants::pchDelim, true);
 	Errors.ParseIntoArray(OutErrorMessages, PlasticSourceControlConstants::pchDelim, true);
@@ -328,7 +326,7 @@ void GetPlasticScmVersion(FString& OutPlasticScmVersion)
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommandInternal(TEXT("version"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("version"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		OutPlasticScmVersion = InfoMessages[0];
@@ -339,7 +337,7 @@ void GetUserName(FString& OutUserName)
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommandInternal(TEXT("whoami"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("whoami"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		OutUserName = InfoMessages[0];
@@ -355,7 +353,7 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName)
 	TArray<FString> Files;
 	Files.Add(InWorkspaceRoot);
 	// Get the workspace name
-	const bool bResult = RunCommandInternal(TEXT("getworkspacefrompath"), Parameters, Files, InfoMessages, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, Files, InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		OutWorkspaceName = MoveTemp(InfoMessages[0]);
@@ -373,7 +371,7 @@ bool GetRepositorySpecification(const FString& InWorkspaceRoot, FString& OutRepo
 	TArray<FString> Files;
 	Files.Add(InWorkspaceRoot);
 	// Get the workspace status, looking like "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087"
-	bool bResult = RunCommandInternal(TEXT("status"), Parameters, Files, InfoMessages, ErrorMessages);
+	bool bResult = RunCommand(TEXT("status"), Parameters, Files, InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		static const FString Changeset(TEXT("cs:"));
@@ -407,42 +405,11 @@ void GetBranchName(const FString& InWorkspaceRoot, FString& OutBranchName)
 	Parameters.Add(TEXT("--nostatus"));
 	TArray<FString> Files;
 	Files.Add(InWorkspaceRoot);
-	const bool bResult = RunCommandInternal(TEXT("status"), Parameters, Files, InfoMessages, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("status"), Parameters, Files, InfoMessages, ErrorMessages);
 	if(bResult && InfoMessages.Num() > 0)
 	{
 		OutBranchName = InfoMessages[0];
 	}
-}
-
-bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
-{
-	bool bResult = true;
-
-	if(InFiles.Num() > PlasticSourceControlConstants::MaxFilesPerBatch)
-	{
-		// Batch files up so we dont exceed "cm shell" limits (@todo are there any limits?)
-		int32 FileCount = 0;
-		while(FileCount < InFiles.Num())
-		{
-			TArray<FString> FilesInBatch;
-			for(int32 FileIndex = 0; FileCount < InFiles.Num() && FileIndex < PlasticSourceControlConstants::MaxFilesPerBatch; FileIndex++, FileCount++)
-			{
-				FilesInBatch.Add(InFiles[FileCount]);
-			}
-
-			TArray<FString> BatchResults;
-			TArray<FString> BatchErrors;
-			bResult &= RunCommandInternal(InCommand, InParameters, FilesInBatch, BatchResults, BatchErrors);
-			OutResults += BatchResults;
-			OutErrorMessages += BatchErrors;
-		}
-	}
-	else
-	{
-		bResult &= RunCommandInternal(InCommand, InParameters, InFiles, OutResults, OutErrorMessages);
-	}
-
-	return bResult;
 }
 
 /**
@@ -879,7 +846,8 @@ static bool RunLogCommand(const FString& InChangeset, FPlasticSourceControlRevis
 	Parameters.Add(TEXT("--xml"));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 
-	bool bResult = RunCommandInternalShell(TEXT("log"), Parameters, TArray<FString>(), Results, Errors);
+	// Uses the raw RunCommandInternal() that does not split results in an array of strings, for XML parsing
+	bool bResult = RunCommandInternal(TEXT("log"), Parameters, TArray<FString>(), Results, Errors);
 	if (bResult)
 	{
 		FXmlFile XmlFile;
@@ -944,7 +912,7 @@ bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, TPl
 	TArray<FString> OneFile;
 	OneFile.Add(*InFile);
 
-	bool bResult = RunCommandInternal(TEXT("history"), Parameters, OneFile, Results, OutErrorMessages);
+	bool bResult = RunCommand(TEXT("history"), Parameters, OneFile, Results, OutErrorMessages);
 	if (bResult)
 	{
 		bResult = ParseHistoryResults(Results, OutHistory);
