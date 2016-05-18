@@ -30,7 +30,8 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability(bool bForceConnecti
 		bPlasticAvailable = PlasticSourceControlUtils::CheckPlasticAvailability(PathToPlasticBinary);
 		if(bPlasticAvailable)
 		{
-			// @todo: get the 'cm version'
+			FString PlasticScmVersion;
+			PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
 
 			// Find the path to the root Plastic directory (if any)
 			const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());

@@ -55,6 +55,12 @@ void Terminate();
 bool FindRootDirectory(const FString& InPathToGameDir, FString& OutWorkspaceRoot);
 
 /**
+ * Get Plastic SCM cli version
+ * @param	OutCliVersion		Verson of the Plastic SCM Command Line Interface tool
+*/
+void GetPlasticScmVersion(FString& OutPlasticScmVersion);
+
+/**
  * Get Plastic SCM current user
  * @param	OutUserName			Name of the Plastic SCM user configured globaly
  */

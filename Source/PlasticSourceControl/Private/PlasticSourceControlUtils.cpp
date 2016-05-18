@@ -324,6 +324,17 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 	return bFound;
 }
 
+void GetPlasticScmVersion(FString& OutPlasticScmVersion)
+{
+	TArray<FString> InfoMessages;
+	TArray<FString> ErrorMessages;
+	const bool bResult = RunCommandInternal(TEXT("version"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
+	if (bResult && InfoMessages.Num() > 0)
+	{
+		OutPlasticScmVersion = InfoMessages[0];
+	}
+}
+
 void GetUserName(FString& OutUserName)
 {
 	TArray<FString> InfoMessages;
