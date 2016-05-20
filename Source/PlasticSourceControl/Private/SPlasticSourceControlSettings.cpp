@@ -14,8 +14,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 	bAutoCreateIgnoreFile = true;
 	bAutoInitialCommit = true;
 
-	InitialCommitMessage = LOCTEXT("InitialCommitMessage", "Initial chekin");
-	ServerUrl = LOCTEXT("DefaultServerUrl", "localhost:8087");
+	InitialCommitMessage = LOCTEXT("InitialCommitMessage", "Initial checkin");
+	ServerUrl = FText::FromString(TEXT("localhost:8087"));
 
 	ChildSlot
 	[
@@ -41,7 +41,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					[
 						SNew(STextBlock)
 						.Text(LOCTEXT("BinaryPathLabel", "Plastic SCM Path"))
-						.ToolTipText(LOCTEXT("BinaryPathLabel_Tooltip", "Path to Plastic SCM binary"))
+						.ToolTipText(LOCTEXT("BinaryPathLabel_Tooltip", "Path to the Plastic SCM binary"))
 						.Font(Font)
 					]
 				]
@@ -55,7 +55,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					[
 						SNew(SEditableTextBox)
 						.Text(this, &SPlasticSourceControlSettings::GetBinaryPathText)
-						.ToolTipText(LOCTEXT("BinaryPathLabel_Tooltip", "Path to Plastic SCM binary"))
+						.ToolTipText(LOCTEXT("BinaryPathLabel_Tooltip", "Path to the Plastic SCM binary"))
+						.HintText(LOCTEXT("BinaryPathLabel", "Path to the Plastic SCM binary"))
 						.OnTextCommitted(this, &SPlasticSourceControlSettings::OnBinaryPathTextCommited)
 						.Font(Font)
 					]
@@ -134,6 +135,30 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				]
 			]
 			+SVerticalBox::Slot()
+			.Padding( 5, 5 )
+			.AutoHeight()
+			.VAlign( VAlign_Center )
+			[
+				SNew( SSeparator )
+			]
+			+SVerticalBox::Slot()
+			.FillHeight(1.0f)
+			.Padding(2.0f)
+			.VAlign(VAlign_Center)
+			[
+				SNew(SHorizontalBox)
+				.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
+				+SHorizontalBox::Slot()
+				.FillWidth(1.0f)
+				.HAlign(HAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("WorkspaceNotFound", "Current Project is not contained in a Plastic SCM Workspace. Fill the form below to initialize a new Workspace."))
+					.ToolTipText(LOCTEXT("WorkspaceNotFound_Tooltip", "No Workspace found at the level or above the current Project"))
+					.Font(Font)
+				]
+			]
+			+SVerticalBox::Slot()
 			.FillHeight(1.5f)
 			.Padding(2.0f)
 			.VAlign(VAlign_Center)
@@ -151,7 +176,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					[
 						SNew(STextBlock)
 						.Text(LOCTEXT("WorkspaceName", "Workspace Name"))
-						.ToolTipText(LOCTEXT("WorkspaceName_Tooltip", "Set the Workspace Name"))
+						.ToolTipText(LOCTEXT("WorkspaceName_Tooltip", "Enter the Name of the new Workspace to create"))
 						.Font(Font)
 					]
 				]
@@ -165,8 +190,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					[
 						SNew(SEditableTextBox)
 						.Text(this, &SPlasticSourceControlSettings::GetWorkspaceName)
-						.ToolTipText(LOCTEXT("WorkspaceName_Tooltip", "Set the Workspace Name"))
-						.HintText(LOCTEXT("WorkspaceName", "Workspace Name"))
+						.ToolTipText(LOCTEXT("WorkspaceName_Tooltip", "Enter the Name of the new Workspace to create"))
+						.HintText(LOCTEXT("WorkspaceName_Hint", "Workspace Name to create"))
 						.OnTextCommitted(this, &SPlasticSourceControlSettings::OnWorkspaceNameCommited)
 						.Font(Font)
 					]
@@ -190,7 +215,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					[
 						SNew(STextBlock)
 						.Text(LOCTEXT("RepositoryName", "Repository Name"))
-						.ToolTipText(LOCTEXT("RepositoryName_Tooltip", "Set the Repository Name"))
+						.ToolTipText(LOCTEXT("RepositoryName_Tooltip", "Enter the Name of the new Repository to create"))
 						.Font(Font)
 					]
 				]
@@ -204,8 +229,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					[
 						SNew(SEditableTextBox)
 						.Text(this, &SPlasticSourceControlSettings::GetRepositoryName)
-						.ToolTipText(LOCTEXT("RepositoryName_Tooltip", "Set the Repository Name"))
-						.HintText(LOCTEXT("RepositoryName", "Repository Name"))
+						.ToolTipText(LOCTEXT("RepositoryName_Tooltip", "Enter the Name of the new Repository to create"))
+						.HintText(LOCTEXT("RepositoryName_Hint", "Repository Name to create"))
 						.OnTextCommitted(this, &SPlasticSourceControlSettings::OnRepositoryNameCommited)
 						.Font(Font)
 					]
@@ -229,7 +254,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					[
 						SNew(STextBlock)
 						.Text(LOCTEXT("ServerUrl", "Server URL address:port"))
-						.ToolTipText(LOCTEXT("ServerUrl_Tooltip", "Set the Server URL in the form address:port (localhost:8084)"))
+						.ToolTipText(LOCTEXT("ServerUrl_Tooltip", "Enter the Server URL in the form address:port (localhost:8087)"))
 						.Font(Font)
 					]
 				]
@@ -243,8 +268,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					[
 						SNew(SEditableTextBox)
 						.Text(this, &SPlasticSourceControlSettings::GetServerUrl)
-						.ToolTipText(LOCTEXT("ServerUrl_Tooltip", "Set the Server URL in the form address:port (localhost:8084)"))
-						.HintText(LOCTEXT("ServerUrl", "Set the Workspace Name"))
+						.ToolTipText(LOCTEXT("ServerUrl_Tooltip", "Enter the Server URL in the form address:port (localhost:8087)"))
+						.HintText(LOCTEXT("ServerUrl", "Enter the Server URL"))
 						.OnTextCommitted(this, &SPlasticSourceControlSettings::OnServerUrlCommited)
 						.Font(Font)
 					]
@@ -305,7 +330,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.VAlign(VAlign_Center)
 					[
 						SNew(SCheckBox)
-						.ToolTipText(LOCTEXT("InitialCommit_Tooltip", "Make the initial Plastic SCM commit"))
+						.ToolTipText(LOCTEXT("InitialCommit_Tooltip", "Make the initial Plastic SCM checkin"))
 						.IsChecked(ECheckBoxState::Checked)
 						.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedInitialCommit)
 					]
@@ -320,8 +345,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.VAlign(VAlign_Center)
 					[
 						SNew(STextBlock)
-						.Text(LOCTEXT("InitialCommit", "Make the initial Plastic SCM Commit"))
-						.ToolTipText(LOCTEXT("InitialCommit_Tooltip", "Make the initial Plastic SCM commit"))
+						.Text(LOCTEXT("InitialCommit", "Make the initial Plastic SCM Checkin"))
+						.ToolTipText(LOCTEXT("InitialCommit_Tooltip", "Click to make the initial Plastic SCM Checkin"))
 						.Font(Font)
 					]
 				]
@@ -335,8 +360,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					[
 						SNew(SMultiLineEditableTextBox)
 						.Text(this, &SPlasticSourceControlSettings::GetInitialCommitMessage)
-						.ToolTipText(LOCTEXT("InitialCommitMessage_Tooltip", "Message of initial commit"))
-						.HintText(LOCTEXT("InitialCommitMessage_Tooltip", "Message of initial commit"))
+						.ToolTipText(LOCTEXT("InitialCommitMessage_Tooltip", "Enter the message for the initial checkin"))
+						.HintText(LOCTEXT("InitialCommitMessage_Hint", "Message for the initial checkin"))
 						.OnTextCommitted(this, &SPlasticSourceControlSettings::OnInitialCommitMessageCommited)
 						.Font(Font)
 					]
@@ -361,8 +386,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					[
 						SNew(SButton)
 						.IsEnabled(this, &SPlasticSourceControlSettings::IsReadyToInitializePlasticWorkspace)
-						.Text(LOCTEXT("PlasticInitWorkspace", "Initialize project with Plastic SCM"))
-						.ToolTipText(LOCTEXT("PlasticInitWorkspace_Tooltip", "Initialize current project as a new Plastic SCM workspace"))
+						.Text(LOCTEXT("PlasticInitWorkspace", "Create a new Plastic SCM workspace for the current project"))
+						.ToolTipText(LOCTEXT("PlasticInitWorkspace_Tooltip", "Create and initialize a new Plastic SCM workspace and repository for the current project"))
 						.OnClicked(this, &SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace)
 						.HAlign(HAlign_Center)
 					]
@@ -437,7 +462,7 @@ bool SPlasticSourceControlSettings::IsReadyToInitializePlasticWorkspace() const
 	const bool bWorkspaceNameOk = !WorkspaceName.IsEmpty();
 	// Either RepositoryName should be empty, or ServerUrl should also be filled
 	const bool bRepositoryNameOk = RepositoryName.IsEmpty() || !ServerUrl.IsEmpty();
-	// If Initial Commit is requested, commit message cannot be empty
+	// If Initial Commit is requested, checkin message cannot be empty
 	const bool bInitialCommitOk = (!bAutoInitialCommit || !InitialCommitMessage.IsEmpty());
 	return bWorkspaceNameOk && bRepositoryNameOk && bInitialCommitOk;
 }
@@ -547,7 +572,7 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace() cons
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, ProjectFiles, InfoMessages, ErrorMessages);
 		if (bAutoInitialCommit && bResult)
 		{
-			// optionnal initial commit with custom message
+			// optionnal initial checkin with custom message
 			TArray<FString> Parameters;
 			FString ParamCommitMsg = TEXT("-c=\"");
 			ParamCommitMsg += InitialCommitMessage.ToString();
