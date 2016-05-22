@@ -537,8 +537,9 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 	if (1 == InFiles.Num() && !FPaths::FileExists(InFiles[0]))
 	{
 		// Special case for "status" of a non-existing file (newly created/deleted)
-		// or the Engine Content folder (so not a regular file) : Unknown state
 		OutStates.Add(FPlasticSourceControlState(InFiles[0]));
+		FPlasticSourceControlState& FileState = OutStates.Last();
+		FileState.WorkspaceState = EWorkspaceState::Private; // Not Controled
 		bResult = false; // false so that we do not try to get it's lock state with "fileinfo"
 	}
 	else
