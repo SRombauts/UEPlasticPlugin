@@ -414,7 +414,7 @@ void GetBranchName(const FString& InWorkspaceRoot, FString& OutBranchName)
 
 /**
  * Extract and interpret the file state from the given Plastic "status" result.
- * empty string = unmodified or hidden changes
+ * empty string = unmodified/controlled or hidden changes
  CH Content\Changed_BP.uasset
  CO Content\CheckedOut_BP.uasset
  CP Content\Copied_BP.uasset
@@ -515,7 +515,7 @@ static void ParseStatusResult(const FString& InFile, const TArray<FString>& InRe
 	}
 	else
 	{
-		// No result means Controled/Unchanged file
+		// No result means Controled/Unchanged file/Hidden changes
 		OutFileState.WorkspaceState = EWorkspaceState::Controled;
 	}
 	// @todo: temporary debug log
@@ -663,7 +663,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMe
 {
 	bool bResult = true;
 
-	// Plastic fileinfo does not return any results when called with at least on file not in a workspace
+	// Plastic fileinfo does not return any results when called with at least one file not in a workspace
 	// 1) So here we group files by path (ie. by subdirectory)
 	TMap<FString, TArray<FString>> GroupOfFiles;
 	for (const FString& File : InFiles)
@@ -926,21 +926,21 @@ bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>( "PlasticSourceControl" );
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-	const FDateTime Now = FDateTime::Now();
+	int NbStatesUpdated = 0;
 
 	for (const auto& InState : InStates)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(InState.LocalFilename);
-		auto History = MoveTemp(State->History); // This avoids a copy in next operation
-		*State = InState;
-		State->History = MoveTemp(History);
-		// Timestamp is used to throttle status requests, so update it to current time:
-		State->TimeStamp = Now;
-		// @todo: temporary debug logs
-//		UE_LOG(LogSourceControl, Log, TEXT("UpdateCachedStates(%s): %s (at %s)"), *(State->LocalFilename), State->ToString(), *(State->TimeStamp.ToString()));
+		if (State->WorkspaceState != InState.WorkspaceState)
+		{
+			State->WorkspaceState = InState.WorkspaceState;
+			State->PendingMergeBaseFileHash = InState.PendingMergeBaseFileHash;
+			State->TimeStamp = InState.TimeStamp; // TODO: Bug report: Workaround a bug with the Source Control Module not updating file state after a "Save"
+			NbStatesUpdated++;
+		}
 	}
 
-	return InStates.Num() > 0;
+	return (NbStatesUpdated > 0);
 }
 
 /**
