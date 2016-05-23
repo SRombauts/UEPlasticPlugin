@@ -36,6 +36,10 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	{
 		// Execute a 'checkconnection' command to check the connectivity of the server.
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		if (!InCommand.bCommandSuccessful || InCommand.ErrorMessages.Num() > 0 || InCommand.InfoMessages.Num() == 0)
+		{
+			StaticCastSharedRef<FConnect>(InCommand.Operation)->SetErrorText(FText::FromString(InCommand.ErrorMessages[0]));
+		}
 	}
 
 	return InCommand.bCommandSuccessful;
