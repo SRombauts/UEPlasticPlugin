@@ -66,16 +66,15 @@ Alpha version 0.4.1 2016/05/11 :
 - add support for partial checkin (like Gluon, for artists)
 
 #### Bugs
-.6 Checkout in a not up-to-date workspace: checkin fails silently.
+.10 "Infinite checkin" when server goes offline (each "status" command takes up 3s)
 .12 Revert "Unchanged only" does nothing.
+Rename is not working as intended
 
 #### Known issues:
 - Error messages with accents are not handled (for instance connection error in French)
-- the Editor does not show deleted files => no way to checkin them!
-- the Editor does not show missing files
-- the Editor does not show .uproject file
-- a Move/Rename leaves a redirector file behind:
-  renaming a Blueprint in Editor leaves a tracker file, AND modify too much the asset to enable Plastic to track its history through renaming
+- the Editor does not show deleted files: no way to check them in
+- the Editor does not show missing files: no way to revert/restore them
+- the Editor does not show .uproject file: no way
 - the Editor does no show folder status and is not able to manage them
-- reverting a Blueprint asset does not update content in Editor!
+- reverting a Blueprint asset does not update content in Editor (and popup saying "is in use")!
 - Branch is not in the current Editor workflow (but on Epic Roadmap)

@@ -42,7 +42,11 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 
 bool FPlasticSourceControlRevision::GetAnnotated( TArray<FAnnotationLine>& OutLines ) const
 {
-	// TODO GetAnnotated: called only by SourceControlHelpers::AnnotateFile(), which is called only by ICrashDebugHelper::AddAnnotatedSourceToReport() using a changelist/check identifier
+	// TODO GetAnnotated: called only by SourceControlHelpers::AnnotateFile(),
+	//      called only by ICrashDebugHelper::AddAnnotatedSourceToReport() using a changelist/check identifier
+	//      called only by FCrashDebugHelperWindows::CreateMinidumpDiagnosticReport() (and Mac) to Extract annotated lines from a source file stored in Perforce, and add to the crash report.
+	//      called by - MinidumpDiagnosticsApp RunMinidumpDiagnostics() for Perfore ONLY "MinidumpDiagnostics.exe <Crash.dmp> [-Annotate] [-SyncSymbols] [-SyncMicrosoftSymbols]"
+	//                - FWindowsErrorReport::DiagnoseReport() (and Mac)
 	return false;
 }
 
@@ -90,8 +94,8 @@ const FString& FPlasticSourceControlRevision::GetAction() const
 
 TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlRevision::GetBranchSource() const
 {
-	// TODO if this revision was copied from some other revision, then that source revision should
-	//       be returned here (this should be determined when history is being fetched)
+	// TODO if this revision was copied/moved from some other revision, then that source revision should
+	//      be returned here (this should be determined when history is being fetched)
 	return nullptr;
 }
 

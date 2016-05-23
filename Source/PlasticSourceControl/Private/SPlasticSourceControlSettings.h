@@ -26,7 +26,7 @@ private:
 	FText GetPathToWorkspaceRoot() const;
 	FText GetUserName() const;
 
-	/** Delegate to initialize a new Plastic workspace (TODO and repository) */
+	/** Delegate to initialize a new Plastic workspace and repository */
 	EVisibility CanInitializePlasticWorkspace() const;
 	bool IsReadyToInitializePlasticWorkspace() const;
 	void OnWorkspaceNameCommited(const FText& InText, ETextCommit::Type InCommitType);
