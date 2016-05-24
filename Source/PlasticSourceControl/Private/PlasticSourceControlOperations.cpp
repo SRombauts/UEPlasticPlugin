@@ -232,8 +232,17 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 
 	if (InCommand.Files.Num() > 0)
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
-		PlasticSourceControlUtils::RemoveRedundantErrors(InCommand, TEXT("is not in a workspace."));
+		{
+			// Execute beforehand a 'checkconnection' command to check the connectivity of the server.
+			TArray<FString> Files;
+			Files.Add(InCommand.PathToWorkspaceRoot);
+			InCommand.bConnectionDropped = !PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+		if (!InCommand.bConnectionDropped)
+		{
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
+			PlasticSourceControlUtils::RemoveRedundantErrors(InCommand, TEXT("is not in a workspace."));
+		}
 		if (!InCommand.bCommandSuccessful)
 		{
 			// In case of error, execute a 'checkconnection' command to check the connectivity of the server.
@@ -265,6 +274,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	}
 	else
 	{
+		UE_LOG(LogSourceControl, Log, TEXT("status (with no files)"));
 		// Perforce "opened files" are those that have been modified (or added/deleted): that is what we get with a simple Plastic status from the root
 		if (Operation->ShouldGetOpenedOnly())
 		{
