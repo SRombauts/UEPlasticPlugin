@@ -95,10 +95,11 @@ FName FPlasticSourceControlState::GetIconName() const
 	case EWorkspaceState::CheckedOut:
 		return FName("Perforce.CheckedOut");
 	case EWorkspaceState::Added:
-	case EWorkspaceState::Moved:
-	case EWorkspaceState::Copied:
 	case EWorkspaceState::Replaced:
+	case EWorkspaceState::Copied:
 		return FName("Perforce.OpenForAdd");
+	case EWorkspaceState::Moved:
+		return FName("Perforce.Branched");
 	case EWorkspaceState::Deleted:
 		return FName("Perforce.MarkedForDelete");
 	case EWorkspaceState::Changed:
@@ -128,10 +129,11 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	case EWorkspaceState::CheckedOut:
 		return FName("Perforce.CheckedOut_Small");
 	case EWorkspaceState::Added:
-	case EWorkspaceState::Moved:
-	case EWorkspaceState::Copied:
 	case EWorkspaceState::Replaced:
+	case EWorkspaceState::Copied:
 		return FName("Perforce.OpenForAdd_Small");
+	case EWorkspaceState::Moved:
+		return FName("Perforce.Branched_Small");
 	case EWorkspaceState::Deleted:
 		return FName("Perforce.MarkedForDelete_Small");
 	case EWorkspaceState::Changed:

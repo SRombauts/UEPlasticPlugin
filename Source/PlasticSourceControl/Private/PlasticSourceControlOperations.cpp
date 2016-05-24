@@ -6,6 +6,7 @@
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlUtils.h"
+#include "AssetRegistryModule.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -227,7 +228,8 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FUpdateStatus>(InCommand.Operation);
 
-	UE_LOG(LogSourceControl, Log, TEXT("status"));
+	// @todo: temporary debug log
+	UE_LOG(LogSourceControl, Log, TEXT("status (of %d files)"), InCommand.Files.Num());
 
 	if (InCommand.Files.Num() > 0)
 	{
@@ -274,12 +276,15 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	else
 	{
 		UE_LOG(LogSourceControl, Log, TEXT("status (with no files)"));
+		InCommand.bCommandSuccessful = true;
 		// Perforce "opened files" are those that have been modified (or added/deleted): that is what we get with a simple Plastic status from the root
 		if (Operation->ShouldGetOpenedOnly())
 		{
+			/** TODO: UpdateStatus() from the ContentDir()
 			TArray<FString> Files;
 			Files.Add(FPaths::ConvertRelativePathToFull(FPaths::GameDir()));
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Files, InCommand.ErrorMessages, States);
+			*/
 		}
 	}
 
@@ -305,6 +310,114 @@ bool FPlasticUpdateStatusWorker::UpdateStates() const
 	}
 
 	return bUpdated;
+}
+
+FName FPlasticCopyWorker::GetName() const
+{
+	return "Copy";
+}
+
+bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FCopy, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCopy>(InCommand.Operation);
+
+	if (InCommand.Files.Num() > 0)
+	{
+		const FString& Origin = InCommand.Files[0];
+		const FString Destination = FPaths::ConvertRelativePathToFull(Operation->GetDestination());
+
+		// Detect if the copy leaved a redirector (ie it was a rename/move) or not (it was a duplicate/copy)
+		bool bIsCopyOperation = false;
+		FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+		FString PackageName;
+		if (FPackageName::TryConvertFilenameToLongPackageName(Origin, PackageName))
+		{
+			TArray<FAssetData> AssetsData;
+			AssetRegistryModule.Get().GetAssetsByPackageName(FName(*PackageName), AssetsData);
+			UE_LOG(LogSourceControl, Log, TEXT("PackageName: %s, AssetsData: Num=%d"), *PackageName, AssetsData.Num());
+			if (AssetsData.Num() > 0)
+			{
+				const FAssetData& AssetData = AssetsData[0];
+				if (!AssetData.IsRedirector())
+				{
+					// @todo temporary debug log
+					UE_LOG(LogSourceControl, Log, TEXT("%s is a plain asset, so it's a duplicate/copy"), *Origin);
+					bIsCopyOperation = true;
+				}
+				else
+				{
+					// @todo temporary debug log
+					UE_LOG(LogSourceControl, Log, TEXT("%s is a redirector, so it's a move/rename"), *Origin);
+				}
+			}
+			else
+			{
+				// @todo temporary debug log
+				// no asset in package (no redirector) so it should be a rename/move of a just added file
+				UE_LOG(LogSourceControl, Log, TEXT("%s does not have asset in package (ie. no redirector) so it's a move/rename of a newly added file"), *Origin);
+			}
+		}
+
+		// Now start the real work: 
+		if (!bIsCopyOperation)
+		{
+			UE_LOG(LogSourceControl, Log, TEXT("Moving %s to %s..."), *Origin, *Destination);
+			// In case of rename, we have to undo what the Editor (created a redirector and added the dest asset), and then redo it with Plastic SCM
+			// - backup the redirector (if it exists) to a temp file
+			const bool bReplace = true;
+			const bool bEvenIfReadOnly = true;
+			const FString TempFileName = FPaths::CreateTempFilename(*FPaths::GameLogDir(), TEXT("Plastic-MoveTemp"), TEXT(".uasset"));
+			InCommand.bCommandSuccessful = IFileManager::Get().Move(*TempFileName, *Origin, bReplace, bEvenIfReadOnly);
+			// - revert the 'cm add' that was applied to the destination by the Editor
+			if (InCommand.bCommandSuccessful)
+			{
+				TArray<FString> DestinationFiles;
+				DestinationFiles.Add(Destination);
+				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), DestinationFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+			}
+			// - move back the asset from the destination to it's original location
+			if (InCommand.bCommandSuccessful)
+			{
+				InCommand.bCommandSuccessful = IFileManager::Get().Move(*Origin, *Destination, bReplace, bEvenIfReadOnly);
+			}
+			// - execute a 'cm move' command to the destination
+			if (InCommand.bCommandSuccessful)
+			{
+				TArray<FString> Files;
+				Files.Add(Origin);
+				Files.Add(Destination);
+				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("move"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+			}
+			// - restore the redirector file (if it exists) to it's former location
+			if (InCommand.bCommandSuccessful)
+			{
+				InCommand.bCommandSuccessful = IFileManager::Get().Move(*Origin, *TempFileName, bReplace, bEvenIfReadOnly);
+			}
+			// - add the redirector file (if it exists) to source control
+			if (InCommand.bCommandSuccessful)
+			{
+				TArray<FString> Files;
+				Files.Add(Origin);
+				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+			}
+		}
+		else
+		{
+			// copy operation: destination file already added to Source Control, and original asset not changed, so nothing to do
+			InCommand.bCommandSuccessful = true;
+		}
+
+		// now update the status of our files
+		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
+	}
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticCopyWorker::UpdateStates() const
+{
+	return PlasticSourceControlUtils::UpdateCachedStates(States);
 }
 
 FName FPlasticSyncWorker::GetName() const

@@ -9,6 +9,7 @@ public class PlasticSourceControl : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"Core",
+				"CoreUObject",
 				"Slate",
 				"SlateCore",
 				"EditorStyle",
@@ -16,6 +17,7 @@ public class PlasticSourceControl : ModuleRules
 				"InputCore",
 				"XmlParser2",
 				"Projects",
+				"AssetRegistry",
 			}
 		);
 	}

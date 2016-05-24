@@ -1,5 +1,7 @@
 // Copyright (c) 2016 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
+// Specialization of classes defineds in Engine\Source\Developer\SourceControl\Public\SourceControlOperations.h
+
 #pragma once
 
 #include "IPlasticSourceControlWorker.h"
@@ -125,7 +127,22 @@ public:
 	TMap<FString, TPlasticSourceControlHistory> Histories;
 };
 
-/** @todo Plastic add to mark a conflict as resolved
+/** Copy or Move operation on a single file */
+class FPlasticCopyWorker : public IPlasticSourceControlWorker
+{
+public:
+	virtual ~FPlasticCopyWorker() {}
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() const override;
+
+public:
+	// Temporary states for results
+	TArray<FPlasticSourceControlState> States;
+};
+
+/** TODO Plastic add to mark a conflict as resolved
 class FPlasticResolveWorker : public IPlasticSourceControlWorker
 {
 public:

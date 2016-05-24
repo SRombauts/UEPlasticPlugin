@@ -507,7 +507,7 @@ static void ParseStatusResult(const FString& InFile, const TArray<FString>& InRe
 	static const FString EmptyString(TEXT(""));
 	if (0 < InResults.Num())
 	{
-		const FString& Status = InResults[0];
+		const FString& Status = InResults[InResults.Num()-1]; // NOTE: in case of rename by editor, there are two results: checkouted AND renamed
 		const FPlasticStatusParser StatusParser(Status);
 		OutFileState.WorkspaceState = StatusParser.State;
 	}

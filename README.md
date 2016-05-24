@@ -38,10 +38,11 @@ Alpha version 0.4.1 2016/05/11 :
 - show current branch name in status text
 - display status icons to show controled/checked-out/added/deleted/private/changed/ignored files
 - display locked files
-- add, duplicate, move/rename a file
+- add, duplicate a file
+- move/rename a file or a folder
 - revert modifications of a file
 - checkin a set of files with a multiline UTF-8 comment
-- migrate an asset between two projects if both are using Plastic SCM
+- migrate (copy) an asset between two projects if both are using Plastic SCM
 - delete file (but no way to checkin them, see known issues bellow)
 - update workspace to latest head (Sync command)
 - show history of a file
@@ -69,9 +70,7 @@ Alpha version 0.4.1 2016/05/11 :
 - add support for partial checkin (like Gluon, for artists)
 
 #### Bugs
-.10 "Infinite checkin" when server goes offline (each "status" command takes up 3s)
 .12 Revert "Unchanged only" does nothing.
-Rename is not working as intended
 
 #### Known issues:
 - Error messages with accents are not handled (for instance connection error in French)
