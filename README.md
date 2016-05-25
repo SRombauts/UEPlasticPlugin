@@ -75,6 +75,7 @@ Rename is not working as intended
 - the Editor does not show deleted files: no way to check them in
 - the Editor does not show missing files: no way to revert/restore them
 - the Editor does not show .uproject file: no way
-- the Editor does no show folder status and is not able to manage them
+- the Editor does not show folder status and is not able to manage them
+- the Editor does not refresh status of assets in subdirectories at startup, so "Mark for add" is wrongly displayed in context menu for thoses subdirectories
 - reverting a Blueprint asset does not update content in Editor (and popup saying "is in use")!
 - Branch is not in the current Editor workflow (but on Epic Roadmap)
