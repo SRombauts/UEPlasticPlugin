@@ -11,7 +11,7 @@ namespace EWorkspaceState
 	{
 		Unknown,
 		Ignored,
-		Controled, // called "Pristine" in Perforce, "Unchanged" in Git, "Clean" in SVN
+		Controlled, // called "Pristine" in Perforce, "Unchanged" in Git, "Clean" in SVN
 		CheckedOut,
 		Added,
 		Moved, // Renamed
@@ -21,7 +21,7 @@ namespace EWorkspaceState
 		Changed, // Modified but not CheckedOut
 		Conflicted,
 		LockedByOther, // LockedBy with name of someone else than cm whoami
-		Private, // "Not Controlled"/"Not In Depot"/"Untraked"
+		Private, // "Not Controlled"/"Not In Depot"/"Untracked"
 	};
 
 	// debug log utility

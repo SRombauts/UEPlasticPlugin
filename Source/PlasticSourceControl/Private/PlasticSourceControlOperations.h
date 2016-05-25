@@ -47,7 +47,7 @@ public:
 	TArray<FPlasticSourceControlState> States;
 };
 
-/** Add an untraked file to source control (so only a subset of the Plastic add command). */
+/** Add an untracked file to source control (so only a subset of the Plastic add command). */
 class FPlasticMarkForAddWorker : public IPlasticSourceControlWorker
 {
 public:

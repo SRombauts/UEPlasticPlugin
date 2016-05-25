@@ -572,7 +572,7 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace() cons
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, ProjectFiles, InfoMessages, ErrorMessages);
 		if (bAutoInitialCommit && bResult)
 		{
-			// optionnal initial checkin with custom message
+			// optional initial checkin with custom message
 			TArray<FString> Parameters;
 			FString ParamCommitMsg = TEXT("-c=\"");
 			ParamCommitMsg += InitialCommitMessage.ToString();

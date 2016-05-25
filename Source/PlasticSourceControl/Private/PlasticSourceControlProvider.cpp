@@ -331,7 +331,7 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		// Issue the command asynchronously...
 		IssueCommand( InCommand );
 
-		// ... then wait for its completion (thus making it synchrounous)
+		// ... then wait for its completion (thus making it synchronous)
 		while(!InCommand.bExecuteProcessed)
 		{
 			// Tick the command queue and update progress.

@@ -134,7 +134,7 @@ bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParam
 
 	if (ShellProcessHandle.IsValid())
 	{
-		// Detect previsous crash of cm.exe and restart 'cm shell'
+		// Detect previous crash of cm.exe and restart 'cm shell'
 		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternal: 'cm shell' has stopped. Restarting!"), FPlatformProcess::IsProcRunning(ShellProcessHandle));
@@ -172,7 +172,7 @@ bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParam
 			FString Output = FPlatformProcess::ReadPipe(ShellOutputPipeRead);
 			if (0 < Output.Len())
 			{
-				LastActivity = FPlatformTime::Seconds(); // freshen the timestamp while cm is still actively outputing information
+				LastActivity = FPlatformTime::Seconds(); // freshen the timestamp while cm is still actively outputting information
 				OutResults.Append(MoveTemp(Output));
 				// Search the output for the line containing the result code, also indicating the end of the command
 				const uint32 IndexCommandResult = OutResults.Find(TEXT("CommandResult "), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
@@ -202,7 +202,7 @@ bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParam
 		}
 		if (!InCommand.Equals(TEXT("exit")) && !FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
-			// 'cm shell' normaly only terminates in case of 'exit' command. Will restart on next command.
+			// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
 			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternal(%s): 'cm shell' stopped after '%lf's Out=\n%s"), *InCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
 		}
 		else
@@ -456,7 +456,7 @@ public:
 		{
 			State = EWorkspaceState::Added;
 		}
-		else if (FileStatus == "PR") // Not Controled/Not in Depot/Untraked
+		else if (FileStatus == "PR") // Not Controlled/Not in Depot/Untracked
 		{
 			State = EWorkspaceState::Private;
 		}
@@ -466,7 +466,7 @@ public:
 		}
 		else if ((FileStatus == "DE") || (FileStatus == "LD")) // TODO: need to differentiate for CanEdit/CanCheckout/CanCheckIn?
 		{
-			State = EWorkspaceState::Deleted; // Deleted or Locally Deleleted (ie. missing)
+			State = EWorkspaceState::Deleted; // Deleted or Locally Deleted (ie. missing)
 		}
 		else if ((FileStatus == "MV") || (FileStatus == "LM")) // Renamed TODO: need to differentiate for CanEdit/CanCheckout/CanCheckIn?
 		{
@@ -474,8 +474,6 @@ public:
 		}
 		else if (FileStatus == "conflited") // TODO: what is the appropriate status?
 		{
-			// "Unmerged" conflict cases are generally marked with a "U",
-			// but there are also the special cases of both "A"dded, or both "D"eleted
 			State = EWorkspaceState::Conflicted;
 		}
 		else
@@ -515,8 +513,8 @@ static void ParseStatusResult(const FString& InFile, const TArray<FString>& InRe
 	}
 	else
 	{
-		// No result means Controled/Unchanged file/Hidden changes
-		OutFileState.WorkspaceState = EWorkspaceState::Controled;
+		// No result means Controlled/Unchanged file/Hidden changes
+		OutFileState.WorkspaceState = EWorkspaceState::Controlled;
 	}
 	// @todo: temporary debug log
 	UE_LOG(LogSourceControl, Log, TEXT("%s = %d:%s"), *InFile, static_cast<uint32>(OutFileState.WorkspaceState), OutFileState.ToString());
@@ -539,7 +537,7 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 		// Special case for "status" of a non-existing file (newly created/deleted)
 		OutStates.Add(FPlasticSourceControlState(InFiles[0]));
 		FPlasticSourceControlState& FileState = OutStates.Last();
-		FileState.WorkspaceState = EWorkspaceState::Private; // Not Controled
+		FileState.WorkspaceState = EWorkspaceState::Private; // Not Controlled
 		bResult = false; // false so that we do not try to get it's lock state with "fileinfo"
 	}
 	else

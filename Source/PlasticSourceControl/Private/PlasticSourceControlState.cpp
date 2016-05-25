@@ -14,7 +14,7 @@ static const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState)
 	{
 	case EWorkspaceState::Unknown: WorkspaceStateStr = TEXT("Unknown"); break;
 	case EWorkspaceState::Ignored: WorkspaceStateStr = TEXT("Ignored"); break;
-	case EWorkspaceState::Controled: WorkspaceStateStr = TEXT("Controled"); break;
+	case EWorkspaceState::Controlled: WorkspaceStateStr = TEXT("Controlled"); break;
 	case EWorkspaceState::CheckedOut: WorkspaceStateStr = TEXT("CheckedOut"); break;
 	case EWorkspaceState::Added: WorkspaceStateStr = TEXT("Added"); break;
 	case EWorkspaceState::Moved: WorkspaceStateStr = TEXT("Moved"); break;
@@ -110,7 +110,7 @@ FName FPlasticSourceControlState::GetIconName() const
 		return FName("Perforce.NotInDepot");
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:
-	case EWorkspaceState::Controled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
+	case EWorkspaceState::Controlled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
 	default:
 		return NAME_None;
 	}
@@ -143,7 +143,7 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 		return FName("Perforce.NotInDepot_Small");
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:
-	case EWorkspaceState::Controled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
+	case EWorkspaceState::Controlled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
 	default:
 		return NAME_None;
 	}
@@ -157,8 +157,8 @@ FText FPlasticSourceControlState::GetDisplayName() const
 		return LOCTEXT("Unknown", "Unknown");
 	case EWorkspaceState::Ignored:
 		return LOCTEXT("Ignored", "Ignored");
-	case EWorkspaceState::Controled:
-		return LOCTEXT("Controled", "Controled");
+	case EWorkspaceState::Controlled:
+		return LOCTEXT("Controlled", "Controlled");
 	case EWorkspaceState::CheckedOut:
 		return LOCTEXT("CheckedOut", "CheckedOut");
 	case EWorkspaceState::Added:
@@ -192,7 +192,7 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 		return LOCTEXT("Unknown_Tooltip", "Unknown source control state");
 	case EWorkspaceState::Ignored:
 		return LOCTEXT("Ignored_Tooltip", "Item is being ignored.");
-	case EWorkspaceState::Controled:
+	case EWorkspaceState::Controlled:
 		return LOCTEXT("Pristine_Tooltip", "There are no modifications");
 	case EWorkspaceState::CheckedOut:
 		return LOCTEXT("CheckedOut_Tooltip", "The file(s) are checked out");
@@ -224,7 +224,7 @@ const FDateTime& FPlasticSourceControlState::GetTimeStamp() const
 // Deleted and Missing assets cannot appear in the Content Browser
 bool FPlasticSourceControlState::CanCheckIn() const
 {
-	// TODO: cf. CanCheckout Moved/Copied? Also Localy Moved?
+	// TODO: cf. CanCheckout Moved/Copied? Also Locally Moved?
 	const bool bCanCheckIn = WorkspaceState == EWorkspaceState::Added
 		|| WorkspaceState == EWorkspaceState::Deleted
 		|| WorkspaceState == EWorkspaceState::Changed
@@ -239,7 +239,7 @@ bool FPlasticSourceControlState::CanCheckIn() const
 bool FPlasticSourceControlState::CanCheckout() const
 {
 	// TODO: Moved/Copied?
-	const bool bCanCheckout  = WorkspaceState == EWorkspaceState::Controled	// In source control, Unmodified
+	const bool bCanCheckout  = WorkspaceState == EWorkspaceState::Controlled	// In source control, Unmodified
 							|| WorkspaceState == EWorkspaceState::Changed;	// In source control, but not checked-out
 
 	UE_LOG(LogSourceControl, Log, TEXT("CanCheckout(%s)=%d"), *LocalFilename, bCanCheckout);
@@ -249,7 +249,7 @@ bool FPlasticSourceControlState::CanCheckout() const
 
 bool FPlasticSourceControlState::IsCheckedOut() const
 {
-	// TODO: cf. CanCheckout Moved/Copied? Also Localy Moved?
+	// TODO: cf. CanCheckout Moved/Copied? Also Locally Moved?
 	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
 							|| WorkspaceState == EWorkspaceState::Added
 							|| WorkspaceState == EWorkspaceState::Moved
@@ -317,7 +317,7 @@ bool FPlasticSourceControlState::IsIgnored() const
 
 bool FPlasticSourceControlState::CanEdit() const
 {
-	// TODO: cf. CanCheckout Moved/Copied? Also Localy Moved?
+	// TODO: cf. CanCheckout Moved/Copied? Also Locally Moved?
 	const bool bCanEdit =  WorkspaceState == EWorkspaceState::CheckedOut
 						|| WorkspaceState == EWorkspaceState::Added
 						|| WorkspaceState == EWorkspaceState::Moved
@@ -346,7 +346,7 @@ bool FPlasticSourceControlState::IsModified() const
 	//
 	// So here we must take care to enumerate all states that need to be commited, all other will be discarded:
 	//  - Unknown
-	//  - Controled (Unchanged)
+	//  - Controlled (Unchanged)
 	//  - Private
 	//  - Ignored
 	const bool bIsModified =   WorkspaceState == EWorkspaceState::CheckedOut

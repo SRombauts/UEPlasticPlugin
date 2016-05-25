@@ -103,7 +103,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if (CommitMsgFile.GetFilename().Len() > 0)
 	{
 		TArray<FString> Parameters;
-		Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Localy
+		Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
 		FString ParamCommitMsgFilename = TEXT("--commentsfile=\"");
 		ParamCommitMsgFilename += FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename());
 		ParamCommitMsgFilename += TEXT("\"");
