@@ -566,10 +566,12 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace() cons
 				ProjectFiles.Add(GetIgnoreFileName());
 			}
 		}
-		// Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)
-		TArray<FString> Parameters;
-		Parameters.Add(TEXT("-R"));
-		bResult = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, ProjectFiles, InfoMessages, ErrorMessages);
+		{
+         // Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)
+         TArray<FString> Parameters;
+         Parameters.Add(TEXT("-R"));
+         bResult = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, ProjectFiles, InfoMessages, ErrorMessages);
+		}
 		if (bAutoInitialCommit && bResult)
 		{
 			// optional initial checkin with custom message

@@ -34,9 +34,9 @@ public:
 	FPlasticSourceControlState( const FString& InLocalFilename )
 		: LocalFilename(InLocalFilename)
 		, WorkspaceState(EWorkspaceState::Unknown)
-		, TimeStamp(0)
 		, DepotRevisionChangeset(-1)
 		, LocalRevisionChangeset(-1)
+		, TimeStamp(0)
 	{
 	}
 
