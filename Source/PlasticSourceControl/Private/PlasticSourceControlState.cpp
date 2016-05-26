@@ -230,11 +230,12 @@ const FDateTime& FPlasticSourceControlState::GetTimeStamp() const
 // Deleted and Missing assets cannot appear in the Content Browser
 bool FPlasticSourceControlState::CanCheckIn() const
 {
-	// TODO: cf. CanCheckout Moved/Copied? Also Locally Moved?
 	const bool bCanCheckIn = WorkspaceState == EWorkspaceState::Added
 		|| WorkspaceState == EWorkspaceState::Deleted
 		|| WorkspaceState == EWorkspaceState::Changed
 		|| WorkspaceState == EWorkspaceState::Moved
+		|| WorkspaceState == EWorkspaceState::Copied
+		|| WorkspaceState == EWorkspaceState::Replaced
 		|| WorkspaceState == EWorkspaceState::CheckedOut;
 
 	UE_LOG(LogSourceControl, Log, TEXT("CanCheckIn(%s)=%d"), *LocalFilename, bCanCheckIn);
@@ -244,7 +245,6 @@ bool FPlasticSourceControlState::CanCheckIn() const
 
 bool FPlasticSourceControlState::CanCheckout() const
 {
-	// TODO: Moved/Copied?
 	const bool bCanCheckout  = WorkspaceState == EWorkspaceState::Controlled	// In source control, Unmodified
 							|| WorkspaceState == EWorkspaceState::Changed;	// In source control, but not checked-out
 
@@ -255,12 +255,8 @@ bool FPlasticSourceControlState::CanCheckout() const
 
 bool FPlasticSourceControlState::IsCheckedOut() const
 {
-	// TODO: cf. CanCheckout Moved/Copied? Also Locally Moved?
 	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
-							|| WorkspaceState == EWorkspaceState::Added
-							|| WorkspaceState == EWorkspaceState::Moved
-							|| WorkspaceState == EWorkspaceState::Copied
-							|| WorkspaceState == EWorkspaceState::Replaced;
+							|| WorkspaceState == EWorkspaceState::Moved;
 
 	UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOut(%s)=%d"), *LocalFilename, bIsCheckedOut);
 
@@ -302,9 +298,13 @@ bool FPlasticSourceControlState::IsSourceControlled() const
 
 bool FPlasticSourceControlState::IsAdded() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Added);
+	const bool bIsAdded =	WorkspaceState == EWorkspaceState::Added
+						 || WorkspaceState == EWorkspaceState::Copied
+						 || WorkspaceState == EWorkspaceState::Replaced;
 
-	return WorkspaceState == EWorkspaceState::Added; // TODO Moved & Copie? 
+	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, bIsAdded);
+
+	return bIsAdded;
 }
 
 bool FPlasticSourceControlState::IsDeleted() const
@@ -323,7 +323,6 @@ bool FPlasticSourceControlState::IsIgnored() const
 
 bool FPlasticSourceControlState::CanEdit() const
 {
-	// TODO: cf. CanCheckout Moved/Copied? Also Locally Moved?
 	const bool bCanEdit =  WorkspaceState == EWorkspaceState::CheckedOut
 						|| WorkspaceState == EWorkspaceState::Added
 						|| WorkspaceState == EWorkspaceState::Moved
@@ -353,7 +352,7 @@ bool FPlasticSourceControlState::IsModified() const
 	// So here we must take care to enumerate all states that need to be commited, all other will be discarded:
 	//  - Unknown
 	//  - Controlled (Unchanged)
-	//  - Private
+	//  - Private (Not Controlled)
 	//  - Ignored
 	const bool bIsModified =   WorkspaceState == EWorkspaceState::CheckedOut
 							|| WorkspaceState == EWorkspaceState::Added
