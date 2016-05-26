@@ -17,6 +17,7 @@ FName FPlasticConnectWorker::GetName() const
 bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FConnect, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FConnect>(InCommand.Operation);
 
 	UE_LOG(LogSourceControl, Log, TEXT("connect"));
 
@@ -29,7 +30,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("status"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 	if(!InCommand.bCommandSuccessful || InCommand.ErrorMessages.Num() > 0 || InCommand.InfoMessages.Num() == 0)
 	{
-		StaticCastSharedRef<FConnect>(InCommand.Operation)->SetErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic source control. You need to initialize the project as a Plastic repository first."));
+		Operation->SetErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic source control. You need to initialize the project as a Plastic repository first."));
 		InCommand.bCommandSuccessful = false;
 	}
 	else
@@ -38,7 +39,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 		if (!InCommand.bCommandSuccessful || InCommand.ErrorMessages.Num() > 0 || InCommand.InfoMessages.Num() == 0)
 		{
-			StaticCastSharedRef<FConnect>(InCommand.Operation)->SetErrorText(FText::FromString(InCommand.ErrorMessages[0]));
+			Operation->SetErrorText(FText::FromString(InCommand.ErrorMessages[0]));
 		}
 	}
 
@@ -93,10 +94,9 @@ FName FPlasticCheckInWorker::GetName() const
 bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FCheckIn, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCheckIn>(InCommand.Operation);
 
 	UE_LOG(LogSourceControl, Log, TEXT("checkin"));
-
-	TSharedRef<FCheckIn, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCheckIn>(InCommand.Operation);
 
 	// make a temp file to place our commit message in
 	FScopedTempFile CommitMsgFile(Operation->GetDescription());
@@ -225,7 +225,6 @@ FName FPlasticUpdateStatusWorker::GetName() const
 bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
-
 	TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FUpdateStatus>(InCommand.Operation);
 
 	UE_LOG(LogSourceControl, Log, TEXT("status"));
