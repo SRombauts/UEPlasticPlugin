@@ -195,15 +195,21 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 	case EWorkspaceState::Controlled:
 		return LOCTEXT("Pristine_Tooltip", "There are no modifications");
 	case EWorkspaceState::CheckedOut:
-		return LOCTEXT("CheckedOut_Tooltip", "The file(s) are checked out");
+		return LOCTEXT("CheckedOut_Tooltip", "Item is checked out");
 	case EWorkspaceState::Added:
 		return LOCTEXT("Added_Tooltip", "Item is scheduled for addition");
+	case EWorkspaceState::Moved:
+		return LOCTEXT("Moved_Tooltip", "Item has been moved or renamed");
+	case EWorkspaceState::Copied:
+		return LOCTEXT("Copied_Tooltip", "Item has been copied");
+	case EWorkspaceState::Replaced:
+		return LOCTEXT("Replaced_Tooltip", "Item has been replaced");
 	case EWorkspaceState::Deleted:
 		return LOCTEXT("Deleted_Tooltip", "Item is scheduled for deletion");
 	case EWorkspaceState::Changed:
 		return LOCTEXT("Modified_Tooltip", "Item has been modified");
 	case EWorkspaceState::Conflicted:
-		return LOCTEXT("ContentsConflict_Tooltip", "The contents (as opposed to the properties) of the item conflict with updates received from the repository.");
+		return LOCTEXT("ContentsConflict_Tooltip", "The contents of the item conflict with updates received from the repository.");
 	case EWorkspaceState::Private:
 		return LOCTEXT("NotControlled_Tooltip", "Item is not under version control.");
 	}
