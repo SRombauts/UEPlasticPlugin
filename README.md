@@ -70,7 +70,8 @@ Alpha version 0.4.1 2016/05/11 :
 - add support for partial checkin (like Gluon, for artists)
 
 #### Bugs
-.12 Revert "Unchanged only" does nothing.
+- .12 Revert "Unchanged only" does nothing.
+- diff not working in history in case of a rename
 
 #### Known issues:
 - Error messages with accents are not handled (for instance connection error in French)

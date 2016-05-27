@@ -199,7 +199,7 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 	case EWorkspaceState::CheckedOut:
 		return LOCTEXT("CheckedOut_Tooltip", "Item is checked out");
 	case EWorkspaceState::Added:
-		return LOCTEXT("Added_Tooltip", "Item is scheduled for addition");
+		return LOCTEXT("Added_Tooltip", "Item has been added");
 	case EWorkspaceState::Moved:
 		return LOCTEXT("Moved_Tooltip", "Item has been moved or renamed");
 	case EWorkspaceState::Copied:
