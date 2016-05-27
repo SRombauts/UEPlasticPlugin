@@ -16,6 +16,9 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 - [Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
 - [Source Control Inside Unreal Editor](https://docs.unrealengine.com/latest/INT/Engine/Basics/SourceControl/InEditor/)
 
+- [Diffing Unreal Assets](https://www.unrealengine.com/blog/diffing-unreal-assets)
+- [Diffing Blueprints (Video)](https://www.unrealengine.com/blog/diffing-blueprints)
+
 ### Quick setup
 
 1.a. Either: Unzip the content of the ZIP in the root of the Unreal Engine 4.11.2 project folder.
