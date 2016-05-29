@@ -722,6 +722,29 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 	return bResult;
 }
 
+
+// Translate actions from Plastic 'cm log' command to keywords used by the Editor UI 
+FString TranslateAction(const FString& InAction)
+{
+	if (InAction.Equals(TEXT("Added")))
+	{
+		return TEXT("add");
+	}
+	else if (InAction.Equals(TEXT("Moved")))
+	{
+		return TEXT("branch");
+	}
+	else if (InAction.Equals(TEXT("Deleted")))
+	{
+		return TEXT("delete");
+	}
+	else // if (InAction.Equals(TEXT("Changed")))
+	{
+		return TEXT("edit");
+	}
+	// TODO: "integrate" for merged?
+}
+
 /**
  * Parse the array of strings results of a 'cm log --xml' command
  *
@@ -764,6 +787,8 @@ static void ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlRe
 	static const FString Changes(TEXT("Changes"));
 	static const FString Item(TEXT("Item"));
 	static const FString RevId(TEXT("RevId"));
+	static const FString ParentRevId(TEXT("ParentRevId"));
+	static const FString SrcCmPath(TEXT("SrcCmPath"));
 	static const FString DstCmPath(TEXT("DstCmPath"));
 	static const FString Type(TEXT("Type"));
 
@@ -819,14 +844,26 @@ static void ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlRe
 			const FXmlNode* DstCmPathNode = ItemNode->FindChildNode(DstCmPath);
 			if (DstCmPathNode != nullptr)
 			{
-				OutSourceControlRevision.Filename = DstCmPathNode->GetContent().RightChop(1);
+				OutSourceControlRevision.Filename = DstCmPathNode->GetContent();
+
+				const FXmlNode* SrcCmPathNode = ItemNode->FindChildNode(SrcCmPath);
+				const FXmlNode* ParentRevIdNode = ItemNode->FindChildNode(ParentRevId);
+				// Detect case of rename ("branch" in Perforce vocabulary)
+				if (ParentRevIdNode != nullptr && SrcCmPathNode != nullptr && !SrcCmPathNode->GetContent().Equals(DstCmPathNode->GetContent()))
+				{
+					TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> MovedFromRevision = MakeShareable(new FPlasticSourceControlRevision);
+					MovedFromRevision->Filename = SrcCmPathNode->GetContent();
+					MovedFromRevision->RevisionNumber = FCString::Atoi(*ParentRevIdNode->GetContent());
+	
+					OutSourceControlRevision.BranchSource = MovedFromRevision;
+				}
 			}
 			const FXmlNode* TypeNode = ItemNode->FindChildNode(Type);
 			if (TypeNode != nullptr)
 			{
-				OutSourceControlRevision.Action = TypeNode->GetContent();
+				OutSourceControlRevision.Action = TranslateAction(TypeNode->GetContent());
 			}
-			break;
+			// 	Do not stop at first match, because in case of rename there are multiple log nodes: Changed+Moved (in this order)
 		}
 	}
 }
@@ -870,6 +907,8 @@ static bool RunLogCommand(const FString& InChangeset, FPlasticSourceControlRevis
 static bool ParseHistoryResults(const TArray<FString>& InResults, TPlasticSourceControlHistory& OutHistory)
 {
 	bool bResult = true;
+
+	OutHistory.Reserve(InResults.Num());
 
 	// parse history in reverse: needed to get most recent at the top (implied by the UI)
 	for (int32 Index = InResults.Num() - 1; Index >= 0; Index--)

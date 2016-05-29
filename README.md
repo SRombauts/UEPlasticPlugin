@@ -71,7 +71,6 @@ Alpha version 0.4.1 2016/05/11 :
 
 #### Bugs
 - .12 Revert "Unchanged only" does nothing.
-- diff not working in history in case of a rename
 
 #### Known issues:
 - Error messages with accents are not handled (for instance connection error in French)
@@ -80,5 +79,6 @@ Alpha version 0.4.1 2016/05/11 :
 - the Editor does not show .uproject file: no way
 - the Editor does not show folder status and is not able to manage them
 - the Editor does not refresh status of assets in subdirectories at startup, so "Mark for add" is wrongly displayed in context menu for thoses subdirectories
+- the Editor does not handle visual diff for renamed/moved assets
 - reverting a Blueprint asset does not update content in Editor (and popup saying "is in use")!
 - Branch is not in the current Editor workflow (but on Epic Roadmap)

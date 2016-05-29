@@ -94,9 +94,8 @@ const FString& FPlasticSourceControlRevision::GetAction() const
 
 TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlRevision::GetBranchSource() const
 {
-	// TODO if this revision was copied/moved from some other revision, then that source revision should
-	//      be returned here (this should be determined when history is being fetched)
-	return nullptr;
+	// if this revision was copied/moved from some other revision
+	return BranchSource;
 }
 
 const FDateTime& FPlasticSourceControlRevision::GetDate() const
