@@ -32,7 +32,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Alpha version 0.4.1 2016/05/11 :
+Alpha version 0.5.0 2016/05/30 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
@@ -54,8 +54,6 @@ Alpha version 0.4.1 2016/05/11 :
 
 #### What *cannot* be done presently (TODO list for v1.0, ordered by priority):
 - solve a merge conflict on a blueprint
-- tags: get labels (used for crash when the full Engine is under Plastic SCM)
-- annotate: blame (used for crash when the full Engine is under Plastic SCM)
 - Mac and Linux
 
 #### Feature Requests (post v1.0)
@@ -68,6 +66,10 @@ Alpha version 0.4.1 2016/05/11 :
 - add a setting to pass the --update option to "checkin"
 - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
 - add support for partial checkin (like Gluon, for artists)
+
+### Abandonned as reserved for internal use by Epic Games with Perforce only
+- tags: get labels (used for crash when the full Engine is under Plastic SCM)
+- annotate: blame (used for crash when the full Engine is under Plastic SCM)
 
 #### Bugs
 - .12 Revert "Unchanged only" does nothing.
