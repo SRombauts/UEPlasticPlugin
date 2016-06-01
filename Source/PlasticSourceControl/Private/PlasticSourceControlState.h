@@ -16,7 +16,7 @@ namespace EWorkspaceState
 		Added,
 		Moved, // Renamed
 		Copied,
-		Replaced,
+		Replaced, // Replaced / Merged
 		Deleted,
 		Changed, // Modified but not CheckedOut
 		Conflicted,

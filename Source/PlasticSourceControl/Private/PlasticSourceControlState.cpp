@@ -93,9 +93,9 @@ FName FPlasticSourceControlState::GetIconName() const
 	switch(WorkspaceState)
 	{
 	case EWorkspaceState::CheckedOut:
+	case EWorkspaceState::Replaced: // Merged (waiting for checkin)
 		return FName("Perforce.CheckedOut");
 	case EWorkspaceState::Added:
-	case EWorkspaceState::Replaced:
 	case EWorkspaceState::Copied:
 		return FName("Perforce.OpenForAdd");
 	case EWorkspaceState::Moved:
@@ -127,9 +127,9 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	switch(WorkspaceState)
 	{
 	case EWorkspaceState::CheckedOut:
+	case EWorkspaceState::Replaced: // Merged (waiting for checkin)
 		return FName("Perforce.CheckedOut_Small");
 	case EWorkspaceState::Added:
-	case EWorkspaceState::Replaced:
 	case EWorkspaceState::Copied:
 		return FName("Perforce.OpenForAdd_Small");
 	case EWorkspaceState::Moved:
@@ -205,7 +205,7 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 	case EWorkspaceState::Copied:
 		return LOCTEXT("Copied_Tooltip", "Item has been copied");
 	case EWorkspaceState::Replaced:
-		return LOCTEXT("Replaced_Tooltip", "Item has been replaced");
+		return LOCTEXT("Replaced_Tooltip", "Item has been replaced / merged");
 	case EWorkspaceState::Deleted:
 		return LOCTEXT("Deleted_Tooltip", "Item is scheduled for deletion");
 	case EWorkspaceState::Changed:
@@ -248,7 +248,8 @@ bool FPlasticSourceControlState::CanCheckIn() const
 bool FPlasticSourceControlState::CanCheckout() const
 {
 	const bool bCanCheckout  = WorkspaceState == EWorkspaceState::Controlled	// In source control, Unmodified
-							|| WorkspaceState == EWorkspaceState::Changed;	// In source control, but not checked-out
+							|| WorkspaceState == EWorkspaceState::Changed		// In source control, but not checked-out
+							|| WorkspaceState == EWorkspaceState::Replaced;		// In source control, merged, waiting for checkin to conclude the merge 
 
 	UE_LOG(LogSourceControl, Log, TEXT("CanCheckout(%s)=%d"), *LocalFilename, bCanCheckout);
 
@@ -258,7 +259,8 @@ bool FPlasticSourceControlState::CanCheckout() const
 bool FPlasticSourceControlState::IsCheckedOut() const
 {
 	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
-							|| WorkspaceState == EWorkspaceState::Moved;
+							|| WorkspaceState == EWorkspaceState::Moved
+							|| WorkspaceState == EWorkspaceState::Replaced; // Workaround to enable checkin!
 
 	UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOut(%s)=%d"), *LocalFilename, bIsCheckedOut);
 
@@ -301,8 +303,7 @@ bool FPlasticSourceControlState::IsSourceControlled() const
 bool FPlasticSourceControlState::IsAdded() const
 {
 	const bool bIsAdded =	WorkspaceState == EWorkspaceState::Added
-						 || WorkspaceState == EWorkspaceState::Copied
-						 || WorkspaceState == EWorkspaceState::Replaced;
+						 || WorkspaceState == EWorkspaceState::Copied;
 
 	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, bIsAdded);
 
