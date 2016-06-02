@@ -42,11 +42,12 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 
 bool FPlasticSourceControlRevision::GetAnnotated( TArray<FAnnotationLine>& OutLines ) const
 {
-	// TODO GetAnnotated: called only by SourceControlHelpers::AnnotateFile(),
+	// NOTE GetAnnotated: called only by SourceControlHelpers::AnnotateFile(),
 	//      called only by ICrashDebugHelper::AddAnnotatedSourceToReport() using a changelist/check identifier
 	//      called only by FCrashDebugHelperWindows::CreateMinidumpDiagnosticReport() (and Mac) to Extract annotated lines from a source file stored in Perforce, and add to the crash report.
 	//      called by - MinidumpDiagnosticsApp RunMinidumpDiagnostics() for Perfore ONLY "MinidumpDiagnostics.exe <Crash.dmp> [-Annotate] [-SyncSymbols] [-SyncMicrosoftSymbols]"
 	//                - FWindowsErrorReport::DiagnoseReport() (and Mac)
+	// Reserved for internal use by Epic Games with Perforce only
 	return false;
 }
 

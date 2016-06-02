@@ -307,8 +307,9 @@ TArray< TSharedRef<ISourceControlLabel> > FPlasticSourceControlProvider::GetLabe
 {
 	TArray< TSharedRef<ISourceControlLabel> > Tags;
 
-	// TODO list labels. Called by CrashDebugHelper() (to remote debug Engine crash)
+	// NOTE list labels. Called by CrashDebugHelper() (to remote debug Engine crash)
 	//					 and by SourceControlHelpers::AnnotateFile() (to add source file to report)
+	// Reserved for internal use by Epic Games with Perforce only
 	return Tags;
 }
 
