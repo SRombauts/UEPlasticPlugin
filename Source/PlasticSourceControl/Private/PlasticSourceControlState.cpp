@@ -74,7 +74,7 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 	for(const auto& Revision : History)
 	{
 		// look for the the SHA1 id of the file, not the commit id (revision)
-		if(Revision->FileHash == PendingMergeBaseFileHash)
+		if(Revision->ChangesetNumber == PendingMergeBaseChangeset)
 		{
 			return Revision;
 		}
@@ -221,11 +221,15 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 
 const FString& FPlasticSourceControlState::GetFilename() const
 {
+	// UE_LOG(LogSourceControl, Log, TEXT("GetFilename(%s)"), *LocalFilename);
+
 	return LocalFilename;
 }
 
 const FDateTime& FPlasticSourceControlState::GetTimeStamp() const
 {
+	// UE_LOG(LogSourceControl, Log, TEXT("GetTimeStamp(%s)=%s"), *LocalFilename, *TimeStamp.ToString());
+
 	return TimeStamp;
 }
 
@@ -260,8 +264,9 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 {
 	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
 							|| WorkspaceState == EWorkspaceState::Moved
-							|| WorkspaceState == EWorkspaceState::Changed	// Workaround to enable checkin
-							|| WorkspaceState == EWorkspaceState::Replaced; // Workaround to enable checkin
+							|| WorkspaceState == EWorkspaceState::Conflicted
+							|| WorkspaceState == EWorkspaceState::Replaced // Workaround to enable checkin
+							|| WorkspaceState == EWorkspaceState::Changed; // Workaround to enable checkin
 
 	UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOut(%s)=%d"), *LocalFilename, bIsCheckedOut);
 
@@ -331,9 +336,7 @@ bool FPlasticSourceControlState::CanEdit() const
 						|| WorkspaceState == EWorkspaceState::Added
 						|| WorkspaceState == EWorkspaceState::Moved
 						|| WorkspaceState == EWorkspaceState::Copied
-						|| WorkspaceState == EWorkspaceState::Replaced
-						|| WorkspaceState == EWorkspaceState::Ignored
-						|| WorkspaceState == EWorkspaceState::Private;
+						|| WorkspaceState == EWorkspaceState::Replaced;
 
 	UE_LOG(LogSourceControl, Log, TEXT("CanEdit(%s)=%d"), *LocalFilename, bCanEdit);
 

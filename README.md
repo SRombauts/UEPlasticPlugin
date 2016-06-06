@@ -68,13 +68,16 @@ Alpha version 0.5.0 2016/05/30 :
 - add support for partial checkin (like Gluon, for artists)
 - add icon for Changed files
 - add icon for Conflicted files
+- add icon for Replaced/Merged files
 
 ### Abandonned as reserved for internal use by Epic Games with Perforce only
 - tags: get labels (used for crash when the full Engine is under Plastic SCM)
 - annotate: blame (used for crash when the full Engine is under Plastic SCM)
 
 #### Bugs
-- .12 Revert "Unchanged only" does nothing.
+- Changed assets popup a "needs checkout" windows that does nothing when clicked!
+- "NotCurrent" warning is not working because "DepotRevisionChangeset" is not correct in the "cm fileinfo" command
+- Revert "Unchanged only" does nothing.
 
 #### Known issues:
 - Error messages with accents are not handled (for instance connection error in French)
@@ -85,4 +88,6 @@ Alpha version 0.5.0 2016/05/30 :
 - the Editor does not refresh status of assets in subdirectories at startup, so "Mark for add" is wrongly displayed in context menu for thoses subdirectories
 - the Editor does not handle visual diff for renamed/moved assets
 - reverting a Blueprint asset does not update content in Editor (and popup saying "is in use")!
-- Branch is not in the current Editor workflow (but on Epic Roadmap)
+- Branch is not in the current Editor workflow
+- Merge is not in the current Editor workflow
+- History does not show which revision is the current/checkout one

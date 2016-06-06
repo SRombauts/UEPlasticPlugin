@@ -301,7 +301,7 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 		if(!bFound)
 		{
 			int32 LastSlashIndex;
-			if(OutWorkspaceRoot.FindLastChar('/', LastSlashIndex))
+			if(OutWorkspaceRoot.FindLastChar(TEXT('/'), LastSlashIndex))
 			{
 				OutWorkspaceRoot = OutWorkspaceRoot.Left(LastSlashIndex);
 			}
@@ -422,8 +422,6 @@ void GetBranchName(const FString& InWorkspaceRoot, FString& OutBranchName)
  LD Content\Deleted2_BP.uasset
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
-
- TODO: Conflicted files?
 */
 class FPlasticStatusParser
 {
@@ -467,10 +465,6 @@ public:
 		else if ((FileStatus == "MV") || (FileStatus == "LM")) // Renamed TODO: need to differentiate for CanEdit/CanCheckout/CanCheckIn?
 		{
 			State = EWorkspaceState::Moved; // Moved/Renamed or Locally Moved
-		}
-		else if (FileStatus == "conflited") // TODO: what is the appropriate status?
-		{
-			State = EWorkspaceState::Conflicted;
 		}
 		else
 		{
@@ -556,10 +550,6 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 				if (bResult)
 				{
 					ParseStatusResult(File, Results, FileState);
-					if (FileState.IsConflicted())
-					{
-						// TODO In case of a conflict (unmerged file) get the base revision to merge
-					}
 				}
 			}
 		}
@@ -652,6 +642,131 @@ static bool RunFileinfo(const TArray<FString>& InFiles, TArray<FString>& OutErro
 	return bResult;
 }
 
+// FILE_CONFLICT /Content/FirstPersonBP/Blueprints/FirstPersonProjectile.uasset 1 4 6 903
+// (explanations: 'The file /Content/FirstPersonBP/Blueprints/FirstPersonProjectile.uasset needs to be merged from cs:4 to cs:6 base cs:1. Changed by both contributors.')
+class FPlasticMergeConflictParser
+{
+public:
+	FPlasticMergeConflictParser(const FString& InResult)
+	{
+		static const FString FILE_CONFLICT(TEXT("FILE_CONFLICT "));
+		if (InResult.StartsWith(FILE_CONFLICT, ESearchCase::CaseSensitive))
+		{
+			FString Temp = InResult.RightChop(FILE_CONFLICT.Len());
+			int32 WhitespaceIndex;
+			if (Temp.FindChar(TEXT(' '), WhitespaceIndex))
+			{
+				Filename = Temp.Left(WhitespaceIndex);
+			}
+			Temp = Temp.RightChop(WhitespaceIndex + 1);
+			if (Temp.FindChar(TEXT(' '), WhitespaceIndex))
+			{
+				const FString Base = Temp.Left(WhitespaceIndex);
+				BaseChangeset = FCString::Atoi(*Base);
+			}
+			Temp = Temp.RightChop(WhitespaceIndex + 1);
+			if (Temp.FindChar(TEXT(' '), WhitespaceIndex))
+			{
+				const FString Source = Temp.Left(WhitespaceIndex);
+				SourceChangeset = FCString::Atoi(*Source);
+			}
+		}
+	}
+
+	FString Filename;
+	int32 BaseChangeset;
+	int32 SourceChangeset;
+};
+
+// Check if merging, and from which changelist, then execute a cm merge command to amend status for listed files
+bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
+{
+	bool bResult = false;
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+
+	const FString MergeProgressFilename = FPaths::Combine(*Provider.GetPathToWorkspaceRoot(), TEXT(".plastic/plastic.mergeprogress"));
+	if (FPaths::FileExists(MergeProgressFilename))
+	{
+		// read in file as string
+		FString MergeProgressContent;
+		if (FFileHelper::LoadFileToString(MergeProgressContent, *MergeProgressFilename))
+		{
+			// @todo: temporary debug logs
+			UE_LOG(LogSourceControl, Log, TEXT("RunCheckMergeStatus: %s:\n%s"), *MergeProgressFilename, *MergeProgressContent);
+			// Content is in one line, looking like the following:
+			// Target: mount:56e62dd7-241f-41e9-8c6b-dd4ca4513e62#/#UE4MergeTest@localhost:8087 merged from: Merge 4
+			// Target: mount:56e62dd7-241f-41e9-8c6b-dd4ca4513e62#/#UE4MergeTest@localhost:8087 merged from: Cherrypicking 3
+			// Target: mount:56e62dd7-241f-41e9-8c6b-dd4ca4513e62#/#UE4MergeTest@localhost:8087 merged from: IntervalCherrypick 2 4
+			// 1) Extract the word after "merged from: "
+			static const FString MergeFromString(TEXT("merged from: "));
+			const int32 MergeFromIndex = MergeProgressContent.Find(MergeFromString, ESearchCase::CaseSensitive);
+			if (MergeFromIndex > INDEX_NONE)
+			{
+				const FString MergeType = MergeProgressContent.RightChop(MergeFromIndex + MergeFromString.Len());
+				int32 SpaceBeforeChangesetIndex;
+				if (MergeType.FindChar(TEXT(' '), SpaceBeforeChangesetIndex))
+				{
+					// 2) In case of "Merge" or "Cherrypicking" extract the merge changelist xxx after the last space (use case for merge from "branch", from "label", and for "merge on Update")
+					const FString ChangesetString = MergeType.RightChop(SpaceBeforeChangesetIndex + 1);
+					const int32 Changeset = FCString::Atoi(*ChangesetString);
+					const FString ChangesetSpecification = FString::Printf(TEXT("cs:%d"), Changeset);
+
+					TArray<FString> Results;
+					TArray<FString> ErrorMessages;
+					TArray<FString> Parameters;
+					Parameters.Add(TEXT("--machinereadable"));
+					Parameters.Add(ChangesetSpecification);
+
+					int32 SpaceBeforeChangeset2Index;
+					if (ChangesetString.FindLastChar(TEXT(' '), SpaceBeforeChangeset2Index))
+					{
+						// 3) In case of "IntervalCherrypick", extract the 2 changelists
+						const FString Changeset2String = ChangesetString.RightChop(SpaceBeforeChangeset2Index + 1);
+						const int32 Changeset2 = FCString::Atoi(*Changeset2String);
+						const FString Changeset2Specification = FString::Printf(TEXT("--interval-origin=cs:%d"), Changeset2);
+
+						Parameters.Add(Changeset2Specification);
+					}
+					else
+					{
+						if (MergeType.StartsWith(TEXT("Cherrypicking"), ESearchCase::CaseSensitive))
+						{
+							Parameters.Add(TEXT("--cherrypicking"));
+						}
+					}
+					// call 'cm merge --machinereadable cs:xxx'
+					bResult = RunCommand(TEXT("merge"), Parameters, TArray<FString>(), Results, ErrorMessages);
+					OutErrorMessages.Append(ErrorMessages);
+					// Parse the result, one line for each conflicted files:
+					for (const FString& Result : Results)
+					{
+						FPlasticMergeConflictParser MergeConflict(Result);
+						UE_LOG(LogSourceControl, Log, TEXT("MergeConflict.Filename: '%s'"), *MergeConflict.Filename);
+						bool bFound = false;
+						for (FPlasticSourceControlState& State : OutStates)
+						{
+							UE_LOG(LogSourceControl, Log, TEXT("State.LocalFilename: '%s'"), *State.LocalFilename);
+							if (State.LocalFilename.EndsWith(MergeConflict.Filename, ESearchCase::CaseSensitive))
+							{
+								UE_LOG(LogSourceControl, Warning, TEXT("MergeConflict '%s' found Base cs:%d From cs:%d"), *MergeConflict.Filename, MergeConflict.BaseChangeset, MergeConflict.SourceChangeset);
+								// TODO: update also Changeset
+								State.WorkspaceState = EWorkspaceState::Conflicted;
+								State.PendingMergeBaseChangeset = MergeConflict.BaseChangeset;
+								State.PendingMergeSourceChangeset = MergeConflict.SourceChangeset;
+								bFound = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return bResult;
+}
+
 // Run a Plastic "status" and "fileinfo" commands to update status of given files.
 bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
 {
@@ -687,6 +802,9 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMe
 			bResult &= RunFileinfo(Files.Value, OutErrorMessages, OutStates);
 		}
 	}
+
+	// Check if merging, and from which changelist, then execute a cm merge command to amend status for listed files
+	RunCheckMergeStatus(InFiles, OutErrorMessages, OutStates);
 
 	return bResult;
 }
@@ -738,7 +856,6 @@ FString TranslateAction(const FString& InAction)
 	{
 		return TEXT("edit");
 	}
-	// TODO: "integrate" for merged?
 }
 
 /**
@@ -967,7 +1084,9 @@ bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 		if (State->WorkspaceState != InState.WorkspaceState)
 		{
 			State->WorkspaceState = InState.WorkspaceState;
-			State->PendingMergeBaseFileHash = InState.PendingMergeBaseFileHash;
+			State->PendingMergeBaseChangeset = InState.PendingMergeBaseChangeset;
+			State->PendingMergeSourceChangeset = InState.PendingMergeSourceChangeset;
+			// TODO: try to revert and also remove all "UpdateStatus" operations so that the Editor have to call it asynchronously?
 			State->TimeStamp = InState.TimeStamp; // TODO: Bug report: Workaround a bug with the Source Control Module not updating file state after a "Save"
 			NbStatesUpdated++;
 		}

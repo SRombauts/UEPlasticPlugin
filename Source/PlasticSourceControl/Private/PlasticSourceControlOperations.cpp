@@ -255,15 +255,35 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		{
 			if (Operation->ShouldUpdateHistory())
 			{
-				for (int32 Index = 0; Index < States.Num(); Index++)
+				for (int32 IdxFile = 0; IdxFile < States.Num(); IdxFile++)
 				{
-					FString& File = InCommand.Files[Index];
+					FString& File = InCommand.Files[IdxFile];
+					const auto& State = States[IdxFile];
 					TPlasticSourceControlHistory History;
 
-					if (States[Index].IsSourceControlled())
+					if (State.IsSourceControlled())
 					{
-						// Get the history of the file in the current branch
+						// Get the history of the file (on all branches)
 						InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, InCommand.ErrorMessages, History);
+						if (State.IsConflicted())
+						{
+							// In case of a merge conflict, we need to put the tip of the "remote branch" on top of the history
+							UE_LOG(LogSourceControl, Log, TEXT("%s: PendingMergeSourceChangeset %d"), *State.LocalFilename, State.PendingMergeSourceChangeset);
+							for (int32 IdxRevision = 0; IdxRevision < History.Num(); IdxRevision++)
+							{
+								const auto& Revision = History[IdxRevision];
+								if (Revision->ChangesetNumber == State.PendingMergeSourceChangeset)
+								{
+									// If the Source Changeset is not already at the top of the History, duplicate it there.
+									if (IdxRevision > 0)
+									{
+										const auto RevisionCopy = Revision;
+										History.Insert(RevisionCopy, 0);
+									}
+									break;
+								}
+							}
+						}
 						Histories.Add(*File, History);
 					}
 				}

@@ -46,9 +46,6 @@ public:
 	/** The revision to display to the user */
 	FString Revision;
 
-	/** The SHA1 identifier of the file at this revision */
-	FString FileHash; // TODO
-
 	/** The description of this revision */
 	FString Description;
 

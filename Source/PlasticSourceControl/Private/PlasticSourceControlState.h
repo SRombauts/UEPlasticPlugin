@@ -80,8 +80,11 @@ public:
 	/** Filename on disk */
 	FString LocalFilename;
 
-	/** File Id with which our local revision diverged from the remote revision */
-	FString PendingMergeBaseFileHash;
+	/** Changeset with which our local revision diverged from the source/remote revision */
+	int32 PendingMergeBaseChangeset;
+
+	/** Changeset of the source/remote revision */
+	int32 PendingMergeSourceChangeset;
 
 	/** If a user (another or ourself) has this file locked, this contains his name. */
 	FString LockedBy;
