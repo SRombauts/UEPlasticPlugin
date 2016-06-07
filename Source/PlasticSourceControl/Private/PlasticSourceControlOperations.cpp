@@ -322,7 +322,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if (InCommand.Files.Num() > 0)
 	{
 		const FString& Origin = InCommand.Files[0];
-		const FString Destination = FPaths::ConvertRelativePathToFull(Operation->GetDestination());
+		const FString Destination = Operation->GetDestination();
 
 		// Detect if the copy leaved a redirector (ie it was a rename/move) or not (it was a duplicate/copy)
 		bool bIsCopyOperation = false;

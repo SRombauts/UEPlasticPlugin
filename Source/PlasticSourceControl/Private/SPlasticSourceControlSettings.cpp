@@ -520,7 +520,6 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace() cons
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	bool bResult;
@@ -534,14 +533,13 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace() cons
 	{
 		TArray<FString> Parameters;
 		Parameters.Add(WorkspaceName.ToString());
-		TArray<FString> Files;
-		Files.Add(PathToGameDir);
+		Parameters.Add(TEXT(".")); // current path, ie. GameDir
 		if (!RepositoryName.IsEmpty())
 		{
 			// working only if repository already exists
 			Parameters.Add(FString::Printf(TEXT("--repository=rep:%s@repserver:%s"), *RepositoryName.ToString(), *ServerUrl.ToString()));
 		}
-		bResult = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, Files, InfoMessages, ErrorMessages);
+		bResult = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
 	}
 	if (bResult)
 	{
@@ -551,26 +549,26 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace() cons
 	if (PlasticSourceControl.GetProvider().IsWorkspaceFound())
 	{
 		TArray<FString> ProjectFiles;
-		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()));
-		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
-		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
+		ProjectFiles.Add(FPaths::GetCleanFilename(FPaths::GetProjectFilePath()));
+		ProjectFiles.Add(FPaths::GetCleanFilename(FPaths::GameConfigDir()));
+		ProjectFiles.Add(FPaths::GetCleanFilename(FPaths::GameContentDir()));
 		if (FPaths::DirectoryExists(FPaths::GameSourceDir()))
 		{
-			ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameSourceDir()));
+			ProjectFiles.Add(FPaths::GetCleanFilename(FPaths::GameSourceDir()));
 		}
 		if (bAutoCreateIgnoreFile)
 		{
 			// Create a standard "ignore.conf" file with common patterns for a typical Blueprint & C++ project
 			if (CreateIgnoreFile())
 			{
-				ProjectFiles.Add(GetIgnoreFileName());
+				ProjectFiles.Add(TEXT("ignore.conf"));
 			}
 		}
 		{
-         // Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)
-         TArray<FString> Parameters;
-         Parameters.Add(TEXT("-R"));
-         bResult = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, ProjectFiles, InfoMessages, ErrorMessages);
+			// Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)
+			TArray<FString> Parameters;
+			Parameters.Add(TEXT("-R"));
+			bResult = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, ProjectFiles, InfoMessages, ErrorMessages);
 		}
 		if (bAutoInitialCommit && bResult)
 		{
@@ -580,9 +578,7 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace() cons
 			ParamCommitMsg += InitialCommitMessage.ToString();
 			ParamCommitMsg += TEXT("\"");
 			Parameters.Add(ParamCommitMsg);
-			TArray<FString> Files;
-			Files.Add(PathToGameDir);
-			PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, Files, InfoMessages, ErrorMessages);
+			PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
 		}
 	}
 	return FReply::Handled();
@@ -609,7 +605,7 @@ FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("-R"));
 		TArray<FString> Files;
-		Files.Add(GetIgnoreFileName());
+		Files.Add(TEXT("ignore.conf"));
 		PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, Files, InfoMessages, ErrorMessages);
 	}
 	return FReply::Handled();
