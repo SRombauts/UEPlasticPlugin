@@ -25,19 +25,22 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability(bool bForceConnecti
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
+
+	// Find the path to the root Plastic directory (if any, else uses the GameDir)
+	const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
+	bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToWorkspaceRoot);
+
 	if(!PathToPlasticBinary.IsEmpty())
 	{
-		bPlasticAvailable = PlasticSourceControlUtils::CheckPlasticAvailability(PathToPlasticBinary);
+		bPlasticAvailable = PlasticSourceControlUtils::LaunchBackgroundPlasticShell(PathToPlasticBinary, PathToWorkspaceRoot);
 		if(bPlasticAvailable)
 		{
 			FString PlasticScmVersion;
 			PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
 
-			// Find the path to the root Plastic directory (if any)
-			const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
-			bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToWorkspaceRoot);
 			// Get user name (from the global Plastic SCM client config)
 			PlasticSourceControlUtils::GetUserName(UserName);
+
 			if(bWorkspaceFound)
 			{
 				// Get workspace, repository, server and branch name

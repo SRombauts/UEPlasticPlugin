@@ -85,8 +85,9 @@ static void CleanupBackgroundCommandLineShell()
 	ShellInputPipeRead = ShellInputPipeWrite = nullptr;
 }
 
-// Launch the Plastic command line shell process in background for optimized successive commands
-static bool LaunchBackgroundCommandLineShell(const FString& InPathToPlasticBinary)
+// Launch the Plastic SCM background 'cm shell' process in background for optimized successive commands,
+// if possible (and not already running)
+bool LaunchBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FString& InWorkingDirectory)
 {
 	// only if shell not already running
 	if (!ShellProcessHandle.IsValid())
@@ -100,8 +101,8 @@ static bool LaunchBackgroundCommandLineShell(const FString& InPathToPlasticBinar
 		verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite));	// For reading from child process
 		verify(CreatePipeWrite(ShellInputPipeRead, ShellInputPipeWrite));	// For writing to child process
 
-		UE_LOG(LogSourceControl, Log, TEXT("LaunchBackgroundCommandLineShell: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
-		ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, nullptr, ShellOutputPipeWrite, ShellInputPipeRead);
+		UE_LOG(LogSourceControl, Log, TEXT("LaunchBackgroundPlasticShell: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
+		ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
 		if (!ShellProcessHandle.IsValid())
 		{
 			UE_LOG(LogSourceControl, Warning, TEXT("Failed to launch 'cm shell'")); // not a bug, just no Plastic SCM cli found
@@ -116,16 +117,11 @@ static void RestartBackgroundCommandLineShell()
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
+	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
 
 	FPlatformProcess::CloseProc(ShellProcessHandle);
 	CleanupBackgroundCommandLineShell();
-	LaunchBackgroundCommandLineShell(PathToPlasticBinary);
-}
-
-bool CheckPlasticAvailability(const FString& InPathToPlasticBinary)
-{
-	// Launch the background 'cm shell' process if possible (and not already running)
-	return LaunchBackgroundCommandLineShell(InPathToPlasticBinary);
+	LaunchBackgroundPlasticShell(PathToPlasticBinary, WorkingDirectory);
 }
 
 bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)

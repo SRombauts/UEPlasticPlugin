@@ -37,11 +37,12 @@ namespace PlasticSourceControlUtils
 FString FindPlasticBinaryPath();
 
 /**
- * Run a Plastic "version" command to check the availability of the binary.
- * @param InPathToPlasticBinary	The path to the Plastic binary
+ * Launch the Plastic SCM "shell" command to run it in background.
+ * @param	InPathToPlasticBinary	The path to the Plastic binary
+ * @param	InWorkspaceRoot			The workspace from where to run the command - usually the Game directory
  * @returns true if the command succeeded and returned no errors
  */
-bool CheckPlasticAvailability(const FString& InPathToPlasticBinary);
+bool LaunchBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FString& InWorkspaceRoot);
 
 /** Terminate the background 'cm shell' process and associated pipes */
 void Terminate();
