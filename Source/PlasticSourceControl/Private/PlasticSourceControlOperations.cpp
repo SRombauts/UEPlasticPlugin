@@ -251,24 +251,21 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 			Files.Add(InCommand.PathToWorkspaceRoot);
 			InCommand.bConnectionDropped = !PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
-
-		if (Operation->ShouldUpdateHistory())
+		else
 		{
-			for (int32 Index = 0; Index < States.Num(); Index++)
+			if (Operation->ShouldUpdateHistory())
 			{
-				FString& File = InCommand.Files[Index];
-				TPlasticSourceControlHistory History;
+				for (int32 Index = 0; Index < States.Num(); Index++)
+				{
+					FString& File = InCommand.Files[Index];
+					TPlasticSourceControlHistory History;
 
-				if (States[Index].IsConflicted())
-				{
-					// In case of a merge conflict, we first need to get the tip of the "remote branch" (MERGE_HEAD)
-// TODO					PlasticSourceControlUtils::RunGetHistory(File, true, InCommand.ErrorMessages, History);
-				}
-				else if (States[Index].IsSourceControlled())
-				{
-					// Get the history of the file in the current branch
-					InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, InCommand.ErrorMessages, History);
-					Histories.Add(*File, History);
+					if (States[Index].IsSourceControlled())
+					{
+						// Get the history of the file in the current branch
+						InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, InCommand.ErrorMessages, History);
+						Histories.Add(*File, History);
+					}
 				}
 			}
 		}
