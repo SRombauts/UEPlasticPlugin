@@ -260,7 +260,8 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 {
 	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
 							|| WorkspaceState == EWorkspaceState::Moved
-							|| WorkspaceState == EWorkspaceState::Replaced; // Workaround to enable checkin!
+							|| WorkspaceState == EWorkspaceState::Changed	// Workaround to enable checkin
+							|| WorkspaceState == EWorkspaceState::Replaced; // Workaround to enable checkin
 
 	UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOut(%s)=%d"), *LocalFilename, bIsCheckedOut);
 
