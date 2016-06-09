@@ -66,6 +66,8 @@ Alpha version 0.5.0 2016/05/30 :
 - add a setting to pass the --update option to "checkin"
 - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
 - add support for partial checkin (like Gluon, for artists)
+- add icon for Changed files
+- add icon for Conflicted files
 
 ### Abandonned as reserved for internal use by Epic Games with Perforce only
 - tags: get labels (used for crash when the full Engine is under Plastic SCM)
@@ -78,7 +80,7 @@ Alpha version 0.5.0 2016/05/30 :
 - Error messages with accents are not handled (for instance connection error in French)
 - the Editor does not show deleted files: no way to check them in
 - the Editor does not show missing files: no way to revert/restore them
-- the Editor does not show .uproject file: no way
+- the Editor does not show .uproject file: no way to check in modification to the project file
 - the Editor does not show folder status and is not able to manage them
 - the Editor does not refresh status of assets in subdirectories at startup, so "Mark for add" is wrongly displayed in context menu for thoses subdirectories
 - the Editor does not handle visual diff for renamed/moved assets

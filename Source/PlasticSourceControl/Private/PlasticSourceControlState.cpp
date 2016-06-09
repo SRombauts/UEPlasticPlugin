@@ -102,12 +102,12 @@ FName FPlasticSourceControlState::GetIconName() const
 		return FName("Perforce.Branched");
 	case EWorkspaceState::Deleted:
 		return FName("Perforce.MarkedForDelete");
-	case EWorkspaceState::Changed:
-	case EWorkspaceState::Conflicted:
+	case EWorkspaceState::Conflicted: // TODO: would need a dedicated icon
 		return FName("Perforce.NotAtHeadRevision");
 	case EWorkspaceState::LockedByOther:
 		return FName("Perforce.CheckedOutByOtherUser");
-	case EWorkspaceState::Private:
+	case EWorkspaceState::Private: // Not controlled
+	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
 		return FName("Perforce.NotInDepot");
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:
@@ -136,12 +136,12 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 		return FName("Perforce.Branched_Small");
 	case EWorkspaceState::Deleted:
 		return FName("Perforce.MarkedForDelete_Small");
-	case EWorkspaceState::Changed:
-	case EWorkspaceState::Conflicted:
+	case EWorkspaceState::Conflicted: // TODO: would need a dedicated icon
 		return FName("Perforce.NotAtHeadRevision_Small");
 	case EWorkspaceState::LockedByOther:
 		return FName("Perforce.CheckedOutByOtherUser_Small");
-	case EWorkspaceState::Private:
+	case EWorkspaceState::Private: // Not controlled
+	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
 		return FName("Perforce.NotInDepot_Small");
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:
