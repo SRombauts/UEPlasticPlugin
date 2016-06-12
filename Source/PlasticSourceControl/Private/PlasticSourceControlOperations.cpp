@@ -447,4 +447,49 @@ bool FPlasticSyncWorker::UpdateStates() const
 	return PlasticSourceControlUtils::UpdateCachedStates(States);
 }
 
+FName FPlasticResolveWorker::GetName() const
+{
+	return "Resolve";
+}
+
+bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	check(InCommand.Operation->GetName() == GetName());
+
+	for (const FString& File : InCommand.Files)
+	{
+		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(File);
+
+		// To resolve the conflict, merge the file by keeping it like it is on file system
+		// TODO: according to documentation, this cannot work for cherry-picking
+		// merge cs:2@repo@url:port --merge --keepdestination "/path/to/file"
+
+		// Use Merge Parameters obtained in the UpdateStatus operation
+		TArray<FString> Parameters = State->PendingMergeParameters;
+		Parameters.Add(TEXT("--merge"));
+		Parameters.Add(TEXT("--keepdestination"));
+
+		TArray<FString> OneFile;
+		OneFile.Add(State->PendingMergeFilename);
+
+		// @todo temporary debug log
+		UE_LOG(LogSourceControl, Log, TEXT("resolve %s"), *State->PendingMergeFilename);
+
+		// Mark the conflicted file as resolved
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("merge"), Parameters, OneFile, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+
+	// now update the status of our files
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticResolveWorker::UpdateStates() const
+{
+	return PlasticSourceControlUtils::UpdateCachedStates(States);
+}
+
 #undef LOCTEXT_NAMESPACE

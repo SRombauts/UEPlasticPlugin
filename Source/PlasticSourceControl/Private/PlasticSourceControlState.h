@@ -80,11 +80,17 @@ public:
 	/** Filename on disk */
 	FString LocalFilename;
 
+	/** Relative filename of the file in merge conflict */
+	FString PendingMergeFilename;
+
 	/** Changeset with which our local revision diverged from the source/remote revision */
 	int32 PendingMergeBaseChangeset;
 
-	/** Changeset of the source/remote revision */
+	/** Changeset of the source/remote revision of the merge in progress */
 	int32 PendingMergeSourceChangeset;
+
+	/** Plastic SCM Parameters of the merge in progress */
+	TArray<FString> PendingMergeParameters;
 
 	/** If a user (another or ourself) has this file locked, this contains his name. */
 	FString LockedBy;

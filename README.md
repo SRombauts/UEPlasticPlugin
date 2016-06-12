@@ -52,9 +52,9 @@ Alpha version 0.6.0 2016/06/16 :
 - make the initial commit
 - also permit late creation of the ignore.conf file
 - show conflicted files and 3-way visual diff
+- solve a merge conflict on a blueprint
 
 #### What *cannot* be done presently (TODO list for v1.0, ordered by priority):
-- solve a merge conflict on a blueprint
 - Mac and Linux
 
 #### Feature Requests (post v1.0)
@@ -80,6 +80,7 @@ Alpha version 0.6.0 2016/06/16 :
 - Source Control does not show correctly at next launch of the Editor after first connection
 - "NotCurrent" warning is not working because "DepotRevisionChangeset" is not correct in the "cm fileinfo" command
 - Revert "Unchanged only" does nothing.
+- Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
 
 #### Known issues:
 - Error messages with accents are not handled (for instance connection error in French)
@@ -93,3 +94,4 @@ Alpha version 0.6.0 2016/06/16 :
 - Branch is not in the current Editor workflow
 - Merge is not in the current Editor workflow
 - History does not show which revision is the current/checkout one
+- Merge: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)

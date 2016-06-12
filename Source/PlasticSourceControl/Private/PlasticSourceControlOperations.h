@@ -142,7 +142,7 @@ public:
 	TArray<FPlasticSourceControlState> States;
 };
 
-/** TODO Plastic add to mark a conflict as resolved
+/** TODO: Plastic command to mark the conflict as solved */
 class FPlasticResolveWorker : public IPlasticSourceControlWorker
 {
 public:
@@ -155,4 +155,3 @@ private:
 	// Temporary states for results
 	TArray<FPlasticSourceControlState> States;
 };
-*/
