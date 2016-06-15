@@ -71,13 +71,15 @@ static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 namespace PlasticSourceControlUtils
 {
 // In/Out Pipes for the 'cm shell' persistent process
-static void*		ShellOutputPipeRead = nullptr;
-static void*		ShellOutputPipeWrite = nullptr;
-static void*		ShellInputPipeRead = nullptr;
-static void*		ShellInputPipeWrite = nullptr;
-static FProcHandle	ShellProcessHandle;
+static void*			ShellOutputPipeRead = nullptr;
+static void*			ShellOutputPipeWrite = nullptr;
+static void*			ShellInputPipeRead = nullptr;
+static void*			ShellInputPipeWrite = nullptr;
+static FProcHandle		ShellProcessHandle;
+static FCriticalSection	ShellCriticalSection;
 
-static void CleanupBackgroundCommandLineShell()
+// Internal function to cleanup (called under the critical section)
+static void _CleanupBackgroundCommandLineShell()
 {
 	FPlatformProcess::ClosePipe(ShellInputPipeRead, ShellInputPipeWrite);
 	FPlatformProcess::ClosePipe(ShellOutputPipeRead, ShellOutputPipeWrite);
@@ -85,133 +87,188 @@ static void CleanupBackgroundCommandLineShell()
 	ShellInputPipeRead = ShellInputPipeWrite = nullptr;
 }
 
-// Launch the Plastic SCM background 'cm shell' process in background for optimized successive commands,
-// if possible (and not already running)
-bool LaunchBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FString& InWorkingDirectory)
+// Internal function to actualy launch the Plastic SCM background 'cm shell' process if possible (called under the critical section)
+static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FString& InWorkingDirectory)
 {
-	// only if shell not already running
+	const FString FullCommand(TEXT("shell"));
+
+	const bool bLaunchDetached = false;				// the new process will NOT have its own window
+	const bool bLaunchHidden = true;				// the new process will be minimized in the task bar
+	const bool bLaunchReallyHidden = bLaunchHidden; // the new process will not have a window or be in the task bar
+
+	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite));	// For reading from child process
+	verify(CreatePipeWrite(ShellInputPipeRead, ShellInputPipeWrite));	// For writing to child process
+
+	UE_LOG(LogSourceControl, Log, TEXT("LaunchBackgroundPlasticShell: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
+	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
 	if (!ShellProcessHandle.IsValid())
 	{
-		const FString FullCommand(TEXT("shell"));
-
-		const bool bLaunchDetached = false;				// the new process will NOT have its own window
-		const bool bLaunchHidden = true;				// the new process will be minimized in the task bar
-		const bool bLaunchReallyHidden = bLaunchHidden; // the new process will not have a window or be in the task bar
-
-		verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite));	// For reading from child process
-		verify(CreatePipeWrite(ShellInputPipeRead, ShellInputPipeWrite));	// For writing to child process
-
-		UE_LOG(LogSourceControl, Log, TEXT("LaunchBackgroundPlasticShell: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
-		ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
-		if (!ShellProcessHandle.IsValid())
-		{
-			UE_LOG(LogSourceControl, Warning, TEXT("Failed to launch 'cm shell'")); // not a bug, just no Plastic SCM cli found
-			CleanupBackgroundCommandLineShell();
-		}
+		UE_LOG(LogSourceControl, Warning, TEXT("Failed to launch 'cm shell'")); // not a bug, just no Plastic SCM cli found
+		_CleanupBackgroundCommandLineShell();
 	}
 
 	return ShellProcessHandle.IsValid();
 }
 
-static void RestartBackgroundCommandLineShell()
+// Internal function (called under the critical section)
+static void _RestartBackgroundCommandLineShell()
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
 
 	FPlatformProcess::CloseProc(ShellProcessHandle);
-	CleanupBackgroundCommandLineShell();
-	LaunchBackgroundPlasticShell(PathToPlasticBinary, WorkingDirectory);
+	_CleanupBackgroundCommandLineShell();
+	_StartBackgroundPlasticShell(PathToPlasticBinary, WorkingDirectory);
 }
 
-bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
+// Internal function (called under the critical section)
+static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
 {
 	bool bResult = false;
 
-	if (ShellProcessHandle.IsValid())
+	// Detect previous crash of cm.exe and restart 'cm shell'
+	if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
-		// Detect previous crash of cm.exe and restart 'cm shell'
-		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
-		{
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternal: 'cm shell' has stopped. Restarting!"), FPlatformProcess::IsProcRunning(ShellProcessHandle));
-			RestartBackgroundCommandLineShell();
-		}
+		UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternal: 'cm shell' has stopped. Restarting!"), FPlatformProcess::IsProcRunning(ShellProcessHandle));
+		_RestartBackgroundCommandLineShell();
+	}
 
-		// Start with the Plastic command itself ("status", "log", "chekin"...)
-		FString FullCommand = InCommand;
-		// Append to the command all parameters, and then finally the files
-		for (const FString& Parameter : InParameters)
-		{
-			FullCommand += TEXT(" ");
-			FullCommand += Parameter;
-		}
-		for (const FString& File : InFiles)
-		{
-			FullCommand += TEXT(" \"");
-			FullCommand += File;
-			FullCommand += TEXT("\"");
-		}
-		// @todo: temporary debug logs (before end of line)
-		UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternal: '%s'"), *FullCommand);
-		FullCommand += TEXT('\n'); // Finalize the command line
+	// Start with the Plastic command itself ("status", "log", "chekin"...)
+	FString FullCommand = InCommand;
+	// Append to the command all parameters, and then finally the files
+	for (const FString& Parameter : InParameters)
+	{
+		FullCommand += TEXT(" ");
+		FullCommand += Parameter;
+	}
+	for (const FString& File : InFiles)
+	{
+		FullCommand += TEXT(" \"");
+		FullCommand += File;
+		FullCommand += TEXT("\"");
+	}
+	// @todo: temporary debug logs (before end of line)
+	UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternal: '%s'"), *FullCommand);
+	FullCommand += TEXT('\n'); // Finalize the command line
 
-		// Send command to 'cm shell' process
-		const bool bWriteOk = FPlatformProcess::WritePipe(ShellInputPipeWrite, FullCommand);
+	// Send command to 'cm shell' process
+	const bool bWriteOk = FPlatformProcess::WritePipe(ShellInputPipeWrite, FullCommand);
 
-		// And wait up to 60 seconds for any kind of output from cm shell: in case of lengthier operation, intermediate output (like percentage of progress) is expected, which would refresh the timout
-		const double Timeout = 60.0;
-		const double StartTimestamp = FPlatformTime::Seconds();
-		double LastActivity = StartTimestamp;
-		int32 PreviousLogLen = 0;
-		while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
+	// And wait up to 60 seconds for any kind of output from cm shell: in case of lengthier operation, intermediate output (like percentage of progress) is expected, which would refresh the timout
+	const double Timeout = 60.0;
+	const double StartTimestamp = FPlatformTime::Seconds();
+	double LastActivity = StartTimestamp;
+	int32 PreviousLogLen = 0;
+	while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
+	{
+		FString Output = FPlatformProcess::ReadPipe(ShellOutputPipeRead);
+		if (0 < Output.Len())
 		{
-			FString Output = FPlatformProcess::ReadPipe(ShellOutputPipeRead);
-			if (0 < Output.Len())
+			LastActivity = FPlatformTime::Seconds(); // freshen the timestamp while cm is still actively outputting information
+			OutResults.Append(MoveTemp(Output));
+			// Search the output for the line containing the result code, also indicating the end of the command
+			const uint32 IndexCommandResult = OutResults.Find(TEXT("CommandResult "), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
+			if (INDEX_NONE != IndexCommandResult)
 			{
-				LastActivity = FPlatformTime::Seconds(); // freshen the timestamp while cm is still actively outputting information
-				OutResults.Append(MoveTemp(Output));
-				// Search the output for the line containing the result code, also indicating the end of the command
-				const uint32 IndexCommandResult = OutResults.Find(TEXT("CommandResult "), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
-				if (INDEX_NONE != IndexCommandResult)
+				const uint32 IndexEndResult = OutResults.Find(PlasticSourceControlConstants::pchDelim, ESearchCase::CaseSensitive, ESearchDir::FromStart, IndexCommandResult + 14);
+				if (INDEX_NONE != IndexEndResult)
 				{
-					const uint32 IndexEndResult = OutResults.Find(PlasticSourceControlConstants::pchDelim, ESearchCase::CaseSensitive, ESearchDir::FromStart, IndexCommandResult + 14);
-					if (INDEX_NONE != IndexEndResult)
-					{
-						const FString Result = OutResults.Mid(IndexCommandResult + 14, IndexEndResult - IndexCommandResult - 14);
-						const int32 ResultCode = FCString::Atoi(*Result);
-						bResult = (0 == ResultCode);
-						// remove the CommandResult line from the OutResults
-						OutResults.RemoveAt(IndexCommandResult, OutResults.Len() - IndexCommandResult);
-						break;
-					}
+					const FString Result = OutResults.Mid(IndexCommandResult + 14, IndexEndResult - IndexCommandResult - 14);
+					const int32 ResultCode = FCString::Atoi(*Result);
+					bResult = (0 == ResultCode);
+					// remove the CommandResult line from the OutResults
+					OutResults.RemoveAt(IndexCommandResult, OutResults.Len() - IndexCommandResult);
+					break;
 				}
 			}
-			else if (FPlatformTime::Seconds() - LastActivity > Timeout)
-			{
-				// Shut-down and restart the connexion to 'cm shell' in case of timeout!
-				UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternal(%s)=%d TIMEOUT after '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
-				PreviousLogLen = OutResults.Len();
-				LastActivity = FPlatformTime::Seconds(); // freshen the timestamp to reinit timeout warning
-			}
+		}
+		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
+		{
+			// Shut-down and restart the connexion to 'cm shell' in case of timeout!
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternal(%s)=%d TIMEOUT after '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			PreviousLogLen = OutResults.Len();
+			LastActivity = FPlatformTime::Seconds(); // freshen the timestamp to reinit timeout warning
+		}
 
-			FPlatformProcess::Sleep(0.0f); // 0.0 means release the current time slice to let other threads get some attention
-		}
-		if (!InCommand.Equals(TEXT("exit")) && !FPlatformProcess::IsProcRunning(ShellProcessHandle))
-		{
-			// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternal(%s): 'cm shell' stopped after '%lf's Out=\n%s"), *InCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
-		}
-		else
-		{
-			// @todo: temporary debug logs
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternal(%s)=%d in '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
-		}
+		FPlatformProcess::Sleep(0.0f); // 0.0 means release the current time slice to let other threads get some attention
+	}
+	if (!InCommand.Equals(TEXT("exit")) && !FPlatformProcess::IsProcRunning(ShellProcessHandle))
+	{
+		// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
+		UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternal(%s): 'cm shell' stopped after '%lf's Out=\n%s"), *InCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+	}
+	else
+	{
+		// @todo: temporary debug logs
+		UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternal(%s)=%d in '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+	}
 		
-		// Return output as error if result code is an error
-		if (!bResult)
-		{
-			OutErrors = MoveTemp(OutResults);
-		}
+	// Return output as error if result code is an error
+	if (!bResult)
+	{
+		OutErrors = MoveTemp(OutResults);
+	}
+
+	return bResult;
+}
+
+// Internal function (called under the critical section)
+static void _ExitBackgroundCommandLineShell()
+{
+	// Tell the 'cm shell' to exit
+	FString Results, Errors;
+	_RunCommandInternal(TEXT("exit"), TArray<FString>(), TArray<FString>(), Results, Errors);
+	// And wait up to one seconde for its termination
+	int timeout = 100;
+	while (FPlatformProcess::IsProcRunning(ShellProcessHandle) && (0 < timeout--))
+	{
+		FPlatformProcess::Sleep(0.01f);
+	}
+	FPlatformProcess::CloseProc(ShellProcessHandle);
+	_CleanupBackgroundCommandLineShell();
+}
+
+// Launch the Plastic SCM background 'cm shell' process in background for optimized successive commands (thread-safe)
+bool LaunchBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FString& InWorkingDirectory)
+{
+	// Protect public APIs from multi-thread access
+	FScopeLock Lock(&ShellCriticalSection);
+
+	// only if shell not already running
+	if (!ShellProcessHandle.IsValid())
+	{
+		return _StartBackgroundPlasticShell(InPathToPlasticBinary, InWorkingDirectory);
+	}
+	else
+	{
+		return true;
+	}
+}
+
+// Terminate the background 'cm shell' process and associated pipes (thread-safe)
+void Terminate()
+{
+	// Protect public APIs from multi-thread access
+	FScopeLock Lock(&ShellCriticalSection);
+
+	if (ShellProcessHandle.IsValid())
+	{
+		_ExitBackgroundCommandLineShell();
+	}
+}
+
+// Run command (thread-safe)
+static bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
+{
+	bool bResult = false;
+
+	// Protect public APIs from multi-thread access
+	FScopeLock Lock(&ShellCriticalSection);
+
+	if (ShellProcessHandle.IsValid())
+	{
+		bResult = _RunCommandInternal(InCommand, InParameters, InFiles, OutResults, OutErrors);
 	}
 	else
 	{
@@ -222,41 +279,13 @@ bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParam
 	return bResult;
 }
 
-static void ExitBackgroundCommandLineShell()
-{
-	if (ShellProcessHandle.IsValid())
-	{
-		// Tell the 'cm shell' to exit
-		FString Results, Errors;
-		RunCommandInternal(TEXT("exit"), TArray<FString>(), TArray<FString>(), Results, Errors);
-		// And wait up to one seconde for its termination
-		int timeout = 100;
-		while (FPlatformProcess::IsProcRunning(ShellProcessHandle) && (0 < timeout--))
-		{
-			FPlatformProcess::Sleep(0.01f);
-		}
-		FPlatformProcess::CloseProc(ShellProcessHandle);
-		CleanupBackgroundCommandLineShell();
-	}
-}
-
-// Terminate the background 'cm shell' process and associated pipes
-void Terminate()
-{
-	if (ShellProcessHandle.IsValid())
-	{
-		ExitBackgroundCommandLineShell();
-	}
-}
-
 // Basic parsing or results & errors from the Plastic command line process
 bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
 {
-	bool bResult;
 	FString Results;
 	FString Errors;
 
-	bResult = RunCommandInternal(InCommand, InParameters, InFiles, Results, Errors);
+	const bool bResult = RunCommandInternal(InCommand, InParameters, InFiles, Results, Errors);
 
 	Results.ParseIntoArray(OutResults, PlasticSourceControlConstants::pchDelim, true);
 	Errors.ParseIntoArray(OutErrorMessages, PlasticSourceControlConstants::pchDelim, true);
