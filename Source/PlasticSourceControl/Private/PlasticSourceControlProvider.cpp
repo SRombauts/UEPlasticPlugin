@@ -124,15 +124,17 @@ ECommandResult::Type FPlasticSourceControlProvider::GetState( const TArray<FStri
 		return ECommandResult::Failed;
 	}
 
+	TArray<FString> AbsoluteFiles = SourceControlHelpers::AbsoluteFilenames(InFiles);
+
 	if(InStateCacheUsage == EStateCacheUsage::ForceUpdate)
 	{
 		UE_LOG(LogSourceControl, Log, TEXT("GetState: ForceUpdate"));
-		Execute(ISourceControlOperation::Create<FUpdateStatus>(), InFiles);
+		Execute(ISourceControlOperation::Create<FUpdateStatus>(), AbsoluteFiles);
 	}
 
-	for(const auto& File : InFiles)
+	for(const auto& AbsoluteFile : AbsoluteFiles)
 	{
-		OutState.Add(GetStateInternal(*File));
+		OutState.Add(GetStateInternal(*AbsoluteFile));
 	}
 
 	return ECommandResult::Succeeded;
@@ -174,6 +176,8 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute( const TSharedRef<IS
 		return ECommandResult::Failed;
 	}
 
+	TArray<FString> AbsoluteFiles = SourceControlHelpers::AbsoluteFilenames(InFiles);
+
 	// Query to see if we allow this operation
 	TSharedPtr<IPlasticSourceControlWorker, ESPMode::ThreadSafe> Worker = CreateWorker(InOperation->GetName());
 	if(!Worker.IsValid())
@@ -187,7 +191,7 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute( const TSharedRef<IS
 	}
 
 	FPlasticSourceControlCommand* Command = new FPlasticSourceControlCommand(InOperation, Worker.ToSharedRef());
-	Command->Files = InFiles;
+	Command->Files = AbsoluteFiles;
 	Command->OperationCompleteDelegate = InOperationCompleteDelegate;
 
 	// fire off operation
