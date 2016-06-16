@@ -75,7 +75,8 @@ Alpha version 0.5.0 2016/05/30 :
 - annotate: blame (used for crash when the full Engine is under Plastic SCM)
 
 #### Bugs
-- Changed assets popup a "needs checkout" windows that does nothing when clicked!
+- Changed assets popup a "Files need check-out!" (UnrealEdSrv.cpp) windows that does nothing when clicked!
+- Source Control does not show correctly at next launch of the Editor after first connection
 - "NotCurrent" warning is not working because "DepotRevisionChangeset" is not correct in the "cm fileinfo" command
 - Revert "Unchanged only" does nothing.
 

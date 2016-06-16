@@ -23,6 +23,9 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 
 void FPlasticSourceControlProvider::CheckPlasticAvailability(bool bForceConnection)
 {
+	// @todo: temporary debug log
+	UE_LOG(LogSourceControl, Log, TEXT("CheckPlasticAvailability(bForceConnection=%d)"), bForceConnection);
+
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 

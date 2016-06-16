@@ -238,13 +238,13 @@ bool FPlasticSourceControlState::CanCheckIn() const
 {
 	const bool bCanCheckIn = WorkspaceState == EWorkspaceState::Added
 		|| WorkspaceState == EWorkspaceState::Deleted
-		|| WorkspaceState == EWorkspaceState::Changed
+		|| WorkspaceState == EWorkspaceState::Changed // NOTE: Comment to enable checkout on prompt of a Changed file (see bellow)
 		|| WorkspaceState == EWorkspaceState::Moved
 		|| WorkspaceState == EWorkspaceState::Copied
 		|| WorkspaceState == EWorkspaceState::Replaced
 		|| WorkspaceState == EWorkspaceState::CheckedOut;
 
-	UE_LOG(LogSourceControl, Log, TEXT("CanCheckIn(%s)=%d"), *LocalFilename, bCanCheckIn);
+	UE_LOG(LogSourceControl, Log, TEXT("%s CanCheckIn=%d"), *LocalFilename, bCanCheckIn);
 
 	return bCanCheckIn;
 }
@@ -255,7 +255,7 @@ bool FPlasticSourceControlState::CanCheckout() const
 							|| WorkspaceState == EWorkspaceState::Changed		// In source control, but not checked-out
 							|| WorkspaceState == EWorkspaceState::Replaced;		// In source control, merged, waiting for checkin to conclude the merge 
 
-	UE_LOG(LogSourceControl, Log, TEXT("CanCheckout(%s)=%d"), *LocalFilename, bCanCheckout);
+	UE_LOG(LogSourceControl, Log, TEXT("%s CanCheckout=%d"), *LocalFilename, bCanCheckout);
 
 	return bCanCheckout;
 }
@@ -266,9 +266,9 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 							|| WorkspaceState == EWorkspaceState::Moved
 							|| WorkspaceState == EWorkspaceState::Conflicted
 							|| WorkspaceState == EWorkspaceState::Replaced // Workaround to enable checkin
-							|| WorkspaceState == EWorkspaceState::Changed; // Workaround to enable checkin
+							|| WorkspaceState == EWorkspaceState::Changed; // Workaround to enable checkin  NOTE: Comment to enable checkout on prompt of a Changed file (see above)
 
-	UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOut(%s)=%d"), *LocalFilename, bIsCheckedOut);
+	if (bIsCheckedOut) UE_LOG(LogSourceControl, Log, TEXT("%s IsCheckedOut"), *LocalFilename);
 
 	return bIsCheckedOut;
 }
@@ -281,7 +281,7 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 	}
 	const bool bIsLockedByOther = WorkspaceState == EWorkspaceState::LockedByOther;
 
-	if (bIsLockedByOther) UE_LOG(LogSourceControl, Log, TEXT("IsCheckedOutOther(%s)=%d by '%s' (%s)"), *LocalFilename, bIsLockedByOther, *LockedBy, *LockedWhere);
+	if (bIsLockedByOther) UE_LOG(LogSourceControl, Log, TEXT("%s IsCheckedOutOther by '%s' (%s)"), *LocalFilename, *LockedBy, *LockedWhere);
 
 	return bIsLockedByOther;
 }
@@ -290,7 +290,8 @@ bool FPlasticSourceControlState::IsCurrent() const
 {
 	const bool bIsCurrent = (LocalRevisionChangeset == DepotRevisionChangeset);
 
-	UE_LOG(LogSourceControl, Log, TEXT("IsCurrent(%s)=%d"), *LocalFilename, bIsCurrent);
+	// TODO: Plastic SCM "bug": DepotRevisionChangeset not working as expected
+	// if (bIsCurrent) UE_LOG(LogSourceControl, Log, TEXT("%s IsCurrent"), *LocalFilename, );
 	
 	return bIsCurrent;
 }
@@ -301,7 +302,7 @@ bool FPlasticSourceControlState::IsSourceControlled() const
 								  && WorkspaceState != EWorkspaceState::Ignored
 								  && WorkspaceState != EWorkspaceState::Unknown;
 
-	UE_LOG(LogSourceControl, Log, TEXT("IsSourceControlled(%s)=%d"), *LocalFilename, bIsSourceControlled);
+	if (!bIsSourceControlled) UE_LOG(LogSourceControl, Log, TEXT("%s NOT SourceControlled"), *LocalFilename);
 
 	return bIsSourceControlled;
 }
@@ -311,21 +312,21 @@ bool FPlasticSourceControlState::IsAdded() const
 	const bool bIsAdded =	WorkspaceState == EWorkspaceState::Added
 						 || WorkspaceState == EWorkspaceState::Copied;
 
-	UE_LOG(LogSourceControl, Log, TEXT("IsAdded(%s)=%d"), *LocalFilename, bIsAdded);
+	if (bIsAdded) UE_LOG(LogSourceControl, Log, TEXT("%s IsAdded"), *LocalFilename);
 
 	return bIsAdded;
 }
 
 bool FPlasticSourceControlState::IsDeleted() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsDeleted(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Deleted);
+	if (WorkspaceState == EWorkspaceState::Deleted) UE_LOG(LogSourceControl, Log, TEXT("%s IsDeleted"), *LocalFilename);
 
 	return WorkspaceState == EWorkspaceState::Deleted;
 }
 
 bool FPlasticSourceControlState::IsIgnored() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsIgnored(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Ignored);
+	if (WorkspaceState == EWorkspaceState::Ignored) UE_LOG(LogSourceControl, Log, TEXT("%s IsIgnored"), *LocalFilename);
 
 	return WorkspaceState == EWorkspaceState::Ignored;
 }
@@ -338,14 +339,14 @@ bool FPlasticSourceControlState::CanEdit() const
 						|| WorkspaceState == EWorkspaceState::Copied
 						|| WorkspaceState == EWorkspaceState::Replaced;
 
-	UE_LOG(LogSourceControl, Log, TEXT("CanEdit(%s)=%d"), *LocalFilename, bCanEdit);
+	UE_LOG(LogSourceControl, Log, TEXT("%s CanEdit=%d"), *LocalFilename, bCanEdit);
 
 	return bCanEdit;
 }
 
 bool FPlasticSourceControlState::IsUnknown() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsUnknown(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Unknown);
+	if (WorkspaceState == EWorkspaceState::Unknown) UE_LOG(LogSourceControl, Log, TEXT("%s IsUnknown"), *LocalFilename);
 
 	return WorkspaceState == EWorkspaceState::Unknown;
 }
@@ -370,7 +371,7 @@ bool FPlasticSourceControlState::IsModified() const
 							|| WorkspaceState == EWorkspaceState::Changed
 							|| WorkspaceState == EWorkspaceState::Conflicted;
 
-	UE_LOG(LogSourceControl, Log, TEXT("IsModified(%s)=%d"), *LocalFilename, bIsModified);
+	UE_LOG(LogSourceControl, Log, TEXT("%s IsModified=%d"), *LocalFilename, bIsModified);
 
 	return bIsModified;
 }
@@ -378,14 +379,14 @@ bool FPlasticSourceControlState::IsModified() const
 
 bool FPlasticSourceControlState::CanAdd() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("CanAdd(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Private);
+	UE_LOG(LogSourceControl, Log, TEXT("%s CanAdd=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Private);
 
 	return WorkspaceState == EWorkspaceState::Private;
 }
 
 bool FPlasticSourceControlState::IsConflicted() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IsConflicted(%s)=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Conflicted);
+	if (WorkspaceState == EWorkspaceState::Conflicted) UE_LOG(LogSourceControl, Log, TEXT("%s IsConflicted"), *LocalFilename);
 
 	return WorkspaceState == EWorkspaceState::Conflicted;
 }

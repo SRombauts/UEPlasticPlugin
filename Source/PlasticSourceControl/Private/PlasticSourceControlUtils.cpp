@@ -99,12 +99,15 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite));	// For reading from child process
 	verify(CreatePipeWrite(ShellInputPipeRead, ShellInputPipeWrite));	// For writing to child process
 
-	UE_LOG(LogSourceControl, Log, TEXT("LaunchBackgroundPlasticShell: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
 	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
 	if (!ShellProcessHandle.IsValid())
 	{
 		UE_LOG(LogSourceControl, Warning, TEXT("Failed to launch 'cm shell'")); // not a bug, just no Plastic SCM cli found
 		_CleanupBackgroundCommandLineShell();
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Log, TEXT("LaunchBackgroundPlasticShell: '%s %s' ok (handle %d)"), *InPathToPlasticBinary, *FullCommand, ShellProcessHandle.Get());
 	}
 
 	return ShellProcessHandle.IsValid();
@@ -149,7 +152,8 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		FullCommand += TEXT("\"");
 	}
 	// @todo: temporary debug logs (before end of line)
-	UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternal: '%s'"), *FullCommand);
+	const FString LoggableCommand = FullCommand;
+//	UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternal: '%s'"), *LoggableCommand);
 	FullCommand += TEXT('\n'); // Finalize the command line
 
 	// Send command to 'cm shell' process
@@ -186,7 +190,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
 			// Shut-down and restart the connexion to 'cm shell' in case of timeout!
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternal(%s)=%d TIMEOUT after '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternal: '%s' %d TIMEOUT after %lfs output:\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
 			PreviousLogLen = OutResults.Len();
 			LastActivity = FPlatformTime::Seconds(); // freshen the timestamp to reinit timeout warning
 		}
@@ -196,12 +200,19 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	if (!InCommand.Equals(TEXT("exit")) && !FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
 		// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
-		UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternal(%s): 'cm shell' stopped after '%lf's Out=\n%s"), *InCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+		UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternal: '%s' 'cm shell' stopped after %lfs output:\n%s"), *LoggableCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
 	}
 	else
 	{
 		// @todo: temporary debug logs
-		UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternal(%s)=%d in '%lf's Out=\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+		if (bResult)
+		{
+			UE_LOG(LogSourceControl, Log, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+		}
+		else
+		{
+			UE_LOG(LogSourceControl, Warning, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+		}
 	}
 		
 	// Return output as error if result code is an error

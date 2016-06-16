@@ -20,8 +20,6 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FConnect, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FConnect>(InCommand.Operation);
 
-	UE_LOG(LogSourceControl, Log, TEXT("connect"));
-
 	// Execute a 'status' command to check for the workspace
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--nochanges"));
@@ -58,8 +56,6 @@ FName FPlasticCheckOutWorker::GetName() const
 bool FPlasticCheckOutWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
-
-	UE_LOG(LogSourceControl, Log, TEXT("checkout"));
 
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkout"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 
@@ -150,8 +146,6 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	UE_LOG(LogSourceControl, Log, TEXT("add"));
-
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--parents"));
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
@@ -176,8 +170,6 @@ bool FPlasticDeleteWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	UE_LOG(LogSourceControl, Log, TEXT("Delete"));
-
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("remove"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 
 	// now update the status of our files
@@ -199,8 +191,6 @@ FName FPlasticRevertWorker::GetName() const
 bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
-
-	UE_LOG(LogSourceControl, Log, TEXT("Revert"));
 
 	// revert any changes in workspace
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
@@ -440,7 +430,6 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	UE_LOG(LogSourceControl, Log, TEXT("Sync"));
 	TArray<FString> Files;
 	Files.Add(InCommand.PathToWorkspaceRoot); // Always update the Root of the Workspace
 
