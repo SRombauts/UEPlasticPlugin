@@ -358,7 +358,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.FillHeight(1.5f)
 					.Padding(2.0f)
 					[
-						SNew(SMultiLineEditableTextBox)
+						// TODO: SMultiLineEditableTextBox & run a real <CheckIn> operation
+						SNew(SEditableTextBox)
 						.Text(this, &SPlasticSourceControlSettings::GetInitialCommitMessage)
 						.ToolTipText(LOCTEXT("InitialCommitMessage_Tooltip", "Enter the message for the initial checkin"))
 						.HintText(LOCTEXT("InitialCommitMessage_Hint", "Message for the initial checkin"))
