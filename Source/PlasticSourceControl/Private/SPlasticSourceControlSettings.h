@@ -47,7 +47,12 @@ private:
 	FText GetInitialCommitMessage() const;
 	FText InitialCommitMessage;
 
-	FReply OnClickedInitializePlasticWorkspace() const;
+	TSharedPtr<FCheckIn, ESPMode::ThreadSafe> CheckInOperation;
+	/** Delegate called when a source control operation has completed */
+	void OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+
+
+	FReply OnClickedInitializePlasticWorkspace();
 
 	/** Delegate to add a Plastic ignore.conf file to an existing Plastic workspace */
 	EVisibility CanAddIgnoreFile() const;

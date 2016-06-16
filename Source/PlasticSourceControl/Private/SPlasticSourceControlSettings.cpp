@@ -314,7 +314,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				]
 			]
 			+SVerticalBox::Slot()
-			.FillHeight(1.5f)
+			.AutoHeight()
 			.Padding(2.0f)
 			.VAlign(VAlign_Center)
 			[
@@ -355,11 +355,10 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				[
 					SNew(SVerticalBox)
 					+SVerticalBox::Slot()
-					.FillHeight(1.5f)
+					.AutoHeight()
 					.Padding(2.0f)
 					[
-						// TODO: SMultiLineEditableTextBox & run a real <CheckIn> operation
-						SNew(SEditableTextBox)
+						SNew(SMultiLineEditableTextBox)
 						.Text(this, &SPlasticSourceControlSettings::GetInitialCommitMessage)
 						.ToolTipText(LOCTEXT("InitialCommitMessage_Tooltip", "Enter the message for the initial checkin"))
 						.HintText(LOCTEXT("InitialCommitMessage_Hint", "Message for the initial checkin"))
@@ -517,13 +516,17 @@ FText SPlasticSourceControlSettings::GetInitialCommitMessage() const
 }
 
 
-FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace() const
+FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	bool bResult;
+
+	UE_LOG(LogSourceControl, Log, TEXT("InitializePlasticWorkspace(%s, %s, %s) CreateIgnore=%d Commit=%d"),
+		*WorkspaceName.ToString(), *RepositoryName.ToString(), *ServerUrl.ToString(), bAutoCreateIgnoreFile, bAutoInitialCommit);
+
 	if (!RepositoryName.IsEmpty())
 	{
 		TArray<FString> Parameters;
@@ -573,18 +576,36 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace() cons
 		}
 		if (bAutoInitialCommit && bResult)
 		{
-			// optional initial checkin with custom message
-			TArray<FString> Parameters;
-			FString ParamCommitMsg = TEXT("-c=\"");
-			ParamCommitMsg += InitialCommitMessage.ToString();
-			ParamCommitMsg += TEXT("\"");
-			Parameters.Add(ParamCommitMsg);
-			PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+			UE_LOG(LogSourceControl, Log, TEXT("FCheckIn(%s)"), *InitialCommitMessage.ToString());
+
+			// optional initial checkin with custom message: launch a "CheckIn" Operation
+			ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
+			ISourceControlProvider& Provider = SourceControl.GetProvider();
+			CheckInOperation = ISourceControlOperation::Create<FCheckIn>();
+			CheckInOperation->SetDescription(InitialCommitMessage);
+			Provider.Execute(CheckInOperation.ToSharedRef(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
 		}
 	}
 	return FReply::Handled();
 }
 
+
+void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	if (InResult == ECommandResult::Succeeded)
+	{
+		check(InOperation->GetName() == "CheckIn");
+		check(CheckInOperation == StaticCastSharedRef<FCheckIn>(InOperation));
+
+		UE_LOG(LogSourceControl, Log, TEXT("Initial CheckIn succeeded: '%s'"), *CheckInOperation->GetSuccessMessage().ToString());
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("Initial CheckIn failed!"));
+	}
+
+// TODO:	GetWorkspacesOperation.Reset();
+}
 
 /** Delegate to check for presence of a Plastic ignore.conf file to an existing Plastic SCM workspace */
 EVisibility SPlasticSourceControlSettings::CanAddIgnoreFile() const
