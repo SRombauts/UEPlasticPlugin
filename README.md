@@ -32,7 +32,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Alpha version 0.5.0 2016/05/30 :
+Alpha version 0.6.0 2016/06/16 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
@@ -51,6 +51,7 @@ Alpha version 0.5.0 2016/05/30 :
 - create an appropriate ignore.conf file as part as initialization
 - make the initial commit
 - also permit late creation of the ignore.conf file
+- show conflicted files and 3-way visual diff
 
 #### What *cannot* be done presently (TODO list for v1.0, ordered by priority):
 - solve a merge conflict on a blueprint
