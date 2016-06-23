@@ -46,6 +46,12 @@ public:
 	 */
 	void CheckPlasticAvailability(bool bForceConnection = true);
 
+	/** Is Plastic command line working. */
+	inline bool IsPlasticAvailable() const
+	{
+		return bPlasticAvailable;
+	}
+
 	/** Is Plastic workspace found. */
 	inline bool IsWorkspaceFound() const
 	{

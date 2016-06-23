@@ -451,7 +451,7 @@ FText SPlasticSourceControlSettings::GetUserName() const
 EVisibility SPlasticSourceControlSettings::CanInitializePlasticWorkspace() const
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const bool bPlasticAvailable = PlasticSourceControl.GetProvider().IsEnabled();
+	const bool bPlasticAvailable = PlasticSourceControl.GetProvider().IsPlasticAvailable();
 	const bool bPlasticWorkspaceFound = PlasticSourceControl.GetProvider().IsWorkspaceFound();
 	return (bPlasticAvailable && !bPlasticWorkspaceFound) ? EVisibility::Visible : EVisibility::Collapsed;
 }
