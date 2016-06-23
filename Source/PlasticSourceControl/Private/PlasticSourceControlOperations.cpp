@@ -323,7 +323,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FCopy, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCopy>(InCommand.Operation);
 
-	if (InCommand.Files.Num() > 0)
+	if (InCommand.Files.Num() == 1)
 	{
 		const FString& Origin = InCommand.Files[0];
 		const FString Destination = Operation->GetDestination();
@@ -412,6 +412,10 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		// now update the status of our files
 		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States);
 	}
+	else
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("Copy is working for one file only: %d provided!"), InCommand.Files.Num());
+	}
 
 	return InCommand.bCommandSuccessful;
 }
@@ -456,6 +460,7 @@ bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
+	// Currently resolve operation is always on one file only, but the following would works for many
 	for (const FString& File : InCommand.Files)
 	{
 		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
