@@ -197,24 +197,28 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 
 		FPlatformProcess::Sleep(0.0f); // 0.0 means release the current time slice to let other threads get some attention
 	}
-	if (!InCommand.Equals(TEXT("exit")) && !FPlatformProcess::IsProcRunning(ShellProcessHandle))
+	if (!InCommand.Equals(TEXT("exit")))
 	{
-		// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
-		UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternal: '%s' 'cm shell' stopped after %lfs output:\n%s"), *LoggableCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
-	}
-	else
-	{
-		// @todo: temporary debug logs
-		if (bResult)
+		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
-			UE_LOG(LogSourceControl, Log, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+			// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternal: '%s' 'cm shell' stopped after %lfs output:\n%s"), *LoggableCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
 		}
-		else
+		else if (!bResult)
 		{
 			UE_LOG(LogSourceControl, Warning, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
 		}
+		else
+		{
+			// @todo: debug log
+			UE_LOG(LogSourceControl, Log, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+		}
 	}
-		
+	else
+	{
+		// @todo: debug log
+		UE_LOG(LogSourceControl, Log, TEXT("'exit'"));
+	}
 	// Return output as error if result code is an error
 	if (!bResult)
 	{
