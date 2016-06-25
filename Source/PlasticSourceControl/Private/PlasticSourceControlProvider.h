@@ -16,6 +16,7 @@ public:
 		: bPlasticAvailable(false)
 		, bWorkspaceFound(false)
 		, bServerAvailable(false)
+		, ChangesetNumber(-1)
 	{
 	}
 
@@ -128,6 +129,9 @@ private:
 	/** Output any messages this command holds */
 	void OutputCommandMessages(const class FPlasticSourceControlCommand& InCommand) const;
 
+	/** Update workspace status on Connect and UpdateStatus operations */
+	void UpdateWorkspaceStatus(const class FPlasticSourceControlCommand& InCommand);
+
 	/** Path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */
 	FString PathToWorkspaceRoot;
 
@@ -145,6 +149,9 @@ private:
 
 	/** Name of the current branch */
 	FString BranchName;
+
+	/** Current Changeset Number */
+	int32 ChangesetNumber;
 
 	/** State cache */
 	TMap<FString, TSharedRef<class FPlasticSourceControlState, ESPMode::ThreadSafe> > StateCache;

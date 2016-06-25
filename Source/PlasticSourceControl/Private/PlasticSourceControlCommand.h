@@ -53,6 +53,21 @@ public:
 	/**If true, the source control connection was dropped while this command was being executed*/
 	bool bConnectionDropped;
 
+	/** Plastic current workspace */
+	FString WorkspaceName;
+
+	/** Plastic current repository */
+	FString RepositoryName;
+
+	/** Plastic current server URL */
+	FString ServerUrl;
+
+	/** Name of the current branch */
+	FString BranchName;
+
+	/** Current Changeset Number */
+	int32 ChangesetNumber;
+
 	/** If true, this command will be automatically cleaned up in Tick() */
 	bool bAutoDelete;
 

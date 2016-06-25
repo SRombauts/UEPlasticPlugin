@@ -13,6 +13,7 @@ FPlasticSourceControlCommand::FPlasticSourceControlCommand(const TSharedRef<clas
 	, bExecuteProcessed(0)
 	, bCommandSuccessful(false)
 	, bConnectionDropped(false)
+	, ChangesetNumber(-1)
 	, bAutoDelete(true)
 	, Concurrency(EConcurrency::Synchronous)
 {

@@ -76,10 +76,10 @@ Alpha version 0.6.0 2016/06/16 :
 - annotate: blame (used for crash when the full Engine is under Plastic SCM)
 
 #### Bugs
-- Changed assets popup a "Files need check-out!" (UnrealEdSrv.cpp) windows that does nothing when clicked!
-- Source Control does not show correctly at next launch of the Editor after first connection
+- "Changed" assets popup a "Files need check-out!" (UnrealEdSrv.cpp) windows that does nothing when clicked!
+- Source Control icon does not show correctly at next launch of the Editor after first connection, or when server is offline
 - "NotCurrent" warning is not working because "DepotRevisionChangeset" is not correct in the "cm fileinfo" command
-- Revert "Unchanged only" does nothing.
+- Revert "Unchanged only" does nothing because Plastic SCM cli lacks a "chacked-out but unchanged" status.
 - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
 
 #### Known issues:

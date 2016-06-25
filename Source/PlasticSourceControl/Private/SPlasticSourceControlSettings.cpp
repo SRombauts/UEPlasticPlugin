@@ -603,8 +603,6 @@ void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSour
 	{
 		UE_LOG(LogSourceControl, Error, TEXT("Initial CheckIn failed!"));
 	}
-
-// TODO:	GetWorkspacesOperation.Reset();
 }
 
 /** Delegate to check for presence of a Plastic ignore.conf file to an existing Plastic SCM workspace */

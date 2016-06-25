@@ -69,25 +69,18 @@ void GetUserName(FString& OutUserName);
 
 /**
  * Get Plastic workspace name
- * @param	InWorkspaceRoot		The workspace from where to run the command - usually the Game directory (can be empty)
  * @param	OutWorkspaceName	Name of the current workspace
  */
-bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName);
+bool GetWorkspaceName(FString& OutWorkspaceName);
 
 /**
- * Get Plastic repository name and server URL
- * @param	InWorkspaceRoot		The workspace from where to run the command - usually the Game directory (can be empty)
+ * Get Plastic repository name and server URL, branch name and current changeset number
+ * @param   OutChangeset		The current Changeset Number
  * @param	OutRepositoryName	Name of the repository of the current workspace
  * @param	OutServerUrl		Url/Port of the server of the repository
+ * @param	OutBranchName		Name of the current checked-out branch
  */
-bool GetRepositorySpecification(const FString& InWorkspaceRoot, FString& OutRepositoryName, FString& OutServerUrl);
-
-/**
- * Get Plastic current checked-out branch
- * @param	InWorkspaceRoot		The workspace from where to run the command - usually the Game directory (can be empty)
- * @param	OutBranchName		Name of the current checked-out branch (if any, ie. not in detached HEAD)
- */
-void GetBranchName(const FString& InWorkspaceRoot, FString& OutBranchName);
+bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName);
 
 /**
  * Run a Plastic command - output is a string TArray.
@@ -106,9 +99,12 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
  *
  * @param	InFiles				The files to be operated on
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+ * @param   OutStates			States of the files
+ * @param   OutChangeset		The current Changeset Number
+ * @param	OutBranchName		Name of the current checked-out branch
  * @returns true if the command succeeded and returned no errors
  */
-bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates);
+bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName);
 
 /**
  * Run a Plastic "cat" command to dump the binary content of a revision into a file.
