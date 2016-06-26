@@ -436,11 +436,14 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("--last"));
+	Parameters.Add(TEXT("--dontmerge"));
 	TArray<FString> Files;
 	Files.Add(InCommand.PathToWorkspaceRoot); // Always update the Root of the Workspace
 
 	// Update the workspace to the head of the repository
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("update"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 
 	// now update the status of our files
 	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
