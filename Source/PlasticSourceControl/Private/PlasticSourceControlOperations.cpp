@@ -30,7 +30,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			// Execute a 'checkconnection' command to check the connectivity of the server.
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
-			if (!InCommand.bCommandSuccessful || InCommand.ErrorMessages.Num() > 0 || InCommand.InfoMessages.Num() == 0)
+			if (!InCommand.bCommandSuccessful)
 			{
 				Operation->SetErrorText(FText::FromString(InCommand.ErrorMessages[0]));
 			}
