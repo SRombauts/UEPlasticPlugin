@@ -395,7 +395,11 @@ bool GetWorkspaceName(FString& OutWorkspaceName)
 	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
-		OutWorkspaceName = MoveTemp(InfoMessages[0]);
+		// NOTE: getworkspacefrompath never returns an error!
+		if (!InfoMessages[0].Equals(TEXT(". is not in a workspace.")))
+		{
+			OutWorkspaceName = MoveTemp(InfoMessages[0]);
+		}
 	}
 
 	return bResult;
