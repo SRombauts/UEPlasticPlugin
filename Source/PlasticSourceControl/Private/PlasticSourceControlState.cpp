@@ -93,7 +93,7 @@ FName FPlasticSourceControlState::GetIconName() const
 	switch(WorkspaceState)
 	{
 	case EWorkspaceState::CheckedOut:
-	case EWorkspaceState::Replaced: // Merged (waiting for checkin)
+	case EWorkspaceState::Replaced: // Merged (waiting for checkin) TODO: would need a dedicated icon
 		return FName("Perforce.CheckedOut");
 	case EWorkspaceState::Added:
 	case EWorkspaceState::Copied:
@@ -136,12 +136,12 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 		return FName("Perforce.Branched_Small");
 	case EWorkspaceState::Deleted:
 		return FName("Perforce.MarkedForDelete_Small");
-	case EWorkspaceState::Conflicted: // TODO: would need a dedicated icon
+	case EWorkspaceState::Conflicted:
 		return FName("Perforce.NotAtHeadRevision_Small");
 	case EWorkspaceState::LockedByOther:
 		return FName("Perforce.CheckedOutByOtherUser_Small");
 	case EWorkspaceState::Private: // Not controlled
-	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
+	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled
 		return FName("Perforce.NotInDepot_Small");
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:

@@ -23,9 +23,6 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 
 void FPlasticSourceControlProvider::CheckPlasticAvailability(bool bForceConnection)
 {
-	// @todo: temporary debug log
-	UE_LOG(LogSourceControl, Log, TEXT("CheckPlasticAvailability(bForceConnection=%d)"), bForceConnection);
-
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 
@@ -43,15 +40,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability(bool bForceConnecti
 		// Get user name (from the global Plastic SCM client config)
 		PlasticSourceControlUtils::GetUserName(UserName);
 
-		if(bWorkspaceFound)
-		{
-			if (bForceConnection)
-			{
-				// TODO: no "checkconnection" at this stage, "Connect" is already the first operation executed by the Editor Toolbar at load time
-				UE_LOG(LogSourceControl, Warning, TEXT("CheckPlasticAvailability(bForceConnection)"));
-			}
-		}
-		else
+		if(!bWorkspaceFound)
 		{
 			UE_LOG(LogSourceControl, Error, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::GameDir());
 		}
@@ -257,7 +246,6 @@ void FPlasticSourceControlProvider::OutputCommandMessages(const FPlasticSourceCo
 
 void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSourceControlCommand& InCommand)
 {
-	// TODO: and on "UpdateStatus"
 	if (InCommand.Operation->GetName() == "Connect")
 	{
 		// Is connection successful?

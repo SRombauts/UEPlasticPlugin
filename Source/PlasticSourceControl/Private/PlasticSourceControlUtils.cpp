@@ -1130,8 +1130,7 @@ bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 			State->PendingMergeBaseChangeset = InState.PendingMergeBaseChangeset;
 			State->PendingMergeSourceChangeset = InState.PendingMergeSourceChangeset;
 			State->PendingMergeParameters = InState.PendingMergeParameters;
-			// TODO: try to revert and also remove all "UpdateStatus" operations so that the Editor have to call it asynchronously?
-			State->TimeStamp = InState.TimeStamp; // TODO: Bug report: Workaround a bug with the Source Control Module not updating file state after a "Save"
+			State->TimeStamp = InState.TimeStamp; // TODO: Bug report: Workaround a bug with the Source Control Module not updating file state after a "Save" : try to revert and also remove all "UpdateStatus" operations so that the Editor have to call it asynchronously?
 			NbStatesUpdated++;
 		}
 	}
