@@ -9,7 +9,8 @@ It is not intended to replace Plastic SCM GUI or command line.
 It is a complementary tool improving efficiency in daily workflow.
 It automates tracking of assets, bring common SCM tasks inside the Editor, and provide visual diffing of Blueprints.
 
-![History Log window](Resources/UE4PlasticPlugin-History.png) 
+![Create new Workspace](Resources/UE4PlasticPlugin-CreateWorkspace) 
+![History Log](Resources/UE4PlasticPlugin-History.png) 
 
 ### References
 
