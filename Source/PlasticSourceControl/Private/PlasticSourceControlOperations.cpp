@@ -279,15 +279,13 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	else
 	{
 		UE_LOG(LogSourceControl, Log, TEXT("status (with no files)"));
-		InCommand.bCommandSuccessful = true;
 		// Perforce "opened files" are those that have been modified (or added/deleted): that is what we get with a simple Plastic status from the root
 		if (Operation->ShouldGetOpenedOnly())
 		{
-			/** TODO: UpdateStatus() from the ContentDir()
+			// UpdateStatus() from the ContentDir()
 			TArray<FString> Files;
 			Files.Add(FPaths::ConvertRelativePathToFull(FPaths::GameDir()));
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Files, InCommand.ErrorMessages, States);
-			*/
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Files, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 		}
 	}
 
