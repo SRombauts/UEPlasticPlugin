@@ -7,7 +7,7 @@
 
 namespace EWorkspaceState
 {
-static const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState)
+const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState)
 {
 	const TCHAR* WorkspaceStateStr = nullptr;
 	switch (InWorkspaceState)
@@ -302,7 +302,7 @@ bool FPlasticSourceControlState::IsSourceControlled() const
 								  && WorkspaceState != EWorkspaceState::Ignored
 								  && WorkspaceState != EWorkspaceState::Unknown;
 
-	if (!bIsSourceControlled) UE_LOG(LogSourceControl, Log, TEXT("%s NOT SourceControlled"), *LocalFilename);
+	if (!bIsSourceControlled && !IsUnknown()) UE_LOG(LogSourceControl, Log, TEXT("%s NOT SourceControlled"), *LocalFilename);
 
 	return bIsSourceControlled;
 }
@@ -379,7 +379,7 @@ bool FPlasticSourceControlState::IsModified() const
 
 bool FPlasticSourceControlState::CanAdd() const
 {
-	UE_LOG(LogSourceControl, Log, TEXT("%s CanAdd=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Private);
+	if (!IsUnknown()) UE_LOG(LogSourceControl, Log, TEXT("%s CanAdd=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Private);
 
 	return WorkspaceState == EWorkspaceState::Private;
 }

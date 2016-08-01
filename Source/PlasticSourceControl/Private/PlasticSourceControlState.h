@@ -25,7 +25,7 @@ namespace EWorkspaceState
 	};
 
 	// debug log utility
-	static const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState);
+	const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState);
 }
 
 class FPlasticSourceControlState : public ISourceControlState, public TSharedFromThis<FPlasticSourceControlState, ESPMode::ThreadSafe>
