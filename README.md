@@ -33,7 +33,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Beta version 0.7.0 2016/06/26 :
+Beta version 0.7.1 2016/08/04 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
