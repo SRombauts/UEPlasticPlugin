@@ -262,7 +262,7 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 		bServerAvailable = false;
 	}
 
-	// And for all operations running UpdateStatus:
+	// And for all operations running UpdateStatus, get Changeset and Branch informations:
 	if (InCommand.ChangesetNumber > -1)
 	{
 		ChangesetNumber = InCommand.ChangesetNumber;

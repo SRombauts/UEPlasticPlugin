@@ -405,23 +405,19 @@ bool GetWorkspaceName(FString& OutWorkspaceName)
 	return bResult;
 }
 
-bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName)
+static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName)
 {
-	TArray<FString> InfoMessages;
-	TArray<FString> ErrorMessages;
-	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--wkconfig"));
-	Parameters.Add(TEXT("--nochanges"));
-	// Get the workspace status, looking like "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087"
-	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
-	if (bResult && InfoMessages.Num() > 0)
+	bool bResult = true;
+
+	// Get workspace status, in the form "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087" (disabled by the "--nostatus" flag)
+	if (InInfoMessages.Num() > 0)
 	{
 		static const FString Changeset(TEXT("cs:"));
 		static const FString Rep(TEXT("rep:"));
 		static const FString Server(TEXT("repserver:"));
-		const FString& WorkspaceStatus = InfoMessages[0];
+		const FString& WorkspaceStatus = InInfoMessages[0];
 		TArray<FString> RepositorySpecification;
- 		WorkspaceStatus.ParseIntoArray(RepositorySpecification, TEXT("@"));
+		WorkspaceStatus.ParseIntoArray(RepositorySpecification, TEXT("@"));
 		if (3 >= RepositorySpecification.Num())
 		{
 			const FString ChangesetString = RepositorySpecification[0].RightChop(Changeset.Len());
@@ -434,10 +430,26 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 			bResult = false;
 		}
 	}
-	// Get the branch name, looking like "Branch /main@UE4PlasticPluginDev"
-	if (bResult && InfoMessages.Num() > 1)
+	// Get the branch name, in the form "Branch /main@UE4PlasticPluginDev" (enabled by the "--wkconfig" flag)
+	if (InInfoMessages.Num() > 1)
 	{
-		OutBranchName = MoveTemp(InfoMessages[1]);
+		OutBranchName = InInfoMessages[1];
+	}
+
+	return bResult;
+}
+
+bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName)
+{
+	TArray<FString> InfoMessages;
+	TArray<FString> ErrorMessages;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("--wkconfig")); // Branch name
+	Parameters.Add(TEXT("--nochanges")); // No file status
+	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	if (bResult)
+	{
+		ParseWorkspaceInformation(InfoMessages, OutChangeset, OutRepositoryName, OutServerUrl, OutBranchName);
 	}
 
 	return bResult;
@@ -618,8 +630,12 @@ static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
  */
-static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
+static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
+	// Parse the first two lines with Changeset number and Branch name
+	FString RepositoryName, ServerUrl;
+	ParseWorkspaceInformation(InResults, OutChangeset, RepositoryName, ServerUrl, OutBranchName);
+
 	// Iterate on each file explicitely listed in the command
 	for (const FString& File : InFiles)
 	{
@@ -667,7 +683,7 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
  * @param[out]	OutErrorMessages	Error messages from the "status" command
  * @param[out]	OutStates			States of files for witch the status has been gathered (distinct than InFiles in case of a "directory status")
  */
-static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
+static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
 	FString Path = FPaths::GetPath(*InFiles[0]);
 	bool bDirectoryStatus;
@@ -688,8 +704,16 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 	}
 
 	TArray<FString> Parameters;
-//	Parameters.Add(TEXT("--wkconfig")); TODO: get branch name, workspace and repository configuration
-	Parameters.Add(TEXT("--nostatus"));
+	if (bDirectoryStatus)
+	{
+		// Do not get changeset number to simplify parse in the case of the "directory status"
+		Parameters.Add(TEXT("--nostatus"));
+	}
+	else
+	{
+		// Get  current branch name and changeset number
+		Parameters.Add(TEXT("--wkconfig"));
+	}
 	Parameters.Add(TEXT("--noheaders"));
 	Parameters.Add(TEXT("--all"));
 	Parameters.Add(TEXT("--ignored"));
@@ -712,7 +736,7 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 		}
 		else
 		{
-			ParseFileStatusResult(InFiles, Results, OutStates);
+			ParseFileStatusResult(InFiles, Results, OutStates, OutChangeset, OutBranchName);
 		}
 	}
 
@@ -944,63 +968,59 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 // Run a Plastic "status" and "fileinfo" commands to update status of given files.
 bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
-	FString RepositoryName, ServerUrl;
-	// TODO: merge with RunStatus()
-	bool bResult = GetWorkspaceInformation(OutChangeset, RepositoryName, ServerUrl, OutBranchName);
-	if (bResult)
+	bool bResult = true;
+
+	// @todo: temporary debug log
+	if (InFiles.Num() > 0)
 	{
-		// TODO: temporary debug logs
-		if (InFiles.Num() > 0)
+		UE_LOG(LogSourceControl, Log, TEXT("RunUpdateStatus: %d files ('%s'...)"), InFiles.Num(), *InFiles[0]);
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Warning, TEXT("RunUpdateStatus: NO file"));
+	}
+
+	// The "status" command only operate on one directory at a time
+	// (whole tree recursively) not on different folders with no common root.
+	// But "Submit to Source Control" ask for the State of 3 different directories, Engine/Content, Project/Content and Project/Config,
+	// In a same way, a check-in can involve files from different subdirectories, and UpdateStatus is called for them all at once.
+
+	// 1) So here we group files by path (ie. by subdirectory)
+	TMap<FString, TArray<FString>> GroupOfFiles;
+	for (const FString& File : InFiles)
+	{
+		const FString Path = FPaths::GetPath(*File);
+		TArray<FString>* Group = GroupOfFiles.Find(Path);
+		if (Group != nullptr)
 		{
-			UE_LOG(LogSourceControl, Log, TEXT("RunUpdateStatus: %d files ('%s'...)"), InFiles.Num(), *InFiles[0]);
+			Group->Add(File);
 		}
 		else
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("RunUpdateStatus: NO file"));
+			TArray<FString> NewGroup;
+			NewGroup.Add(File);
+			GroupOfFiles.Add(Path, NewGroup);
 		}
-
-		// The "status" command only operate on one directory at a time
-		// (whole tree recursively) not on different folders with no common root.
-		// But "Submit to Source Control" ask for the State of 3 different directories, Engine/Content, Project/Content and Project/Config,
-		// In a same way, a check-in can involve files from different subdirectories, and UpdateStatus is called for them all at once.
-
-		// 1) So here we group files by path (ie. by subdirectory)
-		TMap<FString, TArray<FString>> GroupOfFiles;
-		for (const FString& File : InFiles)
-		{
-			const FString Path = FPaths::GetPath(*File);
-			TArray<FString>* Group = GroupOfFiles.Find(Path);
-			if (Group != nullptr)
-			{
-				Group->Add(File);
-			}
-			else
-			{
-				TArray<FString> NewGroup;
-				NewGroup.Add(File);
-				GroupOfFiles.Add(Path, NewGroup);
-			}
-		}
-
-		// 2) then we can batch Plastic status operation by subdirectory
-		for (const auto& Files : GroupOfFiles)
-		{
-			// Run a "status" command on the directory to get workspace file states.
-			TArray<FPlasticSourceControlState> States;
-			const bool bGroupOk = RunStatus(Files.Value, OutErrorMessages, States);
-			if (bGroupOk && (States.Num() > 0))
-			{
-				// Run a "fileinfo" command to update status of given files.
-				// In case of "directory status", there is no explicit file in the group (it contains only the directory) 
-				// => work on the list of files discovered by RunStatus()
-				bResult &= RunFileinfo(OutErrorMessages, States);
-			}
-			OutStates.Append(MoveTemp(States));
-		}
-
-		// Check if merging, and from which changelist, then execute a cm merge command to amend status for listed files
-		RunCheckMergeStatus(InFiles, OutErrorMessages, OutStates);
 	}
+
+	// 2) then we can batch Plastic status operation by subdirectory
+	for (const auto& Files : GroupOfFiles)
+	{
+		// Run a "status" command on the directory to get workspace file states.
+		TArray<FPlasticSourceControlState> States;
+		const bool bGroupOk = RunStatus(Files.Value, OutErrorMessages, States, OutChangeset, OutBranchName);
+		if (bGroupOk && (States.Num() > 0))
+		{
+			// Run a "fileinfo" command to update status of given files.
+			// In case of "directory status", there is no explicit file in the group (it contains only the directory) 
+			// => work on the list of files discovered by RunStatus()
+			bResult &= RunFileinfo(OutErrorMessages, States);
+		}
+		OutStates.Append(MoveTemp(States));
+	}
+
+	// Check if merging, and from which changelist, then execute a cm merge command to amend status for listed files
+	RunCheckMergeStatus(InFiles, OutErrorMessages, OutStates);
 
 	return bResult;
 }
