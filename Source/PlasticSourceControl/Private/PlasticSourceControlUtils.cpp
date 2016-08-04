@@ -485,7 +485,7 @@ public:
 		{
 			State = EWorkspaceState::Added;
 		}
-		else if (FileStatus == "PR") // Not Controlled/Not in Depot/Untracked
+		else if ((FileStatus == "PR") || (FileStatus == "LM")) // Not Controlled/Not in Depot/Untracked (or Locally Moved/Renamed)
 		{
 			State = EWorkspaceState::Private;
 		}
@@ -493,13 +493,13 @@ public:
 		{
 			State = EWorkspaceState::Ignored;
 		}
-		else if ((FileStatus == "DE") || (FileStatus == "LD")) // TODO: need to differentiate for CanEdit/CanCheckout/CanCheckIn?
+		else if ((FileStatus == "DE") || (FileStatus == "LD"))
 		{
 			State = EWorkspaceState::Deleted; // Deleted or Locally Deleted (ie. missing)
 		}
-		else if ((FileStatus == "MV") || (FileStatus == "LM")) // Renamed TODO: need to differentiate for CanEdit/CanCheckout/CanCheckIn?
+		else if (FileStatus == "MV")
 		{
-			State = EWorkspaceState::Moved; // Moved/Renamed or Locally Moved
+			State = EWorkspaceState::Moved; // Moved/Renamed
 		}
 		else
 		{

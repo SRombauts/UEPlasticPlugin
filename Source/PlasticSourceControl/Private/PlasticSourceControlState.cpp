@@ -346,8 +346,6 @@ bool FPlasticSourceControlState::CanEdit() const
 
 bool FPlasticSourceControlState::IsUnknown() const
 {
-	if (WorkspaceState == EWorkspaceState::Unknown) UE_LOG(LogSourceControl, Log, TEXT("%s IsUnknown"), *LocalFilename);
-
 	return WorkspaceState == EWorkspaceState::Unknown;
 }
 
