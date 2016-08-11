@@ -8,6 +8,33 @@
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlRevision.h"
 
+
+/**
+ * Internal operation used to revert checked-out unchanged files
+*/
+class FPlasticRevertUnchanged : public ISourceControlOperation
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+};
+
+
+/**
+ * Internal operation used to revert checked-out files
+*/
+class FPlasticRevertAll : public ISourceControlOperation
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+};
+
+
 /** Called when first activated on a project, and then at project load time.
  *  Look for the root directory of the Plastic workspace (where the ".plastic/" subdirectory is located). */
 class FPlasticConnectWorker : public IPlasticSourceControlWorker
@@ -75,7 +102,7 @@ public:
 	virtual bool UpdateStates() const override;
 
 public:
-	/** Map of filenames to Plastic state */
+	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
 };
 
@@ -90,8 +117,30 @@ public:
 	virtual bool UpdateStates() const override;
 
 public:
-	/** Map of filenames to Plastic state */
+	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
+};
+
+/** Revert only unchanged file(s) (uncheckout). */
+class FPlasticRevertUnchangedWorker : public IPlasticSourceControlWorker
+{
+public:
+	virtual ~FPlasticRevertUnchangedWorker() {}
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() const override;
+};
+
+/** Revert all checked-out file(s). */
+class FPlasticRevertAllWorker : public IPlasticSourceControlWorker
+{
+public:
+	virtual ~FPlasticRevertAllWorker() {}
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() const override;
 };
 
 /** Plastic update the workspace to latest changes */
@@ -105,7 +154,7 @@ public:
 	virtual bool UpdateStates() const override;
 
 public:
-	/** Map of filenames to Plastic state */
+	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
 };
 
@@ -138,7 +187,7 @@ public:
 	virtual bool UpdateStates() const override;
 
 public:
-	// Temporary states for results
+	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
 };
 
@@ -152,6 +201,6 @@ public:
 	virtual bool UpdateStates() const override;
 	
 private:
-	// Temporary states for results
+	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
 };

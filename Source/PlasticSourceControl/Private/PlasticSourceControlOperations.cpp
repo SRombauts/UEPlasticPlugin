@@ -10,6 +10,27 @@
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
+FName FPlasticRevertUnchanged::GetName() const
+{
+	return "RevertUnchanged";
+}
+
+FText FPlasticRevertUnchanged::GetInProgressString() const
+{
+	return LOCTEXT("SourceControl_RevertUnchanged", "Reverting unchanged file(s) in Source Control...");
+}
+
+FName FPlasticRevertAll::GetName() const
+{
+	return "RevertAll";
+}
+
+FText FPlasticRevertAll::GetInProgressString() const
+{
+	return LOCTEXT("SourceControl_RevertAll", "Reverting checked-out file(s) in Source Control...");
+}
+
+
 FName FPlasticConnectWorker::GetName() const
 {
 	return "Connect";
@@ -193,7 +214,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	// revert any changes in workspace
+	// revert any changes of the given files in workspace
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 
 	// now update the status of our files
@@ -205,6 +226,52 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 bool FPlasticRevertWorker::UpdateStates() const
 {
 	return PlasticSourceControlUtils::UpdateCachedStates(States);
+}
+
+FName FPlasticRevertUnchangedWorker::GetName() const
+{
+	return "RevertUnchanged";
+}
+
+bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	check(InCommand.Operation->GetName() == GetName());
+
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("-R"));
+
+	// revert the checkout of all unchanged files recursively
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("uncounchanged"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticRevertUnchangedWorker::UpdateStates() const
+{
+	return false;
+}
+
+FName FPlasticRevertAllWorker::GetName() const
+{
+	return "RevertAll";
+}
+
+bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	check(InCommand.Operation->GetName() == GetName());
+
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("--all"));
+
+	// revert the checkout of all unchanged files recursively
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticRevertAllWorker::UpdateStates() const
+{
+	return false;
 }
 
 FName FPlasticUpdateStatusWorker::GetName() const
@@ -430,14 +497,14 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--last"));
 	Parameters.Add(TEXT("--dontmerge"));
-	TArray<FString> Files;
-	Files.Add(InCommand.PathToWorkspaceRoot); // Always update the Root of the Workspace
 
-	// Update the workspace to the head of the repository
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
-
-	// now update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	// Update specified directory to the head of the repository
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+	if (InCommand.bCommandSuccessful)
+	{
+		// now update the status of our files
+		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	}
 
 	return InCommand.bCommandSuccessful;
 }
