@@ -3,7 +3,7 @@ Unreal Engine 4 Plastic Source Control Plugin
 
 [![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
 
-UE4PlasticPlugin is a simple Plastic Source Control Plugin for Unreal Engine 4
+UE4PlasticPlugin is a simple Plastic Source Control Plugin for Unreal Engine 4 (UE 4.11 and 4.12)
 
 It is not intended to replace Plastic SCM GUI or command line.
 It is a complementary tool improving efficiency in daily workflow.
@@ -33,7 +33,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Beta version 0.7.1 2016/08/04 :
+Beta version 0.8.0 2016/08/17 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
@@ -59,7 +59,6 @@ Beta version 0.7.1 2016/08/04 :
 - Mac and Linux
 
 #### Feature Requests (post v1.0)
-- improve "status" efficiency by requesting status of the workspace root instead of file by file
 - fire a global "status" command at startup (to populate the cache) to fix wrong context menu on content folders ("Mark for Add")
 - add a top-menu "Sync/Update" instead of "Sync" on folder's context menu
 - add a top-menu option to "undo all changes" in the project
