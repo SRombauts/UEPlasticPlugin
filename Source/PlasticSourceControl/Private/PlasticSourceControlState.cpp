@@ -344,6 +344,11 @@ bool FPlasticSourceControlState::CanEdit() const
 	return bCanEdit;
 }
 
+bool FPlasticSourceControlState::CanDelete() const
+{
+	return !IsCheckedOutOther() && IsSourceControlled() && IsCurrent();
+}
+
 bool FPlasticSourceControlState::IsUnknown() const
 {
 	return WorkspaceState == EWorkspaceState::Unknown;
