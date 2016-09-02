@@ -3,7 +3,7 @@ Unreal Engine 4 Plastic Source Control Plugin
 
 [![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
 
-UE4PlasticPlugin is a simple Plastic Source Control Plugin for Unreal Engine 4 (UE 4.11 and 4.12)
+UE4PlasticPlugin is a simple Plastic Source Control Plugin for Unreal Engine 4 (UE 4.11 to 4.13)
 
 It is not intended to replace Plastic SCM GUI or command line.
 It is a complementary tool improving efficiency in daily workflow.
@@ -33,7 +33,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Beta version 0.8.0 2016/08/17 :
+Beta version 0.8.1 2016/09/02 for UE4.3 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
