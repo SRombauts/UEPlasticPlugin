@@ -33,7 +33,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Beta version 0.8.1 2016/09/02 for UE4.3 :
+Beta version 0.9.0 2016/09/18 for UE4.13 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
@@ -54,15 +54,14 @@ Beta version 0.8.1 2016/09/02 for UE4.3 :
 - also permit late creation of the ignore.conf file
 - show conflicted files and 3-way visual diff
 - solve a merge conflict on a blueprint
+- top-menu global "Sync" instead of on folder's context menu
+- top-menu global "undo unchanged" and "undo all checkout"
 
 #### What *cannot* be done presently (TODO list for v1.0):
 - Mac and Linux
 
 #### Feature Requests (post v1.0)
 - fire a global "status" command at startup (to populate the cache) to fix wrong context menu on content folders ("Mark for Add")
-- add a top-menu "Sync/Update" instead of "Sync" on folder's context menu
-- add a top-menu option to "undo all changes" in the project
-- add a top-menu option to "undo unchanged only"
 - add a "clean directory" or "checkin deleted files"
 - add a setting to pass the --update option to "checkin"
 - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
