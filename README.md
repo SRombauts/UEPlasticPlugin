@@ -33,7 +33,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Beta version 0.9.0 2016/09/18 for UE4.13 :
+Beta version 0.9.1 2016/10/10 for UE4.13 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
