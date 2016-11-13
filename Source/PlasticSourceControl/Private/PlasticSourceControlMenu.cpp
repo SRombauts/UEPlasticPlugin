@@ -44,11 +44,14 @@ void FPlasticSourceControlMenu::Register()
 
 	// Register the extension with the level editor
 	{
-		FLevelEditorModule::FLevelEditorMenuExtender ViewMenuExtender = FLevelEditorModule::FLevelEditorMenuExtender::CreateRaw(this, &FPlasticSourceControlMenu::OnExtendLevelEditorViewMenu);
-		FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-		auto& MenuExtenders = LevelEditorModule.GetAllLevelEditorToolbarSourceControlMenuExtenders();
-		MenuExtenders.Add(ViewMenuExtender);
-		ViewMenuExtenderHandle = MenuExtenders.Last().GetHandle();
+		FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
+		if (LevelEditorModule)
+		{
+			FLevelEditorModule::FLevelEditorMenuExtender ViewMenuExtender = FLevelEditorModule::FLevelEditorMenuExtender::CreateRaw(this, &FPlasticSourceControlMenu::OnExtendLevelEditorViewMenu);
+			auto& MenuExtenders = LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders();
+			MenuExtenders.Add(ViewMenuExtender);
+			ViewMenuExtenderHandle = MenuExtenders.Last().GetHandle();
+		}
 	}
 }
 
@@ -56,8 +59,11 @@ void FPlasticSourceControlMenu::Unregister()
 {
 	// Unregister the level editor extensions
 	{
-		FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-		LevelEditorModule.GetAllLevelEditorToolbarSourceControlMenuExtenders().RemoveAll([=](const FLevelEditorModule::FLevelEditorMenuExtender& Extender) { return Extender.GetHandle() == ViewMenuExtenderHandle; });
+		FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
+		if (LevelEditorModule)
+		{
+			LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders().RemoveAll([=](const FLevelEditorModule::FLevelEditorMenuExtender& Extender) { return Extender.GetHandle() == ViewMenuExtenderHandle; });
+		}
 	}
 
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
