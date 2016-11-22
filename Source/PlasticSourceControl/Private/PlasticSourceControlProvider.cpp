@@ -54,6 +54,10 @@ void FPlasticSourceControlProvider::Close()
 	// terminate the background 'cm shell' process and associated pipes
 	PlasticSourceControlUtils::Terminate();
 
+	// TODO SRO : is this safe? is it enough?
+	UE_LOG(LogSourceControl, Log, TEXT("Close: PlasticSourceControlMenu.Unregister"));
+	PlasticSourceControlMenu.Unregister();
+
 	bServerAvailable = false;
 }
 
@@ -255,6 +259,13 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 		WorkspaceName = InCommand.WorkspaceName;
 		RepositoryName = InCommand.RepositoryName;
 		ServerUrl = InCommand.ServerUrl;
+
+		if (bWorkspaceFound)
+		{
+			// Extend the "Source Control" menu in the Editor Toolbar on first successfull connection
+			UE_LOG(LogSourceControl, Log, TEXT("Init: PlasticSourceControlMenu.Register"));
+			PlasticSourceControlMenu.Register();
+		}
 	}
 	else if (InCommand.bConnectionDropped)
 	{

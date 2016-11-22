@@ -5,7 +5,6 @@
 #include "ModuleInterface.h"
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlProvider.h"
-#include "PlasticSourceControlMenu.h"
 
 /**
  * UE4PlasticPlugin is a simple Plastic SCM Source Control Plugin for Unreal Engine 4
@@ -40,7 +39,4 @@ private:
 
 	/** The settings for Plastic source control */
 	FPlasticSourceControlSettings PlasticSourceControlSettings;
-
-	/** Source Control Menu Extension */
-	FPlasticSourceControlMenu PlasticSourceControlMenu;
 };

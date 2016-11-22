@@ -42,17 +42,12 @@ void FPlasticSourceControlModule::StartupModule()
 	// load our settings
 	PlasticSourceControlSettings.LoadSettings();
 
-	// extends the "Source Control" menu in the Editor toolbar
-	PlasticSourceControlMenu.Register();
-
 	// Bind our source control provider to the editor
 	IModularFeatures::Get().RegisterModularFeature( "SourceControl", &PlasticSourceControlProvider );
 }
 
 void FPlasticSourceControlModule::ShutdownModule()
 {
-	PlasticSourceControlMenu.Unregister();
-
 	// shut down the provider, as this module is going away
 	PlasticSourceControlProvider.Close();
 

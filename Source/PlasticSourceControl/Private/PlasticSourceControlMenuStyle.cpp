@@ -19,9 +19,12 @@ void FPlasticSourceControlMenuStyle::Initialize()
 
 void FPlasticSourceControlMenuStyle::Shutdown()
 {
-	FSlateStyleRegistry::UnRegisterSlateStyle(*StyleInstance);
-	ensure(StyleInstance.IsUnique());
-	StyleInstance.Reset();
+	if (StyleInstance.IsValid())
+	{
+		FSlateStyleRegistry::UnRegisterSlateStyle(*StyleInstance);
+		ensure(StyleInstance.IsUnique());
+		StyleInstance.Reset();
+	}
 }
 
 FName FPlasticSourceControlMenuStyle::GetStyleSetName()

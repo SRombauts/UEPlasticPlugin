@@ -5,6 +5,7 @@
 #include "ISourceControlProvider.h"
 #include "IPlasticSourceControlWorker.h"
 #include "PlasticSourceControlState.h"
+#include "PlasticSourceControlMenu.h"
 
 DECLARE_DELEGATE_RetVal(FPlasticSourceControlWorkerRef, FGetPlasticSourceControlWorker)
 
@@ -164,4 +165,7 @@ private:
 
 	/** For notifying when the source control states in the cache have changed */
 	FSourceControlStateChanged OnSourceControlStateChanged;
+
+	/** Source Control Menu Extension */
+	FPlasticSourceControlMenu PlasticSourceControlMenu;
 };
