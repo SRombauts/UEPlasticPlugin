@@ -22,7 +22,10 @@ private:
 
 	TSharedRef<FExtender> OnExtendLevelEditorViewMenu(const TSharedRef<FUICommandList> CommandList);
 
-	void DisplayInProgressNotification(const FSourceControlOperationRef& InOperationInProgress);
+	void DisplayInProgressNotification(const FSourceControlOperationRef& InOperation);
+	void RemoveInProgressNotification();
+	void DisplaySucessNotification(const FSourceControlOperationRef& InOperation);
+	void DisplayFailureNotification(const FSourceControlOperationRef& InOperation);
 
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;
