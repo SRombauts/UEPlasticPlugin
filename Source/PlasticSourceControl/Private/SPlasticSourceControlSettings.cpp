@@ -5,6 +5,8 @@
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlUtils.h"
 
+#include "SlateExtras.h"
+
 #define LOCTEXT_NAMESPACE "SPlasticSourceControlSettings"
 
 void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
@@ -450,32 +452,103 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 		}
 		if (bAutoInitialCommit && bResult)
 		{
-			UE_LOG(LogSourceControl, Log, TEXT("FCheckIn(%s)"), *InitialCommitMessage.ToString());
+			if (!CheckInOperation.IsValid())
+			{
+				UE_LOG(LogSourceControl, Log, TEXT("FCheckIn(%s)"), *InitialCommitMessage.ToString());
 
-			// optional initial checkin with custom message: launch a "CheckIn" Operation
-			ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
-			ISourceControlProvider& Provider = SourceControl.GetProvider();
-			CheckInOperation = ISourceControlOperation::Create<FCheckIn>();
-			CheckInOperation->SetDescription(InitialCommitMessage);
-			Provider.Execute(CheckInOperation.ToSharedRef(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
+				// optional initial Asynchronous checkin with custom message: launch a "CheckIn" Operation
+				ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
+				ISourceControlProvider& Provider = SourceControl.GetProvider();
+				CheckInOperation = ISourceControlOperation::Create<FCheckIn>();
+				CheckInOperation->SetDescription(InitialCommitMessage);
+				ECommandResult::Type Result = Provider.Execute(CheckInOperation.ToSharedRef(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
+				if (Result == ECommandResult::Succeeded)
+				{
+					// Display an ongoing notification during the whole operation
+					DisplayInProgressNotification(CheckInOperation.ToSharedRef());
+				}
+				else
+				{
+					DisplayFailureNotification(CheckInOperation.ToSharedRef());
+				}
+			}
+			else
+			{
+				UE_LOG(LogSourceControl, Warning, TEXT("Source control operation already in progress!"));
+			}
 		}
 	}
 	return FReply::Handled();
 }
 
 
+// Display an ongoing notification during the whole operation
+void SPlasticSourceControlSettings::DisplayInProgressNotification(const FSourceControlOperationRef& InOperation)
+{
+	FNotificationInfo Info(InOperation->GetInProgressString());
+	Info.bFireAndForget = false;
+	Info.ExpireDuration = 0.0f;
+	Info.FadeOutDuration = 1.0f;
+	OperationInProgressNotification = FSlateNotificationManager::Get().AddNotification(Info);
+	if (OperationInProgressNotification.IsValid())
+	{
+		OperationInProgressNotification.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
+	}
+}
+
+// Remove the ongoing notification at the end of the operation
+void SPlasticSourceControlSettings::RemoveInProgressNotification()
+{
+	if (OperationInProgressNotification.IsValid())
+	{
+		OperationInProgressNotification.Pin()->ExpireAndFadeout();
+		OperationInProgressNotification.Reset();
+	}
+}
+
+// Display a temporary success notification at the end of the operation
+void SPlasticSourceControlSettings::DisplaySucessNotification(const FSourceControlOperationRef& InOperation)
+{
+	const FText NotificationText = FText::Format(
+		LOCTEXT("InitialCommit_Success", "{0} operation was successfull!"),
+		FText::FromName(InOperation->GetName())
+	);
+	FNotificationInfo Info(NotificationText);
+	Info.bUseSuccessFailIcons = true;
+	Info.Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
+	FSlateNotificationManager::Get().AddNotification(Info);
+	UE_LOG(LogSourceControl, Log, TEXT("%s"), *NotificationText.ToString());
+}
+
+// Display a temporary failure notification at the end of the operation
+void SPlasticSourceControlSettings::DisplayFailureNotification(const FSourceControlOperationRef& InOperation)
+{
+	const FText NotificationText = FText::Format(
+		LOCTEXT("InitialCommit_Failure", "Error: {0} operation failed!"),
+		FText::FromName(InOperation->GetName())
+	);
+	FNotificationInfo Info(NotificationText);
+	Info.ExpireDuration = 8.0f;
+	FSlateNotificationManager::Get().AddNotification(Info);
+	UE_LOG(LogSourceControl, Error, TEXT("%s"), *NotificationText.ToString());
+}
+
 void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
+	check(InOperation->GetName() == "CheckIn");
+	check(CheckInOperation == StaticCastSharedRef<FCheckIn>(InOperation));
+	CheckInOperation.Reset();
+
+	RemoveInProgressNotification();
+
+	// Report result with a notification
 	if (InResult == ECommandResult::Succeeded)
 	{
-		check(InOperation->GetName() == "CheckIn");
-		check(CheckInOperation == StaticCastSharedRef<FCheckIn>(InOperation));
-
-		UE_LOG(LogSourceControl, Log, TEXT("Initial CheckIn succeeded: '%s'"), *CheckInOperation->GetSuccessMessage().ToString());
+		DisplaySucessNotification(InOperation);
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Error, TEXT("Initial CheckIn failed!"));
+		DisplayFailureNotification(InOperation);
 	}
 }
 

@@ -2,9 +2,6 @@
 
 #include "PlasticSourceControlPrivatePCH.h"
 
-#include "SlateBasics.h"
-#include "SlateExtras.h"
-
 #include "PlasticSourceControlMenu.h"
 #include "PlasticSourceControlMenuStyle.h"
 #include "PlasticSourceControlMenuCommands.h"
@@ -12,6 +9,7 @@
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlOperations.h"
 
+#include "SlateExtras.h"
 #include "LevelEditor.h"
 
 static const FName PlasticSourceControlMenuTabName("PlasticSourceControlMenu");
@@ -75,7 +73,7 @@ void FPlasticSourceControlMenu::Unregister()
 
 void FPlasticSourceControlMenu::SyncProjectClicked()
 {
-	if (!SyncOperation.IsValid() && !OperationInProgressNotification.IsValid())
+	if (!SyncOperation.IsValid())
 	{
 		// Launch a "Sync" Operation
 		ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
@@ -104,7 +102,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 
 void FPlasticSourceControlMenu::RevertUnchangedClicked()
 {
-	if (!RevertUnchangedOperation.IsValid() && !OperationInProgressNotification.IsValid())
+	if (!RevertUnchangedOperation.IsValid())
 	{
 		// Launch a "RevertUnchanged" Operation
 		ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
@@ -133,7 +131,7 @@ void FPlasticSourceControlMenu::RevertUnchangedClicked()
 
 void FPlasticSourceControlMenu::RevertAllClicked()
 {
-	if (!RevertAllOperation.IsValid() && !OperationInProgressNotification.IsValid())
+	if (!RevertAllOperation.IsValid())
 	{
 		// Ask the user before reverting all!
 		const FText DialogText(LOCTEXT("SourceControlMenu_AskRevertAll", "Revert all modifications into the workspace?"));
@@ -169,14 +167,17 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 // Display an ongoing notification during the whole operation
 void FPlasticSourceControlMenu::DisplayInProgressNotification(const FSourceControlOperationRef& InOperation)
 {
-	FNotificationInfo Info(InOperation->GetInProgressString());
-	Info.bFireAndForget = false;
-	Info.ExpireDuration = 0.0f;
-	Info.FadeOutDuration = 1.0f;
-	OperationInProgressNotification = FSlateNotificationManager::Get().AddNotification(Info);
-	if (OperationInProgressNotification.IsValid())
+	if (!OperationInProgressNotification.IsValid())
 	{
-		OperationInProgressNotification.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
+		FNotificationInfo Info(InOperation->GetInProgressString());
+		Info.bFireAndForget = false;
+		Info.ExpireDuration = 0.0f;
+		Info.FadeOutDuration = 1.0f;
+		OperationInProgressNotification = FSlateNotificationManager::Get().AddNotification(Info);
+		if (OperationInProgressNotification.IsValid())
+		{
+			OperationInProgressNotification.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
+		}
 	}
 }
 
@@ -237,14 +238,13 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 
 	RemoveInProgressNotification();
 
+	// Report result with a notification
 	if (InResult == ECommandResult::Succeeded)
 	{
-		// report success with a notification
 		DisplaySucessNotification(InOperation);
 	}
 	else
 	{
-		// report failure with a notification
 		DisplayFailureNotification(InOperation);
 	}
 }
