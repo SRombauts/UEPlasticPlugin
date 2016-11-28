@@ -1,11 +1,9 @@
 // Copyright (c) 2016 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
-#include "PlasticSourceControlPrivatePCH.h"
 #include "PlasticSourceControlModule.h"
-#include "ModuleManager.h"
-#include "ISourceControlModule.h"
 #include "PlasticSourceControlOperations.h"
-#include "Runtime/Core/Public/Features/IModularFeatures.h"
+#include "Misc/App.h"
+#include "Features/IModularFeatures.h"
 #include "IPluginManager.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"

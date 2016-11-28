@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "ISourceControlState.h"
+#include "ISourceControlRevision.h"
 #include "PlasticSourceControlRevision.h"
 
 namespace EWorkspaceState

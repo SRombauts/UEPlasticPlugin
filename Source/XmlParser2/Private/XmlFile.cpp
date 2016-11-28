@@ -1,7 +1,5 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
-#include "XmlParserPrivatePCH.h"
-
 #include "XmlFile.h"
 #include "UniquePtr.h"
 #include "XmlCharacterWidthCheck.h"

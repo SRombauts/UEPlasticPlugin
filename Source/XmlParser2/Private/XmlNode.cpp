@@ -1,7 +1,5 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
-#include "XmlParserPrivatePCH.h"
-
 #include "XmlNode.h"
 
 const FString& FXmlAttribute::GetTag() const

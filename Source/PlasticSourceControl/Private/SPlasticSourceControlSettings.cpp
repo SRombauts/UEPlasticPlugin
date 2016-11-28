@@ -1,11 +1,27 @@
 // Copyright (c) 2016 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
-#include "PlasticSourceControlPrivatePCH.h"
 #include "SPlasticSourceControlSettings.h"
+
+#include "Fonts/SlateFontInfo.h"
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
+#include "Modules/ModuleManager.h"
+#include "Widgets/SBoxPanel.h"
+#include "Styling/SlateTypes.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/Layout/SSeparator.h"
+#include "Widgets/Text/STextBlock.h"
+#include "Widgets/Input/SEditableTextBox.h"
+#include "Widgets/Input/SMultiLineEditableTextBox.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Input/SCheckBox.h"
+#include "EditorStyleSet.h"
+
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlUtils.h"
 
-#include "SlateExtras.h"
+#include "Framework/Notifications/NotificationManager.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 #define LOCTEXT_NAMESPACE "SPlasticSourceControlSettings"
 
@@ -322,7 +338,6 @@ FText SPlasticSourceControlSettings::GetUserName() const
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	return FText::FromString(PlasticSourceControl.GetProvider().GetUserName());
 }
-
 
 EVisibility SPlasticSourceControlSettings::CanInitializePlasticWorkspace() const
 {

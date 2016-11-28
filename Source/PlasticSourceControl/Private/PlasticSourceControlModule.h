@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "ModuleInterface.h"
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlProvider.h"

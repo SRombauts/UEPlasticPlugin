@@ -1,14 +1,24 @@
 // Copyright (c) 2016 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
-#include "PlasticSourceControlPrivatePCH.h"
 #include "PlasticSourceControlUtils.h"
-#include "PlasticSourceControlState.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlCommand.h"
+#include "HAL/PlatformProcess.h"
+#include "HAL/PlatformFilemanager.h"
+#include "HAL/FileManager.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Modules/ModuleManager.h"
+#include "ISourceControlModule.h"
 #include "XmlParser.h"
 
 #if PLATFORM_LINUX
 #include <sys/ioctl.h>
+#endif
+
+#if PLATFORM_WINDOWS
+#include "WindowsHWrapper.h" // SECURITY_ATTRIBUTES
+#undef GetUserName
 #endif
 
 

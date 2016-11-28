@@ -2,7 +2,10 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "ISourceControlProvider.h"
+#include "ISourceControlOperation.h"
+#include "ISourceControlState.h"
 #include "IPlasticSourceControlWorker.h"
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlMenu.h"

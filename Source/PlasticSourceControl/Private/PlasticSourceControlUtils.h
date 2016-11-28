@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "PlasticSourceControlState.h"
-#include "PlasticSourceControlRevision.h"
 
 class FPlasticSourceControlCommand;
 

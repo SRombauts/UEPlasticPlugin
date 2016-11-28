@@ -4,10 +4,9 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "IPlasticSourceControlWorker.h"
 #include "PlasticSourceControlState.h"
-#include "PlasticSourceControlRevision.h"
-
 
 /**
  * Internal operation used to revert checked-out unchanged files

@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include "SlateBasics.h"
+#include "CoreMinimal.h"
+
 #include "PlasticSourceControlMenuStyle.h"
 
 class FPlasticSourceControlMenuCommands : public TCommands<FPlasticSourceControlMenuCommands>

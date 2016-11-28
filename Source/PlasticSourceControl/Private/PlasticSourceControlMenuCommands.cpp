@@ -1,6 +1,5 @@
 // Copyright (c) 2016 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
-#include "PlasticSourceControlPrivatePCH.h"
 #include "PlasticSourceControlMenuCommands.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"

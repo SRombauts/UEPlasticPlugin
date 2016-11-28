@@ -1,7 +1,5 @@
 // Copyright (c) 2016 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
-#include "PlasticSourceControlPrivatePCH.h"
-
 #include "PlasticSourceControlMenu.h"
 #include "PlasticSourceControlMenuStyle.h"
 #include "PlasticSourceControlMenuCommands.h"
@@ -9,8 +7,10 @@
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlOperations.h"
 
-#include "SlateExtras.h"
+#include "ISourceControlModule.h"
 #include "LevelEditor.h"
+#include "Widgets/Notifications/SNotificationList.h"
+#include "Framework/Notifications/NotificationManager.h"
 
 static const FName PlasticSourceControlMenuTabName("PlasticSourceControlMenu");
 
@@ -171,8 +171,6 @@ void FPlasticSourceControlMenu::DisplayInProgressNotification(const FSourceContr
 	{
 		FNotificationInfo Info(InOperation->GetInProgressString());
 		Info.bFireAndForget = false;
-		Info.ExpireDuration = 0.0f;
-		Info.FadeOutDuration = 1.0f;
 		OperationInProgressNotification = FSlateNotificationManager::Get().AddNotification(Info);
 		if (OperationInProgressNotification.IsValid())
 		{

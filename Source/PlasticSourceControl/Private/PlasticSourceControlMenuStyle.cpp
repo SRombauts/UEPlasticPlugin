@@ -1,12 +1,11 @@
 // Copyright (c) 2016 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
-#include "PlasticSourceControlPrivatePCH.h"
-
 #include "PlasticSourceControlMenuStyle.h"
 #include "SlateGameResources.h"
+#include "Styling/SlateStyleRegistry.h"
 #include "IPluginManager.h"
 
-TSharedPtr< FSlateStyleSet > FPlasticSourceControlMenuStyle::StyleInstance = NULL;
+TSharedPtr<FSlateStyleSet> FPlasticSourceControlMenuStyle::StyleInstance = NULL;
 
 void FPlasticSourceControlMenuStyle::Initialize()
 {

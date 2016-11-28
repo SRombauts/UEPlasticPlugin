@@ -1,6 +1,5 @@
 // Copyright (c) 2016 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
-#include "PlasticSourceControlPrivatePCH.h"
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlCommand.h"
 #include "ISourceControlModule.h"
@@ -9,6 +8,11 @@
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlSettings.h"
+#include "HAL/PlatformProcess.h"
+#include "Misc/Paths.h"
+#include "Misc/QueuedThreadPool.h"
+#include "Modules/ModuleManager.h"
+#include "Widgets/DeclarativeSyntaxSupport.h"
 #include "MessageLog.h"
 #include "ScopedSourceControlProgress.h"
 

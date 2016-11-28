@@ -2,6 +2,14 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+#include "Layout/Visibility.h"
+#include "Input/Reply.h"
+#include "Widgets/DeclarativeSyntaxSupport.h"
+#include "Widgets/SCompoundWidget.h"
+#include "SourceControlOperations.h"
+//#include "SlateFwd.h"
+
 class SPlasticSourceControlSettings : public SCompoundWidget
 {
 public:
