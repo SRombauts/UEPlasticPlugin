@@ -33,7 +33,7 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 
 ### Status
 
-Beta version 0.9.3 2016/11/15 for UE4.14 :
+Beta version 0.9.4 2016/12/12 for UE4.14 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
@@ -85,7 +85,6 @@ Beta version 0.9.3 2016/11/15 for UE4.14 :
 - Error messages with accents are not handled (for instance connection error in French)
 - the Editor does not show deleted files: no way to check them in
 - the Editor does not show missing files: no way to revert/restore them
-- the Editor does not show .uproject file: no way to check in modification to the project file
 - the Editor does not show folder status and is not able to manage them
 - the Editor does not refresh status of assets in subdirectories at startup, so "Mark for add" is wrongly displayed in context menu for thoses subdirectories
 - the Editor does not handle visual diff for renamed/moved assets
