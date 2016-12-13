@@ -5,11 +5,17 @@
 class FPlasticSourceControlSettings
 {
 public:
-	/** Get the Plastic Binary Path */
+	/** Get the Path to the Plastic SCM command line Binary */
 	const FString& GetBinaryPath() const;
 
 	/** Set the Plastic Binary Path */
 	void SetBinaryPath(const FString& InString);
+
+	/** Get the Root of the Plastic SCM Workspace */
+	const FString& GetWorkspaceRoot() const;
+
+	/** Set the Plastic Binary Path */
+	void SetWorkspaceRoot(const FString& InString);
 
 	/** Load settings from ini file */
 	void LoadSettings();
@@ -21,6 +27,9 @@ private:
 	/** A critical section for settings access */
 	mutable FCriticalSection CriticalSection;
 
-	/** Plastic binary path */
+	/** Plastic SCM path to binary */
 	FString BinaryPath;
+
+	/** Root of the Plastic SCM workspace */
+	FString WorkspaceRoot;
 };

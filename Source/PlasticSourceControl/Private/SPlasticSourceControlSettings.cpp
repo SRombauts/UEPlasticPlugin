@@ -54,7 +54,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			]
 			// Root of the workspace
 			+SVerticalBox::Slot()
-			.FillHeight(1.0f)
+			.FillHeight(1.5f)
 			.Padding(2.0f)
 			.VAlign(VAlign_Center)
 			[
@@ -70,9 +70,10 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				+SHorizontalBox::Slot()
 				.FillWidth(2.0f)
 				[
-					SNew(STextBlock)
+					SNew(SEditableTextBox)
 					.Text(this, &SPlasticSourceControlSettings::GetPathToWorkspaceRoot)
 					.ToolTipText(LOCTEXT("WorkspaceRootLabel_Tooltip", "Path to the root of the Plastic SCM workspace"))
+					.OnTextCommitted(this, &SPlasticSourceControlSettings::OnWorkspaceRootTextCommited)
 					.Font(Font)
 				]
 			]
@@ -314,7 +315,7 @@ void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText
 FText SPlasticSourceControlSettings::GetPathToWorkspaceRoot() const
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	return FText::FromString(PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot());
+	return FText::FromString(PlasticSourceControl.AccessSettings().GetWorkspaceRoot());
 }
 
 FText SPlasticSourceControlSettings::GetUserName() const
@@ -323,6 +324,12 @@ FText SPlasticSourceControlSettings::GetUserName() const
 	return FText::FromString(PlasticSourceControl.GetProvider().GetUserName());
 }
 
+void SPlasticSourceControlSettings::OnWorkspaceRootTextCommited(const FText& InText, ETextCommit::Type InCommitType) const
+{
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	PlasticSourceControl.AccessSettings().SetWorkspaceRoot(InText.ToString());
+	PlasticSourceControl.SaveSettings();
+}
 
 EVisibility SPlasticSourceControlSettings::CanInitializePlasticWorkspace() const
 {
@@ -413,7 +420,7 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 	{
 		TArray<FString> Parameters;
 		Parameters.Add(WorkspaceName.ToString());
-		Parameters.Add(TEXT(".")); // current path, ie. GameDir
+		Parameters.Add(TEXT(".")); // current path, ie. WorkspaceRoot
 		if (!RepositoryName.IsEmpty())
 		{
 			// working only if repository already exists
@@ -582,8 +589,9 @@ FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 /** Path to the "ignore.conf" file */
 const FString& SPlasticSourceControlSettings::GetIgnoreFileName() const
 {
-	static const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
-	static const FString IgnoreFileName = FPaths::Combine(*PathToGameDir, TEXT("ignore.conf"));
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	static const FString WorkspaceRoot = PlasticSourceControl.AccessSettings().GetWorkspaceRoot();
+	static const FString IgnoreFileName = FPaths::Combine(*WorkspaceRoot, TEXT("ignore.conf"));
 	return IgnoreFileName;
 }
 
