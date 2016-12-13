@@ -114,12 +114,12 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
 	if (!ShellProcessHandle.IsValid())
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("Failed to launch 'cm shell'")); // not a bug, just no Plastic SCM cli found
+		UE_LOG(LogSourceControl, Warning, TEXT("Failed to launch 'cm shell' in %s"), *InPathToPlasticBinary); // not a bug, just no Plastic SCM cli found
 		_CleanupBackgroundCommandLineShell();
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Log, TEXT("LaunchBackgroundPlasticShell: '%s %s' ok (handle %d)"), *InPathToPlasticBinary, *FullCommand, ShellProcessHandle.Get());
+		UE_LOG(LogSourceControl, Log, TEXT("LaunchBackgroundPlasticShell: '%s %s' in %s ok (handle %d)"), *InPathToPlasticBinary, *FullCommand, *InWorkingDirectory, ShellProcessHandle.Get());
 	}
 
 	return ShellProcessHandle.IsValid();
@@ -130,7 +130,7 @@ static void _RestartBackgroundCommandLineShell()
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
+	const FString& WorkingDirectory = PlasticSourceControl.AccessSettings().GetWorkspaceRoot();
 
 	FPlatformProcess::CloseProc(ShellProcessHandle);
 	_CleanupBackgroundCommandLineShell();
@@ -341,7 +341,6 @@ FString FindPlasticBinaryPath()
 bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 {
 	bool bFound = false;
-	FString PathToPlasticSubdirectory;
 	OutWorkspaceRoot = InPath;
 
 	auto TrimTrailing = [](FString& Str, const TCHAR Char)
@@ -360,8 +359,7 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 	while(!bFound && !OutWorkspaceRoot.IsEmpty())
 	{
 		// Look for the ".plastic" subdirectory present at the root of every Plastic workspace
-		PathToPlasticSubdirectory = OutWorkspaceRoot / TEXT(".plastic");
-		bFound = IFileManager::Get().DirectoryExists(*PathToPlasticSubdirectory);
+		bFound = CheckRootDirectory(OutWorkspaceRoot);
 		if(!bFound)
 		{
 			int32 LastSlashIndex;
@@ -380,6 +378,13 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 		OutWorkspaceRoot = InPath; // If not found, return the provided dir as best possible root.
 	}
 	return bFound;
+}
+
+bool CheckRootDirectory(const FString& InPathToWorkspaceRoot)
+{
+	// Look for the ".plastic" subdirectory present at the root of every Plastic workspace
+	const FString PathToPlasticSubdirectory = InPathToWorkspaceRoot / TEXT(".plastic");
+	return IFileManager::Get().DirectoryExists(*PathToPlasticSubdirectory);
 }
 
 void GetPlasticScmVersion(FString& OutPlasticScmVersion)
@@ -409,7 +414,7 @@ bool GetWorkspaceName(FString& OutWorkspaceName)
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("."));
+	Parameters.Add(TEXT(".")); // current path, ie. WorkspaceRoot
 	Parameters.Add(TEXT("--format={0}"));
 	// Get the workspace name
 	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
@@ -613,7 +618,7 @@ static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
+	const FString& WorkingDirectory = PlasticSourceControl.AccessSettings().GetWorkspaceRoot();
 
 	// Iterate on each line of result of the status command
 	// NOTE: in case of rename by editor, there are two results: checkouted AND renamed

@@ -13,6 +13,12 @@ public:
 	/** Set the Plastic Binary Path */
 	bool SetBinaryPath(const FString& InString);
 
+	/** Get the Root of the Plastic SCM Workspace */
+	const FString& GetWorkspaceRoot() const;
+
+	/** Set the Root of the Plastic SCM Workspace */
+	bool SetWorkspaceRoot(const FString& InString);
+
 	/** Load settings from ini file */
 	void LoadSettings();
 
@@ -23,6 +29,9 @@ private:
 	/** A critical section for settings access */
 	mutable FCriticalSection CriticalSection;
 
-	/** Plastic binary path */
+	/** Path to the Plastic SCM cli executable */
 	FString BinaryPath;
+
+	/** Root of the Plastic SCM workspace: can be the GameDir itself, any parent directory, or a configured subdirectory */
+	FString WorkspaceRoot;
 };

@@ -36,6 +36,9 @@ private:
 	FText GetPathToWorkspaceRoot() const;
 	FText GetUserName() const;
 
+	/** Delegate to commit alternate workspace root to settings */
+	void OnWorkspaceRootTextCommited(const FText& InText, ETextCommit::Type InCommitType) const;
+
 	/** Delegate to initialize a new Plastic workspace and repository */
 	EVisibility CanInitializePlasticWorkspace() const;
 	bool IsReadyToInitializePlasticWorkspace() const;

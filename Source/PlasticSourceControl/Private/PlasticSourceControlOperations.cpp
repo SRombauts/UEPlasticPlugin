@@ -372,7 +372,7 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 	{
 		TArray<FString> Parameters;
 		Parameters.Add(Operation->WorkspaceName);
-		Parameters.Add(TEXT(".")); // current path, ie. GameDir
+		Parameters.Add(TEXT(".")); // current path, ie. WorkspaceRoot
 		Parameters.Add(FString::Printf(TEXT("--repository=rep:%s@repserver:%s"), *Operation->RepositoryName, *Operation->ServerUrl));
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
@@ -455,10 +455,11 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		// Perforce "opened files" are those that have been modified (or added/deleted): that is what we get with a simple Plastic status from the root
 		if (Operation->ShouldGetOpenedOnly())
 		{
-			// UpdateStatus() from the ContentDir()
-			TArray<FString> Files;
-			Files.Add(FPaths::ConvertRelativePathToFull(FPaths::GameDir()));
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+			// Update the status of assets in Content/ directory and also Config files
+			TArray<FString> ProjectDirs;
+			ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
+			ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 		}
 	}
 

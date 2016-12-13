@@ -6,6 +6,7 @@
 #include "PlasticSourceControlMenuStyle.h"
 #include "PlasticSourceControlMenuCommands.h"
 
+#include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlOperations.h"
 
@@ -15,6 +16,7 @@
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Misc/MessageDialog.h"
 #include "EditorStyleSet.h"
+#include "Modules/ModuleManager.h"
 
 static const FName PlasticSourceControlMenuTabName("PlasticSourceControlMenu");
 
@@ -80,8 +82,8 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 	if (!SyncOperation.IsValid())
 	{
 		// Launch a "Sync" Operation
-		ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
-		FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
+		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 		SyncOperation = ISourceControlOperation::Create<FSync>();
 		TArray<FString> Files;
 		Files.Add(Provider.GetPathToWorkspaceRoot()); // Sync the root of the workspace (needs an absolute path)
@@ -109,8 +111,8 @@ void FPlasticSourceControlMenu::RevertUnchangedClicked()
 	if (!RevertUnchangedOperation.IsValid())
 	{
 		// Launch a "RevertUnchanged" Operation
-		ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
-		FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
+		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 		RevertUnchangedOperation = ISourceControlOperation::Create<FPlasticRevertUnchanged>();
 		TArray<FString> Files;
 		Files.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
@@ -143,8 +145,8 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 		if (Choice == EAppReturnType::Ok)
 		{
 			// Launch a "RevertAll" Operation
-			ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
-			FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
+			FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+			FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 			RevertAllOperation = ISourceControlOperation::Create<FPlasticRevertAll>();
 			TArray<FString> Files;
 			Files.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)

@@ -44,7 +44,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 	FString PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 	if(PathToPlasticBinary.IsEmpty())
 	{
-		// Try to find Plastic binary, and update settings accordingly
+		// Try to find Plastic binary, and update settings accordingly (but don't save since this is only autodetection, not manual configuration)
 		PathToPlasticBinary = PlasticSourceControlUtils::FindPlasticBinaryPath();
 		if(!PathToPlasticBinary.IsEmpty())
 		{
@@ -54,9 +54,21 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 	if(!PathToPlasticBinary.IsEmpty())
 	{
-		// Find the path to the root Plastic directory (if any, else uses the GameDir)
-		const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
-		bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToWorkspaceRoot);
+		const FString& WorkspaceRoot = PlasticSourceControl.AccessSettings().GetWorkspaceRoot();
+		if (!WorkspaceRoot.IsEmpty())
+		{
+			// Check the path provided on the connect screen:
+			bWorkspaceFound = PlasticSourceControlUtils::CheckRootDirectory(WorkspaceRoot);
+			PathToWorkspaceRoot = WorkspaceRoot;
+		}
+		else
+		{
+			// Find the path to the root directory of the Plastic SCM workpsace (if any, else uses the GameDir)
+			// and update settings accordingly (but don't save since this is only autodetection, not manual configuration)
+			const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
+			bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToWorkspaceRoot);
+			PlasticSourceControl.AccessSettings().SetWorkspaceRoot(PathToWorkspaceRoot);
+		}
 
 		// Launch the Plastic SCM cli shell on the background to issue all commands during this session
 		bPlasticAvailable = PlasticSourceControlUtils::LaunchBackgroundPlasticShell(PathToPlasticBinary, PathToWorkspaceRoot);
@@ -70,7 +82,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 			if(!bWorkspaceFound)
 			{
-				UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::GameDir());
+				UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *PathToWorkspaceRoot);
 			}
 		}
 	}

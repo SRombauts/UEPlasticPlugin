@@ -75,7 +75,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			]
 			// Root of the workspace
 			+SVerticalBox::Slot()
-			.FillHeight(1.0f)
+			.FillHeight(1.5f)
 			.Padding(2.0f)
 			.VAlign(VAlign_Center)
 			[
@@ -91,8 +91,9 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				+SHorizontalBox::Slot()
 				.FillWidth(2.0f)
 				[
-					SNew(STextBlock)
+					SNew(SEditableTextBox)
 					.Text(this, &SPlasticSourceControlSettings::GetPathToWorkspaceRoot)
+					.OnTextCommitted(this, &SPlasticSourceControlSettings::OnWorkspaceRootTextCommited)
 					.Font(Font)
 				]
 			]
@@ -322,9 +323,9 @@ void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const bool bChanged = PlasticSourceControl.AccessSettings().SetBinaryPath(InText.ToString());
-	if(bChanged)
+	if (bChanged)
 	{
-		// Re-Check provided Plastic binary path for each change
+		// Re-Check provided Plastic SCM path cli binary for each change
 		PlasticSourceControl.GetProvider().CheckPlasticAvailability();
 		if (PlasticSourceControl.GetProvider().IsPlasticAvailable())
 		{
@@ -336,7 +337,7 @@ void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText
 FText SPlasticSourceControlSettings::GetPathToWorkspaceRoot() const
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	return FText::FromString(PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot());
+	return FText::FromString(PlasticSourceControl.AccessSettings().GetWorkspaceRoot());
 }
 
 FText SPlasticSourceControlSettings::GetUserName() const
@@ -345,6 +346,18 @@ FText SPlasticSourceControlSettings::GetUserName() const
 	return FText::FromString(PlasticSourceControl.GetProvider().GetUserName());
 }
 
+void SPlasticSourceControlSettings::OnWorkspaceRootTextCommited(const FText& InText, ETextCommit::Type InCommitType) const
+{
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const bool bChanged = PlasticSourceControl.AccessSettings().SetWorkspaceRoot(InText.ToString());
+	if (bChanged)
+	{
+		PlasticSourceControl.SaveSettings();
+
+		// Re-Check provided Plastic SCM Workspace Root for each change
+		PlasticSourceControl.GetProvider().CheckPlasticAvailability();
+	}
+}
 
 EVisibility SPlasticSourceControlSettings::CanInitializePlasticWorkspace() const
 {
@@ -602,8 +615,9 @@ FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 /** Path to the "ignore.conf" file */
 const FString& SPlasticSourceControlSettings::GetIgnoreFileName() const
 {
-	static const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
-	static const FString IgnoreFileName = FPaths::Combine(*PathToGameDir, TEXT("ignore.conf"));
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	static const FString WorkspaceRoot = PlasticSourceControl.AccessSettings().GetWorkspaceRoot();
+	static const FString IgnoreFileName = FPaths::Combine(*WorkspaceRoot, TEXT("ignore.conf"));
 	return IgnoreFileName;
 }
 

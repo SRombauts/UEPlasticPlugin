@@ -36,6 +36,23 @@ bool FPlasticSourceControlSettings::SetBinaryPath(const FString& InString)
 	return bChanged;
 }
 
+const FString& FPlasticSourceControlSettings::GetWorkspaceRoot() const
+{
+	FScopeLock ScopeLock(&CriticalSection);
+	return WorkspaceRoot;
+}
+
+bool FPlasticSourceControlSettings::SetWorkspaceRoot(const FString& InString)
+{
+	FScopeLock ScopeLock(&CriticalSection);
+	const bool bChanged = (WorkspaceRoot != InString);
+	if(bChanged)
+	{
+		WorkspaceRoot = InString;
+	}
+	return bChanged;
+}
+
 // This is called at startup nearly before anything else in our module: BinaryPath will then be used by the provider
 void FPlasticSourceControlSettings::LoadSettings()
 {
