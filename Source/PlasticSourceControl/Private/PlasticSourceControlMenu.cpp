@@ -76,11 +76,11 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 	if (!SyncOperation.IsValid())
 	{
 		// Launch a "Sync" Operation
-		ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
-		FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
+		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 		SyncOperation = ISourceControlOperation::Create<FSync>();
 		TArray<FString> Files;
-		Files.Add(Provider.GetPathToWorkspaceRoot() / TEXT("")); // Sync the root of the workspace
+		Files.Add(PlasticSourceControl.AccessSettings().GetWorkspaceRoot() / TEXT("")); // Sync the root of the workspace
 		ECommandResult::Type Result = Provider.Execute(SyncOperation.ToSharedRef(), Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 		if (Result == ECommandResult::Succeeded)
 		{
