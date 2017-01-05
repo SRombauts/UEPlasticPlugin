@@ -3,9 +3,9 @@ Unreal Engine 4 Plastic Source Control Plugin
 
 [![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
 
-UE4PlasticPlugin is a simple Plastic Source Control Plugin for Unreal Engine 4 (UE 4.11 to 4.13)
+UE4PlasticPlugin is a simple [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4 (UE 4.11 to 4.14)
 
-It is not intended to replace Plastic SCM GUI or command line.
+It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml) or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
 It is a complementary tool improving efficiency in daily workflow.
 It automates tracking of assets, bring common SCM tasks inside the Editor, and provide visual diffing of Blueprints.
 
@@ -65,7 +65,7 @@ Beta version 0.9.4 2016/12/12 for UE4.14 :
 - add a "clean directory" or "checkin deleted files"
 - add a setting to pass the --update option to "checkin"
 - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
-- add support for partial checkin (like Gluon, for artists)
+- add support for [partial checkin (like Gluon, for artists)](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
 - add icon for Changed files
 - add icon for Conflicted files
 - add icon for Replaced/Merged files
