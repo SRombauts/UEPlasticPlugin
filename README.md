@@ -6,11 +6,18 @@ Unreal Engine 4 Plastic Source Control Plugin
 UE4PlasticPlugin is a simple [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4 (UE 4.11 to 4.14)
 
 It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml) or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
-It is a complementary tool improving efficiency in daily workflow.
-It automates tracking of assets, bring common SCM tasks inside the Editor, and provide visual diffing of Blueprints.
+It is a complementary tool improving efficiency in your daily workflow.
 
-![Create new Workspace](Resources/UE4PlasticPlugin-CreateWorkspace.png) 
-![History Log](Resources/UE4PlasticPlugin-History.png) 
+It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints. It also helps importing an existing UE4 Project into source contorl, with appropriate *ignore.conf* file.
+
+Source Control Login screen to create a new workspace/a new repository :
+<img src="Screenshots/UE4PlasticPlugin-CreateWorkspace.png" width="720">
+
+History menu entry to look a the changelog of an asset :
+<img src="Screenshots/UE4PlasticPlugin-History.png" width="720">
+
+Visual Diffing of different revision of a Blueprint :
+<img src="https://cdn2.unrealengine.com/blog/DiffTool-1009x542-719850393.png" width="720">
 
 ### References
 
@@ -21,15 +28,15 @@ It automates tracking of assets, bring common SCM tasks inside the Editor, and p
 - [Diffing Blueprints (Video)](https://www.unrealengine.com/blog/diffing-blueprints)
 
 ### Quick setup
-
-1.a. Either: Unzip the content of the ZIP in the root of the Unreal Engine 4.11.2 project folder.
+1. Either:
+  1. Unzip the content of the ZIP in the root of the Unreal Engine 4.x project folder.
      That should create a "Plugins/" folder into your project.
      This is the way to go to use Platic SCM only on a specific projetc.
-1.b. Else: Unzip the content of the ZIP in the Engine/ directory of UE4.11 directly for all your projects
-     (typically "C:\Program Files\Epic Games\4.11\Engine\")
+  2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
+     (for instance "C:\Program Files\Epic Games\4.14\Engine\")
      That should create a "UE4PlasticPlugin" forlder into the "Plugins/" subidrectory.
      This is the way to enable Plastic SCM for all Unreal Engine projects.
-2. Launch Unreal Engine 4.11.1, click on the Source Control icon "Connect to Source", select "Plastic SCM".
+2. Then, launch Unreal Engine 4.x, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
 ### Status
 
@@ -93,3 +100,4 @@ Beta version 0.9.4 2016/12/12 for UE4.14 :
 - Merge is not in the current Editor workflow
 - History does not show which revision is the current/checkout one
 - Merge: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
+
