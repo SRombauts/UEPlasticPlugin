@@ -420,11 +420,11 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 			Parameters.Add(FString::Printf(TEXT("--repository=rep:%s@repserver:%s"), *RepositoryName.ToString(), *ServerUrl.ToString()));
 		}
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
-	}
-	if (bResult)
-	{
-		// Check the new workspace status to enable connection
-		PlasticSourceControl.GetProvider().CheckPlasticAvailability();
+		if (bResult)
+		{
+			// Check the new workspace status to enable connection
+			PlasticSourceControl.GetProvider().CheckPlasticAvailability();
+		}
 	}
 	if (PlasticSourceControl.GetProvider().IsWorkspaceFound())
 	{
@@ -469,7 +469,7 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 				}
 				else
 				{
-					DisplayFailureNotification(CheckInOperation.ToSharedRef());
+					DisplayFailureNotification(CheckInOperation->GetName());
 				}
 			}
 			else
@@ -477,6 +477,10 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 				UE_LOG(LogSourceControl, Warning, TEXT("Source control operation already in progress!"));
 			}
 		}
+	}
+	else
+	{
+		DisplayFailureNotification(FName(TEXT("makeworkspace")));
 	}
 	return FReply::Handled();
 }
@@ -507,11 +511,11 @@ void SPlasticSourceControlSettings::RemoveInProgressNotification()
 }
 
 // Display a temporary success notification at the end of the operation
-void SPlasticSourceControlSettings::DisplaySucessNotification(const FSourceControlOperationRef& InOperation)
+void SPlasticSourceControlSettings::DisplaySucessNotification(const FName& InOperationName)
 {
 	const FText NotificationText = FText::Format(
-		LOCTEXT("InitialCommit_Success", "{0} operation was successfull!"),
-		FText::FromName(InOperation->GetName())
+		LOCTEXT("InitWorkspace_Success", "{0} operation was successfull!"),
+		FText::FromName(InOperationName)
 	);
 	FNotificationInfo Info(NotificationText);
 	Info.bUseSuccessFailIcons = true;
@@ -521,11 +525,11 @@ void SPlasticSourceControlSettings::DisplaySucessNotification(const FSourceContr
 }
 
 // Display a temporary failure notification at the end of the operation
-void SPlasticSourceControlSettings::DisplayFailureNotification(const FSourceControlOperationRef& InOperation)
+void SPlasticSourceControlSettings::DisplayFailureNotification(const FName& InOperationName)
 {
 	const FText NotificationText = FText::Format(
-		LOCTEXT("InitialCommit_Failure", "Error: {0} operation failed!"),
-		FText::FromName(InOperation->GetName())
+		LOCTEXT("InitWorkspace_Failure", "Error: {0} operation failed!"),
+		FText::FromName(InOperationName)
 	);
 	FNotificationInfo Info(NotificationText);
 	Info.ExpireDuration = 8.0f;
@@ -544,11 +548,11 @@ void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSour
 	// Report result with a notification
 	if (InResult == ECommandResult::Succeeded)
 	{
-		DisplaySucessNotification(InOperation);
+		DisplaySucessNotification(InOperation->GetName());
 	}
 	else
 	{
-		DisplayFailureNotification(InOperation);
+		DisplayFailureNotification(InOperation->GetName());
 	}
 }
 

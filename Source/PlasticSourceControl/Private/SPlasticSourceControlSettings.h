@@ -53,8 +53,8 @@ private:
 
 	void DisplayInProgressNotification(const FSourceControlOperationRef& InOperation);
 	void RemoveInProgressNotification();
-	void DisplaySucessNotification(const FSourceControlOperationRef& InOperation);
-	void DisplayFailureNotification(const FSourceControlOperationRef& InOperation);
+	void DisplaySucessNotification(const FName& InOperationName);
+	void DisplayFailureNotification(const FName& InOperationName);
 
 	/** Delegate called when a source control operation has completed */
 	void OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
