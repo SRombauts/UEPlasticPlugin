@@ -47,13 +47,12 @@ private:
 	FText GetInitialCommitMessage() const;
 	FText InitialCommitMessage;
 
-	/** Initial checkin asynchronous operation, and progress notification */
-	TSharedPtr<FCheckIn, ESPMode::ThreadSafe> CheckInOperation;
+	/** Initial checkin asynchronous operation progress notification */
 	TWeakPtr<SNotificationItem> OperationInProgressNotification;
 
 	void DisplayInProgressNotification(const FSourceControlOperationRef& InOperation);
 	void RemoveInProgressNotification();
-	void DisplaySucessNotification(const FName& InOperationName);
+	void DisplaySuccessNotification(const FName& InOperationName);
 	void DisplayFailureNotification(const FName& InOperationName);
 
 	/** Delegate called when a source control operation has completed */

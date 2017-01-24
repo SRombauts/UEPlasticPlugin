@@ -452,29 +452,20 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 		}
 		if (bAutoInitialCommit && bResult)
 		{
-			if (!CheckInOperation.IsValid())
-			{
-				UE_LOG(LogSourceControl, Log, TEXT("FCheckIn(%s)"), *InitialCommitMessage.ToString());
+			UE_LOG(LogSourceControl, Log, TEXT("FCheckIn(%s)"), *InitialCommitMessage.ToString());
 
-				// optional initial Asynchronous checkin with custom message: launch a "CheckIn" Operation
-				ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
-				ISourceControlProvider& Provider = SourceControl.GetProvider();
-				CheckInOperation = ISourceControlOperation::Create<FCheckIn>();
-				CheckInOperation->SetDescription(InitialCommitMessage);
-				ECommandResult::Type Result = Provider.Execute(CheckInOperation.ToSharedRef(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
-				if (Result == ECommandResult::Succeeded)
-				{
-					// Display an ongoing notification during the whole operation
-					DisplayInProgressNotification(CheckInOperation.ToSharedRef());
-				}
-				else
-				{
-					DisplayFailureNotification(CheckInOperation->GetName());
-				}
+			// optional initial Asynchronous checkin with custom message: launch a "CheckIn" Operation
+			TSharedRef<FCheckIn, ESPMode::ThreadSafe> CheckInOperation = ISourceControlOperation::Create<FCheckIn>();
+			CheckInOperation->SetDescription(InitialCommitMessage);
+			ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(CheckInOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
+			if (Result == ECommandResult::Succeeded)
+			{
+				// Display an ongoing notification during the whole operation
+				DisplayInProgressNotification(CheckInOperation);
 			}
 			else
 			{
-				UE_LOG(LogSourceControl, Warning, TEXT("Source control operation already in progress!"));
+				DisplayFailureNotification(CheckInOperation->GetName());
 			}
 		}
 	}
@@ -511,12 +502,9 @@ void SPlasticSourceControlSettings::RemoveInProgressNotification()
 }
 
 // Display a temporary success notification at the end of the operation
-void SPlasticSourceControlSettings::DisplaySucessNotification(const FName& InOperationName)
+void SPlasticSourceControlSettings::DisplaySuccessNotification(const FName& InOperationName)
 {
-	const FText NotificationText = FText::Format(
-		LOCTEXT("InitWorkspace_Success", "{0} operation was successfull!"),
-		FText::FromName(InOperationName)
-	);
+	const FText NotificationText = FText::Format(LOCTEXT("InitWorkspace_Success", "{0} operation was successfull!"), FText::FromName(InOperationName));
 	FNotificationInfo Info(NotificationText);
 	Info.bUseSuccessFailIcons = true;
 	Info.Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
@@ -527,10 +515,7 @@ void SPlasticSourceControlSettings::DisplaySucessNotification(const FName& InOpe
 // Display a temporary failure notification at the end of the operation
 void SPlasticSourceControlSettings::DisplayFailureNotification(const FName& InOperationName)
 {
-	const FText NotificationText = FText::Format(
-		LOCTEXT("InitWorkspace_Failure", "Error: {0} operation failed!"),
-		FText::FromName(InOperationName)
-	);
+	const FText NotificationText = FText::Format(LOCTEXT("InitWorkspace_Failure", "Error: {0} operation failed!"), FText::FromName(InOperationName));
 	FNotificationInfo Info(NotificationText);
 	Info.ExpireDuration = 8.0f;
 	FSlateNotificationManager::Get().AddNotification(Info);
@@ -540,15 +525,13 @@ void SPlasticSourceControlSettings::DisplayFailureNotification(const FName& InOp
 void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	check(InOperation->GetName() == "CheckIn");
-	check(CheckInOperation == StaticCastSharedRef<FCheckIn>(InOperation));
-	CheckInOperation.Reset();
 
 	RemoveInProgressNotification();
 
 	// Report result with a notification
 	if (InResult == ECommandResult::Succeeded)
 	{
-		DisplaySucessNotification(InOperation->GetName());
+		DisplaySuccessNotification(InOperation->GetName());
 	}
 	else
 	{
