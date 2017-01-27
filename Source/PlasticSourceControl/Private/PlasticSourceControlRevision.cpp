@@ -7,6 +7,9 @@
 #include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlSettings.h"
 
+#include "HAL/FileManager.h"
+#include "Misc/Paths.h"
+
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
 bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const

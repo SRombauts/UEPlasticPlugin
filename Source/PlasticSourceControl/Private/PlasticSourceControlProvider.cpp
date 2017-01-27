@@ -12,6 +12,10 @@
 #include "MessageLog.h"
 #include "ScopedSourceControlProgress.h"
 
+#include "Misc/Paths.h"
+#include "HAL/PlatformProcess.h"
+#include "Misc/QueuedThreadPool.h"
+
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
 static FName ProviderName("Plastic SCM");

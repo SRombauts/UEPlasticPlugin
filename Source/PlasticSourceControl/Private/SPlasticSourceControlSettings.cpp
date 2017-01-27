@@ -5,7 +5,22 @@
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlUtils.h"
 
-#include "SlateExtras.h"
+#include "Fonts/SlateFontInfo.h"
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
+#include "Modules/ModuleManager.h"
+#include "Framework/Notifications/NotificationManager.h"
+#include "Styling/SlateTypes.h"
+#include "Widgets/Input/SEditableTextBox.h"
+#include "Widgets/Input/SMultiLineEditableTextBox.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Input/SCheckBox.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/Layout/SSeparator.h"
+#include "Widgets/Notifications/SNotificationList.h"
+#include "Widgets/SBoxPanel.h"
+#include "Widgets/Text/STextBlock.h"
+#include "EditorStyleSet.h"
 
 #define LOCTEXT_NAMESPACE "SPlasticSourceControlSettings"
 

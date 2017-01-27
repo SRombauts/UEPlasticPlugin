@@ -2,13 +2,25 @@
 
 #include "PlasticSourceControlPrivatePCH.h"
 #include "PlasticSourceControlUtils.h"
-#include "PlasticSourceControlState.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlCommand.h"
+#include "HAL/PlatformProcess.h"
+#include "HAL/PlatformFilemanager.h"
+#include "HAL/FileManager.h"
+#include "Misc/ScopeLock.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "HAL/PlatformTime.h"
+#include "Modules/ModuleManager.h"
 #include "XmlParser.h"
 
 #if PLATFORM_LINUX
 #include <sys/ioctl.h>
+#endif
+
+#if PLATFORM_WINDOWS
+#include "WindowsHWrapper.h" // SECURITY_ATTRIBUTES
+#undef GetUserName
 #endif
 
 

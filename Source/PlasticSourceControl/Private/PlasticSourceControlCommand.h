@@ -2,6 +2,10 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+#include "Misc/IQueuedWork.h"
+#include "ISourceControlProvider.h"
+
 /**
  * Used to execute Plastic commands multi-threaded.
  */

@@ -4,6 +4,9 @@
 
 #include "PlasticSourceControlMenuStyle.h"
 #include "SlateGameResources.h"
+#include "Styling/ISlateStyle.h"
+#include "Styling/SlateStyleRegistry.h"
+#include "Framework/Application/SlateApplication.h"
 #include "IPluginManager.h"
 
 TSharedPtr< FSlateStyleSet > FPlasticSourceControlMenuStyle::StyleInstance = NULL;

@@ -7,6 +7,10 @@
 #include "PlasticSourceControlUtils.h"
 #include "SourceControlHelpers.h"
 
+#include "Misc/ScopeLock.h"
+#include "Misc/ConfigCacheIni.h"
+#include "HAL/PlatformTime.h"
+
 namespace PlasticSettingsConstants
 {
 

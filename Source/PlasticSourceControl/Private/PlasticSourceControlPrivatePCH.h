@@ -2,7 +2,5 @@
 
 #pragma once
 
-#include "Core.h"
-#include "SlateBasics.h"
-#include "EditorStyle.h"
+#include "CoreMinimal.h"
 #include "ISourceControlModule.h"

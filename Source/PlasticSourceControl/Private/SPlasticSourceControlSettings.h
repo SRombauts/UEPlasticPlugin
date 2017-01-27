@@ -2,6 +2,16 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+#include "Widgets/SCompoundWidget.h"
+#include "Widgets/DeclarativeSyntaxSupport.h"
+#include "Layout/Visibility.h"
+#include "Input/Reply.h"
+#include "Styling/SlateTypes.h"
+
+#include "ISourceControlProvider.h"
+#include "ISourceControlOperation.h"
+
 class SPlasticSourceControlSettings : public SCompoundWidget
 {
 public:
@@ -48,7 +58,7 @@ private:
 	FText InitialCommitMessage;
 
 	/** Initial checkin asynchronous operation progress notification */
-	TWeakPtr<SNotificationItem> OperationInProgressNotification;
+	TWeakPtr<class SNotificationItem> OperationInProgressNotification;
 
 	void DisplayInProgressNotification(const FSourceControlOperationRef& InOperation);
 	void RemoveInProgressNotification();
@@ -57,7 +67,6 @@ private:
 
 	/** Delegate called when a source control operation has completed */
 	void OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
-
 
 	FReply OnClickedInitializePlasticWorkspace();
 

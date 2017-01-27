@@ -7,10 +7,13 @@
 #include "PlasticSourceControlMenuCommands.h"
 
 #include "PlasticSourceControlProvider.h"
-#include "PlasticSourceControlOperations.h"
 
-#include "SlateExtras.h"
 #include "LevelEditor.h"
+#include "Widgets/Notifications/SNotificationList.h"
+#include "Framework/Notifications/NotificationManager.h"
+#include "Framework/Multibox/MultiBoxBuilder.h"
+#include "Misc/MessageDialog.h"
+#include "EditorStyleSet.h"
 
 static const FName PlasticSourceControlMenuTabName("PlasticSourceControlMenu");
 

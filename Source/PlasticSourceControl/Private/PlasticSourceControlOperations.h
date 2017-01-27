@@ -8,6 +8,7 @@
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlRevision.h"
 
+#include "ISourceControlOperation.h"
 
 /**
  * Internal operation used to revert checked-out unchanged files

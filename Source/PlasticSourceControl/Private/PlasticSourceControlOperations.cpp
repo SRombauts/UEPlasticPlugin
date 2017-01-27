@@ -8,6 +8,9 @@
 #include "PlasticSourceControlUtils.h"
 #include "AssetRegistryModule.h"
 
+#include "HAL/FileManager.h"
+#include "Misc/Paths.h"
+
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
 FName FPlasticRevertUnchanged::GetName() const
