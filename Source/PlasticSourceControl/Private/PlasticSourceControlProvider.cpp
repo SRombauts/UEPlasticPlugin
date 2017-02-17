@@ -95,7 +95,7 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 /** Quick check if source control is enabled */
 bool FPlasticSourceControlProvider::IsEnabled() const
 {
-	return bPlasticAvailable;
+	return bWorkspaceFound;
 }
 
 /** Quick check if source control is available for use (useful for server-based providers) */

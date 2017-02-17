@@ -83,7 +83,6 @@ Beta version 0.9.6 2017/02/03 for UE4.15 :
 
 #### Bugs
 - "Changed" assets popup a "Files need check-out!" (UnrealEdSrv.cpp) windows that does nothing when clicked!
-- Source Control icon does not show correctly at next launch of the Editor after first connection, or when server is offline
 - "NotCurrent" warning is not working because "DepotRevisionChangeset" is not correct in the "cm fileinfo" command
 - Revert "Unchanged only" does nothing because Plastic SCM cli lacks a "chacked-out but unchanged" status.
 - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
