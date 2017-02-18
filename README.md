@@ -28,7 +28,8 @@ Visual Diffing of different revision of a Blueprint :
 - [Diffing Blueprints (Video)](https://www.unrealengine.com/blog/diffing-blueprints)
 
 ### Quick setup
-1. Either:
+1. Download the [latest UE4PlasticPlugin-x.x.x.zip file](https://github.com/SRombauts/UE4PlasticPlugin/releases) targeting your UE4 version.
+2. Either:
   1. Unzip the content of the ZIP in the root of the Unreal Engine 4.x project folder.
      That should create a "Plugins/" folder into your project.
      This is the way to go to use Platic SCM only on a specific projetc.
@@ -36,7 +37,7 @@ Visual Diffing of different revision of a Blueprint :
      (for instance "C:\Program Files\Epic Games\4.14\Engine\")
      That should create a "UE4PlasticPlugin" forlder into the "Plugins/" subidrectory.
      This is the way to enable Plastic SCM for all Unreal Engine projects.
-2. Then, launch Unreal Engine 4.x, click on the Source Control icon "Connect to Source", select "Plastic SCM".
+3. Then, launch Unreal Engine 4.x, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
 ### Status
 
@@ -84,7 +85,7 @@ Beta version 0.9.6 2017/02/03 for UE4.15 :
 #### Bugs
 - "Changed" assets popup a "Files need check-out!" (UnrealEdSrv.cpp) windows that does nothing when clicked!
 - "NotCurrent" warning is not working because "DepotRevisionChangeset" is not correct in the "cm fileinfo" command
-- Revert "Unchanged only" does nothing because Plastic SCM cli lacks a "chacked-out but unchanged" status.
+- Revert "Unchanged only" does nothing because Plastic SCM cli lacks a "checked-out but unchanged" status.
 - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
 
 #### Known issues:
