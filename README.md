@@ -41,7 +41,7 @@ Visual Diffing of different revision of a Blueprint :
 
 ### Status
 
-Beta version 0.9.6 2017/02/03 for UE4.15 :
+Beta version 0.9.7 2017/02/18 for UE4.15 :
 - Windows only
 - infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
 - show current branch name in status text
