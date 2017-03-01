@@ -11,7 +11,7 @@
 #include "LevelEditor.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Framework/Notifications/NotificationManager.h"
-#include "Framework/Multibox/MultiBoxBuilder.h"
+#include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Misc/MessageDialog.h"
 #include "EditorStyleSet.h"
 
@@ -25,7 +25,7 @@ void FPlasticSourceControlMenu::Register()
 	FPlasticSourceControlMenuStyle::ReloadTextures();
 
 	FPlasticSourceControlMenuCommands::Register();
-	
+
 	PluginCommands = MakeShareable(new FUICommandList);
 
 	PluginCommands->MapAction(
