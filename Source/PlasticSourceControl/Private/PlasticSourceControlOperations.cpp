@@ -133,7 +133,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		if (InCommand.bCommandSuccessful)
 		{
 			// Remove any deleted files from status cache
-			FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+			FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 			FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 
 			TArray<TSharedRef<ISourceControlState, ESPMode::ThreadSafe>> LocalStates;
@@ -361,7 +361,7 @@ bool FPlasticUpdateStatusWorker::UpdateStates() const
 {
 	bool bUpdated = PlasticSourceControlUtils::UpdateCachedStates(States);
 
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 
 	// add history, if any
@@ -393,7 +393,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 		// Detect if the copy leaved a redirector (ie it was a rename/move) or not (it was a duplicate/copy)
 		bool bIsCopyOperation = false;
-		FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+		FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 		FString PackageName;
 		if (FPackageName::TryConvertFilenameToLongPackageName(Origin, PackageName))
 		{
@@ -529,7 +529,7 @@ bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	// Currently resolve operation is always on one file only, but the following would works for many
 	for (const FString& File : InCommand.Files)
 	{
-		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(File);
 

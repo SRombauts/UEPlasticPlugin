@@ -128,7 +128,7 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 // Internal function (called under the critical section)
 static void _RestartBackgroundCommandLineShell()
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
 
@@ -598,7 +598,7 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
  */
 static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
 
@@ -793,7 +793,7 @@ public:
  */
 static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& InOutStates)
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 
 	// Iterate on all files and all status of the result (assuming same number of line of results than number of file states)
@@ -888,7 +888,7 @@ public:
 bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
 {
 	bool bResult = false;
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 
 	const FString MergeProgressFilename = FPaths::Combine(*Provider.GetPathToWorkspaceRoot(), TEXT(".plastic/plastic.mergeprogress"));
@@ -1212,7 +1212,7 @@ static void ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlRe
 // Run "cm log" on the changeset
 static bool RunLogCommand(const FString& InChangeset, FPlasticSourceControlRevision& OutSourceControlRevision)
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 	const FString RepositorySpecification = FString::Printf(TEXT("cs:%s@rep:%s@repserver:%s"), *InChangeset, *Provider.GetRepositoryName(), *Provider.GetServerUrl());
 
@@ -1302,7 +1302,7 @@ bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, TPl
 
 bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>( "PlasticSourceControl" );
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>( "PlasticSourceControl" );
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 	int NbStatesUpdated = 0;
 
