@@ -145,7 +145,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	// Detect previous crash of cm.exe and restart 'cm shell'
 	if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternal: 'cm shell' has stopped. Restarting!"), FPlatformProcess::IsProcRunning(ShellProcessHandle));
+		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: 'cm shell' has stopped. Restarting!"), FPlatformProcess::IsProcRunning(ShellProcessHandle));
 		_RestartBackgroundCommandLineShell();
 	}
 
@@ -165,7 +165,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	}
 	// @todo: temporary debug logs (before end of line)
 	const FString LoggableCommand = FullCommand;
-//	UE_LOG(LogSourceControl, Log, TEXT("RunCommandInternal: '%s'"), *LoggableCommand);
+//	UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s'"), *LoggableCommand);
 	FullCommand += TEXT('\n'); // Finalize the command line
 
 	// Send command to 'cm shell' process
@@ -202,7 +202,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
 			// Shut-down and restart the connexion to 'cm shell' in case of timeout!
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommandInternal: '%s' %d TIMEOUT after %lfs output:\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' %d TIMEOUT after %lfs output:\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
 			PreviousLogLen = OutResults.Len();
 			LastActivity = FPlatformTime::Seconds(); // freshen the timestamp to reinit timeout warning
 		}
@@ -214,7 +214,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternal: '%s' 'cm shell' stopped after %lfs output:\n%s"), *LoggableCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' 'cm shell' stopped after %lfs output:\n%s"), *LoggableCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
 		}
 		else if (!bResult)
 		{
@@ -299,7 +299,7 @@ static bool RunCommandInternal(const FString& InCommand, const TArray<FString>& 
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Error, TEXT("RunCommandInternal(%s): cm shell not running"), *InCommand);
+		UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%s): cm shell not running"), *InCommand);
 		OutErrors = InCommand + ": Plastic SCM shell not running!";
 	}
 
@@ -694,6 +694,8 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
  * @param[in]	InFiles				List of files in a directory, or the path to the directory itself (never empty).
  * @param[out]	OutErrorMessages	Error messages from the "status" command
  * @param[out]	OutStates			States of files for witch the status has been gathered (distinct than InFiles in case of a "directory status")
+ * @param[out]	OutChangeset		The current Changeset Number
+ * @param[out]	OutBranchName		Name of the current checked-out branch
  */
 static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
@@ -977,7 +979,7 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 	return bResult;
 }
 
-// Run a Plastic "status" and "fileinfo" commands to update status of given files.
+// Run a batch of Plastic "status" and "fileinfo" commands to update status of given files and directories.
 bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
 	bool bResult = true;

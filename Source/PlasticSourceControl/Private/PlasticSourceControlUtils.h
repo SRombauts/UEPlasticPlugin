@@ -75,7 +75,7 @@ bool GetWorkspaceName(FString& OutWorkspaceName);
 
 /**
  * Get Plastic repository name and server URL, branch name and current changeset number
- * @param   OutChangeset		The current Changeset Number
+ * @param	OutChangeset		The current Changeset Number
  * @param	OutRepositoryName	Name of the repository of the current workspace
  * @param	OutServerUrl		Url/Port of the server of the repository
  * @param	OutBranchName		Name of the current checked-out branch
@@ -99,8 +99,8 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
  *
  * @param	InFiles				The files to be operated on
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
- * @param   OutStates			States of the files
- * @param   OutChangeset		The current Changeset Number
+ * @param	OutStates			States of the files
+ * @param	OutChangeset		The current Changeset Number
  * @param	OutBranchName		Name of the current checked-out branch
  * @returns true if the command succeeded and returned no errors
  */
