@@ -272,15 +272,14 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			]
 			// Button to create a new Workspace
 			+SVerticalBox::Slot()
-			.FillHeight(2.0f)
-			.Padding(2.0f)
-			.VAlign(VAlign_Fill)
+			.FillHeight(2.5f)
+			.Padding(4.0f)
+			.VAlign(VAlign_Center)
 			[
 				SNew(SHorizontalBox)
 				.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
 				+SHorizontalBox::Slot()
 				.FillWidth(1.0f)
-				.VAlign(VAlign_Fill)
 				[
 					SNew(SButton)
 					.IsEnabled(this, &SPlasticSourceControlSettings::IsReadyToInitializePlasticWorkspace)
@@ -288,7 +287,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.ToolTipText(LOCTEXT("PlasticInitWorkspace_Tooltip", "Create and initialize a new Plastic SCM workspace and repository for the current project"))
 					.OnClicked(this, &SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace)
 					.HAlign(HAlign_Center)
-					.VAlign(VAlign_Center)
+					.ContentPadding(6)
 				]
 			]
 			// Button to add an ignore.conf file on an existing Workspace
