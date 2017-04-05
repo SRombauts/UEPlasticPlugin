@@ -262,15 +262,13 @@ bool LaunchBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FS
 	// Protect public APIs from multi-thread access
 	FScopeLock Lock(&ShellCriticalSection);
 
-	// only if shell not already running
-	if (!ShellProcessHandle.IsValid())
+	// terminate previous shell if one is already running
+	if (ShellProcessHandle.IsValid())
 	{
-		return _StartBackgroundPlasticShell(InPathToPlasticBinary, InWorkingDirectory);
+		_ExitBackgroundCommandLineShell();
 	}
-	else
-	{
-		return true;
-	}
+
+	return _StartBackgroundPlasticShell(InPathToPlasticBinary, InWorkingDirectory);
 }
 
 // Terminate the background 'cm shell' process and associated pipes (thread-safe)

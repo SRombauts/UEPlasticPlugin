@@ -50,7 +50,7 @@ void FPlasticSourceControlSettings::SaveSettings() const
 	// Re-Check provided Plastic binary path for each change
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	PlasticSourceControl.GetProvider().CheckPlasticAvailability();
-	if (PlasticSourceControl.GetProvider().IsAvailable())
+	if (PlasticSourceControl.GetProvider().IsPlasticAvailable())
 	{
 		const FString& IniFile = SourceControlHelpers::GetSettingsIni();
 		GConfig->SetString(*PlasticSettingsConstants::SettingsSection, TEXT("BinaryPath"), *BinaryPath, IniFile);
