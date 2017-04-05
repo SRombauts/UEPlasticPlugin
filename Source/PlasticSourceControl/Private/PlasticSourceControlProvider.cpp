@@ -22,6 +22,8 @@ static FName ProviderName("Plastic SCM");
 
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {
+	// TODO NOCOMMIT
+	UE_LOG(LogSourceControl, Warning, TEXT("FPlasticSourceControlProvider::Init(%d)"), bForceConnection);
 	CheckPlasticAvailability(bForceConnection);
 }
 
@@ -46,7 +48,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability(bool bForceConnecti
 
 		if(!bWorkspaceFound)
 		{
-			UE_LOG(LogSourceControl, Error, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::GameDir());
+			UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::GameDir());
 		}
 	}
 }
