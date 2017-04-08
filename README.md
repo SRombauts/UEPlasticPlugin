@@ -1,5 +1,5 @@
-Unreal Engine 4 Plastic Source Control Plugin
----------------------------------------------
+Unreal Engine 4 Plastic SCM Source Control Plugin
+-------------------------------------------------
 
 [![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
 
@@ -18,6 +18,11 @@ History menu entry to look a the changelog of an asset :
 
 Visual Diffing of different revision of a Blueprint :
 <img src="https://cdn2.unrealengine.com/blog/DiffTool-1009x542-719850393.png" width="720">
+
+### Copyright
+
+Copyright (c) 2016-2017 Codice Software - Sébastien Rombauts (sebastien.rombauts@gmail.com)
+<a href="https://www.paypal.me/SRombauts" title="Pay Me a Beer! Donate with PayPal :)"><img src="https://www.paypalobjects.com/webstatic/paypalme/images/pp_logo_small.png" width="118"></a>
 
 ### References
 
