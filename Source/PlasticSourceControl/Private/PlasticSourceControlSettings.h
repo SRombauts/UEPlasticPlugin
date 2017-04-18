@@ -6,10 +6,10 @@ class FPlasticSourceControlSettings
 {
 public:
 	/** Get the Plastic Binary Path */
-	const FString& GetBinaryPath() const;
+	const FString GetBinaryPath() const;
 
 	/** Set the Plastic Binary Path */
-	void SetBinaryPath(const FString& InString);
+	bool SetBinaryPath(const FString& InString);
 
 	/** Load settings from ini file */
 	void LoadSettings();

@@ -19,16 +19,21 @@ static const FString SettingsSection = TEXT("PlasticSourceControl.PlasticSourceC
 
 }
 
-const FString& FPlasticSourceControlSettings::GetBinaryPath() const
+const FString FPlasticSourceControlSettings::GetBinaryPath() const
 {
 	FScopeLock ScopeLock(&CriticalSection);
 	return BinaryPath;
 }
 
-void FPlasticSourceControlSettings::SetBinaryPath(const FString& InString)
+bool FPlasticSourceControlSettings::SetBinaryPath(const FString& InString)
 {
 	FScopeLock ScopeLock(&CriticalSection);
-	BinaryPath = InString;
+	const bool bChanged = (BinaryPath != InString);
+	if(bChanged)
+	{
+		BinaryPath = InString;
+	}
+	return bChanged;
 }
 
 // This is called at startup nearly before anything else in our module: BinaryPath will then be used by the provider
@@ -36,23 +41,12 @@ void FPlasticSourceControlSettings::LoadSettings()
 {
 	FScopeLock ScopeLock(&CriticalSection);
 	const FString& IniFile = SourceControlHelpers::GetSettingsIni();
-	bool bLoaded = GConfig->GetString(*PlasticSettingsConstants::SettingsSection, TEXT("BinaryPath"), BinaryPath, IniFile);
-	if(!bLoaded || BinaryPath.IsEmpty())
-	{
-		BinaryPath = PlasticSourceControlUtils::FindPlasticBinaryPath();
-	}
+	GConfig->GetString(*PlasticSettingsConstants::SettingsSection, TEXT("BinaryPath"), BinaryPath, IniFile);
 }
 
 void FPlasticSourceControlSettings::SaveSettings() const
 {
 	FScopeLock ScopeLock(&CriticalSection);
-
-	// Re-Check provided Plastic binary path for each change
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	PlasticSourceControl.GetProvider().CheckPlasticAvailability();
-	if (PlasticSourceControl.GetProvider().IsPlasticAvailable())
-	{
-		const FString& IniFile = SourceControlHelpers::GetSettingsIni();
-		GConfig->SetString(*PlasticSettingsConstants::SettingsSection, TEXT("BinaryPath"), *BinaryPath, IniFile);
-	}
+	const FString& IniFile = SourceControlHelpers::GetSettingsIni();
+	GConfig->SetString(*PlasticSettingsConstants::SettingsSection, TEXT("BinaryPath"), *BinaryPath, IniFile);
 }

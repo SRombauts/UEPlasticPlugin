@@ -46,7 +46,7 @@ public:
 	/**
 	 * Run a Plastic "version" command to check the availability of the binary and of the workspace.
 	 */
-	void CheckPlasticAvailability(bool bForceConnection = true);
+	void CheckPlasticAvailability();
 
 	/** Is Plastic command line working. */
 	inline bool IsPlasticAvailable() const

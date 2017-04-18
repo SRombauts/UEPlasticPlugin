@@ -22,34 +22,54 @@ static FName ProviderName("Plastic SCM");
 
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {
-	// TODO NOCOMMIT
-	UE_LOG(LogSourceControl, Warning, TEXT("FPlasticSourceControlProvider::Init(%d)"), bForceConnection);
-	CheckPlasticAvailability(bForceConnection);
+	// Init() is called multiple times at startup: do not check git each time
+	if(!bPlasticAvailable)
+	{
+		CheckPlasticAvailability();
+	}
+
+	// bForceConnection: not used anymore
 }
 
-void FPlasticSourceControlProvider::CheckPlasticAvailability(bool bForceConnection)
+void FPlasticSourceControlProvider::CheckPlasticAvailability()
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-
-	// Find the path to the root Plastic directory (if any, else uses the GameDir)
-	const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
-	bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToWorkspaceRoot);
-
-	// Launch the Plastic SCM cli shell on the background to issue all commands during this session
-	bPlasticAvailable = PlasticSourceControlUtils::LaunchBackgroundPlasticShell(PathToPlasticBinary, PathToWorkspaceRoot);
-	if(bPlasticAvailable)
+	FString PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
+	if(PathToPlasticBinary.IsEmpty())
 	{
-		FString PlasticScmVersion;
-		PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
-
-		// Get user name (from the global Plastic SCM client config)
-		PlasticSourceControlUtils::GetUserName(UserName);
-
-		if(!bWorkspaceFound)
+		// Try to find Plastic binary, and update settings accordingly
+		PathToPlasticBinary = PlasticSourceControlUtils::FindPlasticBinaryPath();
+		if(!PathToPlasticBinary.IsEmpty())
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::GameDir());
+			PlasticSourceControl.AccessSettings().SetBinaryPath(PathToPlasticBinary);
 		}
+	}
+
+	if(!PathToPlasticBinary.IsEmpty())
+	{
+		// Find the path to the root Plastic directory (if any, else uses the GameDir)
+		const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
+		bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToWorkspaceRoot);
+
+		// Launch the Plastic SCM cli shell on the background to issue all commands during this session
+		bPlasticAvailable = PlasticSourceControlUtils::LaunchBackgroundPlasticShell(PathToPlasticBinary, PathToWorkspaceRoot);
+		if(bPlasticAvailable)
+		{
+			FString PlasticScmVersion;
+			PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
+
+			// Get user name (from the global Plastic SCM client config)
+			PlasticSourceControlUtils::GetUserName(UserName);
+
+			if(!bWorkspaceFound)
+			{
+				UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::GameDir());
+			}
+		}
+	}
+	else
+	{
+		bPlasticAvailable = false;
 	}
 }
 
@@ -63,6 +83,9 @@ void FPlasticSourceControlProvider::Close()
 	PlasticSourceControlMenu.Unregister();
 
 	bServerAvailable = false;
+	bPlasticAvailable = false;
+	bWorkspaceFound = false;
+	UserName.Empty();
 }
 
 TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlProvider::GetStateInternal(const FString& Filename)

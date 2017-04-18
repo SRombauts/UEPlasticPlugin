@@ -314,8 +314,16 @@ FText SPlasticSourceControlSettings::GetBinaryPathText() const
 void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText, ETextCommit::Type InCommitType) const
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	PlasticSourceControl.AccessSettings().SetBinaryPath(InText.ToString());
-	PlasticSourceControl.SaveSettings();
+	const bool bChanged = PlasticSourceControl.AccessSettings().SetBinaryPath(InText.ToString());
+	if(bChanged)
+	{
+		// Re-Check provided Plastic binary path for each change
+		PlasticSourceControl.GetProvider().CheckPlasticAvailability();
+		if (PlasticSourceControl.GetProvider().IsPlasticAvailable())
+		{
+			PlasticSourceControl.SaveSettings();
+		}
+	}
 }
 
 FText SPlasticSourceControlSettings::GetPathToWorkspaceRoot() const
@@ -435,6 +443,7 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 	}
 	if (PlasticSourceControl.GetProvider().IsWorkspaceFound())
 	{
+		// List of files to add to Source Control (.uproject, Config/, Content/, Source/ files and .gitignore if any)
 		TArray<FString> ProjectFiles;
 		ProjectFiles.Add(FPaths::GetCleanFilename(FPaths::GetProjectFilePath()));
 		ProjectFiles.Add(FPaths::GetCleanFilename(FPaths::GameConfigDir()));
