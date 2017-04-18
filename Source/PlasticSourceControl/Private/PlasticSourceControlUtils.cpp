@@ -1304,24 +1304,16 @@ bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>( "PlasticSourceControl" );
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-	int NbStatesUpdated = 0;
+//	const FDateTime Now = FDateTime::Now();
 
 	for (const auto& InState : InStates)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(InState.LocalFilename);
-		if (State->WorkspaceState != InState.WorkspaceState)
-		{
-			State->WorkspaceState = InState.WorkspaceState;
-			State->PendingMergeFilename = InState.PendingMergeFilename;
-			State->PendingMergeBaseChangeset = InState.PendingMergeBaseChangeset;
-			State->PendingMergeSourceChangeset = InState.PendingMergeSourceChangeset;
-			State->PendingMergeParameters = InState.PendingMergeParameters;
-			State->TimeStamp = InState.TimeStamp; // TODO: Bug report: Workaround a bug with the Source Control Module not updating file state after a "Save" : try to revert and also remove all "UpdateStatus" operations so that the Editor have to call it asynchronously?
-			NbStatesUpdated++;
-		}
+		*State = InState;
+		State->TimeStamp = InState.TimeStamp; // TODO: Bug report: Workaround a bug with the Source Control Module not updating file state after a "Save" : try to revert and also remove all "UpdateStatus" operations so that the Editor have to call it asynchronously?
 	}
 
-	return (NbStatesUpdated > 0);
+	return (InStates.Num() > 0);
 }
 
 /**
