@@ -11,6 +11,7 @@
 #include "SPlasticSourceControlSettings.h"
 #include "MessageLog.h"
 #include "ScopedSourceControlProgress.h"
+#include "IPluginManager.h"
 
 #include "Misc/Paths.h"
 #include "HAL/PlatformProcess.h"
@@ -25,6 +26,12 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 	// Init() is called multiple times at startup: do not check git each time
 	if(!bPlasticAvailable)
 	{
+		const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
+		if(Plugin.IsValid())
+		{
+			UE_LOG(LogSourceControl, Log, TEXT("Plastic SCM plugin '%s'"), *(Plugin->GetDescriptor().VersionName));
+		}
+
 		CheckPlasticAvailability();
 	}
 

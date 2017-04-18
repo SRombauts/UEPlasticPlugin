@@ -5,7 +5,6 @@
 #include "PlasticSourceControlOperations.h"
 #include "Misc/App.h"
 #include "Features/IModularFeatures.h"
-#include "IPluginManager.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -17,13 +16,6 @@ static TSharedRef<IPlasticSourceControlWorker, ESPMode::ThreadSafe> CreateWorker
 
 void FPlasticSourceControlModule::StartupModule()
 {
-	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
-	if (Plugin.IsValid())
-	{
-		const FPluginDescriptor& PluginDescriptor = Plugin->GetDescriptor();
-		UE_LOG(LogSourceControl, Log, TEXT("Plastic SCM plugin '%s'"), *(Plugin->GetDescriptor().VersionName));
-	}
-
 	// Register our operations (implemented in PlasticSourceControlOperations.cpp by subclassing from Engine\Source\Developer\SourceControl\Public\SourceControlOperations.h)
 	PlasticSourceControlProvider.RegisterWorker("Connect", FGetPlasticSourceControlWorker::CreateStatic( &CreateWorker<FPlasticConnectWorker>));
 	PlasticSourceControlProvider.RegisterWorker("CheckOut", FGetPlasticSourceControlWorker::CreateStatic(&CreateWorker<FPlasticCheckOutWorker>));
