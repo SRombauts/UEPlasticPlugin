@@ -420,20 +420,21 @@ static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int
 	bool bResult = true;
 
 	// Get workspace status, in the form "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087" (disabled by the "--nostatus" flag)
+	//                                or "cs:41@rep:UE4PlasticPlugin@repserver:SRombauts@cloud" (when connected directly to the cloud)
 	if (InInfoMessages.Num() > 0)
 	{
-		static const FString Changeset(TEXT("cs:"));
-		static const FString Rep(TEXT("rep:"));
-		static const FString Server(TEXT("repserver:"));
+		static const FString ChangesetPrefix(TEXT("cs:"));
+		static const FString RepPrefix(TEXT("@rep:"));
+		static const FString ServerPrefix(TEXT("@repserver:"));
 		const FString& WorkspaceStatus = InInfoMessages[0];
-		TArray<FString> RepositorySpecification;
-		WorkspaceStatus.ParseIntoArray(RepositorySpecification, TEXT("@"));
-		if (3 >= RepositorySpecification.Num())
+		const int32 RepIndex = WorkspaceStatus.Find(RepPrefix, ESearchCase::CaseSensitive);
+		const int32 ServerIndex = WorkspaceStatus.Find(ServerPrefix, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
+		if ((RepIndex > INDEX_NONE) && (ServerIndex > INDEX_NONE))
 		{
-			const FString ChangesetString = RepositorySpecification[0].RightChop(Changeset.Len());
+			const FString ChangesetString = WorkspaceStatus.Mid(ChangesetPrefix.Len(), RepIndex - ChangesetPrefix.Len());
 			OutChangeset = FCString::Atoi(*ChangesetString);
-			OutRepositoryName = RepositorySpecification[1].RightChop(Rep.Len());
-			OutServerUrl = RepositorySpecification[2].RightChop(Server.Len());
+			OutRepositoryName = WorkspaceStatus.Mid(RepIndex + RepPrefix.Len(), ServerIndex - RepIndex - RepPrefix.Len());
+			OutServerUrl = WorkspaceStatus.RightChop(ServerIndex + ServerPrefix.Len());
 		}
 		else
 		{
