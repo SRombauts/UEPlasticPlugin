@@ -47,15 +47,15 @@ Copyright (c) 2016-2017 Codice Software - Sébastien Rombauts (sebastien.rombaut
 
 ### Status
 
-Beta version 0.9.7 2017/02/18 for UE4.15 :
+Beta version 0.9.8 2017/04/26 for UE4.15 :
 - Windows only
-- infrastructure : connect (cm version & cm status, optionnal configuration of the cli executable path)
-- show current branch name in status text
+- manage connection to the server
+- show current branch name and CL in status text
 - display status icons to show controled/checked-out/added/deleted/private/changed/ignored files
-- display locked files
+- display locked files, and by who
 - add, duplicate a file
 - move/rename a file or a folder
-- revert modifications of a file
+- revert modifications of a file (works best with the "Content Hot-Reload" option since UE4.15)
 - checkin a set of files with a multiline UTF-8 comment
 - migrate (copy) an asset between two projects if both are using Plastic SCM
 - delete file (but no way to checkin them, see known issues bellow)
@@ -63,18 +63,18 @@ Beta version 0.9.7 2017/02/18 for UE4.15 :
 - show history of a file
 - visual diff of a blueprint against depot or between previous versions of a file
 - initialize a new workspace to manage your UE4 Game Project.
-- create an appropriate ignore.conf file as part as initialization
-- make the initial commit
+- make the initial commit with a custom message
+- create an appropriate ignore.conf file as part of initialization
 - also permit late creation of the ignore.conf file
 - show conflicted files and 3-way visual diff
 - solve a merge conflict on a blueprint
 - top-menu global "Sync" instead of on folder's context menu
 - top-menu global "undo unchanged" and "undo all checkout"
 
-#### What *cannot* be done presently (TODO list for v1.0):
-- Mac and Linux
 
-#### Feature Requests (post v1.0)
+#### Feature Requests (post v1.0)
+- Gluon Partial Checkin mode
+- Mac OS X Support
 - fire a global "status" command at startup (to populate the cache) to fix wrong context menu on content folders ("Mark for Add")
 - add a "clean directory" or "checkin deleted files"
 - add a setting to pass the --update option to "checkin"
