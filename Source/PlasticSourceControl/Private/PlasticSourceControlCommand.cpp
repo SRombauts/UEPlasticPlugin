@@ -15,7 +15,6 @@ FPlasticSourceControlCommand::FPlasticSourceControlCommand(const TSharedRef<clas
 	, bExecuteProcessed(0)
 	, bCommandSuccessful(false)
 	, bConnectionDropped(false)
-	, ChangesetNumber(-1)
 	, bAutoDelete(true)
 	, Concurrency(EConcurrency::Synchronous)
 {
@@ -23,6 +22,7 @@ FPlasticSourceControlCommand::FPlasticSourceControlCommand(const TSharedRef<clas
 	check(IsInGameThread());
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>( "PlasticSourceControl" );
 	PathToWorkspaceRoot = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
+	ChangesetNumber = PlasticSourceControl.GetProvider().GetChangesetNumber();
 }
 
 bool FPlasticSourceControlCommand::DoWork()

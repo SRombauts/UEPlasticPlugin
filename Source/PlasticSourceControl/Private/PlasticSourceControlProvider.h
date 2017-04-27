@@ -17,7 +17,7 @@ public:
 		: bPlasticAvailable(false)
 		, bWorkspaceFound(false)
 		, bServerAvailable(false)
-		, ChangesetNumber(-1)
+		, ChangesetNumber(0)
 	{
 	}
 
@@ -94,6 +94,12 @@ public:
 	inline const FString& GetBranchName() const
 	{
 		return BranchName;
+	}
+
+	/** Get the current Changeset Number */
+	inline int32 GetChangesetNumber() const
+	{
+		return ChangesetNumber;
 	}
 
 	/** Helper function used to update state cache */
