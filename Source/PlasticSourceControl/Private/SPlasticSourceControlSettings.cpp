@@ -423,7 +423,7 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 		TArray<FString> Parameters;
 		Parameters.Add(ServerUrl.ToString());
 		Parameters.Add(RepositoryName.ToString());
-		PlasticSourceControlUtils::RunCommand(TEXT("makerepository"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+		PlasticSourceControlUtils::RunCommand(TEXT("makerepository"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	}
 	{
 		TArray<FString> Parameters;
@@ -434,7 +434,7 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 			// working only if repository already exists
 			Parameters.Add(FString::Printf(TEXT("--repository=rep:%s@repserver:%s"), *RepositoryName.ToString(), *ServerUrl.ToString()));
 		}
-		bResult = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+		bResult = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 		if (bResult)
 		{
 			// Check the new workspace status to enable connection
@@ -464,7 +464,7 @@ FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 			// Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)
 			TArray<FString> Parameters;
 			Parameters.Add(TEXT("-R"));
-			bResult = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, ProjectFiles, InfoMessages, ErrorMessages);
+			bResult = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, ProjectFiles, EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 		}
 		if (bAutoInitialCommit && bResult)
 		{
@@ -576,7 +576,7 @@ FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 		Parameters.Add(TEXT("-R"));
 		TArray<FString> Files;
 		Files.Add(TEXT("ignore.conf"));
-		PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, Files, InfoMessages, ErrorMessages);
+		PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, Files, EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	}
 	return FReply::Handled();
 }

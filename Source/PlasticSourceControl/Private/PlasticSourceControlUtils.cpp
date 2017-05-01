@@ -138,7 +138,7 @@ static void _RestartBackgroundCommandLineShell()
 }
 
 // Internal function (called under the critical section)
-static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
+static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, FString& OutResults, FString& OutErrors)
 {
 	bool bResult = false;
 
@@ -175,6 +175,8 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	const double Timeout = 60.0;
 	const double StartTimestamp = FPlatformTime::Seconds();
 	double LastActivity = StartTimestamp;
+	double LastLog = StartTimestamp;
+	const double LogInterval = 5.0;
 	int32 PreviousLogLen = 0;
 	while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
@@ -199,6 +201,14 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 				}
 			}
 		}
+		else if ((FPlatformTime::Seconds() - LastLog > LogInterval) && (PreviousLogLen < OutResults.Len()) && (InConcurrency == EConcurrency::Asynchronous))
+		{
+			// In case of long running operation, start to print intermediate output from cm shell (like percentage of progress)
+			// (but only when runing Asynchronous commands, since Synchronous commands block the main thread until they finish)
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' in progress for %lfs...\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			PreviousLogLen = OutResults.Len();
+			LastLog = FPlatformTime::Seconds(); // freshen the timestamp of last log
+		}
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
 			// Shut-down and restart the connexion to 'cm shell' in case of timeout!
@@ -222,8 +232,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		}
 		else
 		{
-			// @todo: debug log
-			UE_LOG(LogSourceControl, Log, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+			UE_LOG(LogSourceControl, Log, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
 		}
 	}
 	else
@@ -245,7 +254,7 @@ static void _ExitBackgroundCommandLineShell()
 {
 	// Tell the 'cm shell' to exit
 	FString Results, Errors;
-	_RunCommandInternal(TEXT("exit"), TArray<FString>(), TArray<FString>(), Results, Errors);
+	_RunCommandInternal(TEXT("exit"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, Results, Errors);
 	// And wait up to one seconde for its termination
 	int timeout = 100;
 	while (FPlatformProcess::IsProcRunning(ShellProcessHandle) && (0 < timeout--))
@@ -284,7 +293,7 @@ void Terminate()
 }
 
 // Run command (thread-safe)
-static bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
+static bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, FString& OutResults, FString& OutErrors)
 {
 	bool bResult = false;
 
@@ -293,7 +302,7 @@ static bool RunCommandInternal(const FString& InCommand, const TArray<FString>& 
 
 	if (ShellProcessHandle.IsValid())
 	{
-		bResult = _RunCommandInternal(InCommand, InParameters, InFiles, OutResults, OutErrors);
+		bResult = _RunCommandInternal(InCommand, InParameters, InFiles, InConcurrency, OutResults, OutErrors);
 	}
 	else
 	{
@@ -305,12 +314,12 @@ static bool RunCommandInternal(const FString& InCommand, const TArray<FString>& 
 }
 
 // Basic parsing or results & errors from the Plastic command line process
-bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
+bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
 {
 	FString Results;
 	FString Errors;
 
-	const bool bResult = RunCommandInternal(InCommand, InParameters, InFiles, Results, Errors);
+	const bool bResult = RunCommandInternal(InCommand, InParameters, InFiles, InConcurrency, Results, Errors);
 
 	Results.ParseIntoArray(OutResults, PlasticSourceControlConstants::pchDelim, true);
 	Errors.ParseIntoArray(OutErrorMessages, PlasticSourceControlConstants::pchDelim, true);
@@ -376,7 +385,7 @@ void GetPlasticScmVersion(FString& OutPlasticScmVersion)
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("version"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("version"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		OutPlasticScmVersion = InfoMessages[0];
@@ -387,7 +396,7 @@ void GetUserName(FString& OutUserName)
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("whoami"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("whoami"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		OutUserName = InfoMessages[0];
@@ -402,7 +411,7 @@ bool GetWorkspaceName(FString& OutWorkspaceName)
 	Parameters.Add(TEXT("."));
 	Parameters.Add(TEXT("--format={0}"));
 	// Get the workspace name
-	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		// NOTE: getworkspacefrompath never returns an error!
@@ -457,7 +466,7 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--wkconfig")); // Branch name
 	Parameters.Add(TEXT("--nochanges")); // No file status
-	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
+	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	if (bResult)
 	{
 		ParseWorkspaceInformation(InfoMessages, OutChangeset, OutRepositoryName, OutServerUrl, OutBranchName);
@@ -696,7 +705,7 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
  * @param[out]	OutChangeset		The current Changeset Number
  * @param[out]	OutBranchName		Name of the current checked-out branch
  */
-static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
+static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
 	FString Path = FPaths::GetPath(*InFiles[0]);
 	bool bDirectoryStatus;
@@ -734,7 +743,7 @@ static bool RunStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorM
 	OnePath.Add(MoveTemp(Path));
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("status"), Parameters, OnePath, Results, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("status"), Parameters, OnePath, InConcurrency, Results, ErrorMessages);
 	// Normalize paths in the result (convert all '\' to '/')
 	for (int32 IdxResult = 0; IdxResult < Results.Num(); IdxResult++)
 	{
@@ -828,7 +837,7 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
  * @param[out]		OutErrorMessages	Error messages from the "fileinfo" command
  * @param[in,out]	InOutStates			List of file states in the directory, gathered by the "status" command, completed by results of the "fileinfo" command
  */
-static bool RunFileinfo(TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
+static bool RunFileinfo(const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{LockedBy};{LockedWhere}\""));
@@ -839,7 +848,7 @@ static bool RunFileinfo(TArray<FString>& OutErrorMessages, TArray<FPlasticSource
 	}
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("fileinfo"), Parameters, Files, Results, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("fileinfo"), Parameters, Files, InConcurrency, Results, ErrorMessages);
 	OutErrorMessages.Append(ErrorMessages);
 	if (bResult)
 	{
@@ -945,7 +954,7 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 					const TArray<FString> PendingMergeParameters = Parameters;
 					Parameters.Add(TEXT("--machinereadable"));
 					// call 'cm merge cs:xxx --machinereadable' (only dry-run, whithout the --merge parameter)
-					bResult = RunCommand(TEXT("merge"), Parameters, TArray<FString>(), Results, ErrorMessages);
+					bResult = RunCommand(TEXT("merge"), Parameters, TArray<FString>(), EConcurrency::Synchronous, Results, ErrorMessages);
 					OutErrorMessages.Append(ErrorMessages);
 					// Parse the result, one line for each conflicted files:
 					for (const FString& Result : Results)
@@ -979,7 +988,7 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 }
 
 // Run a batch of Plastic "status" and "fileinfo" commands to update status of given files and directories.
-bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
+bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
 	bool bResult = true;
 
@@ -1021,13 +1030,13 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMe
 	{
 		// Run a "status" command on the directory to get workspace file states.
 		TArray<FPlasticSourceControlState> States;
-		const bool bGroupOk = RunStatus(Files.Value, OutErrorMessages, States, OutChangeset, OutBranchName);
+		const bool bGroupOk = RunStatus(Files.Value, InConcurrency, OutErrorMessages, States, OutChangeset, OutBranchName);
 		if (bGroupOk && (States.Num() > 0))
 		{
 			// Run a "fileinfo" command to update status of given files.
 			// In case of "directory status", there is no explicit file in the group (it contains only the directory) 
 			// => work on the list of files discovered by RunStatus()
-			bResult &= RunFileinfo(OutErrorMessages, States);
+			bResult &= RunFileinfo(InConcurrency, OutErrorMessages, States);
 		}
 		OutStates.Append(MoveTemp(States));
 	}
@@ -1225,7 +1234,7 @@ static bool RunLogCommand(const FString& InChangeset, FPlasticSourceControlRevis
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 
 	// Uses the raw RunCommandInternal() that does not split results in an array of strings, for XML parsing
-	bool bResult = RunCommandInternal(TEXT("log"), Parameters, TArray<FString>(), Results, Errors);
+	bool bResult = RunCommandInternal(TEXT("log"), Parameters, TArray<FString>(), EConcurrency::Synchronous, Results, Errors);
 	if (bResult)
 	{
 		FXmlFile XmlFile;
@@ -1292,7 +1301,7 @@ bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, TPl
 	TArray<FString> OneFile;
 	OneFile.Add(*InFile);
 
-	bool bResult = RunCommand(TEXT("history"), Parameters, OneFile, Results, OutErrorMessages);
+	bool bResult = RunCommand(TEXT("history"), Parameters, OneFile, EConcurrency::Synchronous, Results, OutErrorMessages);
 	if (bResult)
 	{
 		bResult = ParseHistoryResults(Results, OutHistory);

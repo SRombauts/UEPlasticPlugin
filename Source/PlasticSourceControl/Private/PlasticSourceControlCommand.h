@@ -75,7 +75,7 @@ public:
 	/** If true, this command will be automatically cleaned up in Tick() */
 	bool bAutoDelete;
 
-	/** Whether we are running multi-treaded or not*/
+	/** Whether we are running multi-treaded in the background, or blocking the main thread */
 	EConcurrency::Type Concurrency;
 
 	/** Files to perform this operation on */
