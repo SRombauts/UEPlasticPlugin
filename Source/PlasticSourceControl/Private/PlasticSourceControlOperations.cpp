@@ -123,13 +123,20 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if (CommitMsgFile.GetFilename().Len() > 0)
 	{
 		TArray<FString> Parameters;
-		Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
 		FString ParamCommitMsgFilename = TEXT("--commentsfile=\"");
 		ParamCommitMsgFilename += FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename());
 		ParamCommitMsgFilename += TEXT("\"");
 		Parameters.Add(ParamCommitMsgFilename);
-
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		// Detect special case for a partial checkout (Gluon mode)!
+		if (0 <= InCommand.ChangesetNumber)
+		{
+			Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+		else
+		{
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
 		if (InCommand.bCommandSuccessful)
 		{
 			// Remove any deleted files from status cache
@@ -498,11 +505,19 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--last"));
-	Parameters.Add(TEXT("--dontmerge"));
-
 	// Update specified directory to the head of the repository
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	// Detect special case for a partial checkout (Gluon mode)!
+	if (0 <= InCommand.ChangesetNumber)
+	{
+		Parameters.Add(TEXT("--last"));
+		Parameters.Add(TEXT("--dontmerge"));
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+	else
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+
 	if (InCommand.bCommandSuccessful)
 	{
 		// now update the status of our files
