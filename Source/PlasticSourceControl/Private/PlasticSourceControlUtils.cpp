@@ -707,6 +707,8 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
  */
 static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
+	ensure(0 < InFiles.Num());
+
 	FString Path = FPaths::GetPath(*InFiles[0]);
 	bool bDirectoryStatus;
 	if (1 == InFiles.Num() && FPaths::DirectoryExists(InFiles[0]))
@@ -739,8 +741,17 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	Parameters.Add(TEXT("--noheaders"));
 	Parameters.Add(TEXT("--all"));
 	Parameters.Add(TEXT("--ignored"));
+	Parameters.Add(TEXT("--cutignored"));
+	// "cm status" only operate on one patch (file or folder) at a time, so use one folder path for multiple files in a directory
 	TArray<FString> OnePath;
-	OnePath.Add(MoveTemp(Path));
+	if (1 == InFiles.Num())
+	{
+		OnePath.Add(InFiles[0]);
+	}
+	else
+	{
+		OnePath.Add(MoveTemp(Path));
+	}
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
 	const bool bResult = RunCommand(TEXT("status"), Parameters, OnePath, InConcurrency, Results, ErrorMessages);
