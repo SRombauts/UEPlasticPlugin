@@ -145,7 +145,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	// Detect previous crash of cm.exe and restart 'cm shell'
 	if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: 'cm shell' has stopped. Restarting!"), FPlatformProcess::IsProcRunning(ShellProcessHandle));
+		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: 'cm shell' has stopped. Restarting!"));
 		_RestartBackgroundCommandLineShell();
 	}
 
@@ -171,8 +171,8 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	// Send command to 'cm shell' process
 	const bool bWriteOk = FPlatformProcess::WritePipe(ShellInputPipeWrite, FullCommand);
 
-	// And wait up to 60 seconds for any kind of output from cm shell: in case of lengthier operation, intermediate output (like percentage of progress) is expected, which would refresh the timout
-	const double Timeout = 60.0;
+	// And wait up to 180.0 seconds for any kind of output from cm shell: in case of lengthier operation, intermediate output (like percentage of progress) is expected, which would refresh the timout
+	const double Timeout = 180.0;
 	const double StartTimestamp = FPlatformTime::Seconds();
 	double LastActivity = StartTimestamp;
 	double LastLog = StartTimestamp;
@@ -211,20 +211,21 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		}
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
-			// Shut-down and restart the connexion to 'cm shell' in case of timeout!
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' %d TIMEOUT after %lfs output:\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
-			PreviousLogLen = OutResults.Len();
-			LastActivity = FPlatformTime::Seconds(); // freshen the timestamp to reinit timeout warning
+			// In case of timeout, ask the blocking 'cm shell' process to exit, and detach from it immediatly: it will be relaunched by next command
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' %d TIMEOUT after %lfs output:\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
+			FPlatformProcess::CloseProc(ShellProcessHandle);
+			_CleanupBackgroundCommandLineShell();
 		}
 
-		FPlatformProcess::Sleep(0.0f); // 0.0 means release the current time slice to let other threads get some attention
+		FPlatformProcess::Sleep(0.001f);
 	}
 	if (!InCommand.Equals(TEXT("exit")))
 	{
 		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' 'cm shell' stopped after %lfs output:\n%s"), *LoggableCommand, FPlatformProcess::IsProcRunning(ShellProcessHandle), (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' 'cm shell' stopped after %lfs output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
 		}
 		else if (!bResult)
 		{
