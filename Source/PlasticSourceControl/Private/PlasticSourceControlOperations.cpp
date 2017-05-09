@@ -82,7 +82,15 @@ bool FPlasticCheckOutWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkout"), TArray<FString>(), InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+	if (-1 != InCommand.ChangesetNumber)
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkout"), TArray<FString>(), InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+	else
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial checkout"), TArray<FString>(), InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
 
 	// now update the status of our files
 	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
@@ -127,14 +135,15 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		ParamCommitMsgFilename += FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename());
 		ParamCommitMsgFilename += TEXT("\"");
 		Parameters.Add(ParamCommitMsgFilename);
-		// Detect special case for a partial checkout (Gluon mode)!
-		if (0 <= InCommand.ChangesetNumber)
+		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+		if (-1 != InCommand.ChangesetNumber)
 		{
 			Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 		else
 		{
+			Parameters.Add(TEXT("--applychanged")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 		if (InCommand.bCommandSuccessful)
@@ -180,7 +189,15 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--parents"));
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+	if (-1 != InCommand.ChangesetNumber)
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+	else
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial add"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
 
 	// now update the status of our files
 	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
@@ -202,7 +219,15 @@ bool FPlasticDeleteWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("remove"), TArray<FString>(), InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+	if (-1 != InCommand.ChangesetNumber)
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("remove"), TArray<FString>(), InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+	else
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial remove"), TArray<FString>(), InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
 
 	// now update the status of our files
 	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
@@ -225,7 +250,15 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 
 	// revert then checkout and any changes of the given files in workspace
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), TArray<FString>(), InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+	if (-1 != InCommand.ChangesetNumber)
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), TArray<FString>(), InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+	else
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), TArray<FString>(), InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
 
 	// now update the status of our files
 	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
@@ -272,9 +305,16 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--all"));
-
 	// revert the checkout of all files recursively
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+	if (-1 != InCommand.ChangesetNumber)
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+	else
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
 
 	return InCommand.bCommandSuccessful;
 }
@@ -457,7 +497,15 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				TArray<FString> Files;
 				Files.Add(Origin);
 				Files.Add(Destination);
-				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("move"), TArray<FString>(), Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+				// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+				if (-1 != InCommand.ChangesetNumber)
+				{
+					InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("move"), TArray<FString>(), Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+				}
+				else
+				{
+					InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial move"), TArray<FString>(), Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+				}
 			}
 			// - restore the redirector file (if it exists) to it's former location
 			if (InCommand.bCommandSuccessful)
@@ -470,7 +518,15 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			{
 				TArray<FString> Files;
 				Files.Add(Origin);
-				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), TArray<FString>(), Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+				// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+				if (-1 != InCommand.ChangesetNumber)
+				{
+					InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), TArray<FString>(), Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+				}
+				else
+				{
+					InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial add"), TArray<FString>(), Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+				}
 			}
 		}
 		else
@@ -506,8 +562,8 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TArray<FString> Parameters;
 	// Update specified directory to the head of the repository
-	// Detect special case for a partial checkout (Gluon mode)!
-	if (0 <= InCommand.ChangesetNumber)
+	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+	if (-1 != InCommand.ChangesetNumber)
 	{
 		Parameters.Add(TEXT("--last"));
 		Parameters.Add(TEXT("--dontmerge"));
