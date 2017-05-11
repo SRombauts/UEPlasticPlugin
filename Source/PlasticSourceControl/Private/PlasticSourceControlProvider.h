@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "ISourceControlProvider.h"
 #include "IPlasticSourceControlWorker.h"
 #include "PlasticSourceControlState.h"
@@ -13,7 +14,7 @@ class FPlasticSourceControlProvider : public ISourceControlProvider
 {
 public:
 	/** Constructor */
-	FPlasticSourceControlProvider() 
+	FPlasticSourceControlProvider()
 		: bPlasticAvailable(false)
 		, bWorkspaceFound(false)
 		, bServerAvailable(false)

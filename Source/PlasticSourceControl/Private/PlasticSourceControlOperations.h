@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "IPlasticSourceControlWorker.h"
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlRevision.h"
@@ -200,7 +201,7 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() const override;
-	
+
 private:
 	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
