@@ -251,6 +251,11 @@ bool FPlasticSourceControlProvider::UsesChangelists() const
 	return true;
 }
 
+bool FPlasticSourceControlProvider::UsesCheckout() const
+{
+	return true;
+}
+
 TSharedPtr<IPlasticSourceControlWorker, ESPMode::ThreadSafe> FPlasticSourceControlProvider::CreateWorker(const FName& InOperationName) const
 {
 	const FGetPlasticSourceControlWorker* Operation = WorkersMap.Find(InOperationName);
