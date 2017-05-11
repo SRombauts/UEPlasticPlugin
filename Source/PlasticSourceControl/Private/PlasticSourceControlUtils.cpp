@@ -1326,13 +1326,13 @@ bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>( "PlasticSourceControl" );
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-//	const FDateTime Now = FDateTime::Now();
+	const FDateTime Now = FDateTime::Now();
 
 	for (const auto& InState : InStates)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(InState.LocalFilename);
 		*State = InState;
-		State->TimeStamp = InState.TimeStamp; // TODO: Bug report: Workaround a bug with the Source Control Module not updating file state after a "Save" : try to revert and also remove all "UpdateStatus" operations so that the Editor have to call it asynchronously?
+		State->TimeStamp = Now;
 	}
 
 	return (InStates.Num() > 0);
