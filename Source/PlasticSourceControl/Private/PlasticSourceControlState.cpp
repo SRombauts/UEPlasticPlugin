@@ -281,7 +281,8 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 	}
 	const bool bIsLockedByOther = WorkspaceState == EWorkspaceState::LockedByOther;
 
-	if (bIsLockedByOther) UE_LOG(LogSourceControl, Log, TEXT("%s IsCheckedOutOther by '%s' (%s)"), *LocalFilename, *LockedBy, *LockedWhere);
+	// @todo: temporary debug log
+	// if (bIsLockedByOther) UE_LOG(LogSourceControl, Log, TEXT("%s IsCheckedOutOther by '%s' (%s)"), *LocalFilename, *LockedBy, *LockedWhere);
 
 	return bIsLockedByOther;
 }
@@ -290,7 +291,7 @@ bool FPlasticSourceControlState::IsCurrent() const
 {
 	const bool bIsCurrent = (LocalRevisionChangeset == DepotRevisionChangeset);
 
-	// TODO: Plastic SCM "bug": DepotRevisionChangeset not working as expected
+	// @todo: temporary debug log
 	// if (bIsCurrent) UE_LOG(LogSourceControl, Log, TEXT("%s IsCurrent"), *LocalFilename, );
 	
 	return bIsCurrent;
