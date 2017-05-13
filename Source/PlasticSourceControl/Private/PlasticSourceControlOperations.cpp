@@ -33,6 +33,16 @@ FText FPlasticRevertAll::GetInProgressString() const
 	return LOCTEXT("SourceControl_RevertAll", "Reverting checked-out file(s) in Source Control...");
 }
 
+FName FPlasticMakeWorkspace::GetName() const
+{
+	return "MakeWorkspace";
+}
+
+FText FPlasticMakeWorkspace::GetInProgressString() const
+{
+	return LOCTEXT("SourceControl_MakeWorkspace", "Create a new Repository and initialize the Workspace");
+}
+
 
 FName FPlasticConnectWorker::GetName() const
 {
@@ -189,6 +199,7 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--parents"));
+	Parameters.Add(TEXT("-R")); // needed at the time of workspace creation
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (-1 != InCommand.ChangesetNumber)
 	{
@@ -324,6 +335,38 @@ bool FPlasticRevertAllWorker::UpdateStates() const
 	return false;
 }
 
+FName FPlasticMakeWorkspaceWorker::GetName() const
+{
+	return "MakeWorkspace";
+}
+
+bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticMakeWorkspace, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticMakeWorkspace>(InCommand.Operation);
+
+	{
+		TArray<FString> Parameters;
+		Parameters.Add(Operation->ServerUrl);
+		Parameters.Add(Operation->RepositoryName);
+		PlasticSourceControlUtils::RunCommand(TEXT("makerepository"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+	{
+		TArray<FString> Parameters;
+		Parameters.Add(Operation->WorkspaceName);
+		Parameters.Add(TEXT(".")); // current path, ie. GameDir
+		Parameters.Add(FString::Printf(TEXT("--repository=rep:%s@repserver:%s"), *Operation->RepositoryName, *Operation->ServerUrl));
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticMakeWorkspaceWorker::UpdateStates() const
+{
+	return false;
+}
+
 FName FPlasticUpdateStatusWorker::GetName() const
 {
 	return "UpdateStatus";
@@ -341,9 +384,11 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	if (InCommand.Files.Num() > 0)
 	{
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		// Remove all "is not in a workspace" error and convert the result to "success" if there are no other errors
 		PlasticSourceControlUtils::RemoveRedundantErrors(InCommand, TEXT("is not in a workspace."));
 		if (!InCommand.bCommandSuccessful)
 		{
+			UE_LOG(LogSourceControl, Error, TEXT("FPlasticUpdateStatusWorker(ErrorMessages.Num()=%d) => checkconnection"), InCommand.ErrorMessages.Num());
 			// In case of error, execute a 'checkconnection' command to check the connectivity of the server.
 			InCommand.bConnectionDropped = !PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}

@@ -2,6 +2,7 @@
 
 #include "PlasticSourceControlPrivatePCH.h"
 #include "SPlasticSourceControlSettings.h"
+#include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlUtils.h"
 
@@ -351,8 +352,8 @@ bool SPlasticSourceControlSettings::IsReadyToInitializePlasticWorkspace() const
 {
 	// Workspace Name cannot be left empty
 	const bool bWorkspaceNameOk = !WorkspaceName.IsEmpty();
-	// Either RepositoryName should be empty, or ServerUrl should also be filled
-	const bool bRepositoryNameOk = RepositoryName.IsEmpty() || !ServerUrl.IsEmpty();
+	// RepositoryName and ServerUrl should also be filled
+	const bool bRepositoryNameOk = !RepositoryName.IsEmpty() && !ServerUrl.IsEmpty();
 	// If Initial Commit is requested, checkin message cannot be empty
 	const bool bInitialCommitOk = (!bAutoInitialCommit || !InitialCommitMessage.IsEmpty());
 	return bWorkspaceNameOk && bRepositoryNameOk && bInitialCommitOk;
@@ -409,89 +410,125 @@ FText SPlasticSourceControlSettings::GetInitialCommitMessage() const
 
 FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	TArray<FString> InfoMessages;
-	TArray<FString> ErrorMessages;
-	bool bResult;
-
 	UE_LOG(LogSourceControl, Log, TEXT("InitializePlasticWorkspace(%s, %s, %s) CreateIgnore=%d Commit=%d"),
 		*WorkspaceName.ToString(), *RepositoryName.ToString(), *ServerUrl.ToString(), bAutoCreateIgnoreFile, bAutoInitialCommit);
 
-	if (!RepositoryName.IsEmpty())
+	// 1.a. Create a repository (if not already existing) and a workspace: launch an asynchronous MakeWorkspace operation
+	LaunchMakeWorkspaceOperation();
+
+	return FReply::Handled();
+}
+
+
+/// 1. Create a repository (if not already existing) and a workspace
+void SPlasticSourceControlSettings::LaunchMakeWorkspaceOperation()
+{
+	TSharedRef<FPlasticMakeWorkspace, ESPMode::ThreadSafe> MakeWorkspaceOperation = ISourceControlOperation::Create<FPlasticMakeWorkspace>();
+	MakeWorkspaceOperation->WorkspaceName = WorkspaceName.ToString();
+	MakeWorkspaceOperation->RepositoryName = RepositoryName.ToString();
+	MakeWorkspaceOperation->ServerUrl = ServerUrl.ToString();
+
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(MakeWorkspaceOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
+	if (Result == ECommandResult::Succeeded)
 	{
-		TArray<FString> Parameters;
-		Parameters.Add(ServerUrl.ToString());
-		Parameters.Add(RepositoryName.ToString());
-		PlasticSourceControlUtils::RunCommand(TEXT("makerepository"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+		DisplayInProgressNotification(MakeWorkspaceOperation);
 	}
+	else
 	{
-		TArray<FString> Parameters;
-		Parameters.Add(WorkspaceName.ToString());
-		Parameters.Add(TEXT(".")); // current path, ie. GameDir
-		if (!RepositoryName.IsEmpty())
-		{
-			// working only if repository already exists
-			Parameters.Add(FString::Printf(TEXT("--repository=rep:%s@repserver:%s"), *RepositoryName.ToString(), *ServerUrl.ToString()));
-		}
-		bResult = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
-		if (bResult)
-		{
-			// Check the new workspace status to enable connection
-			PlasticSourceControl.GetProvider().CheckPlasticAvailability();
-		}
+		DisplayFailureNotification(MakeWorkspaceOperation->GetName());
 	}
+}
+
+/// 2. Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)
+void SPlasticSourceControlSettings::LaunchMarkForAddOperation()
+{
+	TSharedRef<FMarkForAdd, ESPMode::ThreadSafe> MarkForAddOperation = ISourceControlOperation::Create<FMarkForAdd>();
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+
+	// 1.b. Check the new workspace status to enable connection
+	PlasticSourceControl.GetProvider().CheckPlasticAvailability();
+
 	if (PlasticSourceControl.GetProvider().IsWorkspaceFound())
 	{
-		// List of files to add to Source Control (.uproject, Config/, Content/, Source/ files and .gitignore if any)
+		// List of files to add to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any)
 		TArray<FString> ProjectFiles;
-		ProjectFiles.Add(FPaths::GetCleanFilename(FPaths::GetProjectFilePath()));
-		ProjectFiles.Add(FPaths::GetCleanFilename(FPaths::GameConfigDir()));
-		ProjectFiles.Add(FPaths::GetCleanFilename(FPaths::GameContentDir()));
+		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()));
+		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
 		if (FPaths::DirectoryExists(FPaths::GameSourceDir()))
 		{
-			ProjectFiles.Add(FPaths::GetCleanFilename(FPaths::GameSourceDir()));
+			ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameSourceDir()));
 		}
 		if (bAutoCreateIgnoreFile)
 		{
 			// Create a standard "ignore.conf" file with common patterns for a typical Blueprint & C++ project
 			if (CreateIgnoreFile())
 			{
-				ProjectFiles.Add(TEXT("ignore.conf"));
+				ProjectFiles.Add(GetIgnoreFileName());
 			}
 		}
-		{
-			// Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)
-			TArray<FString> Parameters;
-			Parameters.Add(TEXT("-R"));
-			bResult = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, ProjectFiles, EConcurrency::Synchronous, InfoMessages, ErrorMessages);
-		}
-		if (bAutoInitialCommit && bResult)
-		{
-			UE_LOG(LogSourceControl, Log, TEXT("FCheckIn(%s)"), *InitialCommitMessage.ToString());
 
-			// optional initial Asynchronous checkin with custom message: launch a "CheckIn" Operation
-			TSharedRef<FCheckIn, ESPMode::ThreadSafe> CheckInOperation = ISourceControlOperation::Create<FCheckIn>();
-			CheckInOperation->SetDescription(InitialCommitMessage);
-			ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(CheckInOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
-			if (Result == ECommandResult::Succeeded)
-			{
-				// Display an ongoing notification during the whole operation
-				DisplayInProgressNotification(CheckInOperation);
-			}
-			else
-			{
-				DisplayFailureNotification(CheckInOperation->GetName());
-			}
+		ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(MarkForAddOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
+		if (Result == ECommandResult::Succeeded)
+		{
+			DisplayInProgressNotification(MarkForAddOperation);
+		}
+		else
+		{
+			DisplayFailureNotification(MarkForAddOperation->GetName());
 		}
 	}
 	else
 	{
-		DisplayFailureNotification(FName(TEXT("makeworkspace")));
+		DisplayFailureNotification(MarkForAddOperation->GetName());
 	}
-	return FReply::Handled();
 }
 
+/// 3. Launch an asynchronous "CheckIn" operation and start another ongoing notification
+void SPlasticSourceControlSettings::LaunchCheckInOperation()
+{
+	TSharedRef<FCheckIn, ESPMode::ThreadSafe> CheckInOperation = ISourceControlOperation::Create<FCheckIn>();
+	CheckInOperation->SetDescription(InitialCommitMessage);
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(CheckInOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
+	if (Result == ECommandResult::Succeeded)
+	{
+		DisplayInProgressNotification(CheckInOperation);
+	}
+	else
+	{
+		DisplayFailureNotification(CheckInOperation->GetName());
+	}
+}
+
+/// Delegate called when a source control operation has completed: launch the next one and manage notifications
+void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	RemoveInProgressNotification();
+
+	// Report result with a notification
+	if (InResult == ECommandResult::Succeeded)
+	{
+		DisplaySuccessNotification(InOperation->GetName());
+	}
+	else
+	{
+		DisplayFailureNotification(InOperation->GetName());
+	}
+
+	// Launch the following asynchrounous operation
+	if ((InOperation->GetName() == "MakeWorkspace") && (InResult == ECommandResult::Succeeded) && bAutoInitialCommit)
+	{
+		// 2. Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)
+		LaunchMarkForAddOperation();
+	}
+	else if ((InOperation->GetName() == "MarkForAdd") && (InResult == ECommandResult::Succeeded) && bAutoInitialCommit)
+	{
+		// 3. optional initial Asynchronous commit with custom message: launch a "CheckIn" Operation
+		LaunchCheckInOperation();
+	}
+}
 
 // Display an ongoing notification during the whole operation
 void SPlasticSourceControlSettings::DisplayInProgressNotification(const FSourceControlOperationRef& InOperation)
@@ -525,6 +562,7 @@ void SPlasticSourceControlSettings::DisplaySuccessNotification(const FName& InOp
 	Info.bUseSuccessFailIcons = true;
 	Info.Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
 	FSlateNotificationManager::Get().AddNotification(Info);
+	// @todo temporary debug log
 	UE_LOG(LogSourceControl, Log, TEXT("%s"), *NotificationText.ToString());
 }
 
@@ -535,24 +573,8 @@ void SPlasticSourceControlSettings::DisplayFailureNotification(const FName& InOp
 	FNotificationInfo Info(NotificationText);
 	Info.ExpireDuration = 8.0f;
 	FSlateNotificationManager::Get().AddNotification(Info);
+	// @todo temporary debug log
 	UE_LOG(LogSourceControl, Error, TEXT("%s"), *NotificationText.ToString());
-}
-
-void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
-{
-	check(InOperation->GetName() == "CheckIn");
-
-	RemoveInProgressNotification();
-
-	// Report result with a notification
-	if (InResult == ECommandResult::Succeeded)
-	{
-		DisplaySuccessNotification(InOperation->GetName());
-	}
-	else
-	{
-		DisplayFailureNotification(InOperation->GetName());
-	}
 }
 
 /** Delegate to check for presence of a Plastic ignore.conf file to an existing Plastic SCM workspace */

@@ -57,16 +57,21 @@ private:
 	FText GetInitialCommitMessage() const;
 	FText InitialCommitMessage;
 
-	/** Initial checkin asynchronous operation progress notification */
+	/** Launch initial asynchronous add and commit operations */
+	void LaunchMakeWorkspaceOperation();
+	void LaunchMarkForAddOperation();
+	void LaunchCheckInOperation();
+
+	/** Delegate called when a source control operation has completed */
+	void OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+
+	/** Asynchronous operation progress notifications */
 	TWeakPtr<class SNotificationItem> OperationInProgressNotification;
 
 	void DisplayInProgressNotification(const FSourceControlOperationRef& InOperation);
 	void RemoveInProgressNotification();
 	void DisplaySuccessNotification(const FName& InOperationName);
 	void DisplayFailureNotification(const FName& InOperationName);
-
-	/** Delegate called when a source control operation has completed */
-	void OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 
 	FReply OnClickedInitializePlasticWorkspace();
 

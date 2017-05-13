@@ -11,6 +11,7 @@
 
 #include "ISourceControlOperation.h"
 
+
 /**
  * Internal operation used to revert checked-out unchanged files
 */
@@ -34,6 +35,23 @@ public:
 	virtual FName GetName() const override;
 
 	virtual FText GetInProgressString() const override;
+};
+
+
+/**
+* Internal operation used to initialize a new Workspace and a new Repository
+*/
+class FPlasticMakeWorkspace : public ISourceControlOperation
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	FString WorkspaceName;
+	FString RepositoryName;
+	FString ServerUrl;
 };
 
 
@@ -139,6 +157,17 @@ class FPlasticRevertAllWorker : public IPlasticSourceControlWorker
 {
 public:
 	virtual ~FPlasticRevertAllWorker() {}
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() const override;
+};
+
+/** Initialize a new Workspace and a new Repository */
+class FPlasticMakeWorkspaceWorker : public IPlasticSourceControlWorker
+{
+public:
+	virtual ~FPlasticMakeWorkspaceWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;

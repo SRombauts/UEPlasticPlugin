@@ -7,6 +7,7 @@
 #include "PlasticSourceControlMenuCommands.h"
 
 #include "PlasticSourceControlProvider.h"
+#include "PlasticSourceControlOperations.h"
 
 #include "LevelEditor.h"
 #include "Widgets/Notifications/SNotificationList.h"
