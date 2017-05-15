@@ -4,7 +4,7 @@ Unreal Engine 4 Plastic SCM Source Control Plugin
 [![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
 [![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
-UE4PlasticPlugin is a simple [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4 (UE 4.11 to 4.14)
+UE4PlasticPlugin is a simple [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4 (UE 4.11 to 4.15)
 
 It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml) or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
 It is a complementary tool improving efficiency in your daily workflow.
@@ -40,14 +40,14 @@ Copyright (c) 2016-2017 Codice Software - Sébastien Rombauts (sebastien.rombaut
      That should create a "Plugins/" folder into your project.
      This is the way to go to use Platic SCM only on a specific projetc.
   2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
-     (for instance "C:\Program Files\Epic Games\4.14\Engine\")
+     (for instance "C:\Program Files\Epic Games\4.15\Engine\")
      That should create a "UE4PlasticPlugin" forlder into the "Plugins/" subidrectory.
      This is the way to enable Plastic SCM for all Unreal Engine projects.
 3. Then, launch Unreal Engine 4.x, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
 ### Status
 
-Beta version 0.9.8 2017/04/26 for UE4.15 :
+Beta version 0.9.9 2017/05/15 for UE4.15 :
 - Windows only
 - manage connection to the server
 - show current branch name and CL in status text
@@ -70,27 +70,25 @@ Beta version 0.9.8 2017/04/26 for UE4.15 :
 - solve a merge conflict on a blueprint
 - top-menu global "Sync" instead of on folder's context menu
 - top-menu global "undo unchanged" and "undo all checkout"
-
+- [Partial Checkin (like Gluon, for artists)](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
+- Plastic Cloud is fully supported
 
 #### Feature Requests (post v1.0)
-- Gluon Partial Checkin mode
 - Mac OS X Support
 - fire a global "status" command at startup (to populate the cache) to fix wrong context menu on content folders ("Mark for Add")
-- add a "clean directory" or "checkin deleted files"
 - add a setting to pass the --update option to "checkin"
 - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
-- add support for [partial checkin (like Gluon, for artists)](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
-- add icon for Changed files
-- add icon for Conflicted files
-- add icon for Replaced/Merged files
+- add a "clean directory" or "checkin deleted files"
+- add dedicated icon for Changed files
+- add dedicated icon for Conflicted files
+- add dedicated icon for Replaced/Merged files
 
-### Abandonned as reserved for internal use by Epic Games with Perforce only
+### Reserved for internal use by Epic Games with Perforce only
 - tags: get labels (used for crash when the full Engine is under Plastic SCM)
 - annotate: blame (used for crash when the full Engine is under Plastic SCM)
 
 #### Bugs
 - "Changed" assets popup a "Files need check-out!" (UnrealEdSrv.cpp) windows that does nothing when clicked!
-- "NotCurrent" warning is not working because "DepotRevisionChangeset" is not correct in the "cm fileinfo" command
 - Revert "Unchanged only" does nothing because Plastic SCM cli lacks a "checked-out but unchanged" status.
 - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
 
@@ -100,10 +98,8 @@ Beta version 0.9.8 2017/04/26 for UE4.15 :
 - the Editor does not show missing files: no way to revert/restore them
 - the Editor does not show folder status and is not able to manage them
 - the Editor does not refresh status of assets in subdirectories at startup, so "Mark for add" is wrongly displayed in context menu for thoses subdirectories
-- the Editor does not handle visual diff for renamed/moved assets
-- reverting a Blueprint asset does not update content in Editor (and popup saying "is in use")!
-- Branch is not in the current Editor workflow
-- Merge is not in the current Editor workflow
-- History does not show which revision is the current/checkout one
-- Merge: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
+* the Editor does not handle visual diff for renamed/moved assets
+* History does not show which revision is the current/checkout one
+- Branch and Merge are not in the current Editor workflow
+- Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
 
