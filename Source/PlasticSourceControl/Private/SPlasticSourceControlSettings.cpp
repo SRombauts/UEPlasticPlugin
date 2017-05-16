@@ -8,6 +8,7 @@
 
 #include "Fonts/SlateFontInfo.h"
 #include "Misc/Paths.h"
+#include "Misc/App.h"
 #include "Misc/FileHelper.h"
 #include "Modules/ModuleManager.h"
 #include "Framework/Notifications/NotificationManager.h"
@@ -34,6 +35,11 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 
 	InitialCommitMessage = LOCTEXT("InitialCommitMessage", "Initial checkin");
 	ServerUrl = FText::FromString(TEXT("localhost:8087"));
+	if (FApp::HasGameName())
+	{
+		WorkspaceName = FText::FromString(FApp::GetGameName());
+		RepositoryName = WorkspaceName;
+	}
 
 	ChildSlot
 	[
