@@ -36,13 +36,13 @@ Copyright (c) 2016-2017 Codice Software - Sébastien Rombauts (sebastien.rombaut
 ### Quick setup
 1. Download the [latest UE4PlasticPlugin-x.x.x.zip file](https://github.com/SRombauts/UE4PlasticPlugin/releases) targeting your UE4 version.
 2. Either:
-  1. Unzip the content of the ZIP in the root of the Unreal Engine 4.x project folder.
-     That should create a "Plugins/" folder into your project.
-     This is the way to go to use Platic SCM only on a specific projetc.
-  2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
-     (for instance "C:\Program Files\Epic Games\4.15\Engine\")
-     That should create a "UE4PlasticPlugin" forlder into the "Plugins/" subidrectory.
-     This is the way to enable Plastic SCM for all Unreal Engine projects.
+    1. Unzip the content of the ZIP in the root of the Unreal Engine 4.x project folder.
+       That should create a "Plugins/" folder into your project.
+       This is the way to go to use Platic SCM only on a specific projetc.
+    2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
+       (for instance "C:\Program Files\Epic Games\4.15\Engine\")
+       That should create a "UE4PlasticPlugin" forlder into the "Plugins/" subidrectory.
+       This is the way to enable Plastic SCM for all Unreal Engine projects.
 3. Then, launch Unreal Engine 4.x, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
 ### Status
