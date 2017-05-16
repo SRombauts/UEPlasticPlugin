@@ -93,11 +93,12 @@ Beta version 0.9.9 2017/05/15 for UE4.15 :
 - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
 
 #### Known issues:
-- Error messages with accents are not handled (for instance connection error in French)
+- #15 Initializing a new workspace leave all files with the "Added" icon
+- #16 the Editor does not refresh status of assets in subdirectories at startup, so "Mark for add" is wrongly displayed in context menu for those subdirectories
+- Error messages with accents are not correcly handled/displayed (for instance connection error in French)
 - the Editor does not show deleted files: no way to check them in
 - the Editor does not show missing files: no way to revert/restore them
 - the Editor does not show folder status and is not able to manage them
-- the Editor does not refresh status of assets in subdirectories at startup, so "Mark for add" is wrongly displayed in context menu for thoses subdirectories
 * the Editor does not handle visual diff for renamed/moved assets
 * History does not show which revision is the current/checkout one
 - Branch and Merge are not in the current Editor workflow
