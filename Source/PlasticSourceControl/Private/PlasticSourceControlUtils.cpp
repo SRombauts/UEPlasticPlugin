@@ -598,40 +598,6 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
 /**
  * @brief Parse the array of strings results of a 'cm status --nostatus --noheaders --all --ignore' command
  *
- * Called in case of a "directory status" (no file listed in the command).
- *
- * @param[in]	InResults	Lines of results from the "status" command
- * @param[out]	OutStates	States of files for witch the status has been gathered
- *
- * @see #ParseFileStatusResult() below for an example of a cm status results
- */
-static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
-{
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
-
-	// Iterate on each line of result of the status command
-	// NOTE: in case of rename by editor, there are two results: checkouted AND renamed
-	// => we want to get the second one, witch is always the rename, so we just iterate and the second state will overwrite the first one
-	for (const FString& Result : InResults)
-	{
-		const FString RelativeFilename = FilenameFromPlasticStatus(Result);
-		const FString File = FPaths::ConvertRelativePathToFull(WorkingDirectory, RelativeFilename);
-		FPlasticSourceControlState FileState(File);
-		FileState.WorkspaceState = StateFromPlasticStatus(Result);
-		FileState.TimeStamp.Now();
-
-		// @todo: temporary debug log
-		UE_LOG(LogSourceControl, Log, TEXT("%s = %d:%s"), *File, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
-
-		OutStates.Add(MoveTemp(FileState));
-	}
-}
-
-/**
- * @brief Parse the array of strings results of a 'cm status --nostatus --noheaders --all --ignore' command
- *
  * Called in case of a regular status command for one or multiple files (not for a whole directory). 
  *
  * @param[in]	InFiles		List of files in a directory (never empty).
@@ -694,6 +660,22 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 	}
 }
 
+/// Visitor to list all files in subdirectory
+class FFileVisitor : public IPlatformFile::FDirectoryVisitor
+{
+public:
+	virtual bool Visit(const TCHAR* FilenameOrDirectory, bool bIsDirectory) override
+	{
+		if (!bIsDirectory)
+		{
+			Files.Add(FilenameOrDirectory);
+		}
+		return true;
+	}
+
+	TArray<FString> Files;
+};
+
 /**
  * @brief Run a "status" command for a directory to get workspace file states
  *
@@ -710,40 +692,14 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 {
 	ensure(0 < InFiles.Num());
 
-	FString Path = FPaths::GetPath(*InFiles[0]);
-	bool bDirectoryStatus;
-	if (1 == InFiles.Num() && FPaths::DirectoryExists(InFiles[0]))
-	{
-		// 1) Special case for "status" of a directory: requires a specific parse logic.
-		//   (this is triggered by the "Submit to Source Control" top menu button)
-		// @todo: temporary debug log
-		UE_LOG(LogSourceControl, Log, TEXT("RunStatus(%s): 1) special case for status of a directory (%s)"), *InFiles[0], *Path);
-		bDirectoryStatus = true;
-	}
-	else
-	{
-		// 2) General case for one or more files in the same directory.
-		// @todo: temporary debug log
-		UE_LOG(LogSourceControl, Log, TEXT("RunStatus(%s): 2) general case for one or more files in a directory (%s)"), *InFiles[0], *Path);
-		bDirectoryStatus = false;
-	}
-
 	TArray<FString> Parameters;
-	if (bDirectoryStatus)
-	{
-		// Do not get changeset number to simplify parse in the case of the "directory status"
-		Parameters.Add(TEXT("--nostatus"));
-	}
-	else
-	{
-		// Get  current branch name and changeset number
-		Parameters.Add(TEXT("--wkconfig"));
-	}
+	Parameters.Add(TEXT("--wkconfig"));
 	Parameters.Add(TEXT("--noheaders"));
 	Parameters.Add(TEXT("--all"));
 	Parameters.Add(TEXT("--ignored"));
 	Parameters.Add(TEXT("--cutignored"));
 	// "cm status" only operate on one patch (file or folder) at a time, so use one folder path for multiple files in a directory
+	FString Path = FPaths::GetPath(*InFiles[0]);
 	TArray<FString> OnePath;
 	if (1 == InFiles.Num())
 	{
@@ -764,12 +720,21 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	OutErrorMessages.Append(ErrorMessages);
 	if (bResult)
 	{
-		if (bDirectoryStatus)
+		if (1 == InFiles.Num() && FPaths::DirectoryExists(InFiles[0]))
 		{
-			ParseDirectoryStatusResult(Results, OutStates);
+			// 1) Special case for "status" of a directory: requires a specific parse logic.
+			//   (this is triggered by the "Submit to Source Control" top menu button)
+			// @todo: temporary debug log
+			UE_LOG(LogSourceControl, Log, TEXT("RunStatus(%s): 1) special case for status of a directory (%s)"), *InFiles[0], *Path);
+			FFileVisitor FileVisitor;
+			FPlatformFileManager::Get().GetPlatformFile().IterateDirectoryRecursively(*Path, FileVisitor);
+			ParseFileStatusResult(FileVisitor.Files, Results, OutStates, OutChangeset, OutBranchName);
 		}
 		else
 		{
+			// 2) General case for one or more files in the same directory.
+			// @todo: temporary debug log
+			UE_LOG(LogSourceControl, Log, TEXT("RunStatus(%s): 2) general case for one or more files in a directory (%s)"), *InFiles[0], *Path);
 			ParseFileStatusResult(InFiles, Results, OutStates, OutChangeset, OutBranchName);
 		}
 	}
@@ -1002,7 +967,7 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 // Run a batch of Plastic "status" and "fileinfo" commands to update status of given files and directories.
 bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
-	bool bResult = true;
+	bool bResults = true;
 
 	// @todo: temporary debug log
 	if (InFiles.Num() > 0)
@@ -1048,7 +1013,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type In
 			// Run a "fileinfo" command to update status of given files.
 			// In case of "directory status", there is no explicit file in the group (it contains only the directory) 
 			// => work on the list of files discovered by RunStatus()
-			bResult &= RunFileinfo(InConcurrency, OutErrorMessages, States);
+			bResults &= RunFileinfo(InConcurrency, OutErrorMessages, States);
 		}
 		OutStates.Append(MoveTemp(States));
 	}
@@ -1056,7 +1021,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type In
 	// Check if merging, and from which changelist, then execute a cm merge command to amend status for listed files
 	RunCheckMergeStatus(InFiles, OutErrorMessages, OutStates);
 
-	return bResult;
+	return bResults;
 }
 
 // Run a Plastic "cat" command to dump the binary content of a revision into a file.
