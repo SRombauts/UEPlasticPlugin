@@ -446,7 +446,7 @@ void SPlasticSourceControlSettings::LaunchMakeWorkspaceOperation()
 	}
 }
 
-/// 2. Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)
+/// 2. Add all project files to to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any)
 void SPlasticSourceControlSettings::LaunchMarkForAddOperation()
 {
 	TSharedRef<FMarkForAdd, ESPMode::ThreadSafe> MarkForAddOperation = ISourceControlOperation::Create<FMarkForAdd>();
@@ -457,24 +457,13 @@ void SPlasticSourceControlSettings::LaunchMarkForAddOperation()
 
 	if (PlasticSourceControl.GetProvider().IsWorkspaceFound())
 	{
-		// List of files to add to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any)
-		TArray<FString> ProjectFiles;
-		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()));
-		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
-		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
-		if (FPaths::DirectoryExists(FPaths::GameSourceDir()))
-		{
-			ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameSourceDir()));
-		}
 		if (bAutoCreateIgnoreFile)
 		{
-			// Create a standard "ignore.conf" file with common patterns for a typical Blueprint & C++ project
-			if (CreateIgnoreFile())
-			{
-				ProjectFiles.Add(GetIgnoreFileName());
-			}
+			// 1.c Create a standard "ignore.conf" file with common patterns for a typical Blueprint & C++ project
+			CreateIgnoreFile();
 		}
-
+		// 2. Add all project files to to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any)
+		const TArray<FString> ProjectFiles = GetProjectFiles();
 		ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(MarkForAddOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
 		if (Result == ECommandResult::Succeeded)
 		{
@@ -497,7 +486,8 @@ void SPlasticSourceControlSettings::LaunchCheckInOperation()
 	TSharedRef<FCheckIn, ESPMode::ThreadSafe> CheckInOperation = ISourceControlOperation::Create<FCheckIn>();
 	CheckInOperation->SetDescription(InitialCommitMessage);
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(CheckInOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
+	const TArray<FString> ProjectFiles = GetProjectFiles();
+	ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(CheckInOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
 	if (Result == ECommandResult::Succeeded)
 	{
 		DisplayInProgressNotification(CheckInOperation);
@@ -609,7 +599,6 @@ FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 	return FReply::Handled();
 }
 
-
 /** Path to the "ignore.conf" file */
 const FString& SPlasticSourceControlSettings::GetIgnoreFileName() const
 {
@@ -625,5 +614,22 @@ bool SPlasticSourceControlSettings::CreateIgnoreFile() const
 	return FFileHelper::SaveStringToFile(IgnoreFileContent, *GetIgnoreFileName(), FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 }
 
+/** List of files to add to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any) */
+TArray<FString> SPlasticSourceControlSettings::GetProjectFiles() const
+{
+	TArray<FString> ProjectFiles;
+	ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()));
+	ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+	ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
+	if (FPaths::DirectoryExists(FPaths::GameSourceDir()))
+	{
+		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameSourceDir()));
+	}
+	if (bAutoCreateIgnoreFile)
+	{
+		ProjectFiles.Add(GetIgnoreFileName());
+	}
+	return ProjectFiles;
+}
 
 #undef LOCTEXT_NAMESPACE

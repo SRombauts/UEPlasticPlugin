@@ -81,4 +81,6 @@ private:
 
 	const FString& GetIgnoreFileName() const;
 	bool CreateIgnoreFile() const;
+
+	TArray<FString> GetProjectFiles() const;
 };
