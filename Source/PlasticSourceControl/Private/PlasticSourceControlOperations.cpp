@@ -64,7 +64,14 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			// Execute a 'checkconnection' command to check the connectivity of the server.
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
-			if (!InCommand.bCommandSuccessful)
+			if (InCommand.bCommandSuccessful)
+			{
+				// Now update the status of assets in Content directory
+				TArray<FString> ContentDir;
+				ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
+				PlasticSourceControlUtils::RunUpdateStatus(ContentDir, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+			}
+			else
 			{
 				Operation->SetErrorText(FText::FromString(InCommand.ErrorMessages[0]));
 			}
@@ -80,7 +87,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticConnectWorker::UpdateStates() const
 {
-	return false;
+	return PlasticSourceControlUtils::UpdateCachedStates(States);
 }
 
 FName FPlasticCheckOutWorker::GetName() const
