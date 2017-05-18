@@ -66,10 +66,11 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 			if (InCommand.bCommandSuccessful)
 			{
-				// Now update the status of assets in Content directory
-				TArray<FString> ContentDir;
-				ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
-				PlasticSourceControlUtils::RunUpdateStatus(ContentDir, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+				// Now update the status of assets in Content/ directory and also Config files
+				TArray<FString> ProjectDirs;
+				ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
+				ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+				PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 			}
 			else
 			{
