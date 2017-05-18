@@ -305,12 +305,18 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 	// revert the checkout of all unchanged files recursively
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("uncounchanged"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 
+	// Now update the status of assets in Content/ directory and also Config files
+	TArray<FString> ProjectDirs;
+	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
+	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+	PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+
 	return InCommand.bCommandSuccessful;
 }
 
 bool FPlasticRevertUnchangedWorker::UpdateStates() const
 {
-	return false;
+	return PlasticSourceControlUtils::UpdateCachedStates(States);
 }
 
 FName FPlasticRevertAllWorker::GetName() const
@@ -335,12 +341,18 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
 
+	// Now update the status of assets in Content/ directory and also Config files
+	TArray<FString> ProjectDirs;
+	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
+	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+	PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+
 	return InCommand.bCommandSuccessful;
 }
 
 bool FPlasticRevertAllWorker::UpdateStates() const
 {
-	return false;
+	return PlasticSourceControlUtils::UpdateCachedStates(States);
 }
 
 FName FPlasticMakeWorkspaceWorker::GetName() const

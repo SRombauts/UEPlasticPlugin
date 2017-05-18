@@ -154,6 +154,10 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() const override;
+
+public:
+	/** Temporary states for results */
+	TArray<FPlasticSourceControlState> States;
 };
 
 /** Revert all checked-out file(s). */
@@ -165,6 +169,10 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() const override;
+
+public:
+	/** Temporary states for results */
+	TArray<FPlasticSourceControlState> States;
 };
 
 /** Initialize a new Workspace and a new Repository */
