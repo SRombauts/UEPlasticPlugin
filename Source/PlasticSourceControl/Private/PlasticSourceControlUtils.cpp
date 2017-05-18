@@ -697,7 +697,6 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	Parameters.Add(TEXT("--noheaders"));
 	Parameters.Add(TEXT("--all"));
 	Parameters.Add(TEXT("--ignored"));
-	Parameters.Add(TEXT("--cutignored"));
 	// "cm status" only operate on one patch (file or folder) at a time, so use one folder path for multiple files in a directory
 	FString Path = FPaths::GetPath(*InFiles[0]);
 	TArray<FString> OnePath;
