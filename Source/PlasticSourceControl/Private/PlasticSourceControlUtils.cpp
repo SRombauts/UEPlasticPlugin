@@ -165,7 +165,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	}
 	// @todo: temporary debug logs (before end of line)
 	const FString LoggableCommand = FullCommand;
-//	UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s'"), *LoggableCommand);
+	UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s'"), *LoggableCommand);
 	FullCommand += TEXT('\n'); // Finalize the command line
 
 	// Send command to 'cm shell' process
