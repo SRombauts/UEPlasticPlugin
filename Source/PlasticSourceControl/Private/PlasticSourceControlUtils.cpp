@@ -700,7 +700,9 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	// "cm status" only operate on one patch (file or folder) at a time, so use one folder path for multiple files in a directory
 	FString Path = FPaths::GetPath(*InFiles[0]);
 	TArray<FString> OnePath;
-	if (1 == InFiles.Num())
+	// Only one file: optim very useful for the .uproject file at the root to avoid parsing the whole repository
+	// (does not work if file does not exist anymore)
+	if ((1 == InFiles.Num()) && (FPaths::FileExists(InFiles[0])))
 	{
 		OnePath.Add(InFiles[0]);
 	}
