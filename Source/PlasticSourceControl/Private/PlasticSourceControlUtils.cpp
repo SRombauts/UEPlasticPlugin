@@ -698,7 +698,7 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	Parameters.Add(TEXT("--all"));
 	Parameters.Add(TEXT("--ignored"));
 	// "cm status" only operate on one patch (file or folder) at a time, so use one folder path for multiple files in a directory
-	FString Path = FPaths::GetPath(*InFiles[0]);
+	const FString Path = FPaths::GetPath(*InFiles[0]);
 	TArray<FString> OnePath;
 	// Only one file: optim very useful for the .uproject file at the root to avoid parsing the whole repository
 	// (does not work if file does not exist anymore)
@@ -708,7 +708,7 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	}
 	else
 	{
-		OnePath.Add(MoveTemp(Path));
+		OnePath.Add(Path);
 	}
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
