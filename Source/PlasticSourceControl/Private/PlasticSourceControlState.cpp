@@ -289,7 +289,8 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 
 bool FPlasticSourceControlState::IsCurrent() const
 {
-	const bool bIsCurrent = (LocalRevisionChangeset == DepotRevisionChangeset);
+	// NOTE: Deleted assets get a "-1" HeadRevision which we do not want to override the real icon state
+	const bool bIsCurrent = (LocalRevisionChangeset == DepotRevisionChangeset) || (WorkspaceState == EWorkspaceState::Deleted);
 
 	// @todo: temporary debug log
 	// if (bIsCurrent) UE_LOG(LogSourceControl, Log, TEXT("%s IsCurrent"), *LocalFilename, );
