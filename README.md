@@ -33,8 +33,9 @@ Copyright (c) 2016-2017 Codice Software - Sébastien Rombauts (sebastien.rombaut
 - [Diffing Unreal Assets](https://www.unrealengine.com/blog/diffing-unreal-assets)
 - [Diffing Blueprints (Video)](https://www.unrealengine.com/blog/diffing-blueprints)
 
-### Quick setup
-1. Download the [latest UE4PlasticPlugin-x.x.x.zip file](https://github.com/SRombauts/UE4PlasticPlugin/releases) targeting your UE4 version.
+### Quick setup from binary release
+
+1. Download the [latest binary release UE4PlasticPlugin-x.x.x.zip](https://github.com/SRombauts/UE4PlasticPlugin/releases) targeting your UE4 version.
 2. Either:
     1. Unzip the content of the ZIP in the root of the Unreal Engine 4.x project folder.
        That should create a "Plugins/" folder into your project.
@@ -45,10 +46,24 @@ Copyright (c) 2016-2017 Codice Software - Sébastien Rombauts (sebastien.rombaut
        This is the way to enable Plastic SCM for all Unreal Engine projects.
 3. Then, launch Unreal Engine 4.x, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
+### How to build from sources
+
+If your project is already a C++ project, you only have to re-generate Visual Studio projet files (step 4 bellow) and the plugin will get rebuild the next time you compile your project.
+
+Else, if you want to rebuild the plugin for a Blueprint project:
+
+0. You need Visual Studio 2015 or 2017 with C++ language support (free Community Edition is fine).
+1. Launch the Unreal Engine 4 Editor, create a new C++ **Basic Code** Project (No Starter Content), for instance UE4PlasticSCM. This should launch Visual Studio, build the game project, and open it into the Editor.
+2. Close the Editor, then using the file explorer, create a new **Plugins** directory at the root of your project.
+3. Clone the source code of the plugin into this _Plugins_ directory (for instance _Plugins\UE4PlasticPlugin_).
+4. Right-click on your project's **.uproject** file, **Generate Visual Studio project files**.
+5. In Visual Studio, **Reload All** and **Build Solution** in **Development Editor** mode. That's it, the plugin is built (resulting dlls are located in _Plugins\UE4PlasticPlugin\Binaries\Win64_).
+
+To release the plugin, zip the _Plugins_ folder. But before that, remove the _Intermediate_, _Screenshots_ and _.git_ folders, and also the big *.pdb files in _Plugins\UE4PlasticPlugin\Binaries\Win64_.
+
 ### Status
 
-Beta version 0.9.9 2017/05/15 for UE4.15 :
-- Windows only
+#### Beta version 0.9.9 2017/05/15 for UE4.15 :
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controled/checked-out/added/deleted/private/changed/ignored files
@@ -72,10 +87,10 @@ Beta version 0.9.9 2017/05/15 for UE4.15 :
 - top-menu global "undo unchanged" and "undo all checkout"
 - [Partial Checkin (like Gluon, for artists)](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
 - Plastic Cloud is fully supported
+- Windows only
 
-#### Feature Requests (post v1.0)
+#### Feature Requests
 - Mac OS X Support
-- fire a global "status" command at startup (to populate the cache) to fix wrong context menu on content folders ("Mark for Add")
 - add a setting to pass the --update option to "checkin"
 - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
 - add a "clean directory" or "checkin deleted files"
@@ -83,21 +98,18 @@ Beta version 0.9.9 2017/05/15 for UE4.15 :
 - add dedicated icon for Conflicted files
 - add dedicated icon for Replaced/Merged files
 
-### Reserved for internal use by Epic Games with Perforce only
-- tags: get labels (used for crash when the full Engine is under Plastic SCM)
-- annotate: blame (used for crash when the full Engine is under Plastic SCM)
-
-#### Bugs
-- "Changed" assets popup a "Files need check-out!" (UnrealEdSrv.cpp) windows that does nothing when clicked!
+#### Known issues
 - Revert "Unchanged only" does nothing because Plastic SCM cli lacks a "checked-out but unchanged" status.
 - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
-
-#### Known issues:
-- Error messages with accents are not correcly handled/displayed (for instance connection error in French)
-- the Editor does not show missing files: no way to revert/restore them
+- Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
+- #18 Error messages with accents are not correctly handled/displayed (for instance connection error in French)
+- the Editor does not show missing files: no way to selectively revert/restore them
 - the Editor does not show folder status and is not able to manage them
 * the Editor does not handle visual diff for renamed/moved assets
 * History does not show which revision is the current/checkout one
+* Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
 - Branch and Merge are not in the current Editor workflow
-- Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
 
+#### Reserved for internal use by Epic Games with Perforce only
+- tags: get labels (used for crash when the full Engine is under Plastic SCM)
+- annotate: blame (used for crash when the full Engine is under Plastic SCM)
