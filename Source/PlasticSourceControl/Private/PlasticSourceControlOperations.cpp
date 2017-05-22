@@ -600,8 +600,11 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			InCommand.bCommandSuccessful = true;
 		}
 
-		// now update the status of our files
-		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		// now update the status of our files:
+		TArray<FString> BothFiles;
+		BothFiles.Add(Origin);
+		BothFiles.Add(Destination);
+		PlasticSourceControlUtils::RunUpdateStatus(BothFiles, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 	else
 	{
