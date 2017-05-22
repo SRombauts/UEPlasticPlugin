@@ -63,7 +63,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 
 ### Status
 
-#### Beta version 0.9.9 2017/05/15 for UE4.15 :
+#### Version 1.0.0 2017/05/22 for UE4.15 :
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controled/checked-out/added/deleted/private/changed/ignored files
@@ -103,11 +103,10 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
 - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
 - #18 Error messages with accents are not correctly handled/displayed (for instance connection error in French)
-- the Editor does not show missing files: no way to selectively revert/restore them
-- the Editor does not show folder status and is not able to manage them
 * the Editor does not handle visual diff for renamed/moved assets
 * History does not show which revision is the current/checkout one
 * Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
+- the Editor does not show folder status and is not able to manage them
 - Branch and Merge are not in the current Editor workflow
 
 #### Reserved for internal use by Epic Games with Perforce only
