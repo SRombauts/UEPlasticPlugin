@@ -598,6 +598,43 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
 /**
  * @brief Parse the array of strings results of a 'cm status --nostatus --noheaders --all --ignore' command
  *
+ * Called in case of a "directory status" (no file listed in the command).
+ *
+ * @param[in]	InResults	Lines of results from the "status" command
+ * @param[out]	OutStates	States of files for witch the status has been gathered
+ *
+ * @see #ParseFileStatusResult() below for an example of a cm status results
+*/
+static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
+{
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
+	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
+
+	// Iterate on each line of result of the status command
+	// NOTE: in case of rename by editor, there are two results: checkouted AND renamed
+	// => we want to get the second one, witch is always the rename, so we just iterate and the second state will overwrite the first one
+	for (const FString& Result : InResults)
+	{
+		const FString RelativeFilename = FilenameFromPlasticStatus(Result);
+		const FString File = FPaths::ConvertRelativePathToFull(WorkingDirectory, RelativeFilename);
+		const EWorkspaceState::Type WorkspaceState = StateFromPlasticStatus(Result);
+		if (EWorkspaceState::Deleted == WorkspaceState)
+		{
+			FPlasticSourceControlState FileState(File);
+			FileState.WorkspaceState = WorkspaceState;
+			FileState.TimeStamp.Now();
+
+			// @todo: temporary debug log
+			UE_LOG(LogSourceControl, Log, TEXT("%s = %d:%s"), *File, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
+			OutStates.Add(MoveTemp(FileState));
+		}
+	}
+}
+
+/**
+ * @brief Parse the array of strings results of a 'cm status --nostatus --noheaders --all --ignore' command
+ *
  * Called in case of a regular status command for one or multiple files (not for a whole directory). 
  *
  * @param[in]	InFiles		List of files in a directory (never empty).
@@ -727,9 +764,14 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 			//   (this is triggered by the "Submit to Source Control" top menu button)
 			// @todo: temporary debug log
 			UE_LOG(LogSourceControl, Log, TEXT("RunStatus(%s): 1) special case for status of a directory (%s)"), *InFiles[0], *Path);
+			// Find recursively all files in the directory: this enable getting the list of "Controlled" (unchanged) assets
 			FFileVisitor FileVisitor;
 			FPlatformFileManager::Get().GetPlatformFile().IterateDirectoryRecursively(*Path, FileVisitor);
 			ParseFileStatusResult(FileVisitor.Files, Results, OutStates, OutChangeset, OutBranchName);
+			// The above cannot detect assets removed / locally deleted (they are no files left to find!)
+			// => so we also parse the status results to explicitly look for Removed/Deleted assets
+			Results.RemoveAt(0, 2); // Before that, remove the first two line Changeset, and BranchName
+			ParseDirectoryStatusResult(Results, OutStates);
 		}
 		else
 		{
