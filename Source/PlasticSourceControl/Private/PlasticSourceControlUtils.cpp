@@ -578,9 +578,13 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
 	{
 		State = EWorkspaceState::Ignored;
 	}
-	else if ((FileStatus == "DE") || (FileStatus == "LD"))
+	else if (FileStatus == "DE")
 	{
-		State = EWorkspaceState::Deleted; // Deleted or Locally Deleted (ie. missing)
+		State = EWorkspaceState::Deleted; // Deleted (removed from source control)
+	}
+	else if (FileStatus == "LD")
+	{
+		State = EWorkspaceState::LocallyDeleted; // Locally Deleted (ie. missing)
 	}
 	else if (FileStatus == "MV")
 	{
@@ -619,7 +623,7 @@ static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<
 		const FString RelativeFilename = FilenameFromPlasticStatus(Result);
 		const FString File = FPaths::ConvertRelativePathToFull(WorkingDirectory, RelativeFilename);
 		const EWorkspaceState::Type WorkspaceState = StateFromPlasticStatus(Result);
-		if (EWorkspaceState::Deleted == WorkspaceState)
+		if ((EWorkspaceState::Deleted == WorkspaceState) || (EWorkspaceState::LocallyDeleted == WorkspaceState))
 		{
 			FPlasticSourceControlState FileState(File);
 			FileState.WorkspaceState = WorkspaceState;

@@ -19,6 +19,7 @@ namespace EWorkspaceState
 		Copied,
 		Replaced, // Replaced / Merged
 		Deleted,
+		LocallyDeleted, // Missing
 		Changed, // Modified but not CheckedOut
 		Conflicted,
 		LockedByOther, // LockedBy with name of someone else than cm whoami
@@ -42,7 +43,7 @@ public:
 	}
 
 	// debug log utility
-	const TCHAR* ToString()
+	const TCHAR* ToString() const
 	{
 		return EWorkspaceState::ToString(WorkspaceState);
 	}

@@ -21,6 +21,7 @@ const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState)
 	case EWorkspaceState::Copied: WorkspaceStateStr = TEXT("Copied"); break;
 	case EWorkspaceState::Replaced: WorkspaceStateStr = TEXT("Replaced"); break;
 	case EWorkspaceState::Deleted: WorkspaceStateStr = TEXT("Deleted"); break;
+	case EWorkspaceState::LocallyDeleted: WorkspaceStateStr = TEXT("LocallyDeleted"); break;
 	case EWorkspaceState::Changed: WorkspaceStateStr = TEXT("Changed"); break;
 	case EWorkspaceState::Conflicted: WorkspaceStateStr = TEXT("Conflicted"); break;
 	case EWorkspaceState::LockedByOther: WorkspaceStateStr = TEXT("LockedByOther"); break;
@@ -102,6 +103,7 @@ FName FPlasticSourceControlState::GetIconName() const
 		return FName("Perforce.Branched");
 	case EWorkspaceState::Deleted:
 		return FName("Perforce.MarkedForDelete");
+	case EWorkspaceState::LocallyDeleted: // TODO: would need a dedicated icon
 	case EWorkspaceState::Conflicted: // TODO: would need a dedicated icon
 		return FName("Perforce.NotAtHeadRevision");
 	case EWorkspaceState::LockedByOther:
@@ -136,6 +138,7 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 		return FName("Perforce.Branched_Small");
 	case EWorkspaceState::Deleted:
 		return FName("Perforce.MarkedForDelete_Small");
+	case EWorkspaceState::LocallyDeleted:
 	case EWorkspaceState::Conflicted:
 		return FName("Perforce.NotAtHeadRevision_Small");
 	case EWorkspaceState::LockedByOther:
@@ -173,6 +176,8 @@ FText FPlasticSourceControlState::GetDisplayName() const
 		return LOCTEXT("Replaced", "Replaced");
 	case EWorkspaceState::Deleted:
 		return LOCTEXT("Deleted", "Deleted");
+	case EWorkspaceState::LocallyDeleted:
+		return LOCTEXT("LocallyDeleted", "Missing");
 	case EWorkspaceState::Changed:
 		return LOCTEXT("Changed", "Changed");
 	case EWorkspaceState::Conflicted:
@@ -208,6 +213,8 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 		return LOCTEXT("Replaced_Tooltip", "Item has been replaced / merged");
 	case EWorkspaceState::Deleted:
 		return LOCTEXT("Deleted_Tooltip", "Item is scheduled for deletion");
+	case EWorkspaceState::LocallyDeleted:
+		return LOCTEXT("LocallyDeleted_Tooltip", "Item is missing");
 	case EWorkspaceState::Changed:
 		return LOCTEXT("Modified_Tooltip", "Item has been modified");
 	case EWorkspaceState::Conflicted:
@@ -233,11 +240,12 @@ const FDateTime& FPlasticSourceControlState::GetTimeStamp() const
 	return TimeStamp;
 }
 
-// Deleted and Missing assets cannot appear in the Content Browser
+// Deleted and Missing assets cannot appear in the Content Browser but does appear in Submit to Source Control Window
 bool FPlasticSourceControlState::CanCheckIn() const
 {
 	const bool bCanCheckIn = WorkspaceState == EWorkspaceState::Added
 		|| WorkspaceState == EWorkspaceState::Deleted
+		|| WorkspaceState == EWorkspaceState::LocallyDeleted
 		|| WorkspaceState == EWorkspaceState::Changed // NOTE: Comment to enable checkout on prompt of a Changed file (see bellow)
 		|| WorkspaceState == EWorkspaceState::Moved
 		|| WorkspaceState == EWorkspaceState::Copied
@@ -321,9 +329,12 @@ bool FPlasticSourceControlState::IsAdded() const
 
 bool FPlasticSourceControlState::IsDeleted() const
 {
-	if (WorkspaceState == EWorkspaceState::Deleted) UE_LOG(LogSourceControl, Log, TEXT("%s IsDeleted"), *LocalFilename);
+	const bool bIsDeleted =	WorkspaceState == EWorkspaceState::Deleted
+						 || WorkspaceState == EWorkspaceState::LocallyDeleted;
 
-	return WorkspaceState == EWorkspaceState::Deleted;
+	if (bIsDeleted) UE_LOG(LogSourceControl, Log, TEXT("%s IsDeleted"), *LocalFilename);
+
+	return bIsDeleted;
 }
 
 bool FPlasticSourceControlState::IsIgnored() const
@@ -373,6 +384,7 @@ bool FPlasticSourceControlState::IsModified() const
 							|| WorkspaceState == EWorkspaceState::Copied
 							|| WorkspaceState == EWorkspaceState::Replaced
 							|| WorkspaceState == EWorkspaceState::Deleted
+							|| WorkspaceState == EWorkspaceState::LocallyDeleted
 							|| WorkspaceState == EWorkspaceState::Changed
 							|| WorkspaceState == EWorkspaceState::Conflicted;
 
