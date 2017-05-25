@@ -41,7 +41,7 @@ Copyright (c) 2016-2017 Codice Software - Sébastien Rombauts (sebastien.rombaut
        That should create a "Plugins/" folder into your project.
        This is the way to go to use Platic SCM only on a specific projetc.
     2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
-       (for instance "C:\Program Files\Epic Games\4.15\Engine\")
+       (for instance "C:\Program Files\Epic Games\4.16\Engine\")
        That should create a "UE4PlasticPlugin" forlder into the "Plugins/" subidrectory.
        This is the way to enable Plastic SCM for all Unreal Engine projects.
 3. Then, launch Unreal Engine 4.x, click on the Source Control icon "Connect to Source", select "Plastic SCM".
@@ -63,7 +63,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 
 ### Status
 
-#### Version 1.0.0 2017/05/22 for UE4.15 :
+#### Version 1.0.1 2017/05/25 for UE4.16 :
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controled/checked-out/added/deleted/private/changed/ignored files

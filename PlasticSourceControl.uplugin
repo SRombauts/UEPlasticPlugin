@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 23,
-	"VersionName": "1.0.0",
+	"Version": 24,
+	"VersionName": "1.0.1",
 	"FriendlyName": "Plastic",
 	"Description": "Plastic source control management",
 	"Category": "Source Control",
