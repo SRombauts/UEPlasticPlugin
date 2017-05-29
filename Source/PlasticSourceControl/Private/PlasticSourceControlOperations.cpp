@@ -142,8 +142,6 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FCheckIn, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCheckIn>(InCommand.Operation);
 
-	UE_LOG(LogSourceControl, Log, TEXT("checkin"));
-
 	// make a temp file to place our commit message in
 	FScopedTempFile CommitMsgFile(Operation->GetDescription());
 	if (CommitMsgFile.GetFilename().Len() > 0)
@@ -156,7 +154,8 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 		if (-1 != InCommand.ChangesetNumber)
 		{
-			Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
+			Parameters.Add(TEXT("--all"));    // Also files Changed (not CheckedOut) and Moved/Deleted Locally
+			Parameters.Add(TEXT("--update")); // Processes the update-merge automatically if it eventually happens.
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 		else
