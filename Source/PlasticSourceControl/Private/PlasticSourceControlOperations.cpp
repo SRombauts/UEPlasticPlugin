@@ -124,12 +124,11 @@ bool FPlasticCheckOutWorker::UpdateStates() const
 
 static FText ParseCheckInResults(const TArray<FString>& InResults)
 {
-	if (InResults.Num() >= 1)
+	if ((InResults.Num() > 0) && (InResults.Last().StartsWith(TEXT("Created changeset"))))
 	{
-		const FString& LastLine = InResults[InResults.Num()-1];
-		return FText::FromString(LastLine);
+		return FText::FromString(InResults.Last());
 	}
-	return LOCTEXT("CommitMessageUnknown", "Submitted revision.");
+	return LOCTEXT("CheckInMessageUnknownChangeset", "Changeset submitted successfully.");
 }
 
 FName FPlasticCheckInWorker::GetName() const
@@ -180,7 +179,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			}
 
 			Operation->SetSuccessMessage(ParseCheckInResults(InCommand.InfoMessages));
-			UE_LOG(LogSourceControl, Log, TEXT("FPlasticCheckInWorker: CheckIn successful"));
+			UE_LOG(LogSourceControl, Log, TEXT("CheckIn successful"));
 		}
 	}
 
