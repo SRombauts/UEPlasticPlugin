@@ -643,7 +643,19 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if (InCommand.bCommandSuccessful)
 	{
 		// now update the status of our files
-		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		// detect the special case of a Sync of the root folder:
+		if ((InCommand.Files.Num() == 1) && (InCommand.Files.Last() == InCommand.PathToWorkspaceRoot))
+		{
+			// only update the status of assets in Content/ directory and also Config files
+			TArray<FString> ProjectDirs;
+			ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
+			ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+			PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		}
+		else
+		{
+			PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		}
 	}
 
 	return InCommand.bCommandSuccessful;

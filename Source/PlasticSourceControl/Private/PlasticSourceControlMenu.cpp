@@ -84,7 +84,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 		FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
 		SyncOperation = ISourceControlOperation::Create<FSync>();
 		TArray<FString> Files;
-		Files.Add(Provider.GetPathToWorkspaceRoot() / TEXT("")); // Sync the root of the workspace
+		Files.Add(Provider.GetPathToWorkspaceRoot()); // Sync the root of the workspace (needs an absolute path)
 		ECommandResult::Type Result = Provider.Execute(SyncOperation.ToSharedRef(), Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 		if (Result == ECommandResult::Succeeded)
 		{
@@ -113,7 +113,7 @@ void FPlasticSourceControlMenu::RevertUnchangedClicked()
 		FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
 		RevertUnchangedOperation = ISourceControlOperation::Create<FPlasticRevertUnchanged>();
 		TArray<FString> Files;
-		Files.Add(Provider.GetPathToWorkspaceRoot() / TEXT("")); // Revert the root of the workspace
+		Files.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
 		ECommandResult::Type Result = Provider.Execute(RevertUnchangedOperation.ToSharedRef(), Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 		if (Result == ECommandResult::Succeeded)
 		{
@@ -147,7 +147,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 			FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
 			RevertAllOperation = ISourceControlOperation::Create<FPlasticRevertAll>();
 			TArray<FString> Files;
-			Files.Add(Provider.GetPathToWorkspaceRoot() / TEXT("")); // Revert the root of the workspace
+			Files.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
 			ECommandResult::Type Result = Provider.Execute(RevertAllOperation.ToSharedRef(), Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 			if (Result == ECommandResult::Succeeded)
 			{
