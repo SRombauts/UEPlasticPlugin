@@ -259,11 +259,12 @@ bool FPlasticSourceControlState::CanCheckIn() const
 
 bool FPlasticSourceControlState::CanCheckout() const
 {
-	const bool bCanCheckout  = WorkspaceState == EWorkspaceState::Controlled	// In source control, Unmodified
-							|| WorkspaceState == EWorkspaceState::Changed		// In source control, but not checked-out
-							|| WorkspaceState == EWorkspaceState::Replaced;		// In source control, merged, waiting for checkin to conclude the merge 
+	const bool bCanCheckout  = (   WorkspaceState == EWorkspaceState::Controlled	// In source control, Unmodified
+								|| WorkspaceState == EWorkspaceState::Changed		// In source control, but not checked-out
+								|| WorkspaceState == EWorkspaceState::Replaced)		// In source control, merged, waiting for checkin to conclude the merge 
+								&& IsCurrent(); // Is up to date (at the revision of the repo)
 
-	UE_LOG(LogSourceControl, Log, TEXT("%s CanCheckout=%d"), *LocalFilename, bCanCheckout);
+	UE_LOG(LogSourceControl, Log, TEXT("%s CanCheckout=%d"), *LocalFilename, bCanCheckou);
 
 	return bCanCheckout;
 }
