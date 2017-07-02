@@ -264,7 +264,7 @@ bool FPlasticSourceControlState::CanCheckout() const
 								|| WorkspaceState == EWorkspaceState::Replaced)		// In source control, merged, waiting for checkin to conclude the merge 
 								&& IsCurrent(); // Is up to date (at the revision of the repo)
 
-	UE_LOG(LogSourceControl, Log, TEXT("%s CanCheckout=%d"), *LocalFilename, bCanCheckou);
+	UE_LOG(LogSourceControl, Log, TEXT("%s CanCheckout=%d"), *LocalFilename, bCanCheckout);
 
 	return bCanCheckout;
 }
