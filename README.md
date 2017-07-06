@@ -20,11 +20,6 @@ History menu entry to look a the changelog of an asset :
 Visual Diffing of different revision of a Blueprint :
 <img src="https://cdn2.unrealengine.com/blog/DiffTool-1009x542-719850393.png" width="720">
 
-### Copyright
-
-Copyright (c) 2016-2017 Codice Software - Sébastien Rombauts (sebastien.rombauts@gmail.com)
-<a href="https://www.paypal.me/SRombauts" title="Pay Me a Beer! Donate with PayPal :)"><img src="https://www.paypalobjects.com/webstatic/paypalme/images/pp_logo_small.png" width="118"></a>
-
 ### References
 
 - [Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
@@ -109,6 +104,29 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 - the Editor does not show folder status and is not able to manage them
 - Branch and Merge are not in the current Editor workflow
 
-#### Reserved for internal use by Epic Games with Perforce only
+#### Feature reserved for internal use by Epic Games with Perforce only
 - tags: get labels (used for crash when the full Engine is under Plastic SCM)
 - annotate: blame (used for crash when the full Engine is under Plastic SCM)
+
+### Support
+
+You can always ask questions in [Unreal Engine forums](https://forums.unrealengine.com/showthread.php?108688-Plastic-SCM-Source-Control-Provider/page2).
+
+#### Report an issue
+
+To report an issue, please use the [Github issue-tracker](https://github.com/SRombauts/UE4PlasticPlugin/issues?q=is%3Aissue).
+
+1. Have a look at existing issues (Open and Closed ones)
+2. Specify your Engine & Plugin versions, and if either are built from sources
+3. Post a Log file when applicable (or the corresponding redacted section)
+   1. [enable **UTC Timestamp** in Logs : menu _Preferences -> General -> Appearance -> Log Timestamp Mode_](https://answers.unrealengine.com/questions/358370/time-stamps-in-output-log.html)
+   2. Grab the file **ProjectName/Saved/Logs/ProjectName.log**
+
+#### Use merge requests
+
+If you want to help, Merge Requests are very welcome!
+
+### Copyright
+
+Copyright (c) 2016-2017 Codice Software - Sébastien Rombauts (sebastien.rombauts@gmail.com)
+<a href="https://www.paypal.me/SRombauts" title="Pay Me a Beer! Donate with PayPal :)"><img src="https://www.paypalobjects.com/webstatic/paypalme/images/pp_logo_small.png" width="118"></a>
