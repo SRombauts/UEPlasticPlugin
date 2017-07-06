@@ -118,7 +118,9 @@ To report an issue, please use the [Github issue-tracker](https://github.com/SRo
 
 1. Have a look at existing issues (Open and Closed ones)
 2. Specify your Engine & Plugin versions, and if either are built from sources
-3. Post a Log file when applicable (or the corresponding redacted section)
+3. Describe precisely your issue
+4. Add reproduction steps, if possible on a basic template project
+5. Post a Log file when applicable (or the corresponding redacted section)
    1. [enable **UTC Timestamp** in Logs : menu _Preferences -> General -> Appearance -> Log Timestamp Mode_](https://answers.unrealengine.com/questions/358370/time-stamps-in-output-log.html)
    2. Grab the file **ProjectName/Saved/Logs/ProjectName.log**
 
