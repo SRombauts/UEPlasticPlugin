@@ -164,7 +164,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		FullCommand += TEXT("\"");
 	}
 	// @todo: temporary debug logs (before end of line)
-	const FString LoggableCommand = FullCommand;
+	const FString LoggableCommand = FullCommand.Left(256); // Limit command log size to 256 characters
 	UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s'"), *LoggableCommand);
 	FullCommand += TEXT('\n'); // Finalize the command line
 
@@ -225,15 +225,22 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' 'cm shell' stopped after %lfs output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' 'cm shell' stopped after %lfs output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
 		}
 		else if (!bResult)
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults);
+			UE_LOG(LogSourceControl, Warning, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
 		}
 		else
 		{
-			UE_LOG(LogSourceControl, Log, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			if (PreviousLogLen > 0)
+			{
+				UE_LOG(LogSourceControl, Log, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen).Left(4096)); // Limit result size to 4096 characters
+			}
+			else
+			{
+				UE_LOG(LogSourceControl, Log, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
+			}
 		}
 	}
 	else
@@ -600,9 +607,9 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
 }
 
 /**
- * @brief Parse the array of strings results of a 'cm status --nostatus --noheaders --all --ignore' command
+ * @brief Parse the array of strings results of a 'cm status --noheaders --all --ignore' command
  *
- * Called in case of a "directory status" (no file listed in the command).
+ * Called in case of a "directory status" (no file listed in the command) ONLY to detect Removed/Deleted files !
  *
  * @param[in]	InResults	Lines of results from the "status" command
  * @param[out]	OutStates	States of files for witch the status has been gathered
@@ -631,13 +638,14 @@ static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<
 
 			// @todo: temporary debug log
 			UE_LOG(LogSourceControl, Log, TEXT("%s = %d:%s"), *File, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
+
 			OutStates.Add(MoveTemp(FileState));
 		}
 	}
 }
 
 /**
- * @brief Parse the array of strings results of a 'cm status --nostatus --noheaders --all --ignore' command
+ * @brief Parse the array of strings results of a 'cm status --noheaders --all --ignore' command
  *
  * Called in case of a regular status command for one or multiple files (not for a whole directory). 
  *
@@ -694,11 +702,13 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 		}
 		FileState.TimeStamp.Now();
 
-		// @todo: temporary debug log
-		UE_LOG(LogSourceControl, Log, TEXT("%s = %d:%s"), *File, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
+		// @todo: temporary debug log (only for the first few files)
+		if (OutStates.Num() < 20) UE_LOG(LogSourceControl, Log, TEXT("%s = %d:%s"), *File, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
 
 		OutStates.Add(MoveTemp(FileState));
 	}
+	// @todo: temporary debug log (if too many files)
+	if (OutStates.Num() > 20) UE_LOG(LogSourceControl, Log, TEXT("[...] %d more files"), OutStates.Num() - 20);
 }
 
 /// Visitor to list all files in subdirectory
@@ -766,11 +776,11 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 		{
 			// 1) Special case for "status" of a directory: requires a specific parse logic.
 			//   (this is triggered by the "Submit to Source Control" top menu button)
-			// @todo: temporary debug log
-			UE_LOG(LogSourceControl, Log, TEXT("RunStatus(%s): 1) special case for status of a directory (%s)"), *InFiles[0], *Path);
 			// Find recursively all files in the directory: this enable getting the list of "Controlled" (unchanged) assets
 			FFileVisitor FileVisitor;
 			FPlatformFileManager::Get().GetPlatformFile().IterateDirectoryRecursively(*Path, FileVisitor);
+			// @todo: temporary debug log
+			UE_LOG(LogSourceControl, Log, TEXT("RunStatus(%s): 1) special case for status of a directory containing %d file(s) (%s)"), *InFiles[0], FileVisitor.Files.Num(), *Path);
 			ParseFileStatusResult(FileVisitor.Files, Results, OutStates, OutChangeset, OutBranchName);
 			// The above cannot detect assets removed / locally deleted (they are no files left to find!)
 			// => so we also parse the status results to explicitly look for Removed/Deleted assets
@@ -781,7 +791,7 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 		{
 			// 2) General case for one or more files in the same directory.
 			// @todo: temporary debug log
-			UE_LOG(LogSourceControl, Log, TEXT("RunStatus(%s): 2) general case for one or more files in a directory (%s)"), *InFiles[0], *Path);
+			UE_LOG(LogSourceControl, Log, TEXT("RunStatus(%s...): 2) general case for %d file(s) in a directory (%s)"), *InFiles[0], InFiles.Num(), *Path);
 			ParseFileStatusResult(InFiles, Results, OutStates, OutChangeset, OutBranchName);
 		}
 	}
@@ -850,9 +860,11 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 			FileState.WorkspaceState = EWorkspaceState::LockedByOther;
 		}
 
-		// @todo: temporary debug log
-		UE_LOG(LogSourceControl, Log, TEXT("%s: %d;%d by '%s' (%s)"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.LockedBy, *FileState.LockedWhere);
+		// @todo: temporary debug log (only for the first few files)
+		if (IdxResult < 20) UE_LOG(LogSourceControl, Log, TEXT("%s: %d;%d by '%s' (%s)"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.LockedBy, *FileState.LockedWhere);
 	}
+	// @todo: temporary debug log (if too many files)
+	if (InResults.Num() > 20) UE_LOG(LogSourceControl, Log, TEXT("[...] %d more files"), InResults.Num() - 20);
 }
 
 /**
