@@ -58,7 +58,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 
 ### Status
 
-#### Version 1.0.2 2017/05/29 for UE4.16 :
+#### Version 1.0.3 2017/07/09 for UE4.16 :
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controled/checked-out/added/deleted/private/changed/ignored files
@@ -104,7 +104,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 - the Editor does not show folder status and is not able to manage them
 - Branch and Merge are not in the current Editor workflow
 
-#### Feature reserved for internal use by Epic Games with Perforce only
+#### Features reserved for internal use by Epic Games with Perforce only
 - tags: get labels (used for crash when the full Engine is under Plastic SCM)
 - annotate: blame (used for crash when the full Engine is under Plastic SCM)
 
