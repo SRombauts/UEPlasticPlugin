@@ -10,6 +10,7 @@
 
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"
+#include "Async.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -499,16 +500,23 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if (InCommand.Files.Num() == 1)
 	{
 		const FString& Origin = InCommand.Files[0];
-		const FString Destination = Operation->GetDestination();
+		const FString Destination = FPaths::ConvertRelativePathToFull(Operation->GetDestination());
 
 		// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controled asset)
 		bool bIsMoveOperation = true;
-		FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 		FString PackageName;
 		if (FPackageName::TryConvertFilenameToLongPackageName(Origin, PackageName))
 		{
-			TArray<FAssetData> AssetsData;
-			AssetRegistryModule.Get().GetAssetsByPackageName(FName(*PackageName), AssetsData);
+			// Use AsyncTask to call AssetRegistry GetAssetsByPackageName') on Game Thread
+			const TSharedRef<TPromise<TArray<FAssetData>>, ESPMode::ThreadSafe> Promise = MakeShareable(new TPromise<TArray<FAssetData>>());
+			AsyncTask(ENamedThreads::GameThread, [Promise, PackageName]()
+			{
+				TArray<FAssetData> AssetsData;
+				FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+				AssetRegistryModule.Get().GetAssetsByPackageName(FName(*PackageName), AssetsData);
+				Promise->SetValue(MoveTemp(AssetsData));
+			});
+			const TArray<FAssetData> AssetsData = Promise->GetFuture().Get();
 			UE_LOG(LogSourceControl, Log, TEXT("PackageName: %s, AssetsData: Num=%d"), *PackageName, AssetsData.Num());
 			if (AssetsData.Num() > 0)
 			{
@@ -525,7 +533,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			}
 			else
 			{
-				// no asset in package (no redirector) so it should be a rename/move of a just added file
+				// no asset in package (no redirector) so it should be a rename/move of a newly Added (not Controlled/Checked-In) file
 				UE_LOG(LogSourceControl, Log, TEXT("%s does not have asset in package (ie. no redirector) so it's a move/rename of a newly added file"), *Origin);
 			}
 		}
