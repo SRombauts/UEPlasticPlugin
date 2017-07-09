@@ -154,8 +154,9 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 		if (-1 != InCommand.ChangesetNumber)
 		{
-			Parameters.Add(TEXT("--all"));    // Also files Changed (not CheckedOut) and Moved/Deleted Locally
-			Parameters.Add(TEXT("--update")); // Processes the update-merge automatically if it eventually happens.
+			Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
+		//  NOTE: --update added as #23 but removed as #32 because most assets are locked by the Unreal Editor
+		//	Parameters.Add(TEXT("--update")); // Processes the update-merge automatically if it eventually happens.
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 		else
