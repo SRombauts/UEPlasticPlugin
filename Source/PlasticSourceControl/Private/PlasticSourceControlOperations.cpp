@@ -487,6 +487,48 @@ bool FPlasticUpdateStatusWorker::UpdateStates() const
 	return bUpdated;
 }
 
+/// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controled asset)
+bool IsMoveOperation(const FString& InOrigin)
+{
+	bool bIsMoveOperation = true;
+
+	FString PackageName;
+	if (FPackageName::TryConvertFilenameToLongPackageName(InOrigin, PackageName))
+	{
+		// Use AsyncTask to call AssetRegistry GetAssetsByPackageName') on Game Thread
+		const TSharedRef<TPromise<TArray<FAssetData>>, ESPMode::ThreadSafe> Promise = MakeShareable(new TPromise<TArray<FAssetData>>());
+		AsyncTask(ENamedThreads::GameThread, [Promise, PackageName]()
+		{
+			TArray<FAssetData> AssetsData;
+			FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+			AssetRegistryModule.Get().GetAssetsByPackageName(FName(*PackageName), AssetsData);
+			Promise->SetValue(MoveTemp(AssetsData));
+		});
+		const TArray<FAssetData> AssetsData = Promise->GetFuture().Get();
+		UE_LOG(LogSourceControl, Log, TEXT("PackageName: %s, AssetsData: Num=%d"), *PackageName, AssetsData.Num());
+		if (AssetsData.Num() > 0)
+		{
+			const FAssetData& AssetData = AssetsData[0];
+			if (!AssetData.IsRedirector())
+			{
+				UE_LOG(LogSourceControl, Log, TEXT("%s is a plain asset, so it's a duplicate/copy"), *InOrigin);
+				bIsMoveOperation = false;
+			}
+			else
+			{
+				UE_LOG(LogSourceControl, Log, TEXT("%s is a redirector, so it's a move/rename"), *InOrigin);
+			}
+		}
+		else
+		{
+			// no asset in package (no redirector) so it should be a rename/move of a newly Added (not Controlled/Checked-In) file
+			UE_LOG(LogSourceControl, Log, TEXT("%s does not have asset in package (ie. no redirector) so it's a move/rename of a newly added file"), *InOrigin);
+		}
+	}
+
+	return bIsMoveOperation;
+}
+
 FName FPlasticCopyWorker::GetName() const
 {
 	return "Copy";
@@ -503,42 +545,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		const FString Destination = FPaths::ConvertRelativePathToFull(Operation->GetDestination());
 
 		// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controled asset)
-		bool bIsMoveOperation = true;
-		FString PackageName;
-		if (FPackageName::TryConvertFilenameToLongPackageName(Origin, PackageName))
-		{
-			// Use AsyncTask to call AssetRegistry GetAssetsByPackageName') on Game Thread
-			const TSharedRef<TPromise<TArray<FAssetData>>, ESPMode::ThreadSafe> Promise = MakeShareable(new TPromise<TArray<FAssetData>>());
-			AsyncTask(ENamedThreads::GameThread, [Promise, PackageName]()
-			{
-				TArray<FAssetData> AssetsData;
-				FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
-				AssetRegistryModule.Get().GetAssetsByPackageName(FName(*PackageName), AssetsData);
-				Promise->SetValue(MoveTemp(AssetsData));
-			});
-			const TArray<FAssetData> AssetsData = Promise->GetFuture().Get();
-			UE_LOG(LogSourceControl, Log, TEXT("PackageName: %s, AssetsData: Num=%d"), *PackageName, AssetsData.Num());
-			if (AssetsData.Num() > 0)
-			{
-				const FAssetData& AssetData = AssetsData[0];
-				if (!AssetData.IsRedirector())
-				{
-					UE_LOG(LogSourceControl, Log, TEXT("%s is a plain asset, so it's a duplicate/copy"), *Origin);
-					bIsMoveOperation = false;
-				}
-				else
-				{
-					UE_LOG(LogSourceControl, Log, TEXT("%s is a redirector, so it's a move/rename"), *Origin);
-				}
-			}
-			else
-			{
-				// no asset in package (no redirector) so it should be a rename/move of a newly Added (not Controlled/Checked-In) file
-				UE_LOG(LogSourceControl, Log, TEXT("%s does not have asset in package (ie. no redirector) so it's a move/rename of a newly added file"), *Origin);
-			}
-		}
-
-		// Now start the real work: 
+		const bool bIsMoveOperation = IsMoveOperation(Origin);
 		if (bIsMoveOperation)
 		{
 			UE_LOG(LogSourceControl, Log, TEXT("Moving %s to %s..."), *Origin, *Destination);
