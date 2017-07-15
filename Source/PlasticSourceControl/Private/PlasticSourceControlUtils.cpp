@@ -89,6 +89,7 @@ static void*			ShellInputPipeRead = nullptr;
 static void*			ShellInputPipeWrite = nullptr;
 static FProcHandle		ShellProcessHandle;
 static FCriticalSection	ShellCriticalSection;
+static size_t			ShellCommandCounter = -1;
 
 // Internal function to cleanup (called under the critical section)
 static void _CleanupBackgroundCommandLineShell()
@@ -120,6 +121,7 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 	else
 	{
 		UE_LOG(LogSourceControl, Log, TEXT("LaunchBackgroundPlasticShell: '%s %s' ok (handle %d)"), *InPathToPlasticBinary, *FullCommand, ShellProcessHandle.Get());
+		ShellCommandCounter = 0;
 	}
 
 	return ShellProcessHandle.IsValid();
@@ -145,9 +147,11 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	// Detect previous crash of cm.exe and restart 'cm shell'
 	if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: 'cm shell' has stopped. Restarting!"));
+		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand(%d): 'cm shell' has stopped. Restarting!"), ShellCommandCounter);
 		_RestartBackgroundCommandLineShell();
 	}
+
+	ShellCommandCounter++;
 
 	// Start with the Plastic command itself ("status", "log", "chekin"...)
 	FString FullCommand = InCommand;
@@ -163,9 +167,9 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		FullCommand += File;
 		FullCommand += TEXT("\"");
 	}
-	// @todo: temporary debug logs (before end of line)
+	// @todo: temporary debug logs (whithout the end-of-line)
 	const FString LoggableCommand = FullCommand.Left(256); // Limit command log size to 256 characters
-	UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s'"), *LoggableCommand);
+	UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (%d chars, %d files)"), ShellCommandCounter, *LoggableCommand, FullCommand.Len()+1, InFiles.Num());
 	FullCommand += TEXT('\n'); // Finalize the command line
 
 	// Send command to 'cm shell' process
@@ -205,14 +209,14 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		{
 			// In case of long running operation, start to print intermediate output from cm shell (like percentage of progress)
 			// (but only when runing Asynchronous commands, since Synchronous commands block the main thread until they finish)
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' in progress for %lfs...\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' in progress for %lfs...\n%s"), ShellCommandCounter, *InCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
 			PreviousLogLen = OutResults.Len();
 			LastLog = FPlatformTime::Seconds(); // freshen the timestamp of last log
 		}
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
 			// In case of timeout, ask the blocking 'cm shell' process to exit, and detach from it immediatly: it will be relaunched by next command
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' %d TIMEOUT after %lfs output:\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%d): '%s' %d TIMEOUT after %lfs output:\n%s"), ShellCommandCounter, *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
 			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
 			FPlatformProcess::CloseProc(ShellProcessHandle);
 			_CleanupBackgroundCommandLineShell();
@@ -225,21 +229,21 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' 'cm shell' stopped after %lfs output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%d): '%s' 'cm shell' stopped after %lfs output:\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
 		}
 		else if (!bResult)
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand(%d): '%s' (in %lfs) output:\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
 		}
 		else
 		{
 			if (PreviousLogLen > 0)
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen).Left(4096)); // Limit result size to 4096 characters
+				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) output:\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen).Left(4096)); // Limit result size to 4096 characters
 			}
 			else
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("'%s' (in %lfs) output:\n%s"), *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
+				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) output:\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
 			}
 		}
 	}
@@ -314,7 +318,7 @@ static bool RunCommandInternal(const FString& InCommand, const TArray<FString>& 
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%s): cm shell not running"), *InCommand);
+		UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%d): '%s': cm shell not running"), ShellCommandCounter, *InCommand);
 		OutErrors = InCommand + ": Plastic SCM shell not running!";
 	}
 
@@ -1028,16 +1032,6 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type In
 {
 	bool bResults = true;
 
-	// @todo: temporary debug log
-	if (InFiles.Num() > 0)
-	{
-		UE_LOG(LogSourceControl, Log, TEXT("RunUpdateStatus: %d files ('%s'...)"), InFiles.Num(), *InFiles[0]);
-	}
-	else
-	{
-		UE_LOG(LogSourceControl, Warning, TEXT("RunUpdateStatus: NO file"));
-	}
-
 	// The "status" command only operate on one directory at a time
 	// (whole tree recursively) not on different folders with no common root.
 	// But "Submit to Source Control" ask for the State of 3 different directories, Engine/Content, Project/Content and Project/Config,
@@ -1059,6 +1053,16 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type In
 			NewGroup.Add(File);
 			GroupOfFiles.Add(Path, NewGroup);
 		}
+	}
+
+	// @todo: temporary debug log
+	if (InFiles.Num() > 0)
+	{
+		UE_LOG(LogSourceControl, Log, TEXT("RunUpdateStatus: %d file(s)/%d directory(ies) ('%s'...)"), InFiles.Num(), GroupOfFiles.Num(), *InFiles[0]);
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Warning, TEXT("RunUpdateStatus: NO file"));
 	}
 
 	// 2) then we can batch Plastic status operation by subdirectory
