@@ -73,8 +73,8 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				{
 					// Now update the status of assets in Content/ directory and also Config files
 					TArray<FString> ProjectDirs;
-					ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
-					ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+					ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+					ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
 					PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 				}
 				else
@@ -316,8 +316,8 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 
 	// Now update the status of assets in Content/ directory and also Config files
 	TArray<FString> ProjectDirs;
-	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
-	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
 	PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
@@ -352,8 +352,8 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	// Now update the status of assets in Content/ directory and also Config files
 	TArray<FString> ProjectDirs;
-	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
-	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
 	PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
@@ -383,7 +383,7 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 	{
 		TArray<FString> Parameters;
 		Parameters.Add(Operation->WorkspaceName);
-		Parameters.Add(TEXT(".")); // current path, ie. GameDir
+		Parameters.Add(TEXT(".")); // current path, ie. ProjectDir
 		Parameters.Add(FString::Printf(TEXT("--repository=rep:%s@repserver:%s"), *Operation->RepositoryName, *Operation->ServerUrl));
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
@@ -468,7 +468,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		{
 			// UpdateStatus() from the ContentDir()
 			TArray<FString> Files;
-			Files.Add(FPaths::ConvertRelativePathToFull(FPaths::GameDir()));
+			Files.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()));
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 		}
 	}
@@ -563,7 +563,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			// - backup the redirector (if it exists) to a temp file
 			const bool bReplace = true;
 			const bool bEvenIfReadOnly = true;
-			const FString TempFileName = FPaths::CreateTempFilename(*FPaths::GameLogDir(), TEXT("Plastic-MoveTemp"), TEXT(".uasset"));
+			const FString TempFileName = FPaths::CreateTempFilename(*FPaths::ProjectLogDir(), TEXT("Plastic-MoveTemp"), TEXT(".uasset"));
 			UE_LOG(LogSourceControl, Log, TEXT("Move '%s' -> '%d'"), *Origin, *TempFileName);
 			InCommand.bCommandSuccessful = IFileManager::Get().Move(*TempFileName, *Origin, bReplace, bEvenIfReadOnly);
 			// - revert the 'cm add' that was applied to the destination by the Editor
@@ -673,8 +673,8 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			// only update the status of assets in Content/ directory and also Config files
 			TArray<FString> ProjectDirs;
-			ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
-			ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+			ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+			ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
 			PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 		}
 		else
