@@ -35,9 +35,9 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 
 	InitialCommitMessage = LOCTEXT("InitialCommitMessage", "Initial checkin");
 	ServerUrl = FText::FromString(TEXT("localhost:8087"));
-	if (FApp::HasGameName())
+	if (FApp::HasProjectName())
 	{
-		WorkspaceName = FText::FromString(FApp::GetGameName());
+		WorkspaceName = FText::FromString(FApp::GetProjectName());
 		RepositoryName = WorkspaceName;
 	}
 
@@ -602,8 +602,8 @@ FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 /** Path to the "ignore.conf" file */
 const FString& SPlasticSourceControlSettings::GetIgnoreFileName() const
 {
-	static const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
-	static const FString IgnoreFileName = FPaths::Combine(*PathToGameDir, TEXT("ignore.conf"));
+	static const FString PathToProjectDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
+	static const FString IgnoreFileName = FPaths::Combine(*PathToProjectDir, TEXT("ignore.conf"));
 	return IgnoreFileName;
 }
 
@@ -619,8 +619,8 @@ TArray<FString> SPlasticSourceControlSettings::GetProjectFiles() const
 {
 	TArray<FString> ProjectFiles;
 	ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()));
-	ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
-	ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
+	ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
+	ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
 	if (FPaths::DirectoryExists(FPaths::GameSourceDir()))
 	{
 		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameSourceDir()));

@@ -54,9 +54,9 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 	if(!PathToPlasticBinary.IsEmpty())
 	{
-		// Find the path to the root Plastic directory (if any, else uses the GameDir)
-		const FString PathToGameDir = FPaths::ConvertRelativePathToFull(FPaths::GameDir());
-		bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToGameDir, PathToWorkspaceRoot);
+		// Find the path to the root Plastic directory (if any, else uses the ProjectDir)
+		const FString PathToProjectDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
+		bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToProjectDir, PathToWorkspaceRoot);
 
 		// Launch the Plastic SCM cli shell on the background to issue all commands during this session
 		bPlasticAvailable = PlasticSourceControlUtils::LaunchBackgroundPlasticShell(PathToPlasticBinary, PathToWorkspaceRoot);
@@ -70,7 +70,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 			if(!bWorkspaceFound)
 			{
-				UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::GameDir());
+				UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::ProjectDir());
 			}
 		}
 	}
@@ -301,7 +301,7 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 
 		if (bWorkspaceFound)
 		{
-			// Extend the "Source Control" menu in the Editor Toolbar on each successfull connection
+			// Extend the "Source Control" menu in the Editor Toolbar on each successful connection
 			PlasticSourceControlMenu.Unregister(); // cleanup for any previous connection
 			PlasticSourceControlMenu.Register();
 		}
