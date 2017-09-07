@@ -101,10 +101,10 @@ FName FPlasticSourceControlState::GetIconName() const
 		return FName("Perforce.OpenForAdd");
 	case EWorkspaceState::Moved:
 		return FName("Perforce.Branched");
-	case EWorkspaceState::Deleted:
+	case EWorkspaceState::Deleted: // Deleted & Missing files does not show in Content Browser
 		return FName("Perforce.MarkedForDelete");
-	case EWorkspaceState::LocallyDeleted: // TODO: would need a dedicated icon
-	case EWorkspaceState::Conflicted: // TODO: would need a dedicated icon
+	case EWorkspaceState::LocallyDeleted: // Deleted & Missing files does not show in Content Browser
+	case EWorkspaceState::Conflicted:
 		return FName("Perforce.NotAtHeadRevision");
 	case EWorkspaceState::LockedByOther:
 		return FName("Perforce.CheckedOutByOtherUser");
@@ -138,8 +138,8 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 		return FName("Perforce.Branched_Small");
 	case EWorkspaceState::Deleted:
 		return FName("Perforce.MarkedForDelete_Small");
-	case EWorkspaceState::LocallyDeleted:
-	case EWorkspaceState::Conflicted:
+	case EWorkspaceState::LocallyDeleted: // TODO: would need a dedicated icon
+	case EWorkspaceState::Conflicted: // TODO: would need a dedicated icon
 		return FName("Perforce.NotAtHeadRevision_Small");
 	case EWorkspaceState::LockedByOther:
 		return FName("Perforce.CheckedOutByOtherUser_Small");
