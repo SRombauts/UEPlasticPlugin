@@ -70,7 +70,7 @@ public:
 	virtual bool IsDeleted() const override;
 	virtual bool IsIgnored() const override;
 	virtual bool CanEdit() const override;
-	virtual bool CanDelete() const; // override; // commented out for UE4.12 and 4.13 compatibility : method added for 4.14
+	virtual bool CanDelete() const override;
 	virtual bool IsUnknown() const override;
 	virtual bool IsModified() const override;
 	virtual bool CanAdd() const override;
