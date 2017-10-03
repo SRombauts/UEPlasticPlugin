@@ -752,7 +752,7 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	Parameters.Add(TEXT("--noheaders"));
 	Parameters.Add(TEXT("--all"));
 	Parameters.Add(TEXT("--ignored"));
-	// "cm status" only operate on one patch (file or folder) at a time, so use one folder path for multiple files in a directory
+	// "cm status" only operate on one path (file or folder) at a time, so use one folder path for multiple files in a directory
 	const FString Path = FPaths::GetPath(*InFiles[0]);
 	TArray<FString> OnePath;
 	// Only one file: optim very useful for the .uproject file at the root to avoid parsing the whole repository
@@ -1115,7 +1115,11 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 }
 
 
-// Translate actions from Plastic 'cm log' command to keywords used by the Editor UI 
+/**
+ * Translate file actions from Plastic 'cm log' command to keywords used by the Editor UI.
+ *
+ * @see SHistoryRevisionListRowContent::GenerateWidgetForColumn(): "add", "edit", "delete", "branch" and "integrate"
+*/
 FString TranslateAction(const FString& InAction)
 {
 	if (InAction.Equals(TEXT("Added")))
