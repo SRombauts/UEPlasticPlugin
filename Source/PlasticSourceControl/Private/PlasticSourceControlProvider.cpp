@@ -89,9 +89,9 @@ void FPlasticSourceControlProvider::Close()
 	// Remove all extensions to the "Source Control" menu in the Editor Toolbar
 	PlasticSourceControlMenu.Unregister();
 
-	bServerAvailable = false;
 	bPlasticAvailable = false;
 	bWorkspaceFound = false;
+	bServerAvailable = false;
 	UserName.Empty();
 }
 
@@ -223,12 +223,16 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute( const TSharedRef<IS
 	if(InConcurrency == EConcurrency::Synchronous)
 	{
 		Command->bAutoDelete = false;
+
+		UE_LOG(LogSourceControl, Log, TEXT("ExecuteSynchronousCommand(%s)"), *InOperation->GetName().ToString());
 		return ExecuteSynchronousCommand(*Command, InOperation->GetInProgressString());
 	}
 	else
 	{
 		Command->bAutoDelete = true;
-		return IssueCommand(*Command);
+
+		UE_LOG(LogSourceControl, Log, TEXT("IssueAsynchronousCommand(%s)"), *InOperation->GetName().ToString());
+		return IssueCommand(*Command, false);
 	}
 }
 
@@ -350,7 +354,7 @@ void FPlasticSourceControlProvider::Tick()
 				// Only delete commands that are not running 'synchronously'
 				delete &Command;
 			}
-			
+
 			// only do one command per tick loop, as we dont want concurrent modification 
 			// of the command queue (which can happen in the completion delegate)
 			break;
@@ -384,14 +388,12 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 {
 	ECommandResult::Type Result = ECommandResult::Failed;
 
-	UE_LOG(LogSourceControl, Log, TEXT("ExecuteSynchronousCommand: %s"), *InCommand.Operation->GetName().ToString());
-
 	// Display the progress dialog if a string was provided
 	{
 		FScopedSourceControlProgress Progress(Task);
 
 		// Issue the command asynchronously...
-		IssueCommand( InCommand );
+		IssueCommand( InCommand, false );
 
 		// ... then wait for its completion (thus making it synchronous)
 		while(!InCommand.bExecuteProcessed)
@@ -414,6 +416,9 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		}
 		else
 		{
+			// TODO If the command failed, inform the user that they need to try again (see Perforce)
+			//FMessageDialog::Open( EAppMsgType::Ok, LOCTEXT("Git_ServerUnresponsive", "Git LFS server is unresponsive. Please check your connection and try again.") );
+
 			UE_LOG(LogSourceControl, Error, TEXT("Command '%s' Failed!"), *InCommand.Operation->GetName().ToString());
 		}
 	}
@@ -431,11 +436,9 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 	return Result;
 }
 
-ECommandResult::Type FPlasticSourceControlProvider::IssueCommand(FPlasticSourceControlCommand& InCommand)
+ECommandResult::Type FPlasticSourceControlProvider::IssueCommand(FPlasticSourceControlCommand& InCommand, const bool bSynchronous)
 {
-	UE_LOG(LogSourceControl, Log, TEXT("IssueCommand: %s"), *InCommand.Operation->GetName().ToString());
-
-	if(GThreadPool != nullptr)
+	if ( !bSynchronous && GThreadPool != nullptr )
 	{
 		// Queue this to our worker thread(s) for resolving
 		GThreadPool->AddQueuedWork(&InCommand);
@@ -444,7 +447,18 @@ ECommandResult::Type FPlasticSourceControlProvider::IssueCommand(FPlasticSourceC
 	}
 	else
 	{
-		return ECommandResult::Failed;
+		InCommand.bCommandSuccessful = InCommand.DoWork();
+
+		InCommand.Worker->UpdateStates();
+
+		OutputCommandMessages(InCommand);
+
+		// Callback now if present. When asynchronous, this callback gets called from Tick().
+		ECommandResult::Type Result = InCommand.bCommandSuccessful ? ECommandResult::Succeeded : ECommandResult::Failed;
+		InCommand.OperationCompleteDelegate.ExecuteIfBound(InCommand.Operation, Result);
+
+		return Result;
 	}
 }
+
 #undef LOCTEXT_NAMESPACE

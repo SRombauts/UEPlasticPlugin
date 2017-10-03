@@ -140,6 +140,7 @@ static void _RestartBackgroundCommandLineShell()
 }
 
 // Internal function (called under the critical section)
+// TODO InConcurrency is not needed anymore since synchronous commands now are really executed in the main thread
 static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, FString& OutResults, FString& OutErrors)
 {
 	bool bResult = false;
