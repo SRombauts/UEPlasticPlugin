@@ -50,7 +50,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			SNew(SVerticalBox)
 			// Path to the Plastic SCM binary
 			+SVerticalBox::Slot()
-			.FillHeight(1.5f)
+			.AutoHeight()
 			.Padding(2.0f)
 			.VAlign(VAlign_Center)
 			[
@@ -75,7 +75,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			]
 			// Root of the workspace
 			+SVerticalBox::Slot()
-			.FillHeight(1.0f)
+			.AutoHeight()
 			.Padding(2.0f)
 			.VAlign(VAlign_Center)
 			[
@@ -98,7 +98,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			]
 			// User Name
 			+SVerticalBox::Slot()
-			.FillHeight(1.0f)
+			.AutoHeight()
 			.Padding(2.0f)
 			.VAlign(VAlign_Center)
 			[
@@ -147,7 +147,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			]
 			// Workspace and Repository Name
 			+SVerticalBox::Slot()
-			.FillHeight(1.5f)
+			.AutoHeight()
 			.Padding(2.0f)
 			.VAlign(VAlign_Center)
 			[
@@ -186,7 +186,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			]
 			// Server URL address:port
 			+SVerticalBox::Slot()
-			.FillHeight(1.5f)
+			.AutoHeight()
 			.Padding(2.0f)
 			.VAlign(VAlign_Center)
 			[
@@ -212,7 +212,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			]
 			// Option to add a 'ignore.conf' file at Workspace creation time
 			+SVerticalBox::Slot()
-			.FillHeight(1.5f)
+			.AutoHeight()
 			.Padding(2.0f)
 			.VAlign(VAlign_Center)
 			[

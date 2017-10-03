@@ -24,12 +24,20 @@ public:
 	{
 		return PlasticSourceControlSettings;
 	}
+	const FPlasticSourceControlSettings& AccessSettings() const
+	{
+		return PlasticSourceControlSettings;
+	}
 
 	/** Save the Plastic source control settings */
 	void SaveSettings();
 
 	/** Access the Plastic source control provider */
 	FPlasticSourceControlProvider& GetProvider()
+	{
+		return PlasticSourceControlProvider;
+	}
+	const FPlasticSourceControlProvider& GetProvider() const
 	{
 		return PlasticSourceControlProvider;
 	}
