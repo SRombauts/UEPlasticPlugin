@@ -23,7 +23,7 @@ static FName ProviderName("Plastic SCM");
 
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {
-	// Init() is called multiple times at startup: do not check git each time
+	// Init() is called multiple times at startup: do not check Plastic SCM each time
 	if(!bPlasticAvailable)
 	{
 		const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));

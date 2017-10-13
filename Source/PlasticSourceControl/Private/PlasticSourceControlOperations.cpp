@@ -55,33 +55,42 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FConnect, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FConnect>(InCommand.Operation);
 
-	// Get workspace name
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(InCommand.WorkspaceName);
-	if (InCommand.bCommandSuccessful)
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FString PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
+	if (!PathToPlasticBinary.IsEmpty())
 	{
-		// Get repository, server Url, branch and current changeset number
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceInformation(InCommand.ChangesetNumber, InCommand.RepositoryName, InCommand.ServerUrl, InCommand.BranchName);
+		// Get workspace name
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(InCommand.WorkspaceName);
 		if (InCommand.bCommandSuccessful)
 		{
-			// Execute a 'checkconnection' command to check the connectivity of the server.
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+			// Get repository, server Url, branch and current changeset number
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceInformation(InCommand.ChangesetNumber, InCommand.RepositoryName, InCommand.ServerUrl, InCommand.BranchName);
 			if (InCommand.bCommandSuccessful)
 			{
-				// Now update the status of assets in Content/ directory and also Config files
-				TArray<FString> ProjectDirs;
-				ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
-				ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
-				PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+				// Execute a 'checkconnection' command to check the connectivity of the server.
+				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+				if (InCommand.bCommandSuccessful)
+				{
+					// Now update the status of assets in Content/ directory and also Config files
+					TArray<FString> ProjectDirs;
+					ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameContentDir()));
+					ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::GameConfigDir()));
+					PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+				}
+				else
+				{
+					Operation->SetErrorText(FText::FromString(InCommand.ErrorMessages[0]));
+				}
 			}
-			else
-			{
-				Operation->SetErrorText(FText::FromString(InCommand.ErrorMessages[0]));
-			}
+		}
+		else
+		{
+			Operation->SetErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic SCM source control. You need to initialize the project as a Plastic SCM repository first."));
 		}
 	}
 	else
 	{
-		Operation->SetErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic source control. You need to initialize the project as a Plastic repository first."));
+		Operation->SetErrorText(LOCTEXT("PlasticScmCliUnavaillable", "Failed to launch Plastic SCM command line tool. You need to install it or set the correct path to it first."));
 	}
 
 	return InCommand.bCommandSuccessful;
