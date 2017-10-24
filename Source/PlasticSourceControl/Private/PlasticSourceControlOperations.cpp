@@ -56,8 +56,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TSharedRef<FConnect, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FConnect>(InCommand.Operation);
 
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	FString PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	if (!PathToPlasticBinary.IsEmpty())
+	if (PlasticSourceControl.GetProvider().IsPlasticAvailable())
 	{
 		// Get workspace name
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(InCommand.WorkspaceName);
