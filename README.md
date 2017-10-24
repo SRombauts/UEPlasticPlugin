@@ -4,7 +4,7 @@ Unreal Engine 4 Plastic SCM Source Control Plugin
 [![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
 [![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
-UE4PlasticPlugin is a simple [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4 (UE 4.11 to 4.17)
+UE4PlasticPlugin is a simple [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4 (UE 4.11 to 4.18)
 
 It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml) or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
 It is a complementary tool improving efficiency in your daily workflow.
@@ -36,7 +36,7 @@ Visual Diffing of different revision of a Blueprint :
        That should create a "Plugins/" folder into your project.
        This is the way to go to use Platic SCM only on a specific projetc.
     2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
-       (for instance "C:\Program Files\Epic Games\4.17\Engine\")
+       (for instance "C:\Program Files\Epic Games\4.18\Engine\")
        That should create a "UE4PlasticPlugin" forlder into the "Plugins/" subidrectory.
        This is the way to enable Plastic SCM for all Unreal Engine projects.
 3. Then, launch Unreal Engine 4.x, click on the Source Control icon "Connect to Source", select "Plastic SCM".
@@ -58,7 +58,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 
 ### Status
 
-#### Version 1.0.4 2017/08/08 for UE4.17 :
+#### Version 1.0.5 2017/10/24 for UE4.18 :
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controled/checked-out/added/deleted/private/changed/ignored files

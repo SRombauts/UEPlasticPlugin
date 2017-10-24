@@ -1,8 +1,8 @@
 {
 	"FileVersion": 3,
-	"Version": 27,
-	"VersionName": "1.0.4",
-	"FriendlyName": "Plastic",
+	"Version": 28,
+	"VersionName": "1.0.5",
+	"FriendlyName": "Plastic SCM",
 	"Description": "Plastic source control management",
 	"Category": "Source Control",
 	"CreatedBy": "SRombauts for Codice Software.",
