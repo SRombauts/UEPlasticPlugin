@@ -409,4 +409,9 @@ bool FPlasticSourceControlState::IsConflicted() const
 	return WorkspaceState == EWorkspaceState::Conflicted;
 }
 
+bool FPlasticSourceControlState::CanRevert() const
+{
+	return IsModified();
+}
+
 #undef LOCTEXT_NAMESPACE
