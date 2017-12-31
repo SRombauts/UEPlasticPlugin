@@ -885,7 +885,17 @@ static bool RunFileinfo(const EConcurrency::Type InConcurrency, TArray<FString>&
 	TArray<FString> Files;
 	for (const auto& State : InOutStates)
 	{
-		Files.Add(State.GetFilename());
+		// Optimize by not issuing "fileinfo" commands on "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
+		// This can greatly reduce the time needed to do some basic operation like "Add to source control" when using a distant server or the Plastic Cloud.
+		if (	(State.WorkspaceState == EWorkspaceState::Controlled)
+			||	(State.WorkspaceState == EWorkspaceState::Changed)
+			||	(State.WorkspaceState == EWorkspaceState::Replaced)
+			||	(State.WorkspaceState == EWorkspaceState::Conflicted)
+		//	||	(State.WorkspaceState == EWorkspaceState::LockedByOther) // we do not have this info at this stage, cf. ParseFileinfoResults()
+			)
+		{
+			Files.Add(State.GetFilename());
+		}
 	}
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
