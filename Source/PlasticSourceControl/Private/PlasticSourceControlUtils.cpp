@@ -857,7 +857,8 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 		FileState.LockedBy = MoveTemp(FileinfoParser.LockedBy);
 		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
 
-		if ((FileState.WorkspaceState != EWorkspaceState::CheckedOut) && (0 < FileState.LockedBy.Len()))
+		// If a file is locked by someone but not checked-out locally (or moved/renamed) this means it is locked by someone else or elsewhere
+        if ((FileState.WorkspaceState != EWorkspaceState::CheckedOut) && (FileState.WorkspaceState != EWorkspaceState::Moved) && (0 < FileState.LockedBy.Len())) 
 		{
 			// @todo: temporary debug log
 			UE_LOG(LogSourceControl, Warning, TEXT("LockedByOther(%s) by '%s!=%s' (or %s!=%s)"), *File, *FileState.LockedBy, *Provider.GetUserName(), *FileState.LockedWhere, *Provider.GetWorkspaceName());
