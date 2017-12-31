@@ -276,15 +276,35 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	// revert then checkout and any changes of the given files in workspace
-	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-	if (-1 != InCommand.ChangesetNumber)
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+
+	for(const FString& File : InCommand.Files)
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), TArray<FString>(), InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
-	}
-	else
-	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), TArray<FString>(), InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(File);
+
+		TArray<FString> OneFile;
+		OneFile.Add(State->LocalFilename);
+
+
+		if (EWorkspaceState::Changed == State->WorkspaceState)
+		{
+			// revert the changes of the given file in workspace
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), OneFile, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+		else
+		{
+			// revert the checkout and any changes of the given file in workspace
+			// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+			if (-1 != InCommand.ChangesetNumber)
+			{
+				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), TArray<FString>(), OneFile, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+			}
+			else
+			{
+				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), TArray<FString>(), OneFile, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+			}
+		}
 	}
 
 	// now update the status of our files
