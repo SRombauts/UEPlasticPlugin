@@ -108,6 +108,23 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 - tags: get labels (used for crash when the full Engine is under Plastic SCM)
 - annotate: blame (used for crash when the full Engine is under Plastic SCM)
 
+### Locking UE4 assets
+Binary assets should be locked for exclusive access to avoid merge conflicts.
+
+To lock all assets on the whole `Content` directory, you need to put a `lock.conf` in your server directory (for instance `C:\Program Files\PlasticSCM5\server`) with this content:
+
+```
+rep:default lockserver:mainsvr:8084
+\Content
+```
+
+For instance :
+
+```
+rep:UE4PlasticPluginDev lockserver:localhost:8087
+\Content
+```
+
 ### Support
 
 You can always ask questions in [Unreal Engine forums](https://forums.unrealengine.com/showthread.php?108688-Plastic-SCM-Source-Control-Provider/page2).
