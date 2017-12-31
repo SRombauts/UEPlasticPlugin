@@ -307,8 +307,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 	}
 
-	// now update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	// NOTE: optim, no need to update the status of our files since this is done immediately after by the Editor
 
 	return InCommand.bCommandSuccessful;
 }
