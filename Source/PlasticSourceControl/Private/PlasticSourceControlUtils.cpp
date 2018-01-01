@@ -880,8 +880,7 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
  */
 static bool RunFileinfo(const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
 {
-	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{LockedBy};{LockedWhere}\""));
+	bool bResult = true;
 	TArray<FString> Files;
 	for (const auto& State : InOutStates)
 	{
@@ -897,13 +896,18 @@ static bool RunFileinfo(const EConcurrency::Type InConcurrency, TArray<FString>&
 			Files.Add(State.GetFilename());
 		}
 	}
-	TArray<FString> Results;
-	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("fileinfo"), Parameters, Files, InConcurrency, Results, ErrorMessages);
-	OutErrorMessages.Append(ErrorMessages);
-	if (bResult)
+	if (Files.Num() > 0)
 	{
-		ParseFileinfoResults(Results, InOutStates);
+		TArray<FString> Results;
+		TArray<FString> ErrorMessages;
+		TArray<FString> Parameters;
+		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{LockedBy};{LockedWhere}\""));
+		bResult = RunCommand(TEXT("fileinfo"), Parameters, Files, InConcurrency, Results, ErrorMessages);
+		OutErrorMessages.Append(ErrorMessages);
+		if (bResult)
+		{
+			ParseFileinfoResults(Results, InOutStates);
+		}
 	}
 
 	return bResult;
