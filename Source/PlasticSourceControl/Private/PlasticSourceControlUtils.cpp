@@ -488,6 +488,29 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 }
 
 /**
+ * @brief Extract the renamed from filename from a Plastic SCM status result.
+ *
+ * Examples of status results:
+ MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
+ *
+ * @param[in] InResult One line of status
+ * @return Renamed from filename extracted from the line of status
+ *
+ * @see FilenameFromPlasticStatus()
+ */
+static FString RenamedFromPlasticStatus(const FString& InResult)
+{
+	FString RenamedFrom;
+	int32 RenameIndex;
+	if (InResult.FindLastChar('>', RenameIndex))
+	{
+		// Extract only the first part of a rename "from -> to" (after the 2 letters status surrounded by 2 spaces)
+		RenamedFrom = InResult.Mid(9, RenameIndex - 9 - 2);
+	}
+	return RenamedFrom;
+}
+
+/**
  * @brief Extract the relative filename from a Plastic SCM status result.
  *
  * Examples of status results:
@@ -634,6 +657,9 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
  */
 static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
+
 	// Parse the first two lines with Changeset number and Branch name
 	FString RepositoryName, ServerUrl;
 	ParseWorkspaceInformation(InResults, OutChangeset, RepositoryName, ServerUrl, OutBranchName);
@@ -651,6 +677,12 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 		{
 			// File found in status results; only the case for "changed" files
 			FileState.WorkspaceState = StateFromPlasticStatus(InResults[IdxResult]);
+
+			// Extract the original name of a Moved/Renamed file
+			if (EWorkspaceState::Moved == FileState.WorkspaceState)
+			{
+				FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkingDirectory, RenamedFromPlasticStatus(InResults[IdxResult]));
+			}
 		}
 		else
 		{

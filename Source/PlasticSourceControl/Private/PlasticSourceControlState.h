@@ -110,6 +110,9 @@ public:
 	/** Latest revision number at which a file was synced to before being edited */
 	int LocalRevisionChangeset;
 
+	/** Original name in case of a Moved/Renamed file */
+	FString MovedFrom;
+
 	/** Whether the file is a binary file or not */
 //	bool bBinary;
 
