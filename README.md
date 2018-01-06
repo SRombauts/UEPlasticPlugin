@@ -20,6 +20,18 @@ History menu entry to look a the changelog of an asset :
 Visual Diffing of different revision of a Blueprint :
 <img src="https://cdn2.unrealengine.com/blog/DiffTool-1009x542-719850393.png" width="720">
 
+Status Icons:
+
+![New/Unsaved asset](Screenshots/Icons/UE4PlasticPlugin-New.png)
+![Added to Source Control](Screenshots/Icons/UE4PlasticPlugin-Added.png)
+![Controlled/Unchanged](Screenshots/Icons/UE4PlasticPlugin-Controlled.png)
+![Changed but not Checked-Out](Screenshots/Icons/UE4PlasticPlugin-Changed.png)
+![Checked-Out](Screenshots/Icons/UE4PlasticPlugin-CheckedOut.png)
+![Moved/Renamed](Screenshots/Icons/UE4PlasticPlugin-Renamed.png)
+
+![Checkd-Out/Locked by someone else](Screenshots/Icons/UE4PlasticPlugin-CheckedOutOther.png)
+![Not up-to-date/new revision in repository](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
+
 ### References
 
 - [Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
