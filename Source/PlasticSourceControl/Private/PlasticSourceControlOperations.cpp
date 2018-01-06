@@ -705,10 +705,7 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
 			PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 		}
-		else
-		{
-			PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
-		}
+		// else: optim, no need to update the status of our files since this is done immediately after by the Editor
 	}
 
 	return InCommand.bCommandSuccessful;
