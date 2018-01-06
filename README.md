@@ -4,7 +4,7 @@ Unreal Engine 4 Plastic SCM Source Control Plugin
 [![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
 [![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
-UE4PlasticPlugin is a simple [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4 (UE 4.11 to 4.18.1)
+UE4PlasticPlugin is a simple [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4 (UE 4.11 to 4.18.2)
 
 It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml) or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
 It is a complementary tool improving efficiency in your daily workflow.
@@ -70,7 +70,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 
 ### Status
 
-#### Version 1.0.6 2017/11/16 for UE4.18.1 :
+#### Version 1.1.0 2018/01/06 for UE4.18.2 :
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controled/checked-out/added/deleted/private/changed/ignored files
@@ -110,9 +110,9 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
 - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
 - #18 Error messages with accents are not correctly handled/displayed (for instance connection error in French)
-* the Editor does not handle visual diff for renamed/moved assets
-* History does not show which revision is the current/checkout one
-* Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
+- the Editor does not handle visual diff for renamed/moved assets
+- History does not show which revision is the current/checkout one
+- Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
 - the Editor does not show folder status and is not able to manage them
 - Branch and Merge are not in the current Editor workflow
 
