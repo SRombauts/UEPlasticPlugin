@@ -158,7 +158,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				[
 					SNew(STextBlock)
 					.Text(LOCTEXT("WorkspaceRepositoryName", "Workspace and Repository Name"))
-					.ToolTipText(LOCTEXT("WorkspaceRepositoryName_Tooltip", "Enter the Name of the new Workspace and Repository to create"))
+					.ToolTipText(LOCTEXT("WorkspaceRepositoryName_Tooltip", "Enter the Name of the new Workspace and Repository to create or use"))
 					.Font(Font)
 				]
 				+SHorizontalBox::Slot()
@@ -178,7 +178,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				[
 					SNew(SEditableTextBox)
 					.Text(this, &SPlasticSourceControlSettings::GetRepositoryName)
-					.ToolTipText(LOCTEXT("RepositoryName_Tooltip", "Enter the Name of the new Repository to use or create"))
+					.ToolTipText(LOCTEXT("RepositoryName_Tooltip", "Enter the Name of the Repository to use or create"))
 					.HintText(LOCTEXT("RepositoryName_Hint", "Name of the Repository to use or create"))
 					.OnTextCommitted(this, &SPlasticSourceControlSettings::OnRepositoryNameCommited)
 					.Font(Font)

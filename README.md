@@ -12,7 +12,7 @@ It is a complementary tool improving efficiency in your daily workflow.
 It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints. It also helps importing an existing UE4 Project into source contorl, with appropriate *ignore.conf* file.
 
 Source Control Login screen to create a new workspace/a new repository :
-<img src="Screenshots/UE4PlasticPlugin-CreateWorkspace.png" width="720">
+![Source Control Login screen - create a new workspace](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
 
 History menu entry to look a the changelog of an asset :
 <img src="Screenshots/UE4PlasticPlugin-History.png" width="720">
@@ -26,9 +26,9 @@ Status Icons:
 ![Added to Source Control](Screenshots/Icons/UE4PlasticPlugin-Added.png)
 ![Controlled/Unchanged](Screenshots/Icons/UE4PlasticPlugin-Controlled.png)
 ![Changed but not Checked-Out](Screenshots/Icons/UE4PlasticPlugin-Changed.png)
+
 ![Checked-Out](Screenshots/Icons/UE4PlasticPlugin-CheckedOut.png)
 ![Moved/Renamed](Screenshots/Icons/UE4PlasticPlugin-Renamed.png)
-
 ![Checkd-Out/Locked by someone else](Screenshots/Icons/UE4PlasticPlugin-CheckedOutOther.png)
 ![Not up-to-date/new revision in repository](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
 
