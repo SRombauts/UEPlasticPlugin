@@ -11,13 +11,22 @@ It is a complementary tool improving efficiency in your daily workflow.
 
 It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints. It also helps importing an existing UE4 Project into source contorl, with appropriate *ignore.conf* file.
 
-Source Control Login screen to create a new workspace/a new repository :
-![Source Control Login screen - create a new workspace](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
+Source Control Login window, to create a new workspace/a new repository:
+![Source Control Login window - create a new workspace](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
 
-History menu entry to look a the changelog of an asset :
-<img src="Screenshots/UE4PlasticPlugin-History.png" width="720">
+Source Control status tooltip, when overing the Source Control icon in toolbar:
+![Source Control Status Tooltip](Screenshots/UE4PlasticPlugin-SourceControlStatus.png)
 
-Visual Diffing of different revision of a Blueprint :
+Source Control top Menu, extended whith specific Plastic SCM commands:
+![Source Control Top Menu](Screenshots/UE4PlasticPlugin-SourceControlMenu.png)
+
+Submit Files to Source Control window, to check-in assets:
+![Submit Files to Source Control](Screenshots/UE4PlasticPlugin-SubmitFiles.png)
+
+File History window, to see the changelog of an asset:
+![History of a file](Screenshots/UE4PlasticPlugin-History.png)
+
+Visual Diffing of different revision of a Blueprint:
 <img src="https://cdn2.unrealengine.com/blog/DiffTool-1009x542-719850393.png" width="720">
 
 Status Icons:
@@ -70,7 +79,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 
 ### Status
 
-#### Version 1.1.0 2018/01/06 for UE4.18.2 :
+#### Version 1.1.0 2018/01/06 for UE4.18.2:
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controled/checked-out/added/deleted/private/changed/ignored files
@@ -130,7 +139,7 @@ rep:default lockserver:mainsvr:8084
 \Content
 ```
 
-For instance :
+For instance:
 
 ```
 rep:UE4PlasticPluginDev lockserver:localhost:8087
@@ -150,7 +159,7 @@ To report an issue, please use the [Github issue-tracker](https://github.com/SRo
 3. Describe precisely your issue
 4. Add reproduction steps, if possible on a basic template project
 5. Post a Log file when applicable (or the corresponding redacted section)
-   1. [enable **UTC Timestamp** in Logs : menu _Preferences -> General -> Appearance -> Log Timestamp Mode_](https://answers.unrealengine.com/questions/358370/time-stamps-in-output-log.html)
+   1. [enable **UTC Timestamp** in Logs: menu _Preferences -> General -> Appearance -> Log Timestamp Mode_](https://answers.unrealengine.com/questions/358370/time-stamps-in-output-log.html)
    2. Grab the file **ProjectName/Saved/Logs/ProjectName.log**
 
 #### Use merge requests
@@ -160,4 +169,4 @@ If you want to help, Merge Requests are very welcome!
 ### Copyright
 
 Copyright (c) 2016-2017 Codice Software - Sébastien Rombauts (sebastien.rombauts@gmail.com)
-<a href="https://www.paypal.me/SRombauts" title="Pay Me a Beer! Donate with PayPal :)"><img src="https://www.paypalobjects.com/webstatic/paypalme/images/pp_logo_small.png" width="118"></a>
+<a href="https://www.paypal.me/SRombauts" title="Pay Me a Beer! Donate with PayPal:)"><img src="https://www.paypalobjects.com/webstatic/paypalme/images/pp_logo_small.png" width="118"></a>
