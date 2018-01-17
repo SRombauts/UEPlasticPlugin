@@ -130,14 +130,21 @@ bool FPlasticCheckOutWorker::UpdateStates() const
 	return PlasticSourceControlUtils::UpdateCachedStates(States);
 }
 
-
+/// Parse check-in result, usually locking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
 static FText ParseCheckInResults(const TArray<FString>& InResults)
 {
-	if ((InResults.Num() > 0) && (InResults.Last().StartsWith(TEXT("Created changeset"))))
+	FString ChangesetString;
+	static const FString ChangesetPrefix(TEXT("Created changeset "));
+	if ((InResults.Num() > 0) && (InResults.Last().StartsWith(ChangesetPrefix)))
 	{
-		return FText::FromString(InResults.Last());
+		static const FString BranchPrefix(TEXT("@br:"));
+		const int32 BranchIndex = InResults.Last().Find(BranchPrefix, ESearchCase::CaseSensitive);
+		if (BranchIndex > INDEX_NONE)
+		{
+			ChangesetString = InResults.Last().Mid(ChangesetPrefix.Len(), BranchIndex - ChangesetPrefix.Len());
+		}
 	}
-	return LOCTEXT("CheckInMessageUnknownChangeset", "Changeset submitted successfully.");
+	return FText::Format(LOCTEXT("SubmitMessage", "Submitted changeset {0}"), FText::FromString(ChangesetString));
 }
 
 FName FPlasticCheckInWorker::GetName() const
