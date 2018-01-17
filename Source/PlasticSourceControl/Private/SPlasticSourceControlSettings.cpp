@@ -553,7 +553,7 @@ void SPlasticSourceControlSettings::RemoveInProgressNotification()
 // Display a temporary success notification at the end of the operation
 void SPlasticSourceControlSettings::DisplaySuccessNotification(const FName& InOperationName)
 {
-	const FText NotificationText = FText::Format(LOCTEXT("InitWorkspace_Success", "{0} operation was successfull!"), FText::FromName(InOperationName));
+	const FText NotificationText = FText::Format(LOCTEXT("InitWorkspace_Success", "{0} operation was successful!"), FText::FromName(InOperationName));
 	FNotificationInfo Info(NotificationText);
 	Info.bUseSuccessFailIcons = true;
 	Info.Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));

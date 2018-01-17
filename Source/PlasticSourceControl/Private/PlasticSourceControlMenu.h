@@ -22,8 +22,11 @@ public:
 	void SyncProjectClicked();
 	void RevertUnchangedClicked();
 	void RevertAllClicked();
+	void RefreshClicked();
 
 private:
+	bool IsSourceControlConnected() const;
+
 	void AddMenuExtension(FMenuBuilder& Builder);
 
 	TSharedRef<class FExtender> OnExtendLevelEditorViewMenu(const TSharedRef<class FUICommandList> CommandList);
@@ -37,10 +40,10 @@ private:
 	FDelegateHandle ViewMenuExtenderHandle;
 
 	/** Current source control operation from menu if any */
-	// TODO: move back to the cpp file (and remove corresponding include files)
 	TSharedPtr<FSync, ESPMode::ThreadSafe> SyncOperation;
 	TSharedPtr<FPlasticRevertUnchanged, ESPMode::ThreadSafe> RevertUnchangedOperation;
 	TSharedPtr<FPlasticRevertAll, ESPMode::ThreadSafe> RevertAllOperation;
+	TSharedPtr<FUpdateStatus, ESPMode::ThreadSafe> RefreshOperation;
 	TWeakPtr<class SNotificationItem> OperationInProgressNotification;
 	/** Delegate called when a source control operation has completed */
 	void OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);

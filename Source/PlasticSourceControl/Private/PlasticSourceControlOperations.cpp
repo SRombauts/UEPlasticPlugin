@@ -497,15 +497,11 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Log, TEXT("status (with no files)"));
-		// Perforce "opened files" are those that have been modified (or added/deleted): that is what we get with a simple Plastic status from the root
-		if (Operation->ShouldGetOpenedOnly())
-		{
-			// UpdateStatus() from the ContentDir()
-			TArray<FString> Files;
-			Files.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()));
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Files, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
-		}
+		// no path provided: only update the status of assets in Content/ directory and also Config files
+		TArray<FString> ProjectDirs;
+		ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+		ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 
 	// don't use the ShouldUpdateModifiedState() hint here as it is specific to Perforce: the above normal Plastic status has already told us this information (like Git and Mercurial)

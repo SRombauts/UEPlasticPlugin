@@ -45,6 +45,12 @@ void FPlasticSourceControlMenu::Unregister()
 	}
 }
 
+bool FPlasticSourceControlMenu::IsSourceControlConnected() const
+{
+	const ISourceControlProvider& Provider = ISourceControlModule::Get().GetProvider();
+	return Provider.IsEnabled() && Provider.IsAvailable();
+}
+
 void FPlasticSourceControlMenu::SyncProjectClicked()
 {
 	if (!SyncOperation.IsValid())
@@ -138,6 +144,35 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 	}
 }
 
+void FPlasticSourceControlMenu::RefreshClicked()
+{
+	if (!RefreshOperation.IsValid())
+	{
+		// Launch an "UpdateStatus" Operation
+		ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
+		FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
+		RefreshOperation = ISourceControlOperation::Create<FUpdateStatus>();
+		RefreshOperation->SetCheckingAllFiles(true);
+		RefreshOperation->SetGetOpenedOnly(true);
+		ECommandResult::Type Result = Provider.Execute(RefreshOperation.ToSharedRef(), TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+		if (Result == ECommandResult::Succeeded)
+		{
+			// Display an ongoing notification during the whole operation
+			DisplayInProgressNotification(RefreshOperation.ToSharedRef());
+		}
+		else
+		{
+			// Report failure with a notification
+			DisplayFailureNotification(RefreshOperation.ToSharedRef());
+			RefreshOperation.Reset();
+		}
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Warning, TEXT("Source control operation already in progress!"));
+	}
+}
+
 // Display an ongoing notification during the whole operation
 void FPlasticSourceControlMenu::DisplayInProgressNotification(const FSourceControlOperationRef& InOperation)
 {
@@ -169,7 +204,7 @@ void FPlasticSourceControlMenu::RemoveInProgressNotification()
 void FPlasticSourceControlMenu::DisplaySucessNotification(const FSourceControlOperationRef& InOperation)
 {
 	const FText NotificationText = FText::Format(
-		LOCTEXT("SourceControlMenu_Success", "{0} operation was successfull!"),
+		LOCTEXT("SourceControlMenu_Success", "{0} operation was successful!"),
 		FText::FromName(InOperation->GetName())
 	);
 	FNotificationInfo Info(NotificationText);
@@ -208,6 +243,15 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 	{
 		check(RevertAllOperation == StaticCastSharedRef<FPlasticRevertAll>(InOperation));
 		RevertAllOperation.Reset();
+	}
+	else if (InOperation->GetName() == "UpdateStatus")
+	{
+		check(RefreshOperation == StaticCastSharedRef<FUpdateStatus>(InOperation));
+		RefreshOperation.Reset();
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("Unknown operation '%s'"), *InOperation->GetName().ToString());
 	}
 
 	RemoveInProgressNotification();
@@ -251,6 +295,16 @@ void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Builder)
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Revert"),
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RevertAllClicked),
+			FCanExecuteAction()
+		)
+	);
+
+	Builder.AddMenuEntry(
+		LOCTEXT("PlasticRefresh",			"Refresh All"),
+		LOCTEXT("PlasticRefreshTooltip",	"Update the source control status of all files in the workspace."),
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Refresh"),
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RefreshClicked),
 			FCanExecuteAction()
 		)
 	);

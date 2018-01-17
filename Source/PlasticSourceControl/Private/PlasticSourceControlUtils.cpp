@@ -664,13 +664,13 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 	FString RepositoryName, ServerUrl;
 	ParseWorkspaceInformation(InResults, OutChangeset, RepositoryName, ServerUrl, OutBranchName);
 
-	// Iterate on each file explicitely listed in the command
+	// Iterate on each file explicitly listed in the command
 	for (const FString& File : InFiles)
 	{
 		FPlasticSourceControlState FileState(File);
 
 		// Search the file in the list of status
-		// NOTE: in case of rename by editor, there are two results: checkouted AND renamed
+		// NOTE: in case of rename by editor, there are two results: checked-out AND renamed
 		// => we want to get the second one, witch is always the rename, so we search from the end
 		int32 IdxResult = InResults.FindLastByPredicate(FPlasticStatusFileMatcher(File));
 		if (IdxResult != INDEX_NONE)
