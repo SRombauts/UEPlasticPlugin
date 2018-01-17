@@ -3,8 +3,6 @@
 #include "PlasticSourceControlPrivatePCH.h"
 
 #include "PlasticSourceControlMenu.h"
-#include "PlasticSourceControlMenuStyle.h"
-#include "PlasticSourceControlMenuCommands.h"
 
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlOperations.h"
@@ -22,28 +20,6 @@ static const FName PlasticSourceControlMenuTabName("PlasticSourceControlMenu");
 
 void FPlasticSourceControlMenu::Register()
 {
-	FPlasticSourceControlMenuStyle::Initialize();
-	FPlasticSourceControlMenuStyle::ReloadTextures();
-
-	FPlasticSourceControlMenuCommands::Register();
-
-	PluginCommands = MakeShareable(new FUICommandList);
-
-	PluginCommands->MapAction(
-		FPlasticSourceControlMenuCommands::Get().SyncProject,
-		FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::SyncProjectClicked),
-		FCanExecuteAction());
-
-	PluginCommands->MapAction(
-		FPlasticSourceControlMenuCommands::Get().RevertUnchanged,
-		FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RevertUnchangedClicked),
-		FCanExecuteAction());
-
-	PluginCommands->MapAction(
-		FPlasticSourceControlMenuCommands::Get().RevertAll,
-		FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RevertAllClicked),
-		FCanExecuteAction());
-
 	// Register the extension with the level editor
 	{
 		FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
@@ -67,12 +43,6 @@ void FPlasticSourceControlMenu::Unregister()
 			LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders().RemoveAll([=](const FLevelEditorModule::FLevelEditorMenuExtender& Extender) { return Extender.GetHandle() == ViewMenuExtenderHandle; });
 		}
 	}
-
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
-	FPlasticSourceControlMenuStyle::Shutdown();
-
-	FPlasticSourceControlMenuCommands::Unregister();
 }
 
 void FPlasticSourceControlMenu::SyncProjectClicked()
@@ -255,9 +225,35 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 
 void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Builder)
 {
-	Builder.AddMenuEntry(FPlasticSourceControlMenuCommands::Get().SyncProject);
-	Builder.AddMenuEntry(FPlasticSourceControlMenuCommands::Get().RevertUnchanged);
-	Builder.AddMenuEntry(FPlasticSourceControlMenuCommands::Get().RevertAll);
+	Builder.AddMenuEntry(
+		LOCTEXT("PlasticSync",			"Sync/Update Workspace"),
+		LOCTEXT("PlasticSyncTooltip",	"Update all files in the workspace to the latest version."),
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Sync"),
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::SyncProjectClicked),
+			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::IsSourceControlConnected)
+		)
+	);
+
+	Builder.AddMenuEntry(
+		LOCTEXT("PlasticRevertUnchanged",			"Revert Unchanged"),
+		LOCTEXT("PlasticRevertUnchangedTooltip",	"Revert checked-out but unchanged files in the workspace."),
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Revert"),
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RevertUnchangedClicked),
+			FCanExecuteAction()
+		)
+	);
+
+	Builder.AddMenuEntry(
+		LOCTEXT("PlasticRevertAll",			"Revert All"),
+		LOCTEXT("PlasticRevertAllTooltip",	"Revert all files in the workspace to their controlled/unchanged state."),
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Revert"),
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RevertAllClicked),
+			FCanExecuteAction()
+		)
+	);
 }
 
 TSharedRef<FExtender> FPlasticSourceControlMenu::OnExtendLevelEditorViewMenu(const TSharedRef<FUICommandList> CommandList)
@@ -267,7 +263,7 @@ TSharedRef<FExtender> FPlasticSourceControlMenu::OnExtendLevelEditorViewMenu(con
 	Extender->AddMenuExtension(
 		"SourceControlActions",
 		EExtensionHook::After,
-		PluginCommands,
+		nullptr,
 		FMenuExtensionDelegate::CreateRaw(this, &FPlasticSourceControlMenu::AddMenuExtension));
 
 	return Extender;

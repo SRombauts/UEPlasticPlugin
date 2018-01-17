@@ -34,8 +34,6 @@ private:
 	void DisplayFailureNotification(const FSourceControlOperationRef& InOperation);
 
 private:
-	TSharedPtr<class FUICommandList> PluginCommands;
-
 	FDelegateHandle ViewMenuExtenderHandle;
 
 	/** Current source control operation from menu if any */
