@@ -118,7 +118,15 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	Args.Add( TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot) );
 	Args.Add( TEXT("WorkspaceName"), FText::FromString(WorkspaceName) );
 	Args.Add( TEXT("BranchName"), FText::FromString(BranchName) );
-	Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d"), ChangesetNumber)) );
+	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+	if (-1 != ChangesetNumber)
+	{
+		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d (standard mode)"), ChangesetNumber)) );
+	}
+	else
+	{
+		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("N/A (Gluon/partial mode)"))) );
+	}
 	Args.Add( TEXT("UserName"), FText::FromString(UserName) );
 
 	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Workspace: {WorkspaceName} ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: {UserName}"), Args );
