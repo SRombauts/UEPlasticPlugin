@@ -14,6 +14,9 @@
 #include "Misc/MessageDialog.h"
 #include "EditorStyleSet.h"
 
+
+#include "Logging/MessageLog.h"
+
 static const FName PlasticSourceControlMenuTabName("PlasticSourceControlMenu");
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
@@ -21,27 +24,23 @@ static const FName PlasticSourceControlMenuTabName("PlasticSourceControlMenu");
 void FPlasticSourceControlMenu::Register()
 {
 	// Register the extension with the level editor
+	FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
+	if (LevelEditorModule)
 	{
-		FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
-		if (LevelEditorModule)
-		{
-			FLevelEditorModule::FLevelEditorMenuExtender ViewMenuExtender = FLevelEditorModule::FLevelEditorMenuExtender::CreateRaw(this, &FPlasticSourceControlMenu::OnExtendLevelEditorViewMenu);
-			auto& MenuExtenders = LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders();
-			MenuExtenders.Add(ViewMenuExtender);
-			ViewMenuExtenderHandle = MenuExtenders.Last().GetHandle();
-		}
+		FLevelEditorModule::FLevelEditorMenuExtender ViewMenuExtender = FLevelEditorModule::FLevelEditorMenuExtender::CreateRaw(this, &FPlasticSourceControlMenu::OnExtendLevelEditorViewMenu);
+		auto& MenuExtenders = LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders();
+		MenuExtenders.Add(ViewMenuExtender);
+		ViewMenuExtenderHandle = MenuExtenders.Last().GetHandle();
 	}
 }
 
 void FPlasticSourceControlMenu::Unregister()
 {
 	// Unregister the level editor extensions
+	FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
+	if (LevelEditorModule)
 	{
-		FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
-		if (LevelEditorModule)
-		{
-			LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders().RemoveAll([=](const FLevelEditorModule::FLevelEditorMenuExtender& Extender) { return Extender.GetHandle() == ViewMenuExtenderHandle; });
-		}
+		LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders().RemoveAll([=](const FLevelEditorModule::FLevelEditorMenuExtender& Extender) { return Extender.GetHandle() == ViewMenuExtenderHandle; });
 	}
 }
 
@@ -76,7 +75,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("Source control operation already in progress!"));
+		FMessageLog("LogSourceControl").Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
 	}
 }
 
@@ -105,7 +104,7 @@ void FPlasticSourceControlMenu::RevertUnchangedClicked()
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("Source control operation already in progress!"));
+		FMessageLog("LogSourceControl").Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
 	}
 }
 
@@ -140,7 +139,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("Source control operation already in progress!"));
+		FMessageLog("LogSourceControl").Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
 	}
 }
 
@@ -169,7 +168,7 @@ void FPlasticSourceControlMenu::RefreshClicked()
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("Source control operation already in progress!"));
+		FMessageLog("LogSourceControl").Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
 	}
 }
 
@@ -211,7 +210,7 @@ void FPlasticSourceControlMenu::DisplaySucessNotification(const FSourceControlOp
 	Info.bUseSuccessFailIcons = true;
 	Info.Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
 	FSlateNotificationManager::Get().AddNotification(Info);
-	UE_LOG(LogSourceControl, Log, TEXT("%s"), *NotificationText.ToString());
+	FMessageLog("LogSourceControl").Info(NotificationText);
 }
 
 // Display a temporary failure notification at the end of the operation
@@ -224,7 +223,7 @@ void FPlasticSourceControlMenu::DisplayFailureNotification(const FSourceControlO
 	FNotificationInfo Info(NotificationText);
 	Info.ExpireDuration = 8.0f;
 	FSlateNotificationManager::Get().AddNotification(Info);
-	UE_LOG(LogSourceControl, Log, TEXT("%s"), *NotificationText.ToString());
+	FMessageLog("LogSourceControl").Info(NotificationText);
 }
 
 void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
