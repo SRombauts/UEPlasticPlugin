@@ -14,7 +14,7 @@ It automates tracking of assets, brings common SCM tasks inside the Editor, and 
 Source Control Login window, to create a new workspace/a new repository:
 ![Source Control Login window - create a new workspace](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
 
-Source Control status tooltip, when overing the Source Control icon in toolbar:
+Source Control status tooltip, when hovering the Source Control icon in toolbar:
 ![Source Control Status Tooltip](Screenshots/UE4PlasticPlugin-SourceControlStatus.png)
 
 Source Control top Menu, extended whith specific Plastic SCM commands:
