@@ -7,6 +7,9 @@
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlOperations.h"
 
+#include "ISourceControlOperation.h"
+#include "SourceControlOperations.h"
+
 #include "LevelEditor.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Framework/Notifications/NotificationManager.h"
@@ -52,25 +55,24 @@ bool FPlasticSourceControlMenu::IsSourceControlConnected() const
 
 void FPlasticSourceControlMenu::SyncProjectClicked()
 {
-	if (!SyncOperation.IsValid())
+	if (!OperationInProgressNotification.IsValid())
 	{
 		// Launch a "Sync" Operation
 		ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
 		FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
-		SyncOperation = ISourceControlOperation::Create<FSync>();
+		TSharedRef<FSync, ESPMode::ThreadSafe> SyncOperation = ISourceControlOperation::Create<FSync>();
 		TArray<FString> Files;
 		Files.Add(Provider.GetPathToWorkspaceRoot()); // Sync the root of the workspace (needs an absolute path)
-		ECommandResult::Type Result = Provider.Execute(SyncOperation.ToSharedRef(), Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+		ECommandResult::Type Result = Provider.Execute(SyncOperation, Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 		if (Result == ECommandResult::Succeeded)
 		{
 			// Display an ongoing notification during the whole operation
-			DisplayInProgressNotification(SyncOperation.ToSharedRef());
+			DisplayInProgressNotification(SyncOperation->GetInProgressString());
 		}
 		else
 		{
 			// Report failure with a notification
-			DisplayFailureNotification(SyncOperation.ToSharedRef());
-			SyncOperation.Reset();
+			DisplayFailureNotification(SyncOperation->GetName());
 		}
 	}
 	else
@@ -81,25 +83,24 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 
 void FPlasticSourceControlMenu::RevertUnchangedClicked()
 {
-	if (!RevertUnchangedOperation.IsValid())
+	if (!OperationInProgressNotification.IsValid())
 	{
 		// Launch a "RevertUnchanged" Operation
 		ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
 		FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
-		RevertUnchangedOperation = ISourceControlOperation::Create<FPlasticRevertUnchanged>();
+		TSharedRef<FPlasticRevertUnchanged, ESPMode::ThreadSafe> RevertUnchangedOperation = ISourceControlOperation::Create<FPlasticRevertUnchanged>();
 		TArray<FString> Files;
 		Files.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
-		ECommandResult::Type Result = Provider.Execute(RevertUnchangedOperation.ToSharedRef(), Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+		ECommandResult::Type Result = Provider.Execute(RevertUnchangedOperation, Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 		if (Result == ECommandResult::Succeeded)
 		{
 			// Display an ongoing notification during the whole operation
-			DisplayInProgressNotification(RevertUnchangedOperation.ToSharedRef());
+			DisplayInProgressNotification(RevertUnchangedOperation->GetInProgressString());
 		}
 		else
 		{
 			// Report failure with a notification
-			DisplayFailureNotification(RevertUnchangedOperation.ToSharedRef());
-			RevertUnchangedOperation.Reset();
+			DisplayFailureNotification(RevertUnchangedOperation->GetName());
 		}
 	}
 	else
@@ -110,7 +111,7 @@ void FPlasticSourceControlMenu::RevertUnchangedClicked()
 
 void FPlasticSourceControlMenu::RevertAllClicked()
 {
-	if (!RevertAllOperation.IsValid())
+	if (!OperationInProgressNotification.IsValid())
 	{
 		// Ask the user before reverting all!
 		const FText DialogText(LOCTEXT("SourceControlMenu_AskRevertAll", "Revert all modifications into the workspace?"));
@@ -120,20 +121,19 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 			// Launch a "RevertAll" Operation
 			ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
 			FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
-			RevertAllOperation = ISourceControlOperation::Create<FPlasticRevertAll>();
+			TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> RevertAllOperation = ISourceControlOperation::Create<FPlasticRevertAll>();
 			TArray<FString> Files;
 			Files.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
-			ECommandResult::Type Result = Provider.Execute(RevertAllOperation.ToSharedRef(), Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+			ECommandResult::Type Result = Provider.Execute(RevertAllOperation, Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 			if (Result == ECommandResult::Succeeded)
 			{
 				// Display an ongoing notification during the whole operation
-				DisplayInProgressNotification(RevertAllOperation.ToSharedRef());
+				DisplayInProgressNotification(RevertAllOperation->GetInProgressString());
 			}
 			else
 			{
 				// Report failure with a notification
-				DisplayFailureNotification(RevertAllOperation.ToSharedRef());
-				RevertAllOperation.Reset();
+				DisplayFailureNotification(RevertAllOperation->GetName());
 			}
 		}
 	}
@@ -145,25 +145,24 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 
 void FPlasticSourceControlMenu::RefreshClicked()
 {
-	if (!RefreshOperation.IsValid())
+	if (!OperationInProgressNotification.IsValid())
 	{
 		// Launch an "UpdateStatus" Operation
 		ISourceControlModule& SourceControl = FModuleManager::LoadModuleChecked<ISourceControlModule>("SourceControl");
 		FPlasticSourceControlProvider& Provider = static_cast<FPlasticSourceControlProvider&>(SourceControl.GetProvider());
-		RefreshOperation = ISourceControlOperation::Create<FUpdateStatus>();
+		TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> RefreshOperation = ISourceControlOperation::Create<FUpdateStatus>();
 		RefreshOperation->SetCheckingAllFiles(true);
 		RefreshOperation->SetGetOpenedOnly(true);
-		ECommandResult::Type Result = Provider.Execute(RefreshOperation.ToSharedRef(), TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+		ECommandResult::Type Result = Provider.Execute(RefreshOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 		if (Result == ECommandResult::Succeeded)
 		{
 			// Display an ongoing notification during the whole operation
-			DisplayInProgressNotification(RefreshOperation.ToSharedRef());
+			DisplayInProgressNotification(RefreshOperation->GetInProgressString());
 		}
 		else
 		{
 			// Report failure with a notification
-			DisplayFailureNotification(RefreshOperation.ToSharedRef());
-			RefreshOperation.Reset();
+			DisplayFailureNotification(RefreshOperation->GetName());
 		}
 	}
 	else
@@ -173,11 +172,11 @@ void FPlasticSourceControlMenu::RefreshClicked()
 }
 
 // Display an ongoing notification during the whole operation
-void FPlasticSourceControlMenu::DisplayInProgressNotification(const FSourceControlOperationRef& InOperation)
+void FPlasticSourceControlMenu::DisplayInProgressNotification(const FText& InOperationInProgressString)
 {
 	if (!OperationInProgressNotification.IsValid())
 	{
-		FNotificationInfo Info(InOperation->GetInProgressString());
+		FNotificationInfo Info(InOperationInProgressString);
 		Info.bFireAndForget = false;
 		Info.ExpireDuration = 0.0f;
 		Info.FadeOutDuration = 1.0f;
@@ -200,11 +199,11 @@ void FPlasticSourceControlMenu::RemoveInProgressNotification()
 }
 
 // Display a temporary success notification at the end of the operation
-void FPlasticSourceControlMenu::DisplaySucessNotification(const FSourceControlOperationRef& InOperation)
+void FPlasticSourceControlMenu::DisplaySucessNotification(const FName& InOperationName)
 {
 	const FText NotificationText = FText::Format(
 		LOCTEXT("SourceControlMenu_Success", "{0} operation was successful!"),
-		FText::FromName(InOperation->GetName())
+		FText::FromName(InOperationName)
 	);
 	FNotificationInfo Info(NotificationText);
 	Info.bUseSuccessFailIcons = true;
@@ -214,11 +213,11 @@ void FPlasticSourceControlMenu::DisplaySucessNotification(const FSourceControlOp
 }
 
 // Display a temporary failure notification at the end of the operation
-void FPlasticSourceControlMenu::DisplayFailureNotification(const FSourceControlOperationRef& InOperation)
+void FPlasticSourceControlMenu::DisplayFailureNotification(const FName& InOperationName)
 {
 	const FText NotificationText = FText::Format(
 		LOCTEXT("SourceControlMenu_Failure", "Error: {0} operation failed!"),
-		FText::FromName(InOperation->GetName())
+		FText::FromName(InOperationName)
 	);
 	FNotificationInfo Info(NotificationText);
 	Info.ExpireDuration = 8.0f;
@@ -228,41 +227,16 @@ void FPlasticSourceControlMenu::DisplayFailureNotification(const FSourceControlO
 
 void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
-	if (InOperation->GetName() == "Sync")
-	{
-		check(SyncOperation == StaticCastSharedRef<FSync>(InOperation));
-		SyncOperation.Reset();
-	}
-	else if (InOperation->GetName() == "RevertUnchanged")
-	{
-		check(RevertUnchangedOperation == StaticCastSharedRef<FPlasticRevertUnchanged>(InOperation));
-		RevertUnchangedOperation.Reset();
-	}
-	else if (InOperation->GetName() == "RevertAll")
-	{
-		check(RevertAllOperation == StaticCastSharedRef<FPlasticRevertAll>(InOperation));
-		RevertAllOperation.Reset();
-	}
-	else if (InOperation->GetName() == "UpdateStatus")
-	{
-		check(RefreshOperation == StaticCastSharedRef<FUpdateStatus>(InOperation));
-		RefreshOperation.Reset();
-	}
-	else
-	{
-		UE_LOG(LogSourceControl, Error, TEXT("Unknown operation '%s'"), *InOperation->GetName().ToString());
-	}
-
 	RemoveInProgressNotification();
 
 	// Report result with a notification
 	if (InResult == ECommandResult::Succeeded)
 	{
-		DisplaySucessNotification(InOperation);
+		DisplaySucessNotification(InOperation->GetName());
 	}
 	else
 	{
-		DisplayFailureNotification(InOperation);
+		DisplayFailureNotification(InOperation->GetName());
 	}
 }
 

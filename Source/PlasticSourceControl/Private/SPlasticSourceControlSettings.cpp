@@ -438,7 +438,7 @@ void SPlasticSourceControlSettings::LaunchMakeWorkspaceOperation()
 	ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(MakeWorkspaceOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
 	if (Result == ECommandResult::Succeeded)
 	{
-		DisplayInProgressNotification(MakeWorkspaceOperation);
+		DisplayInProgressNotification(MakeWorkspaceOperation->GetInProgressString());
 	}
 	else
 	{
@@ -467,7 +467,7 @@ void SPlasticSourceControlSettings::LaunchMarkForAddOperation()
 		ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(MarkForAddOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
 		if (Result == ECommandResult::Succeeded)
 		{
-			DisplayInProgressNotification(MarkForAddOperation);
+			DisplayInProgressNotification(MarkForAddOperation->GetInProgressString());
 		}
 		else
 		{
@@ -490,7 +490,7 @@ void SPlasticSourceControlSettings::LaunchCheckInOperation()
 	ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(CheckInOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
 	if (Result == ECommandResult::Succeeded)
 	{
-		DisplayInProgressNotification(CheckInOperation);
+		DisplayInProgressNotification(CheckInOperation->GetInProgressString());
 	}
 	else
 	{
@@ -527,17 +527,20 @@ void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSour
 }
 
 // Display an ongoing notification during the whole operation
-void SPlasticSourceControlSettings::DisplayInProgressNotification(const FSourceControlOperationRef& InOperation)
+void SPlasticSourceControlSettings::DisplayInProgressNotification(const FText& InOperationInProgressString)
 {
-	FNotificationInfo Info(InOperation->GetInProgressString());
-	Info.bFireAndForget = false;
-	Info.ExpireDuration = 0.0f;
-	Info.FadeOutDuration = 1.0f;
-	OperationInProgressNotification = FSlateNotificationManager::Get().AddNotification(Info);
-	if (OperationInProgressNotification.IsValid())
-	{
-		OperationInProgressNotification.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
-	}
+    if (!OperationInProgressNotification.IsValid())
+    {
+        FNotificationInfo Info(InOperationInProgressString);
+        Info.bFireAndForget = false;
+        Info.ExpireDuration = 0.0f;
+        Info.FadeOutDuration = 1.0f;
+        OperationInProgressNotification = FSlateNotificationManager::Get().AddNotification(Info);
+        if (OperationInProgressNotification.IsValid())
+        {
+            OperationInProgressNotification.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
+        }
+    }
 }
 
 // Remove the ongoing notification at the end of the operation

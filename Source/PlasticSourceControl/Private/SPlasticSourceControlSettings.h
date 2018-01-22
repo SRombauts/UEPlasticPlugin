@@ -68,7 +68,7 @@ private:
 	/** Asynchronous operation progress notifications */
 	TWeakPtr<class SNotificationItem> OperationInProgressNotification;
 
-	void DisplayInProgressNotification(const FSourceControlOperationRef& InOperation);
+	void DisplayInProgressNotification(const FText& InOperationInProgressString);
 	void RemoveInProgressNotification();
 	void DisplaySuccessNotification(const FName& InOperationName);
 	void DisplayFailureNotification(const FName& InOperationName);

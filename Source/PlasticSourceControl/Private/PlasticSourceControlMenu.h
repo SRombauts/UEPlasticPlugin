@@ -5,13 +5,10 @@
 #include "CoreMinimal.h"
 #include "ISourceControlProvider.h"
 
-#include "ISourceControlOperation.h"
-#include "SourceControlOperations.h"
-#include "PlasticSourceControlOperations.h"
-
 class FToolBarBuilder;
 class FMenuBuilder;
 
+/** Plastic SCM extension of the Source Control toolbar menu */
 class FPlasticSourceControlMenu
 {
 public:
@@ -31,20 +28,17 @@ private:
 
 	TSharedRef<class FExtender> OnExtendLevelEditorViewMenu(const TSharedRef<class FUICommandList> CommandList);
 
-	void DisplayInProgressNotification(const FSourceControlOperationRef& InOperation);
+	void DisplayInProgressNotification(const FText& InOperationInProgressString);
 	void RemoveInProgressNotification();
-	void DisplaySucessNotification(const FSourceControlOperationRef& InOperation);
-	void DisplayFailureNotification(const FSourceControlOperationRef& InOperation);
+	void DisplaySucessNotification(const FName& InOperationName);
+	void DisplayFailureNotification(const FName& InOperationName);
 
 private:
 	FDelegateHandle ViewMenuExtenderHandle;
 
-	/** Current source control operation from menu if any */
-	TSharedPtr<FSync, ESPMode::ThreadSafe> SyncOperation;
-	TSharedPtr<FPlasticRevertUnchanged, ESPMode::ThreadSafe> RevertUnchangedOperation;
-	TSharedPtr<FPlasticRevertAll, ESPMode::ThreadSafe> RevertAllOperation;
-	TSharedPtr<FUpdateStatus, ESPMode::ThreadSafe> RefreshOperation;
+	/** Current source control operation from extended menu if any */
 	TWeakPtr<class SNotificationItem> OperationInProgressNotification;
+
 	/** Delegate called when a source control operation has completed */
 	void OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 };
