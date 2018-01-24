@@ -331,7 +331,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticRevertWorker::UpdateStates() const
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return false;
 }
 
 FName FPlasticRevertUnchangedWorker::GetName() const
