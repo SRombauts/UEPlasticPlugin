@@ -114,7 +114,7 @@ void FPlasticSourceControlMenu::UnlinkSyncAndReloadPackages()
 		TArray<FString> WorkspaceRoot;
 		WorkspaceRoot.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
 		DisplayInProgressNotification(SyncOperation->GetInProgressString());
-		const ECommandResult::Type Result = Provider.Execute(SyncOperation, WorkspaceRoot, EConcurrency::Asynchronous);
+		const ECommandResult::Type Result = Provider.Execute(SyncOperation, WorkspaceRoot);
 		OnSourceControlOperationComplete(SyncOperation, Result);
 
 		// Reload all packages
