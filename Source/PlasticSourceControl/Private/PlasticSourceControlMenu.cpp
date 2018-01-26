@@ -103,7 +103,7 @@ void FPlasticSourceControlMenu::UnlinkSyncAndReloadPackages()
 			}
 			else
 			{
-				FMessageLog("PlasticSourceControl").Error(FText::FromString(FailureReason));
+				FMessageLog("SourceControl").Error(FText::FromString(FailureReason));
 			}
 		}
 
@@ -115,7 +115,7 @@ void FPlasticSourceControlMenu::UnlinkSyncAndReloadPackages()
 		TArray<FString> WorkspaceRoot;
 		WorkspaceRoot.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
 		DisplayInProgressNotification(SyncOperation->GetInProgressString());
-		const ECommandResult::Type Result = Provider.Execute(SyncOperation, WorkspaceRoot);
+		const ECommandResult::Type Result = Provider.Execute(SyncOperation, WorkspaceRoot, EConcurrency::Synchronous);
 		OnSourceControlOperationComplete(SyncOperation, Result);
 
 		// Reload all packages
@@ -123,9 +123,9 @@ void FPlasticSourceControlMenu::UnlinkSyncAndReloadPackages()
 	}
 	else
 	{
-		FMessageLog ErrorMessage("PlasticSourceControl");
-		ErrorMessage.Warning(LOCTEXT("SourceControlMenu_Sync_Unsaved", "Save All Assets before attempting to Sync!"));
-		ErrorMessage.Notify();
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Sync_Unsaved", "Save All Assets before attempting to Sync!"));
+		SourceControlLog.Notify();
 	}
 
 }
@@ -193,9 +193,9 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 	}
 	else
 	{
-		FMessageLog LogSourceControl("LogSourceControl");
-		LogSourceControl.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
-		LogSourceControl.Notify();
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
 	}
 }
 
@@ -223,9 +223,9 @@ void FPlasticSourceControlMenu::RevertUnchangedClicked()
 	}
 	else
 	{
-		FMessageLog LogSourceControl("LogSourceControl");
-		LogSourceControl.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
-		LogSourceControl.Notify();
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
 	}
 }
 
@@ -259,9 +259,9 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 	}
 	else
 	{
-		FMessageLog LogSourceControl("LogSourceControl");
-		LogSourceControl.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
-		LogSourceControl.Notify();
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
 	}
 }
 
@@ -289,9 +289,9 @@ void FPlasticSourceControlMenu::RefreshClicked()
 	}
 	else
 	{
-		FMessageLog LogSourceControl("LogSourceControl");
-		LogSourceControl.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
-		LogSourceControl.Notify();
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
 	}
 }
 
@@ -333,7 +333,7 @@ void FPlasticSourceControlMenu::DisplaySucessNotification(const FName& InOperati
 	Info.bUseSuccessFailIcons = true;
 	Info.Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
 	FSlateNotificationManager::Get().AddNotification(Info);
-	FMessageLog("LogSourceControl").Info(NotificationText);
+	UE_LOG(LogSourceControl, Log, TEXT("%s"), *NotificationText.ToString());
 }
 
 // Display a temporary failure notification at the end of the operation
@@ -346,7 +346,7 @@ void FPlasticSourceControlMenu::DisplayFailureNotification(const FName& InOperat
 	FNotificationInfo Info(NotificationText);
 	Info.ExpireDuration = 8.0f;
 	FSlateNotificationManager::Get().AddNotification(Info);
-	FMessageLog("LogSourceControl").Info(NotificationText);
+	UE_LOG(LogSourceControl, Error, TEXT("%s"), *NotificationText.ToString());
 }
 
 void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
