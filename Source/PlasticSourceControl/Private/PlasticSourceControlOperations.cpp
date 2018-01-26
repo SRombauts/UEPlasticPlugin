@@ -10,7 +10,7 @@
 
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"
-#include "Async.h"
+#include "Async/Async.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 

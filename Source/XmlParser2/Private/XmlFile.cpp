@@ -3,7 +3,7 @@
 #include "XmlParserPrivatePCH.h"
 
 #include "XmlFile.h"
-#include "UniquePtr.h"
+#include "Templates/UniquePtr.h"
 #include "XmlCharacterWidthCheck.h"
 
 namespace

@@ -8,6 +8,7 @@
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlOperations.h"
 
+#include "ISourceControlModule.h"
 #include "ISourceControlOperation.h"
 #include "SourceControlOperations.h"
 

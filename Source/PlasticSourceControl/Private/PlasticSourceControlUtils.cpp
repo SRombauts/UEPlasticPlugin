@@ -19,7 +19,7 @@
 #endif
 
 #if PLATFORM_WINDOWS
-#include "WindowsHWrapper.h" // SECURITY_ATTRIBUTES
+#include "Windows/WindowsHWrapper.h" // SECURITY_ATTRIBUTES
 #undef GetUserName
 #endif
 

@@ -9,9 +9,9 @@
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlSettings.h"
-#include "MessageLog.h"
+#include "Logging/MessageLog.h"
 #include "ScopedSourceControlProgress.h"
-#include "IPluginManager.h"
+#include "Interfaces/IPluginManager.h"
 
 #include "Misc/Paths.h"
 #include "HAL/PlatformProcess.h"
