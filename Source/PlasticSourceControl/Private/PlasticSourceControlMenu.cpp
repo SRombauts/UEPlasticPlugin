@@ -139,13 +139,13 @@ TArray<UPackage*> FPlasticSourceControlMenu::UnlinkPackages(const TArray<FString
 	return LoadedPackages;
 }
 
-void FPlasticSourceControlMenu::ReloadPackages(TArray<UPackage*>& InLoadedPackages)
+void FPlasticSourceControlMenu::ReloadPackages(TArray<UPackage*>& InPackagesToReload)
 {
-	UE_LOG(LogSourceControl, Log, TEXT("Reloading %d Packages..."), InLoadedPackages.Num());
+	UE_LOG(LogSourceControl, Log, TEXT("Reloading %d Packages..."), InPackagesToReload.Num());
 
 	// Syncing may have deleted some packages, so we need to unload those rather than re-load them...
 	TArray<UPackage*> PackagesToUnload;
-	InLoadedPackages.RemoveAll([&](UPackage* InPackage) -> bool
+	InPackagesToReload.RemoveAll([&](UPackage* InPackage) -> bool
 	{
 		const FString PackageExtension = InPackage->ContainsMap() ? FPackageName::GetMapPackageExtension() : FPackageName::GetAssetPackageExtension();
 		const FString PackageFilename = FPackageName::LongPackageNameToFilename(InPackage->GetName(), PackageExtension);
@@ -158,7 +158,7 @@ void FPlasticSourceControlMenu::ReloadPackages(TArray<UPackage*>& InLoadedPackag
 	});
 
 	// Hot-reload the new packages...
-	PackageTools::ReloadPackages(InLoadedPackages);
+	PackageTools::ReloadPackages(InPackagesToReload);
 
 	// Unload any deleted packages...
 	PackageTools::UnloadPackages(PackagesToUnload);
@@ -172,7 +172,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 		if (bSaved)
 		{
 			// Find and Unlink all packages in Content directory to allow to update them
-			LoadedPackages = UnlinkPackages(ListAllPackages());
+			PackagesToReload = UnlinkPackages(ListAllPackages());
 
 			// Launch a "Sync" operation
 			FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
@@ -188,7 +188,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 			{
 				// Report failure with a notification and Reload all packages
 				DisplayFailureNotification(SyncOperation->GetName());
-				ReloadPackages(LoadedPackages);
+				ReloadPackages(PackagesToReload);
 			}
 		}
 		else
@@ -245,22 +245,36 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::OkCancel, DialogText);
 		if (Choice == EAppReturnType::Ok)
 		{
-			// Launch a "RevertAll" Operation
-			FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-			FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-			TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> RevertAllOperation = ISourceControlOperation::Create<FPlasticRevertAll>();
-			TArray<FString> WorkspaceRoot;
-			WorkspaceRoot.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
-			ECommandResult::Type Result = Provider.Execute(RevertAllOperation, WorkspaceRoot, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
-			if (Result == ECommandResult::Succeeded)
+			const bool bSaved = SaveDirtyPackages();
+			if (bSaved)
 			{
-				// Display an ongoing notification during the whole operation
-				DisplayInProgressNotification(RevertAllOperation->GetInProgressString());
+				// Find and Unlink all packages in Content directory to allow to update them
+				PackagesToReload = UnlinkPackages(ListAllPackages());
+
+				// Launch a "RevertAll" Operation
+				FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+				FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+				TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> RevertAllOperation = ISourceControlOperation::Create<FPlasticRevertAll>();
+				TArray<FString> WorkspaceRoot;
+				WorkspaceRoot.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
+				const ECommandResult::Type Result = Provider.Execute(RevertAllOperation, WorkspaceRoot, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+				if (Result == ECommandResult::Succeeded)
+				{
+					// Display an ongoing notification during the whole operation
+					DisplayInProgressNotification(RevertAllOperation->GetInProgressString());
+				}
+				else
+				{
+					// Report failure with a notification and Reload all packages
+					DisplayFailureNotification(RevertAllOperation->GetName());
+					ReloadPackages(PackagesToReload);
+				}
 			}
 			else
 			{
-				// Report failure with a notification
-				DisplayFailureNotification(RevertAllOperation->GetName());
+				FMessageLog SourceControlLog("SourceControl");
+				SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Sync_Unsaved", "Save All Assets before attempting to Sync!"));
+				SourceControlLog.Notify();
 			}
 		}
 	}
@@ -359,10 +373,10 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 {
 	RemoveInProgressNotification();
 
-	if (InOperation->GetName() == "Sync")
+	if ((InOperation->GetName() == "Sync") || (InOperation->GetName() == "RevertAll"))
 	{
 		// Reload packages that where unlinked at the beginning of the Sync operation
-		ReloadPackages(LoadedPackages);
+		ReloadPackages(PackagesToReload);
 	}
 
 	// Report result with a notification
