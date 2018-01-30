@@ -24,7 +24,8 @@ public:
 private:
 	bool IsSourceControlConnected() const;
 
-	void				UnlinkSyncAndReloadPackages();
+	bool				SaveDirtyPackages();
+	TArray<FString>		ListAllPackages();
 	TArray<UPackage*>	UnlinkPackages(const TArray<FString>& InPackageNames);
 	void				ReloadPackages(TArray<UPackage*>& InLoadedPackages);
 
@@ -39,6 +40,9 @@ private:
 
 private:
 	FDelegateHandle ViewMenuExtenderHandle;
+
+	/** Loaded packages to reload after a Sync or Revert operation */
+	TArray<UPackage*> LoadedPackages;
 
 	/** Current source control operation from extended menu if any */
 	TWeakPtr<class SNotificationItem> OperationInProgressNotification;
