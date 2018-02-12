@@ -9,7 +9,7 @@ UE4PlasticPlugin is a simple [Plastic SCM](https://www.plasticscm.com/) Source C
 It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml) or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
 It is a complementary tool improving efficiency in your daily workflow.
 
-It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints. It also helps importing an existing UE4 Project into source contorl, with appropriate *ignore.conf* file.
+It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints. It also helps importing an existing UE4 Project into source control, with appropriate *ignore.conf* file.
 
 Source Control Login window, to create a new workspace/a new repository:
 ![Source Control Login window - create a new workspace](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
@@ -17,7 +17,7 @@ Source Control Login window, to create a new workspace/a new repository:
 Source Control status tooltip, when hovering the Source Control icon in toolbar:
 ![Source Control Status Tooltip](Screenshots/UE4PlasticPlugin-SourceControlStatus.png)
 
-Source Control top Menu, extended whith specific Plastic SCM commands:
+Source Control top Menu, extended with commands specific to Plastic SCM:
 ![Source Control Top Menu](Screenshots/UE4PlasticPlugin-SourceControlMenu.png)
 
 Submit Files to Source Control window, to check-in assets:
@@ -55,16 +55,16 @@ Status Icons:
 2. Either:
     1. Unzip the content of the ZIP in the root of the Unreal Engine 4.x project folder.
        That should create a "Plugins/" folder into your project.
-       This is the way to go to use Platic SCM only on a specific projetc.
+       This is the way to go to use Plastic SCM only on a specific project.
     2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
        (for instance "C:\Program Files\Epic Games\4.18\Engine\")
-       That should create a "UE4PlasticPlugin" forlder into the "Plugins/" subidrectory.
+       That should create a "UE4PlasticPlugin" folder into the "Plugins/" subdirectory.
        This is the way to enable Plastic SCM for all Unreal Engine projects.
 3. Then, launch Unreal Engine 4.x, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
 ### How to build from sources
 
-If your project is already a C++ project, you only have to re-generate Visual Studio projet files (step 4 bellow) and the plugin will get rebuild the next time you compile your project.
+If your project is already a C++ project, you only have to re-generate Visual Studio project files (step 4 bellow) and the plugin will get rebuild the next time you compile your project.
 
 Else, if you want to rebuild the plugin for a Blueprint project:
 
@@ -82,14 +82,14 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 #### Version 1.2.0 2018/02/05 for UE4.18.2:
 - manage connection to the server
 - show current branch name and CL in status text
-- display status icons to show controled/checked-out/added/deleted/private/changed/ignored files
+- display status icons to show controlled/checked-out/added/deleted/private/changed/ignored files
 - display locked files, and by who
 - add, duplicate a file
 - move/rename a file or a folder
 - revert modifications of a file (works best with the "Content Hot-Reload" option since UE4.15)
-- checkin a set of files with a multiline UTF-8 comment
+- check-in a set of files with a multi-line UTF-8 comment
 - migrate (copy) an asset between two projects if both are using Plastic SCM
-- delete file (but no way to checkin them, see known issues bellow)
+- delete file (but no way to check-in them, see known issues bellow)
 - update workspace to latest head (Sync command)
 - show history of a file
 - visual diff of a blueprint against depot or between previous versions of a file
@@ -109,7 +109,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 - Mac OS X Support
 - add a setting to pass the --update option to "checkin"
 - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
-- add a "clean directory" or "checkin deleted files"
+- add a "clean directory" or "check-in deleted files"
 - add dedicated icon for Changed files
 - add dedicated icon for Conflicted files
 - add dedicated icon for Replaced/Merged files
