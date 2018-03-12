@@ -64,6 +64,12 @@ public:
 	virtual bool CanCheckout() const override;
 	virtual bool IsCheckedOut() const override;
 	virtual bool IsCheckedOutOther(FString* Who = nullptr) const override;
+	virtual bool IsCheckedOutInOtherBranch(const FString& CurrentBranch = FString()) const /* override UE4.20 */;
+	virtual bool IsModifiedInOtherBranch(const FString& CurrentBranch = FString()) const /* override UE4.20 */;
+	virtual bool IsCheckedOutOrModifiedInOtherBranch(const FString& CurrentBranch = FString()) const /* override UE4.20 */;
+	virtual TArray<FString> GetCheckedOutBranches() const /* override UE4.20 */;
+	virtual FString GetOtherUserBranchCheckedOuts() const /* override UE4.20 */;
+	virtual bool GetOtherBranchHeadModification(FString& HeadBranchOut, FString& ActionOut, int32& HeadChangeListOut) const /* override UE4.20 */;
 	virtual bool IsCurrent() const override;
 	virtual bool IsSourceControlled() const override;
 	virtual bool IsAdded() const override;

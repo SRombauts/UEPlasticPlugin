@@ -296,6 +296,46 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 	return bIsLockedByOther;
 }
 
+
+/** Get whether this file is checked out in a different branch, if no branch is specified defaults to FEngineVerion current branch */
+bool FPlasticSourceControlState::IsCheckedOutInOtherBranch(const FString& CurrentBranch) const
+{
+	return false;
+}
+
+/** Get whether this file is modified in a different branch, if no branch is specified defaults to FEngineVerion current branch */
+bool FPlasticSourceControlState::IsModifiedInOtherBranch(const FString& CurrentBranch) const
+{
+	return false;
+}
+
+/** Get whether this file is checked out or modified in a different branch, if no branch is specified defaults to FEngineVerion current branch */
+bool FPlasticSourceControlState::IsCheckedOutOrModifiedInOtherBranch(const FString& CurrentBranch) const
+{
+	return false;
+}
+
+/** Get the other branches this file is checked out in */
+TArray<FString> FPlasticSourceControlState::GetCheckedOutBranches() const
+{
+	return TArray<FString>();
+}
+
+/** Get the user info for checkouts on other branches */
+FString FPlasticSourceControlState::GetOtherUserBranchCheckedOuts() const
+{
+	return FString();
+}
+
+/** Get head modification information for other branches
+ * @returns true with parameters populated if there is a branch with a newer modification (edit/delete/etc)
+*/
+bool FPlasticSourceControlState::GetOtherBranchHeadModification(FString& HeadBranchOut, FString& ActionOut, int32& HeadChangeListOut) const
+{
+	return false;
+}
+
+
 bool FPlasticSourceControlState::IsCurrent() const
 {
 	// NOTE: Deleted assets get a "-1" HeadRevision which we do not want to override the real icon state

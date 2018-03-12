@@ -149,6 +149,25 @@ const FName& FPlasticSourceControlProvider::GetName(void) const
 	return ProviderName;
 }
 
+/**
+ * Register branches to query for state in addition to the current branch
+ * @param	BranchNames			Names of the branches to query
+ * @param	ContentRoot			Path to the content root for branch mapping
+ */
+void FPlasticSourceControlProvider::RegisterStateBranches(const TArray<FString>& BranchNames, const FString& ContentRoot)
+{
+}
+
+/**
+ *Gets the state index of the specified branch, higher index branches are generally closer to releases
+ * @param	BranchName			Names of the branches to query
+ * @return	the index of the specified branch
+ */
+int32 FPlasticSourceControlProvider::GetStateBranchIndex(const FString& BranchName) const
+{
+	return 0;
+}
+
 ECommandResult::Type FPlasticSourceControlProvider::GetState( const TArray<FString>& InFiles, TArray< TSharedRef<ISourceControlState, ESPMode::ThreadSafe> >& OutState, EStateCacheUsage::Type InStateCacheUsage )
 {
 	if(!IsEnabled())
