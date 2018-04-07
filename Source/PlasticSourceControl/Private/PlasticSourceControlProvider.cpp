@@ -11,6 +11,8 @@
 #include "SPlasticSourceControlSettings.h"
 #include "Logging/MessageLog.h"
 #include "ScopedSourceControlProgress.h"
+#include "SourceControlHelpers.h"
+#include "SourceControlOperations.h"
 #include "Interfaces/IPluginManager.h"
 
 #include "Misc/Paths.h"
