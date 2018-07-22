@@ -70,11 +70,15 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 				if (InCommand.bCommandSuccessful)
 				{
-					// Now update the status of assets in Content/ directory and also Config files
-					TArray<FString> ProjectDirs;
-					ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-					ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
-					PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+					// Then, update the status of assets in Content/ directory and also Config files,
+					// but only on real (re-)connection (but not each time Login() is called by Rename or Fixup Redirector command to check connection)
+					if (!PlasticSourceControl.GetProvider().IsAvailable())
+					{
+						TArray<FString> ProjectDirs;
+						ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+						ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
+						PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+					}
 				}
 				else
 				{
