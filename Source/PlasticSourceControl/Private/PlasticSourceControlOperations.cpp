@@ -133,18 +133,26 @@ bool FPlasticCheckOutWorker::UpdateStates() const
 /// Parse check-in result, usually locking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
 static FText ParseCheckInResults(const TArray<FString>& InResults)
 {
-	FString ChangesetString;
-	static const FString ChangesetPrefix(TEXT("Created changeset "));
-	if ((InResults.Num() > 0) && (InResults.Last().StartsWith(ChangesetPrefix)))
+	if (InResults.Num() > 0)
 	{
-		static const FString BranchPrefix(TEXT("@br:"));
-		const int32 BranchIndex = InResults.Last().Find(BranchPrefix, ESearchCase::CaseSensitive);
-		if (BranchIndex > INDEX_NONE)
+		static const FString ChangesetPrefix(TEXT("Created changeset "));
+		if (InResults.Last().StartsWith(ChangesetPrefix))
 		{
-			ChangesetString = InResults.Last().Mid(ChangesetPrefix.Len(), BranchIndex - ChangesetPrefix.Len());
+			FString ChangesetString;
+			static const FString BranchPrefix(TEXT("@br:"));
+			const int32 BranchIndex = InResults.Last().Find(BranchPrefix, ESearchCase::CaseSensitive);
+			if (BranchIndex > INDEX_NONE)
+			{
+				ChangesetString = InResults.Last().Mid(ChangesetPrefix.Len(), BranchIndex - ChangesetPrefix.Len());
+			}
+			return FText::Format(LOCTEXT("SubmitMessage", "Submitted changeset {0}"), FText::FromString(ChangesetString));
+		}
+		else
+		{
+			return FText::FromString(InResults.Last());
 		}
 	}
-	return FText::Format(LOCTEXT("SubmitMessage", "Submitted changeset {0}"), FText::FromString(ChangesetString));
+	return FText();
 }
 
 FName FPlasticCheckInWorker::GetName() const
