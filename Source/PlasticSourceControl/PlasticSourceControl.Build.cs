@@ -10,6 +10,7 @@ public class PlasticSourceControl : ModuleRules
 		// since it does not follow the same rules for In-Engine Plugins as for Game Project Plugins,
 		// and as such prevents us to make a source code compiling as both.
 		bEnforceIWYU = false;
+		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
