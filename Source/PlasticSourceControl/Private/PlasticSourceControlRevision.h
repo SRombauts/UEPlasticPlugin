@@ -11,7 +11,7 @@ class FPlasticSourceControlRevision : public ISourceControlRevision, public TSha
 public:
 	FPlasticSourceControlRevision()
 		: ChangesetNumber(0)
-		, RevisionNumber(0)
+		, RevisionId(0)
 		, Date(0)
 		, FileSize(0)
 	{
@@ -41,10 +41,10 @@ public:
 	/** The changeset number of this revision */
 	int32 ChangesetNumber;
 
-	/** The revision number of this file */
-	int32 RevisionNumber;
+	/** The internal revision ID of this file */
+	int32 RevisionId;
 
-	/** The revision to display to the user */
+	/** The revision to display to the user: use the changeset number */
 	FString Revision;
 
 	/** The description of this revision */

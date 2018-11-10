@@ -262,7 +262,7 @@ bool FPlasticSourceControlProvider::UsesLocalReadOnlyState() const
 
 bool FPlasticSourceControlProvider::UsesChangelists() const
 {
-	return true;
+	return false; // We don't want to show ChangeList column anymore (Plastic SCM term would be ChangeSet)
 }
 
 bool FPlasticSourceControlProvider::UsesCheckout() const

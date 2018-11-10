@@ -1252,7 +1252,7 @@ static void ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlRe
 		OutSourceControlRevision.Description = CommentNode->GetContent();
 	}
 	const FXmlNode* OwnerNode = ChangesetNode->FindChildNode(Owner);
-	if (CommentNode != nullptr)
+	if (OwnerNode != nullptr)
 	{
 		OutSourceControlRevision.UserName = OwnerNode->GetContent();
 	}
@@ -1274,14 +1274,14 @@ static void ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlRe
 	// Iterate on files to find the one we are tracking
 	for (const FXmlNode* ItemNode : ChangesNode->GetChildrenNodes())
 	{
-		int32 RevisionNumber = -1;
+		int32 RevisionId = -1;
 		const FXmlNode* RevIdNode = ItemNode->FindChildNode(RevId);
 		if (RevIdNode != nullptr)
 		{
-			RevisionNumber = FCString::Atoi(*RevIdNode->GetContent());
+			RevisionId = FCString::Atoi(*RevIdNode->GetContent());
 		}
 		// Is this about the file we are looking for?
-		if (RevisionNumber == OutSourceControlRevision.RevisionNumber)
+		if (RevisionId == OutSourceControlRevision.RevisionId)
 		{
 			const FXmlNode* DstCmPathNode = ItemNode->FindChildNode(DstCmPath);
 			if (DstCmPathNode != nullptr)
@@ -1295,7 +1295,7 @@ static void ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlRe
 				{
 					TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> MovedFromRevision = MakeShareable(new FPlasticSourceControlRevision);
 					MovedFromRevision->Filename = SrcCmPathNode->GetContent();
-					MovedFromRevision->RevisionNumber = FCString::Atoi(*ParentRevIdNode->GetContent());
+					MovedFromRevision->RevisionId = FCString::Atoi(*ParentRevIdNode->GetContent());
 	
 					OutSourceControlRevision.BranchSource = MovedFromRevision;
 				}
@@ -1365,9 +1365,9 @@ static bool ParseHistoryResults(const TArray<FString>& InResults, TPlasticSource
 				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShareable(new FPlasticSourceControlRevision);
 				const FString& Changeset = Infos[0];
 				const FString& RevisionId = Infos[1];
-				SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset);
-				SourceControlRevision->RevisionNumber = FCString::Atoi(*RevisionId);
-				SourceControlRevision->Revision = RevisionId;
+				SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset); // Value now used in the Revision column and in the Asset Menu History
+				SourceControlRevision->RevisionId = FCString::Atoi(*RevisionId); // 
+				SourceControlRevision->Revision = Changeset;
 
 				// Run "cm log" on the changeset number
 				bResult = RunLogCommand(Changeset, *SourceControlRevision);
