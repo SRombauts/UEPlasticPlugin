@@ -76,10 +76,10 @@ public:
 	virtual bool IsDeleted() const override;
 	virtual bool IsIgnored() const override;
 	virtual bool CanEdit() const override;
-	virtual bool CanDelete() const override;
 	virtual bool IsUnknown() const override;
 	virtual bool IsModified() const override;
 	virtual bool CanAdd() const override;
+	virtual bool CanDelete() const override;
 	virtual bool IsConflicted() const override;
 	virtual bool CanRevert() const; // override; TODO UE 4.19 only - commented for backward compatibility
 
@@ -89,6 +89,9 @@ public:
 
 	/** Filename on disk */
 	FString LocalFilename;
+
+	/** Depot and Server info (in the form repo@server:port) */
+	FString RefSpec;
 
 	/** Relative filename of the file in merge conflict */
 	FString PendingMergeFilename;

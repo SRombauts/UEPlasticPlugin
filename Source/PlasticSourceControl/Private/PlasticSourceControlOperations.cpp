@@ -6,11 +6,12 @@
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlUtils.h"
-#include "AssetRegistryModule.h"
 
+#include "AssetRegistryModule.h"
+#include "Async/Async.h"
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"
-#include "Async/Async.h"
+#include "SourceControlOperations.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -481,7 +482,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 					if (State.IsSourceControlled())
 					{
 						// Get the history of the file (on all branches)
-						InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, InCommand.ErrorMessages, History);
+						InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, State.RefSpec, InCommand.ErrorMessages, History);
 						if (State.IsConflicted())
 						{
 							// In case of a merge conflict, we need to put the tip of the "remote branch" on top of the history
