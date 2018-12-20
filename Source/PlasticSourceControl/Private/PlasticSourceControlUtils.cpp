@@ -926,12 +926,15 @@ static bool RunFileinfo(const EConcurrency::Type InConcurrency, TArray<FString>&
 	{
 		// Optimize by not issuing "fileinfo" commands on "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
 		// This can greatly reduce the time needed to do some basic operation like "Add to source control" when using a distant server or the Plastic Cloud.
+		/* TODO: this can't work with xlink file when we want to update the history
+			=> we need to know that we are runing a fileinfo command to get the history
 		if (	(State.WorkspaceState == EWorkspaceState::Controlled)
 			||	(State.WorkspaceState == EWorkspaceState::Changed)
 			||	(State.WorkspaceState == EWorkspaceState::Replaced)
 			||	(State.WorkspaceState == EWorkspaceState::Conflicted)
 		//	||	(State.WorkspaceState == EWorkspaceState::LockedByOther) // we do not have this info at this stage, cf. ParseFileinfoResults()
 			)
+		 */
 		{
 			Files.Add(State.GetFilename());
 		}
