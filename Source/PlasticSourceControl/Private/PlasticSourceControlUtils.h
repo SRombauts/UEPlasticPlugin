@@ -124,11 +124,11 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
  * Run a Plastic "history" and "log" commands and parse it.
  *
  * @param	InFile				The file to be operated on
- * @param	InRefSpec			The ref spec of the repository
+ * @param	InRepSpec			The ref spec of the repository
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  * @param	OutHistory			The history of the file
  */
-bool RunGetHistory(const FString& InFile, const FString& InRefSpec, TArray<FString>& OutErrorMessages, TPlasticSourceControlHistory& OutHistory);
+bool RunGetHistory(const FString& InFile, const FString& InRepSpec, TArray<FString>& OutErrorMessages, TPlasticSourceControlHistory& OutHistory);
 
 /**
  * Helper function for various commands to update cached states.

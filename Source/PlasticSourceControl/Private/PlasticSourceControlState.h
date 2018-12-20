@@ -91,7 +91,7 @@ public:
 	FString LocalFilename;
 
 	/** Depot and Server info (in the form repo@server:port) */
-	FString RefSpec;
+	FString RepSpec;
 
 	/** Relative filename of the file in merge conflict */
 	FString PendingMergeFilename;

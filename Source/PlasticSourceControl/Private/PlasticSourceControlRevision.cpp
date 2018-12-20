@@ -36,7 +36,7 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 	else
 	{
 		// Format the revision specification of the file, like revid:1230@repo@server:8087
-		const FString RevisionSpecification = FString::Printf(TEXT("revid:%d@%s"), RevisionId, *State.RefSpec);
+		const FString RevisionSpecification = FString::Printf(TEXT("revid:%d@%s"), RevisionId, *State.RepSpec);
 		bCommandSuccessful = PlasticSourceControlUtils::RunDumpToFile(PathToPlasticBinary, RevisionSpecification, InOutFilename);
 	}
 	return bCommandSuccessful;

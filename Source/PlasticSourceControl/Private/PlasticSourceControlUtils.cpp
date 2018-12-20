@@ -836,7 +836,7 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	return bResult;
 }
 
-// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RefSpec};{LockedBy};{LockedWhere}"
+// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"
 // for example "40;41;repo@server:port;srombauts;UE4PlasticPluginDev"
 class FPlasticFileinfoParser
 {
@@ -851,7 +851,7 @@ public:
 			RevisionHeadChangeset = FCString::Atoi(*Fileinfos[1]);
 			if (NbElmts >= 3)
 			{
-				RefSpec = MoveTemp(Fileinfos[2]);
+				RepSpec = MoveTemp(Fileinfos[2]);
 				if (NbElmts >=4)
 				{
 					LockedBy = MoveTemp(Fileinfos[3]);
@@ -866,12 +866,12 @@ public:
 
 	int32 RevisionChangeset;
 	int32 RevisionHeadChangeset;
-	FString RefSpec;
+	FString RepSpec;
 	FString LockedBy;
 	FString LockedWhere;
 };
 
-/** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{RefSpec};{LockedBy};{LockedWhere}"' command
+/** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"' command
  *
  * Example cm fileinfo results:
 16;16;;
@@ -893,7 +893,7 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 
 		FileState.LocalRevisionChangeset = FileinfoParser.RevisionChangeset;
 		FileState.DepotRevisionChangeset = FileinfoParser.RevisionHeadChangeset;
-		FileState.RefSpec = FileinfoParser.RefSpec;
+		FileState.RepSpec = FileinfoParser.RepSpec;
 		FileState.LockedBy = MoveTemp(FileinfoParser.LockedBy);
 		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
 
@@ -941,7 +941,7 @@ static bool RunFileinfo(const EConcurrency::Type InConcurrency, TArray<FString>&
 		TArray<FString> Results;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;
-		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RefSpec};{LockedBy};{LockedWhere}\""));
+		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
 		bResult = RunCommand(TEXT("fileinfo"), Parameters, Files, InConcurrency, Results, ErrorMessages);
 		OutErrorMessages.Append(ErrorMessages);
 		if (bResult)
@@ -1319,9 +1319,9 @@ static void ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlRe
 }
 
 // Run "cm log" on the changeset provided by the "history" command to get extra info about the change at a specific revision
-static bool RunLogCommand(const FString& InChangeset, const FString& InRefSpec, FPlasticSourceControlRevision& OutSourceControlRevision)
+static bool RunLogCommand(const FString& InChangeset, const FString& InRepSpec, FPlasticSourceControlRevision& OutSourceControlRevision)
 {
-	const FString RepositorySpecification = FString::Printf(TEXT("cs:%s@%s"), *InChangeset, *InRefSpec);
+	const FString RepositorySpecification = FString::Printf(TEXT("cs:%s@%s"), *InChangeset, *InRepSpec);
 
 	FString Results;
 	FString Errors;
@@ -1353,7 +1353,7 @@ static bool RunLogCommand(const FString& InChangeset, const FString& InRefSpec, 
 17;220
 18;223
 */
-static bool ParseHistoryResults(const FString& InRefSpec, const TArray<FString>& InResults, TPlasticSourceControlHistory& OutHistory)
+static bool ParseHistoryResults(const FString& InRepSpec, const TArray<FString>& InResults, TPlasticSourceControlHistory& OutHistory)
 {
 	bool bResult = true;
 
@@ -1376,10 +1376,10 @@ static bool ParseHistoryResults(const FString& InRefSpec, const TArray<FString>&
 				SourceControlRevision->RevisionId = FCString::Atoi(*RevisionId); // 
 				// TODO append depot info only when different then the default one?
 				// TODO or add this useful info in the "workspace" dedicated field in the details panel?
-				SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s@%s"), *Changeset, *InRefSpec);
+				SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s@%s"), *Changeset, *InRepSpec);
 
 				// Run "cm log" on the changeset number
-				bResult = RunLogCommand(Changeset, InRefSpec, *SourceControlRevision);
+				bResult = RunLogCommand(Changeset, InRepSpec, *SourceControlRevision);
 				OutHistory.Add(SourceControlRevision);
 			}
 			else
@@ -1393,7 +1393,7 @@ static bool ParseHistoryResults(const FString& InRefSpec, const TArray<FString>&
 }
 
 // Run a Plastic "history" command and multiple "log" commands and parse them.
-bool RunGetHistory(const FString& InFile, const FString& InRefSpec, TArray<FString>& OutErrorMessages, TPlasticSourceControlHistory& OutHistory)
+bool RunGetHistory(const FString& InFile, const FString& InRepSpec, TArray<FString>& OutErrorMessages, TPlasticSourceControlHistory& OutHistory)
 {
 	TArray<FString> Results;
 	TArray<FString> Parameters;
@@ -1404,7 +1404,7 @@ bool RunGetHistory(const FString& InFile, const FString& InRefSpec, TArray<FStri
 	bool bResult = RunCommand(TEXT("history"), Parameters, OneFile, EConcurrency::Synchronous, Results, OutErrorMessages);
 	if (bResult)
 	{
-		bResult = ParseHistoryResults(InRefSpec, Results, OutHistory);
+		bResult = ParseHistoryResults(InRepSpec, Results, OutHistory);
 	}
 
 	return bResult;
