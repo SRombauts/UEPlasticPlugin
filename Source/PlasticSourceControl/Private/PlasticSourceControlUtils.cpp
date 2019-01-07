@@ -1360,6 +1360,10 @@ static bool ParseHistoryResults(const FString& InRepSpec, const TArray<FString>&
 {
 	bool bResult = true;
 
+	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+	const FString RepositorySpecification = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
+
 	OutHistory.Reserve(InResults.Num());
 
 	// parse history in reverse: needed to get most recent at the top (implied by the UI)
@@ -1377,9 +1381,15 @@ static bool ParseHistoryResults(const FString& InRepSpec, const TArray<FString>&
 				const FString& RevisionId = Infos[1];
 				SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset); // Value now used in the Revision column and in the Asset Menu History
 				SourceControlRevision->RevisionId = FCString::Atoi(*RevisionId); // 
-				// TODO append depot info only when different then the default one?
-				// TODO or add this useful info in the "workspace" dedicated field in the details panel?
-				SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s@%s"), *Changeset, *InRepSpec);
+				// Also append depot info to the revision, but only when it is different from the default one (ie for xlinks sub repository)
+				if (InRepSpec != RepositorySpecification)
+				{
+					SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s@%s"), *Changeset, *InRepSpec);
+				}
+				else
+				{
+					SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s"), *Changeset);
+				}
 
 				// Run "cm log" on the changeset number
 				bResult = RunLogCommand(Changeset, InRepSpec, *SourceControlRevision);
