@@ -1,11 +1,12 @@
 // Copyright (c) 2016-2018 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
 #include "PlasticSourceControlPrivatePCH.h"
-#include "PlasticSourceControlUtils.h"
-#include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlCommand.h"
-#include "HAL/PlatformProcess.h"
+#include "PlasticSourceControlModule.h"
+#include "PlasticSourceControlState.h"
+#include "PlasticSourceControlUtils.h"
 #include "HAL/PlatformFilemanager.h"
+#include "HAL/PlatformProcess.h"
 #include "HAL/FileManager.h"
 #include "Misc/ScopeLock.h"
 #include "Misc/FileHelper.h"
@@ -835,7 +836,8 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	return bResult;
 }
 
-// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{LockedBy};{LockedWhere}"
+// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"
+// for example "40;41;repo@server:port;srombauts;UE4PlasticPluginDev"
 class FPlasticFileinfoParser
 {
 public:
@@ -849,10 +851,14 @@ public:
 			RevisionHeadChangeset = FCString::Atoi(*Fileinfos[1]);
 			if (NbElmts >= 3)
 			{
-				LockedBy = MoveTemp(Fileinfos[2]);
+				RepSpec = MoveTemp(Fileinfos[2]);
 				if (NbElmts >=4)
 				{
-					LockedWhere = MoveTemp(Fileinfos[3]);
+					LockedBy = MoveTemp(Fileinfos[3]);
+					if (NbElmts >= 5)
+					{
+						LockedWhere = MoveTemp(Fileinfos[4]);
+					}
 				}
 			}
 		}
@@ -860,11 +866,12 @@ public:
 
 	int32 RevisionChangeset;
 	int32 RevisionHeadChangeset;
+	FString RepSpec;
 	FString LockedBy;
 	FString LockedWhere;
 };
 
-/** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{LockedBy};{LockedWhere}"' command
+/** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"' command
  *
  * Example cm fileinfo results:
 16;16;;
@@ -873,7 +880,7 @@ public:
  */
 static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& InOutStates)
 {
-   const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 
 	// Iterate on all files and all status of the result (assuming same number of line of results than number of file states)
@@ -886,6 +893,7 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 
 		FileState.LocalRevisionChangeset = FileinfoParser.RevisionChangeset;
 		FileState.DepotRevisionChangeset = FileinfoParser.RevisionHeadChangeset;
+		FileState.RepSpec = FileinfoParser.RepSpec;
 		FileState.LockedBy = MoveTemp(FileinfoParser.LockedBy);
 		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
 
@@ -907,10 +915,12 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 /**
  * @brief Run a Plastic "fileinfo" command to update status of given files.
  *
+ * @param[in]		InForceFileinfo		Also force execute the fileinfo command required to do get RepSpec of xlinks when getting history (or for diffs)
+ * @param[in]		InConcurrency		Is the command running in the background, or blocking the main thread
  * @param[out]		OutErrorMessages	Error messages from the "fileinfo" command
  * @param[in,out]	InOutStates			List of file states in the directory, gathered by the "status" command, completed by results of the "fileinfo" command
  */
-static bool RunFileinfo(const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
+static bool RunFileinfo(const bool InForceFileinfo, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	bool bResult = true;
 	TArray<FString> Files;
@@ -918,7 +928,10 @@ static bool RunFileinfo(const EConcurrency::Type InConcurrency, TArray<FString>&
 	{
 		// Optimize by not issuing "fileinfo" commands on "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
 		// This can greatly reduce the time needed to do some basic operation like "Add to source control" when using a distant server or the Plastic Cloud.
-		if (	(State.WorkspaceState == EWorkspaceState::Controlled)
+		// this can't work with xlink file when we want to update the history
+		// we need to know that we are running a fileinfo command to get the history, that's the role of InForceFileinfo
+		if (	(InForceFileinfo)
+			||	(State.WorkspaceState == EWorkspaceState::Controlled)
 			||	(State.WorkspaceState == EWorkspaceState::Changed)
 			||	(State.WorkspaceState == EWorkspaceState::Replaced)
 			||	(State.WorkspaceState == EWorkspaceState::Conflicted)
@@ -933,7 +946,7 @@ static bool RunFileinfo(const EConcurrency::Type InConcurrency, TArray<FString>&
 		TArray<FString> Results;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;
-		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{LockedBy};{LockedWhere}\""));
+		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
 		bResult = RunCommand(TEXT("fileinfo"), Parameters, Files, InConcurrency, Results, ErrorMessages);
 		OutErrorMessages.Append(ErrorMessages);
 		if (bResult)
@@ -1075,7 +1088,7 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 }
 
 // Run a batch of Plastic "status" and "fileinfo" commands to update status of given files and directories.
-bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
+bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
 	bool bResults = true;
 
@@ -1123,7 +1136,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type In
 			// Run a "fileinfo" command to update status of given files.
 			// In case of "directory status", there is no explicit file in the group (it contains only the directory) 
 			// => work on the list of files discovered by RunStatus()
-			bResults &= RunFileinfo(InConcurrency, OutErrorMessages, States);
+			bResults &= RunFileinfo(InForceFileinfo, InConcurrency, OutErrorMessages, States);
 		}
 		OutStates.Append(MoveTemp(States));
 	}
@@ -1310,12 +1323,10 @@ static void ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlRe
 	}
 }
 
-// Run "cm log" on the changeset
-static bool RunLogCommand(const FString& InChangeset, FPlasticSourceControlRevision& OutSourceControlRevision)
+// Run "cm log" on the changeset provided by the "history" command to get extra info about the change at a specific revision
+static bool RunLogCommand(const FString& InChangeset, const FString& InRepSpec, FPlasticSourceControlRevision& OutSourceControlRevision)
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-	const FString RepositorySpecification = FString::Printf(TEXT("cs:%s@rep:%s@repserver:%s"), *InChangeset, *Provider.GetRepositoryName(), *Provider.GetServerUrl());
+	const FString RepositorySpecification = FString::Printf(TEXT("cs:%s@%s"), *InChangeset, *InRepSpec);
 
 	FString Results;
 	FString Errors;
@@ -1339,16 +1350,21 @@ static bool RunLogCommand(const FString& InChangeset, FPlasticSourceControlRevis
 }
 
 /**
- * Parse results of the 'cm history --format="{1};{6}"' command, then run "cm log" on each
+ * Parse results of the 'cm history --format="{1};{6}"' command ("Changeset number" and "Revision id"),
+ * then run "cm log" on each revision to get extra info about the change (description, date, filename, branch, action)
  * 
  * Results of the history command are with one changeset number and revision id by line, like that:
 14;176
 17;220
 18;223
 */
-static bool ParseHistoryResults(const TArray<FString>& InResults, TPlasticSourceControlHistory& OutHistory)
+static bool ParseHistoryResults(const FString& InRepSpec, const TArray<FString>& InResults, TPlasticSourceControlHistory& OutHistory)
 {
 	bool bResult = true;
+
+	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+	const FString RepositorySpecification = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
 
 	OutHistory.Reserve(InResults.Num());
 
@@ -1367,10 +1383,20 @@ static bool ParseHistoryResults(const TArray<FString>& InResults, TPlasticSource
 				const FString& RevisionId = Infos[1];
 				SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset); // Value now used in the Revision column and in the Asset Menu History
 				SourceControlRevision->RevisionId = FCString::Atoi(*RevisionId); // 
-				SourceControlRevision->Revision = Changeset;
+				// Also append depot name to the revision, but only when it is different from the default one (ie for xlinks sub repository)
+				if (InRepSpec != RepositorySpecification)
+				{
+					TArray<FString> RepSpecs;
+					InRepSpec.ParseIntoArray(RepSpecs, TEXT("@"));
+					SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s@%s"), *Changeset, *RepSpecs[0]);
+				}
+				else
+				{
+					SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s"), *Changeset);
+				}
 
 				// Run "cm log" on the changeset number
-				bResult = RunLogCommand(Changeset, *SourceControlRevision);
+				bResult = RunLogCommand(Changeset, InRepSpec, *SourceControlRevision);
 				OutHistory.Add(SourceControlRevision);
 			}
 			else
@@ -1384,18 +1410,18 @@ static bool ParseHistoryResults(const TArray<FString>& InResults, TPlasticSource
 }
 
 // Run a Plastic "history" command and multiple "log" commands and parse them.
-bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, TPlasticSourceControlHistory& OutHistory)
+bool RunGetHistory(const FString& InFile, const FString& InRepSpec, TArray<FString>& OutErrorMessages, TPlasticSourceControlHistory& OutHistory)
 {
 	TArray<FString> Results;
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--format=\"{1};{6}\"")); // Get Changeset number and revision Id of each revision of the asset
+	Parameters.Add(TEXT("--format=\"{1};{6}\"")); // Get "Changeset number" and "Revision id" of each revision of the asset
 	TArray<FString> OneFile;
 	OneFile.Add(*InFile);
 
 	bool bResult = RunCommand(TEXT("history"), Parameters, OneFile, EConcurrency::Synchronous, Results, OutErrorMessages);
 	if (bResult)
 	{
-		bResult = ParseHistoryResults(Results, OutHistory);
+		bResult = ParseHistoryResults(InRepSpec, Results, OutHistory);
 	}
 
 	return bResult;

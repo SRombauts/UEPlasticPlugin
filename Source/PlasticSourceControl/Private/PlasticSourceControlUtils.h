@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "ISourceControlProvider.h"
-#include "PlasticSourceControlState.h"
 #include "PlasticSourceControlRevision.h"
 
 class FPlasticSourceControlCommand;
+class FPlasticSourceControlState;
 
 /**
  * Helper struct for maintaining temporary files for passing to commands
@@ -101,14 +101,15 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
  * Run a Plastic "status" command and parse it.
  *
  * @param	InFiles				The files to be operated on
- * @param	InConcurrency		Is the command running in the background, or bloking the main thread
+ * @param	InForceFileinfo		Also force execute the fileinfo command required to do get RepSpec of xlinks when getting history (or for diffs)
+ * @param	InConcurrency		Is the command running in the background, or blocking the main thread
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  * @param	OutStates			States of the files
  * @param	OutChangeset		The current Changeset Number
  * @param	OutBranchName		Name of the current checked-out branch
  * @returns true if the command succeeded and returned no errors
  */
-bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName);
+bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName);
 
 /**
  * Run a Plastic "cat" command to dump the binary content of a revision into a file.
@@ -124,10 +125,11 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
  * Run a Plastic "history" and "log" commands and parse it.
  *
  * @param	InFile				The file to be operated on
+ * @param	InRepSpec			The ref spec of the repository
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  * @param	OutHistory			The history of the file
  */
-bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, TPlasticSourceControlHistory& OutHistory);
+bool RunGetHistory(const FString& InFile, const FString& InRepSpec, TArray<FString>& OutErrorMessages, TPlasticSourceControlHistory& OutHistory);
 
 /**
  * Helper function for various commands to update cached states.

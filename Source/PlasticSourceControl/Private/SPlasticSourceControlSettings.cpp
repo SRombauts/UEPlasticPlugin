@@ -6,6 +6,7 @@
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlUtils.h"
 
+#include "SourceControlOperations.h"
 #include "Fonts/SlateFontInfo.h"
 #include "Misc/Paths.h"
 #include "Misc/App.h"
@@ -529,18 +530,18 @@ void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSour
 // Display an ongoing notification during the whole operation
 void SPlasticSourceControlSettings::DisplayInProgressNotification(const FText& InOperationInProgressString)
 {
-    if (!OperationInProgressNotification.IsValid())
-    {
-        FNotificationInfo Info(InOperationInProgressString);
-        Info.bFireAndForget = false;
-        Info.ExpireDuration = 0.0f;
-        Info.FadeOutDuration = 1.0f;
-        OperationInProgressNotification = FSlateNotificationManager::Get().AddNotification(Info);
-        if (OperationInProgressNotification.IsValid())
-        {
-            OperationInProgressNotification.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
-        }
-    }
+	if (!OperationInProgressNotification.IsValid())
+	{
+		FNotificationInfo Info(InOperationInProgressString);
+		Info.bFireAndForget = false;
+		Info.ExpireDuration = 0.0f;
+		Info.FadeOutDuration = 1.0f;
+		OperationInProgressNotification = FSlateNotificationManager::Get().AddNotification(Info);
+		if (OperationInProgressNotification.IsValid())
+		{
+			OperationInProgressNotification.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
+		}
+	}
 }
 
 // Remove the ongoing notification at the end of the operation
