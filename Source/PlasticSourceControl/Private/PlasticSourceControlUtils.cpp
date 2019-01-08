@@ -915,10 +915,12 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 /**
  * @brief Run a Plastic "fileinfo" command to update status of given files.
  *
+ * @param[in]		InForceFileinfo		Also force execute the fileinfo command required to do get RepSpec of xlinks when getting history (or for diffs)
+ * @param[in]		InConcurrency		Is the command running in the background, or blocking the main thread
  * @param[out]		OutErrorMessages	Error messages from the "fileinfo" command
  * @param[in,out]	InOutStates			List of file states in the directory, gathered by the "status" command, completed by results of the "fileinfo" command
  */
-static bool RunFileinfo(const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
+static bool RunFileinfo(const bool InForceFileinfo, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	bool bResult = true;
 	TArray<FString> Files;
@@ -926,15 +928,15 @@ static bool RunFileinfo(const EConcurrency::Type InConcurrency, TArray<FString>&
 	{
 		// Optimize by not issuing "fileinfo" commands on "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
 		// This can greatly reduce the time needed to do some basic operation like "Add to source control" when using a distant server or the Plastic Cloud.
-		/* TODO: this can't work with xlink file when we want to update the history
-			=> we need to know that we are runing a fileinfo command to get the history
-		if (	(State.WorkspaceState == EWorkspaceState::Controlled)
+		// this can't work with xlink file when we want to update the history
+		// we need to know that we are running a fileinfo command to get the history, that's the role of InForceFileinfo
+		if (	(InForceFileinfo)
+			||	(State.WorkspaceState == EWorkspaceState::Controlled)
 			||	(State.WorkspaceState == EWorkspaceState::Changed)
 			||	(State.WorkspaceState == EWorkspaceState::Replaced)
 			||	(State.WorkspaceState == EWorkspaceState::Conflicted)
 		//	||	(State.WorkspaceState == EWorkspaceState::LockedByOther) // we do not have this info at this stage, cf. ParseFileinfoResults()
 			)
-		 */
 		{
 			Files.Add(State.GetFilename());
 		}
@@ -1086,7 +1088,7 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 }
 
 // Run a batch of Plastic "status" and "fileinfo" commands to update status of given files and directories.
-bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
+bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
 	bool bResults = true;
 
@@ -1134,7 +1136,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type In
 			// Run a "fileinfo" command to update status of given files.
 			// In case of "directory status", there is no explicit file in the group (it contains only the directory) 
 			// => work on the list of files discovered by RunStatus()
-			bResults &= RunFileinfo(InConcurrency, OutErrorMessages, States);
+			bResults &= RunFileinfo(InForceFileinfo, InConcurrency, OutErrorMessages, States);
 		}
 		OutStates.Append(MoveTemp(States));
 	}

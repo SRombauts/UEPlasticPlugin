@@ -101,14 +101,15 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
  * Run a Plastic "status" command and parse it.
  *
  * @param	InFiles				The files to be operated on
- * @param	InConcurrency		Is the command running in the background, or bloking the main thread
+ * @param	InForceFileinfo		Also force execute the fileinfo command required to do get RepSpec of xlinks when getting history (or for diffs)
+ * @param	InConcurrency		Is the command running in the background, or blocking the main thread
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  * @param	OutStates			States of the files
  * @param	OutChangeset		The current Changeset Number
  * @param	OutBranchName		Name of the current checked-out branch
  * @returns true if the command succeeded and returned no errors
  */
-bool RunUpdateStatus(const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName);
+bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName);
 
 /**
  * Run a Plastic "cat" command to dump the binary content of a revision into a file.
