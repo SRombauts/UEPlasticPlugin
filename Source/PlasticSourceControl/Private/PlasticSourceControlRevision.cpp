@@ -4,6 +4,7 @@
 #include "PlasticSourceControlRevision.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
+#include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlSettings.h"
 
