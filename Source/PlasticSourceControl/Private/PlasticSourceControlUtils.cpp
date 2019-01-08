@@ -1381,10 +1381,12 @@ static bool ParseHistoryResults(const FString& InRepSpec, const TArray<FString>&
 				const FString& RevisionId = Infos[1];
 				SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset); // Value now used in the Revision column and in the Asset Menu History
 				SourceControlRevision->RevisionId = FCString::Atoi(*RevisionId); // 
-				// Also append depot info to the revision, but only when it is different from the default one (ie for xlinks sub repository)
+				// Also append depot name to the revision, but only when it is different from the default one (ie for xlinks sub repository)
 				if (InRepSpec != RepositorySpecification)
 				{
-					SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s@%s"), *Changeset, *InRepSpec);
+					TArray<FString> RepSpecs;
+					InRepSpec.ParseIntoArray(RepSpecs, TEXT("@"));
+					SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s@%s"), *Changeset, *RepSpecs[0]);
 				}
 				else
 				{
