@@ -4,12 +4,13 @@ Unreal Engine 4 Plastic SCM Source Control Plugin
 [![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
 [![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
-UE4PlasticPlugin is a simple [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4 (UE 4.11 to 4.21)
+This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4** (UE 4.11 to 4.21)
 
 It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml) or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
-It is a complementary tool improving efficiency in your daily workflow.
+It is a complementary tool improving efficiency in your daily workflow with assets in Editor.
 
 It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints. It also helps importing an existing UE4 Project into source control, with appropriate *ignore.conf* file.
+Since UE4 does not manage C++ source code, but only assets, the plugin is especially useful for GDs and artists.
 
 Source Control Login window, to create a new workspace/a new repository:
 ![Source Control Login window - create a new workspace](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
