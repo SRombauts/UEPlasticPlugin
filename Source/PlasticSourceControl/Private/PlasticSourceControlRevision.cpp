@@ -15,8 +15,10 @@
 
 bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 {
+	static const FString PathToProjectDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
+	const FString AbsoluteFilename = FPaths::Combine(PathToProjectDir, Filename.RightChop(1));
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FPlasticSourceControlState& State = *PlasticSourceControl.GetProvider().GetStateInternal(Filename);
+	const FPlasticSourceControlState& State = *PlasticSourceControl.GetProvider().GetStateInternal(AbsoluteFilename);
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 
 	// if a filename for the temp file wasn't supplied generate a unique-ish one
