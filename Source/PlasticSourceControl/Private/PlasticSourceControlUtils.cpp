@@ -906,7 +906,7 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 		}
 
 		// @todo: temporary debug log (only for the first few files)
-		if (IdxResult < 20) UE_LOG(LogSourceControl, Log, TEXT("%s: %d;%d by '%s' (%s)"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.LockedBy, *FileState.LockedWhere);
+		if (IdxResult < 20) UE_LOG(LogSourceControl, Log, TEXT("%s: %d;%d %s by '%s' (%s)"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.RepSpec, *FileState.LockedBy, *FileState.LockedWhere);
 	}
 	// @todo: temporary debug log (if too many files)
 	if (InResults.Num() > 20) UE_LOG(LogSourceControl, Log, TEXT("[...] %d more files"), InResults.Num() - 20);
@@ -1061,7 +1061,6 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 					{
 						FPlasticMergeConflictParser MergeConflict(Result);
 						UE_LOG(LogSourceControl, Log, TEXT("MergeConflict.Filename: '%s'"), *MergeConflict.Filename);
-						bool bFound = false;
 						for (FPlasticSourceControlState& State : OutStates)
 						{
 							UE_LOG(LogSourceControl, Log, TEXT("State.LocalFilename: '%s'"), *State.LocalFilename);
@@ -1074,7 +1073,6 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 								State.PendingMergeBaseChangeset = MergeConflict.BaseChangeset;
 								State.PendingMergeSourceChangeset = MergeConflict.SourceChangeset;
 								State.PendingMergeParameters = PendingMergeParameters;
-								bFound = true;
 								break;
 							}
 						}
