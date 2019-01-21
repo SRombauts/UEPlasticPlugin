@@ -1377,6 +1377,7 @@ static bool ParseHistoryResults(const TArray<FString>& InResults, FPlasticSource
 			if (NbElmts == 2)
 			{
 				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShareable(new FPlasticSourceControlRevision);
+				SourceControlRevision->State = &InOutState;
 				const FString& Changeset = Infos[0];
 				const FString& RevisionId = Infos[1];
 				SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset); // Value now used in the Revision column and in the Asset Menu History
@@ -1425,16 +1426,16 @@ bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, FPl
 	return bResult;
 }
 
-bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates)
+bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates)
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>( "PlasticSourceControl" );
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 	const FDateTime Now = FDateTime::Now();
 
-	for (const auto& InState : InStates)
+	for (auto&& InState : InStates)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(InState.LocalFilename);
-		*State = InState;
+		*State = MoveTemp(InState);
 		State->TimeStamp = Now;
 	}
 

@@ -21,7 +21,7 @@ public:
 	 * Updates the state of any items after completion (if necessary). This is always executed on the main thread.
 	 * @returns true if states were updated
 	 */
-	virtual bool UpdateStates() const = 0;
+	virtual bool UpdateStates() = 0;
 };
 
 typedef TSharedRef<IPlasticSourceControlWorker, ESPMode::ThreadSafe> FPlasticSourceControlWorkerRef;

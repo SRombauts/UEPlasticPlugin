@@ -64,7 +64,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 
 public:
 	/** Temporary states for results */
@@ -78,7 +78,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 
 public:
 	/** Temporary states for results */
@@ -93,7 +93,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 
 public:
 	/** Temporary states for results */
@@ -108,7 +108,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 
 public:
 	/** Temporary states for results */
@@ -123,7 +123,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 
 public:
 	/** Temporary states for results */
@@ -138,7 +138,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 };
 
 /** Revert only unchanged file(s) (uncheckout). */
@@ -149,7 +149,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 
 public:
 	/** Temporary states for results */
@@ -164,7 +164,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 
 public:
 	/** Temporary states for results */
@@ -179,7 +179,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 };
 
 /** Plastic update the workspace to latest changes */
@@ -190,7 +190,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 
 public:
 	/** Temporary states for results */
@@ -205,7 +205,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 
 public:
 	/** Temporary states for results */
@@ -220,7 +220,7 @@ public:
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 
 public:
 	/** Temporary states for results */
@@ -234,7 +234,7 @@ public:
 	virtual ~FPlasticResolveWorker() {}
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
-	virtual bool UpdateStates() const override;
+	virtual bool UpdateStates() override;
 
 private:
 	/** Temporary states for results */

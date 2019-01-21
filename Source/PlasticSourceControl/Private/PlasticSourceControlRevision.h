@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "ISourceControlRevision.h"
 
+class FPlasticSourceControlState;
+
 /** Revision of a file, linked to a specific commit */
 class FPlasticSourceControlRevision : public ISourceControlRevision, public TSharedFromThis<FPlasticSourceControlRevision, ESPMode::ThreadSafe>
 {
@@ -34,6 +36,9 @@ public:
 	virtual int32 GetFileSize() const override;
 
 public:
+
+	/** Point back to State this Revision is from */
+	FPlasticSourceControlState* State = nullptr;
 
 	/** The filename this revision refers to */
 	FString Filename;
@@ -67,4 +72,4 @@ public:
 };
 
 /** History composed of the last 100 revisions of the file */
-typedef TArray< TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> >	TPlasticSourceControlHistory;
+typedef TArray<TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe>>	TPlasticSourceControlHistory;

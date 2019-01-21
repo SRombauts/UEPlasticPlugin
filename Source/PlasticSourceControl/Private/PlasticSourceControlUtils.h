@@ -134,7 +134,7 @@ bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, FPl
  * Helper function for various commands to update cached states.
  * @returns true if any states were updated
  */
-bool UpdateCachedStates(const TArray<FPlasticSourceControlState>& InStates);
+bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates);
 
 /** 
  * Remove redundant errors (that contain a particular string) and also

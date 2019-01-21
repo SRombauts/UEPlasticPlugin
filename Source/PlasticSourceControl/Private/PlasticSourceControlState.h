@@ -33,13 +33,52 @@ namespace EWorkspaceState
 class FPlasticSourceControlState : public ISourceControlState, public TSharedFromThis<FPlasticSourceControlState, ESPMode::ThreadSafe>
 {
 public:
-	FPlasticSourceControlState( const FString& InLocalFilename )
+
+	FPlasticSourceControlState(const FString& InLocalFilename)
 		: LocalFilename(InLocalFilename)
 		, WorkspaceState(EWorkspaceState::Unknown)
 		, DepotRevisionChangeset(-1)
 		, LocalRevisionChangeset(-1)
 		, TimeStamp(0)
 	{
+	}
+
+	FPlasticSourceControlState(const FPlasticSourceControlState& InState) = delete;
+	const FPlasticSourceControlState& operator=(const FPlasticSourceControlState& InState) = delete;
+
+	FPlasticSourceControlState(FPlasticSourceControlState&& InState)
+	{
+		Move(MoveTemp(InState));
+	}
+
+	const FPlasticSourceControlState& operator=(FPlasticSourceControlState&& InState)
+	{
+		Move(MoveTemp(InState));
+		return *this;
+	}
+
+	void Move(FPlasticSourceControlState&& InState)
+	{
+		History = MoveTemp(InState.History);
+		LocalFilename = MoveTemp(InState.LocalFilename);
+		RepSpec = MoveTemp(InState.RepSpec);
+		PendingMergeFilename = MoveTemp(InState.PendingMergeFilename);
+		PendingMergeBaseChangeset = InState.PendingMergeBaseChangeset;
+		PendingMergeSourceChangeset = InState.PendingMergeSourceChangeset;
+		PendingMergeParameters = MoveTemp(InState.PendingMergeParameters);
+		LockedBy = MoveTemp(InState.LockedBy);
+		LockedWhere = MoveTemp(InState.LockedWhere);
+		WorkspaceState = InState.WorkspaceState;
+		DepotRevisionChangeset = InState.DepotRevisionChangeset;
+		LocalRevisionChangeset = InState.LocalRevisionChangeset;
+		MovedFrom = MoveTemp(InState.MovedFrom);
+		TimeStamp = InState.TimeStamp;
+
+		// Update Revision's pointer to the new State instance
+		for (const auto& Revision : History)
+		{
+			Revision->State = this;
+		}
 	}
 
 	// debug log utility

@@ -100,9 +100,9 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticConnectWorker::UpdateStates() const
+bool FPlasticConnectWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 FName FPlasticCheckOutWorker::GetName() const
@@ -130,9 +130,9 @@ bool FPlasticCheckOutWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticCheckOutWorker::UpdateStates() const
+bool FPlasticCheckOutWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 /// Parse check-in result, usually locking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
@@ -219,9 +219,9 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticCheckInWorker::UpdateStates() const
+bool FPlasticCheckInWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 FName FPlasticMarkForAddWorker::GetName() const
@@ -252,9 +252,9 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticMarkForAddWorker::UpdateStates() const
+bool FPlasticMarkForAddWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 FName FPlasticDeleteWorker::GetName() const
@@ -282,9 +282,9 @@ bool FPlasticDeleteWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticDeleteWorker::UpdateStates() const
+bool FPlasticDeleteWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 FName FPlasticRevertWorker::GetName() const
@@ -342,7 +342,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticRevertWorker::UpdateStates() const
+bool FPlasticRevertWorker::UpdateStates()
 {
 	return false;
 }
@@ -371,9 +371,9 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticRevertUnchangedWorker::UpdateStates() const
+bool FPlasticRevertUnchangedWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 FName FPlasticRevertAllWorker::GetName() const
@@ -407,9 +407,9 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticRevertAllWorker::UpdateStates() const
+bool FPlasticRevertAllWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 FName FPlasticMakeWorkspaceWorker::GetName() const
@@ -439,7 +439,7 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticMakeWorkspaceWorker::UpdateStates() const
+bool FPlasticMakeWorkspaceWorker::UpdateStates()
 {
 	return false;
 }
@@ -520,9 +520,9 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticUpdateStatusWorker::UpdateStates() const
+bool FPlasticUpdateStatusWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 /// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controled asset)
@@ -665,9 +665,9 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticCopyWorker::UpdateStates() const
+bool FPlasticCopyWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 FName FPlasticSyncWorker::GetName() const
@@ -711,9 +711,9 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticSyncWorker::UpdateStates() const
+bool FPlasticSyncWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 FName FPlasticResolveWorker::GetName() const
@@ -757,9 +757,9 @@ bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticResolveWorker::UpdateStates() const
+bool FPlasticResolveWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(States);
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 #undef LOCTEXT_NAMESPACE
