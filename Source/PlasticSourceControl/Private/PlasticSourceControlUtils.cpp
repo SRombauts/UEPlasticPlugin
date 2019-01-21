@@ -1356,15 +1356,15 @@ static bool RunLogCommand(const FString& InChangeset, const FString& InRepSpec, 
 17;220
 18;223
 */
-static bool ParseHistoryResults(const FString& InRepSpec, const TArray<FString>& InResults, TPlasticSourceControlHistory& OutHistory)
+static bool ParseHistoryResults(const TArray<FString>& InResults, FPlasticSourceControlState& InOutState)
 {
 	bool bResult = true;
 
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-	const FString RepositorySpecification = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
+	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
 
-	OutHistory.Reserve(InResults.Num());
+	InOutState.History.Reserve(InResults.Num());
 
 	// parse history in reverse: needed to get most recent at the top (implied by the UI)
 	for (int32 Index = InResults.Num() - 1; Index >= 0; Index--)
@@ -1382,10 +1382,10 @@ static bool ParseHistoryResults(const FString& InRepSpec, const TArray<FString>&
 				SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset); // Value now used in the Revision column and in the Asset Menu History
 				SourceControlRevision->RevisionId = FCString::Atoi(*RevisionId); // 
 				// Also append depot name to the revision, but only when it is different from the default one (ie for xlinks sub repository)
-				if (InRepSpec != RepositorySpecification)
+				if (InOutState.RepSpec != RootRepSpec)
 				{
 					TArray<FString> RepSpecs;
-					InRepSpec.ParseIntoArray(RepSpecs, TEXT("@"));
+					InOutState.RepSpec.ParseIntoArray(RepSpecs, TEXT("@"));
 					SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s@%s"), *Changeset, *RepSpecs[0]);
 				}
 				else
@@ -1394,8 +1394,8 @@ static bool ParseHistoryResults(const FString& InRepSpec, const TArray<FString>&
 				}
 
 				// Run "cm log" on the changeset number
-				bResult = RunLogCommand(Changeset, InRepSpec, *SourceControlRevision);
-				OutHistory.Add(SourceControlRevision);
+				bResult = RunLogCommand(Changeset, InOutState.RepSpec, *SourceControlRevision);
+				InOutState.History.Add(SourceControlRevision);
 			}
 			else
 			{
@@ -1408,7 +1408,7 @@ static bool ParseHistoryResults(const FString& InRepSpec, const TArray<FString>&
 }
 
 // Run a Plastic "history" command and multiple "log" commands and parse them.
-bool RunGetHistory(const FString& InFile, const FString& InRepSpec, TArray<FString>& OutErrorMessages, TPlasticSourceControlHistory& OutHistory)
+bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, FPlasticSourceControlState& InOutState)
 {
 	TArray<FString> Results;
 	TArray<FString> Parameters;
@@ -1419,7 +1419,7 @@ bool RunGetHistory(const FString& InFile, const FString& InRepSpec, TArray<FStri
 	bool bResult = RunCommand(TEXT("history"), Parameters, OneFile, EConcurrency::Synchronous, Results, OutErrorMessages);
 	if (bResult)
 	{
-		bResult = ParseHistoryResults(InRepSpec, Results, OutHistory);
+		bResult = ParseHistoryResults(Results, InOutState);
 	}
 
 	return bResult;

@@ -481,7 +481,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 					if (State.IsSourceControlled())
 					{
 						// Get the history of the file (on all branches)
-						InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, State.RepSpec, InCommand.ErrorMessages, State.History);
+						InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, InCommand.ErrorMessages, State);
 						if (State.IsConflicted())
 						{
 							// In case of a merge conflict, we need to put the tip of the "remote branch" on top of the history
