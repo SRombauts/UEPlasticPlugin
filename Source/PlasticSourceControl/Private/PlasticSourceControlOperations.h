@@ -210,9 +210,6 @@ public:
 public:
 	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
-
-	/** Map of filenames to history */
-	TMap<FString, TPlasticSourceControlHistory> Histories;
 };
 
 /** Copy or Move operation on a single file */

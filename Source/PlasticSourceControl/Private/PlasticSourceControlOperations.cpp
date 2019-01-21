@@ -476,33 +476,31 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 				for (int32 IdxFile = 0; IdxFile < States.Num(); IdxFile++)
 				{
 					FString& File = InCommand.Files[IdxFile];
-					const auto& State = States[IdxFile];
-					TPlasticSourceControlHistory History;
+					FPlasticSourceControlState& State = States[IdxFile];
 
 					if (State.IsSourceControlled())
 					{
 						// Get the history of the file (on all branches)
-						InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, State.RepSpec, InCommand.ErrorMessages, History);
+						InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, State.RepSpec, InCommand.ErrorMessages, State.History);
 						if (State.IsConflicted())
 						{
 							// In case of a merge conflict, we need to put the tip of the "remote branch" on top of the history
 							UE_LOG(LogSourceControl, Log, TEXT("%s: PendingMergeSourceChangeset %d"), *State.LocalFilename, State.PendingMergeSourceChangeset);
-							for (int32 IdxRevision = 0; IdxRevision < History.Num(); IdxRevision++)
+							for (int32 IdxRevision = 0; IdxRevision < State.History.Num(); IdxRevision++)
 							{
-								const auto& Revision = History[IdxRevision];
+								const auto& Revision = State.History[IdxRevision];
 								if (Revision->ChangesetNumber == State.PendingMergeSourceChangeset)
 								{
 									// If the Source Changeset is not already at the top of the History, duplicate it there.
 									if (IdxRevision > 0)
 									{
 										const auto RevisionCopy = Revision;
-										History.Insert(RevisionCopy, 0);
+										State.History.Insert(RevisionCopy, 0);
 									}
 									break;
 								}
 							}
 						}
-						Histories.Add(*File, History);
 					}
 				}
 			}
@@ -524,21 +522,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 
 bool FPlasticUpdateStatusWorker::UpdateStates() const
 {
-	bool bUpdated = PlasticSourceControlUtils::UpdateCachedStates(States);
-
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-
-	// add history, if any
-	for (const auto& History : Histories)
-	{
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(History.Key);
-		State->History = History.Value;
-		State->TimeStamp = FDateTime::Now();
-		bUpdated = true;
-	}
-
-	return bUpdated;
+	return PlasticSourceControlUtils::UpdateCachedStates(States);
 }
 
 /// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controled asset)
