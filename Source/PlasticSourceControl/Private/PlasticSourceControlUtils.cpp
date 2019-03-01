@@ -811,17 +811,20 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	ensure(0 < InFiles.Num());
 
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--wkconfig"));
-	Parameters.Add(TEXT("--noheaders"));
-	Parameters.Add(TEXT("--all"));
-	Parameters.Add(TEXT("--ignored"));
 
 	// Command-line format output changed with version 8.0.16.3000, plugin will crash unless we demand the old format.
+	// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
 	FString NewFormatVersion = "8.0.16.3000";
 	FString CurrentVersion;
 	PlasticSourceControlUtils::GetPlasticScmVersion(CurrentVersion);
 	if (!PlasticScmVersionLess(CurrentVersion, NewFormatVersion)) {
-		Parameters.Add(TEXT("--cset"));
+		Parameters.Add(TEXT("--compact"));
+	}
+	else {
+		Parameters.Add(TEXT("--wkconfig"));
+		Parameters.Add(TEXT("--noheaders"));
+		Parameters.Add(TEXT("--all"));
+		Parameters.Add(TEXT("--ignored"));
 	}
 	// "cm status" only operate on one path (file or folder) at a time, so use one folder path for multiple files in a directory
 	const FString Path = FPaths::GetPath(*InFiles[0]);
