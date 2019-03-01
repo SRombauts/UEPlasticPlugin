@@ -405,6 +405,36 @@ void GetPlasticScmVersion(FString& OutPlasticScmVersion)
 	}
 }
 
+/**
+ * @brief Compare Plastic SCM cli version strings.
+ * @param VersionA		PlasticSCM version string in the form "0.0.0.0" (as returned by GetPlasticScmVersion)
+ * @param VersionB		PlasticSCM version string in the form "0.0.0.0" (as returned by GetPlasticScmVersion)
+ * @returns true if VersionA is lower than VersionB
+*/
+static bool PlasticScmVersionLess(const FString& VersionA, const FString& VersionB) {
+	struct Version {
+		Version(const FString& V) {
+			TArray<FString> Parts;
+			const int32 N = V.ParseIntoArray(Parts, TEXT("."));
+			check(N == 4);
+			a = FCString::Atoi(*Parts[0]);
+			b = FCString::Atoi(*Parts[1]);
+			c = FCString::Atoi(*Parts[2]);
+			d = FCString::Atoi(*Parts[3]);
+		}
+		int a, b, c, d;
+	} A(VersionA), B(VersionB);
+	if (A.a < B.a) return true;
+	if (B.a < A.a) return false;
+	if (A.b < B.b) return true;
+	if (B.b < A.b) return false;
+	if (A.c < B.c) return true;
+	if (B.c < A.c) return false;
+	if (A.d < B.d) return true;
+	if (B.d < A.d) return false;
+	return false; // Equal
+}
+
 void GetUserName(FString& OutUserName)
 {
 	TArray<FString> InfoMessages;
@@ -785,6 +815,14 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	Parameters.Add(TEXT("--noheaders"));
 	Parameters.Add(TEXT("--all"));
 	Parameters.Add(TEXT("--ignored"));
+
+	// Command-line format output changed with version 8.0.16.3000, plugin will crash unless we demand the old format.
+	FString NewFormatVersion = "8.0.16.3000";
+	FString CurrentVersion;
+	PlasticSourceControlUtils::GetPlasticScmVersion(CurrentVersion);
+	if (!PlasticScmVersionLess(CurrentVersion, NewFormatVersion)) {
+		Parameters.Add(TEXT("--cset"));
+	}
 	// "cm status" only operate on one path (file or folder) at a time, so use one folder path for multiple files in a directory
 	const FString Path = FPaths::GetPath(*InFiles[0]);
 	TArray<FString> OnePath;
