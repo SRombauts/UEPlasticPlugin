@@ -862,7 +862,11 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 			ParseFileStatusResult(FileVisitor.Files, Results, OutStates, OutChangeset, OutBranchName);
 			// The above cannot detect assets removed / locally deleted since there is no file left to enumerate (either by the Content Browser or by File Manager)
 			// => so we also parse the status results to explicitly look for Removed/Deleted assets
-			Results.RemoveAt(0, 2); // Before that, remove the first two line Changeset, and BranchName
+
+			// Command-line format output changed with version 8.0.16.3000, so we only need to do this for older versions.
+			if (PlasticScmVersionLess(CurrentVersion, NewFormatVersion)) {
+				Results.RemoveAt(0, 2); // Before that, remove the first two line Changeset, and BranchName
+			}
 			ParseDirectoryStatusResult(Results, OutStates);
 		}
 		else
