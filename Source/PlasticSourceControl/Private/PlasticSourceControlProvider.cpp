@@ -64,7 +64,6 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		bPlasticAvailable = PlasticSourceControlUtils::LaunchBackgroundPlasticShell(PathToPlasticBinary, PathToWorkspaceRoot);
 		if(bPlasticAvailable)
 		{
-			FString PlasticScmVersion;
 			PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
 
 			// Get user name (from the global Plastic SCM client config)
@@ -117,6 +116,7 @@ TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceContro
 FText FPlasticSourceControlProvider::GetStatusText() const
 {
 	FFormatNamedArguments Args;
+    Args.Add( TEXT("PlasticScmVersion"), FText::FromString(PlasticScmVersion) );
 	Args.Add( TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot) );
 	Args.Add( TEXT("WorkspaceName"), FText::FromString(WorkspaceName) );
 	Args.Add( TEXT("BranchName"), FText::FromString(BranchName) );
@@ -131,7 +131,7 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	}
 	Args.Add( TEXT("UserName"), FText::FromString(UserName) );
 
-	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Workspace: {WorkspaceName} ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: {UserName}"), Args );
+	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Plastic SCM {PlasticScmVersion}\nWorkspace: {WorkspaceName} ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: {UserName}"), Args );
 }
 
 /** Quick check if source control is enabled */

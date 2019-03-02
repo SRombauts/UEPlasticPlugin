@@ -144,6 +144,9 @@ private:
 	/** Update workspace status on Connect and UpdateStatus operations */
 	void UpdateWorkspaceStatus(const class FPlasticSourceControlCommand& InCommand);
 
+    /** Version of the Plastic SCM executable used */
+    FString PlasticScmVersion;
+
 	/** Path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */
 	FString PathToWorkspaceRoot;
 
