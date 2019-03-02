@@ -80,7 +80,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 
 ### Status
 
-#### Version 1.4.2 2019/01/22 for UE4.21:
+#### Version 1.4.3 2019/03/01 for UE4.21:
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored files
@@ -105,6 +105,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 - [Partial Checkin (like Gluon, for artists)](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
 - Plastic Cloud is fully supported
 - xlinks sub-repositories (for Plugins for instance)
+- support legacy status command from PlasticSCM version 8.0.16.3000 (crash fix)
 - Windows only
 
 #### Feature Requests
