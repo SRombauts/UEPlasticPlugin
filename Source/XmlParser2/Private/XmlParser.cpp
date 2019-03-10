@@ -2,4 +2,4 @@
 
 #include "XmlParserPrivatePCH.h"
 
-IMPLEMENT_MODULE( FDefaultModuleImpl, XmlParser );
+IMPLEMENT_MODULE( FDefaultModuleImpl, XmlParser2 );
