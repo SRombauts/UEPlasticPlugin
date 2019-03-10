@@ -1,9 +1,8 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
 #pragma once
 
-#ifndef __XmlNode_h__
-#define __XmlNode_h__
+#include "CoreMinimal.h"
 
 /** Forward Decl for implementation */
 class FXmlFile;
@@ -97,5 +96,3 @@ private:
 	FXmlNode* NextNode;
 
 };
-
-#endif

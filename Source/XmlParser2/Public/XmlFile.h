@@ -1,10 +1,8 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
 #pragma once
 
-#ifndef __XmlFile_h__
-#define __XmlFile_h__
-
+#include "CoreMinimal.h"
 #include "XmlNode.h"
 
 namespace EConstructMethod
@@ -117,5 +115,3 @@ private:
 	/** Flag for whether the node creation process failed or not */
 	bool bCreationFailed;
 };
-
-#endif

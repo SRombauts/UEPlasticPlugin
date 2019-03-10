@@ -1,5 +1,8 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
 #include "XmlParserPrivatePCH.h"
+
+#include "XmlParser.h"
+#include "Modules/ModuleManager.h"
 
 IMPLEMENT_MODULE( FDefaultModuleImpl, XmlParser2 );

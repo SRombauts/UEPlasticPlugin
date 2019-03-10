@@ -1,8 +1,7 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
-
-#include "XmlParserPrivatePCH.h"
+// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
 #include "XmlNode.h"
+
 
 const FString& FXmlAttribute::GetTag() const
 {
@@ -64,7 +63,7 @@ const FXmlNode* FXmlNode::FindChildNode(const FString& InTag) const
 
 FXmlNode* FXmlNode::FindChildNode(const FString& InTag)
 {
-	return const_cast<FXmlNode*>(const_cast<const FXmlNode*>(this)->FindChildNode(InTag));
+	return const_cast<FXmlNode*>(AsConst(this)->FindChildNode(InTag));
 }
 
 const FString& FXmlNode::GetTag() const
