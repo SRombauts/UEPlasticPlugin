@@ -83,7 +83,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 #### Version 1.4.3 2019/04/03 for UE4.22:
 - manage connection to the server
 - show current branch name and CL in status text
-- display status icons to show controlled/checked-out/added/deleted/private/changed/ignored files
+- display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
 - display locked files, and by who
 - add, duplicate a file
 - move/rename a file or a folder
