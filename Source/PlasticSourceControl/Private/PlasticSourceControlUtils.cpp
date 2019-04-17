@@ -657,7 +657,7 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("Unknown file status '%s'"), *FileStatus);
+		UE_LOG(LogSourceControl, Warning, TEXT("Unknown file status '%s' (in line '%s')"), *FileStatus, *InResult);
 		State = EWorkspaceState::Unknown;
 	}
 
