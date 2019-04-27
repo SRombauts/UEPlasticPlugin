@@ -821,11 +821,11 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 		Parameters.Add(TEXT("--compact"));
 	}
 	else {
-		Parameters.Add(TEXT("--wkconfig"));
-		Parameters.Add(TEXT("--noheaders"));
 		Parameters.Add(TEXT("--all"));
 		Parameters.Add(TEXT("--ignored"));
 	}
+	Parameters.Add(TEXT("--wkconfig")); // Branch name. TODO Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000 => by default in xml format
+	Parameters.Add(TEXT("--noheaders"));
 	// "cm status" only operate on one path (file or folder) at a time, so use one folder path for multiple files in a directory
 	const FString Path = FPaths::GetPath(*InFiles[0]);
 	TArray<FString> OnePath;
@@ -862,11 +862,7 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 			ParseFileStatusResult(FileVisitor.Files, Results, OutStates, OutChangeset, OutBranchName);
 			// The above cannot detect assets removed / locally deleted since there is no file left to enumerate (either by the Content Browser or by File Manager)
 			// => so we also parse the status results to explicitly look for Removed/Deleted assets
-
-			// Command-line format output changed with version 8.0.16.3000, so we only need to do this for older versions.
-			if (PlasticScmVersionLess(CurrentVersion, NewFormatVersion)) {
-				Results.RemoveAt(0, 2); // Before that, remove the first two line Changeset, and BranchName
-			}
+			Results.RemoveAt(0, 2); // Before that, remove the first two line Changeset, and BranchName
 			ParseDirectoryStatusResult(Results, OutStates);
 		}
 		else
