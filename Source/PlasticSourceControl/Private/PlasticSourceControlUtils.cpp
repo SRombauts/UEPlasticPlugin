@@ -522,8 +522,8 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	if (bIsNewVersion80163000) {
 		Parameters.Add(TEXT("--compact"));
 	}
-	Parameters.Add(TEXT("--wkconfig")); // Branch name
-	Parameters.Add(TEXT("--nochanges")); // No file status
+	Parameters.Add(TEXT("--wkconfig")); // Branch name. TODO Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000 => by default in xml format
+	Parameters.Add(TEXT("--nochanges")); // No file status // TODO: The option "--nochanges" has been renamed to "--header", and outputs just the workspace status.
 	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	if (bResult)
 	{
@@ -680,7 +680,7 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
 }
 
 /**
- * @brief Parse the array of strings results of a 'cm status --noheaders --all --ignore' command
+ * @brief Parse the array of strings results of a 'cm status --noheaders --controlledchanged --changed --localdeleted --localmoved --private --ignored' command
  *
  * Called in case of a regular status command for one or multiple files (not for a whole directory). 
  *
@@ -756,7 +756,7 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 }
 
 /**
- * @brief Parse the array of strings results of a 'cm status --noheaders --all --ignore' command
+ * @brief Parse the array of strings results of a 'cm status --noheaders --controlledchanged --changed --localdeleted --localmoved --private --ignored' command
  *
  * Called in case of a "directory status" (no file listed in the command) ONLY to detect Removed/Deleted files !
  *
@@ -832,12 +832,9 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	if (bIsNewVersion80163000) {
 		Parameters.Add(TEXT("--compact"));
 	}
-	else {
-		Parameters.Add(TEXT("--all"));
-		Parameters.Add(TEXT("--ignored"));
-	}
 	Parameters.Add(TEXT("--wkconfig")); // Branch name. TODO Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000 => by default in xml format
 	Parameters.Add(TEXT("--noheaders"));
+	Parameters.Add(TEXT("--controlledchanged --changed --localdeleted --localmoved --private --ignored"));
 	// "cm status" only operate on one path (file or folder) at a time, so use one folder path for multiple files in a directory
 	const FString Path = FPaths::GetPath(*InFiles[0]);
 	TArray<FString> OnePath;
