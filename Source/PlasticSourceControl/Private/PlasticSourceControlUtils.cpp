@@ -83,6 +83,10 @@ static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 
 namespace PlasticSourceControlUtils
 {
+// Command-line interface paramters and output format changed with version 8.0.16.3000
+// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
+static bool				bIsNewVersion80163000 = false;
+
 // In/Out Pipes for the 'cm shell' persistent process
 static void*			ShellOutputPipeRead = nullptr;
 static void*			ShellOutputPipeWrite = nullptr;
@@ -394,17 +398,6 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 	return bFound;
 }
 
-void GetPlasticScmVersion(FString& OutPlasticScmVersion)
-{
-	TArray<FString> InfoMessages;
-	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("version"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
-	if (bResult && InfoMessages.Num() > 0)
-	{
-		OutPlasticScmVersion = InfoMessages[0];
-	}
-}
-
 /**
  * @brief Compare Plastic SCM cli version strings.
  * @param VersionA		PlasticSCM version string in the form "0.0.0.0" (as returned by GetPlasticScmVersion)
@@ -433,6 +426,22 @@ static bool PlasticScmVersionLess(const FString& VersionA, const FString& Versio
 	if (A.d < B.d) return true;
 	if (B.d < A.d) return false;
 	return false; // Equal
+}
+
+// This is called once by FPlasticSourceControlProvider::CheckPlasticAvailability()
+void GetPlasticScmVersion(FString& OutPlasticScmVersion)
+{
+	TArray<FString> InfoMessages;
+	TArray<FString> ErrorMessages;
+	const bool bResult = RunCommand(TEXT("version"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+	if (bResult && InfoMessages.Num() > 0)
+	{
+		OutPlasticScmVersion = InfoMessages[0];
+
+		// Command-line format output changed with version 8.0.16.3000, plugin will crash unless we demand the old format.
+		// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
+		bIsNewVersion80163000 = !PlasticScmVersionLess(OutPlasticScmVersion, "8.0.16.3000");
+	}
 }
 
 void GetUserName(FString& OutUserName)
@@ -507,12 +516,18 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
+
+	// Command-line format output changed with version 8.0.16.3000, plugin will crash unless we demand the old format.
+	// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
+	if (bIsNewVersion80163000) {
+		Parameters.Add(TEXT("--compact"));
+	}
 	Parameters.Add(TEXT("--wkconfig")); // Branch name
 	Parameters.Add(TEXT("--nochanges")); // No file status
 	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	if (bResult)
 	{
-		ParseWorkspaceInformation(InfoMessages, OutChangeset, OutRepositoryName, OutServerUrl, OutBranchName);
+		bResult = ParseWorkspaceInformation(InfoMessages, OutChangeset, OutRepositoryName, OutServerUrl, OutBranchName);
 	}
 
 	return bResult;
@@ -814,10 +829,7 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 
 	// Command-line format output changed with version 8.0.16.3000, plugin will crash unless we demand the old format.
 	// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
-	FString NewFormatVersion = "8.0.16.3000";
-	FString CurrentVersion;
-	PlasticSourceControlUtils::GetPlasticScmVersion(CurrentVersion);
-	if (!PlasticScmVersionLess(CurrentVersion, NewFormatVersion)) {
+	if (bIsNewVersion80163000) {
 		Parameters.Add(TEXT("--compact"));
 	}
 	else {
