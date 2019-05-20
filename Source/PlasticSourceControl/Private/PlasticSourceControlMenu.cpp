@@ -1,6 +1,4 @@
-// Copyright (c) 2016-2018 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
-
-#include "PlasticSourceControlPrivatePCH.h"
+// Copyright (c) 2016-2019 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
 #include "PlasticSourceControlMenu.h"
 

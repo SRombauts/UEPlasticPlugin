@@ -1,10 +1,9 @@
-// Copyright (c) 2016-2018 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
+// Copyright (c) 2016-2019 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
-#include "PlasticSourceControlPrivatePCH.h"
+#include "PlasticSourceControlUtils.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlState.h"
-#include "PlasticSourceControlUtils.h"
 #include "HAL/PlatformFilemanager.h"
 #include "HAL/PlatformProcess.h"
 #include "HAL/FileManager.h"
