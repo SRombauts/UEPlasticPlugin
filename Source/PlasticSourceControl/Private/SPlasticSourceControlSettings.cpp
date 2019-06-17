@@ -270,6 +270,30 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.Font(Font)
 				]
 			]
+			// Option to enable the Update Status operation at Editor Startup
+			+SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(2.0f)
+			.VAlign(VAlign_Center)
+			[
+				SNew(SHorizontalBox)
+				.ToolTipText(LOCTEXT("UpdateStatusAtStartup_Tooltip", "Run an asynchronous Update Status at Editor startup (can be slow)."))
+				+SHorizontalBox::Slot()
+				.FillWidth(0.1f)
+				[
+					SNew(SCheckBox)
+					.IsChecked(SPlasticSourceControlSettings::IsUpdateStatusAtStartupChecked())
+					.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedUpdateStatusAtStartup)
+				]
+				+SHorizontalBox::Slot()
+				.FillWidth(2.9f)
+				.VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("UpdateStatusAtStartup", "Update workspace Status at Editor startup"))
+					.Font(Font)
+				]
+			]
 			// Button to create a new Workspace
 			+SVerticalBox::Slot()
 			.FillHeight(2.5f)
@@ -600,6 +624,24 @@ FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 		PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, Files, EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	}
 	return FReply::Handled();
+}
+
+void SPlasticSourceControlSettings::OnCheckedUpdateStatusAtStartup(ECheckBoxState NewCheckedState)
+{
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	PlasticSourceControl.AccessSettings().SetUpdateStatusAtStartup(NewCheckedState == ECheckBoxState::Checked);
+	PlasticSourceControl.AccessSettings().SaveSettings();
+}
+
+bool SPlasticSourceControlSettings::UpdateStatusAtStartup() const
+{
+	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	return PlasticSourceControl.AccessSettings().UpdateStatusAtStartup();
+}
+
+ECheckBoxState SPlasticSourceControlSettings::IsUpdateStatusAtStartupChecked() const
+{
+	return (UpdateStatusAtStartup() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
 }
 
 /** Path to the "ignore.conf" file */

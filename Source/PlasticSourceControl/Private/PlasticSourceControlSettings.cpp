@@ -18,7 +18,7 @@ static const FString SettingsSection = TEXT("PlasticSourceControl.PlasticSourceC
 
 }
 
-const FString FPlasticSourceControlSettings::GetBinaryPath() const
+FString FPlasticSourceControlSettings::GetBinaryPath() const
 {
 	FScopeLock ScopeLock(&CriticalSection);
 	return BinaryPath;
@@ -35,12 +35,25 @@ bool FPlasticSourceControlSettings::SetBinaryPath(const FString& InString)
 	return bChanged;
 }
 
+bool FPlasticSourceControlSettings::UpdateStatusAtStartup() const
+{
+	FScopeLock ScopeLock(&CriticalSection);
+	return bUpdateStatusAtStartup;
+}
+
+void FPlasticSourceControlSettings::SetUpdateStatusAtStartup(const bool bInUpdateStatusAtStartup)
+{
+	FScopeLock ScopeLock(&CriticalSection);
+	bUpdateStatusAtStartup = bInUpdateStatusAtStartup;
+}
+
 // This is called at startup nearly before anything else in our module: BinaryPath will then be used by the provider
 void FPlasticSourceControlSettings::LoadSettings()
 {
 	FScopeLock ScopeLock(&CriticalSection);
 	const FString& IniFile = SourceControlHelpers::GetSettingsIni();
 	GConfig->GetString(*PlasticSettingsConstants::SettingsSection, TEXT("BinaryPath"), BinaryPath, IniFile);
+	GConfig->GetBool(*PlasticSettingsConstants::SettingsSection, TEXT("UpdateStatusAtStartup"), bUpdateStatusAtStartup, IniFile);
 }
 
 void FPlasticSourceControlSettings::SaveSettings() const
@@ -48,4 +61,5 @@ void FPlasticSourceControlSettings::SaveSettings() const
 	FScopeLock ScopeLock(&CriticalSection);
 	const FString& IniFile = SourceControlHelpers::GetSettingsIni();
 	GConfig->SetString(*PlasticSettingsConstants::SettingsSection, TEXT("BinaryPath"), *BinaryPath, IniFile);
+	GConfig->SetBool(*PlasticSettingsConstants::SettingsSection, TEXT("UpdateStatusAtStartup"), bUpdateStatusAtStartup, IniFile);
 }

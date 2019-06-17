@@ -7,11 +7,13 @@
 class FPlasticSourceControlSettings
 {
 public:
-	/** Get the Plastic Binary Path */
-	const FString GetBinaryPath() const;
-
-	/** Set the Plastic Binary Path */
+	/** Get/Set the Plastic Binary Path */
+	FString GetBinaryPath() const;
 	bool SetBinaryPath(const FString& InString);
+
+	/** Enable an asynchronous "Update Status" at Editor Startup (default is no, can take a long time). */
+	bool UpdateStatusAtStartup() const;
+	void SetUpdateStatusAtStartup(const bool bInUpdateStatusAtStartup);
 
 	/** Load settings from ini file */
 	void LoadSettings();
@@ -25,4 +27,10 @@ private:
 
 	/** Plastic binary path */
 	FString BinaryPath;
+
+	/** Enable an asynchronous "Update Status" at Editor Startup (default is no).
+	 * This does not work well with very big projects where this operation could take dozens of seconds
+	 * preventing the project to have any source control support during this time.
+	*/
+	bool bUpdateStatusAtStartup;
 };

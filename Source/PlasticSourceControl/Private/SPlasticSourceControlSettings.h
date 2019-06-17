@@ -51,6 +51,10 @@ private:
 	void OnCheckedCreateIgnoreFile(ECheckBoxState NewCheckedState);
 	bool bAutoCreateIgnoreFile;
 
+	void OnCheckedUpdateStatusAtStartup(ECheckBoxState NewCheckedState);
+	ECheckBoxState IsUpdateStatusAtStartupChecked() const;
+	bool UpdateStatusAtStartup() const;
+
 	void OnCheckedInitialCommit(ECheckBoxState NewCheckedState);
 	bool bAutoInitialCommit;
 	void OnInitialCommitMessageCommited(const FText& InText, ETextCommit::Type InCommitType);
