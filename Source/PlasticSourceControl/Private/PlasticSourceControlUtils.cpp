@@ -3,6 +3,7 @@
 #include "PlasticSourceControlUtils.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
+#include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlState.h"
 #include "HAL/PlatformFilemanager.h"
 #include "HAL/PlatformProcess.h"
@@ -171,7 +172,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		FullCommand += File;
 		FullCommand += TEXT("\"");
 	}
-	// @todo: temporary debug logs (whithout the end-of-line)
+	// @todo: temporary debug logs (without the end-of-line)
 	const FString LoggableCommand = FullCommand.Left(256); // Limit command log size to 256 characters
 	UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (%d chars, %d files)"), ShellCommandCounter, *LoggableCommand, FullCommand.Len()+1, InFiles.Num());
 	FullCommand += TEXT('\n'); // Finalize the command line
@@ -212,7 +213,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		else if ((FPlatformTime::Seconds() - LastLog > LogInterval) && (PreviousLogLen < OutResults.Len()) && (InConcurrency == EConcurrency::Asynchronous))
 		{
 			// In case of long running operation, start to print intermediate output from cm shell (like percentage of progress)
-			// (but only when runing Asynchronous commands, since Synchronous commands block the main thread until they finish)
+			// (but only when running Asynchronous commands, since Synchronous commands block the main thread until they finish)
 			UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' in progress for %lfs...\n%s"), ShellCommandCounter, *InCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
 			PreviousLogLen = OutResults.Len();
 			LastLog = FPlatformTime::Seconds(); // freshen the timestamp of last log
