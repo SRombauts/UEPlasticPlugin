@@ -6,6 +6,8 @@ public class PlasticSourceControl : ModuleRules
 {
 	public PlasticSourceControl(ReadOnlyTargetRules Target) : base(Target)
 	{
+		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
