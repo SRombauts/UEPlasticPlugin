@@ -156,10 +156,10 @@ void FPlasticSourceControlMenu::ReloadPackages(TArray<UPackage*>& InPackagesToRe
 	});
 
 	// Hot-reload the new packages...
-	PackageTools::ReloadPackages(InPackagesToReload);
+	UPackageTools::ReloadPackages(InPackagesToReload);
 
 	// Unload any deleted packages...
-	PackageTools::UnloadPackages(PackagesToUnload);
+	UPackageTools::UnloadPackages(PackagesToUnload);
 }
 
 void FPlasticSourceControlMenu::SyncProjectClicked()
