@@ -14,6 +14,7 @@
 #include "HAL/PlatformTime.h"
 #include "Modules/ModuleManager.h"
 #include "XmlParser.h"
+#include "ISourceControlModule.h"
 
 #if PLATFORM_LINUX
 #include <sys/ioctl.h>

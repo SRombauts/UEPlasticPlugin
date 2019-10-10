@@ -1,6 +1,7 @@
 // Copyright (c) 2016-2019 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
 
 #include "PlasticSourceControlState.h"
+#include "ISourceControlModule.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl.State"
 

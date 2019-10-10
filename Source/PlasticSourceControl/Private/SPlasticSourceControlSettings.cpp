@@ -6,6 +6,7 @@
 #include "PlasticSourceControlUtils.h"
 
 #include "SourceControlOperations.h"
+#include "ISourceControlModule.h"
 #include "Fonts/SlateFontInfo.h"
 #include "Misc/Paths.h"
 #include "Misc/App.h"

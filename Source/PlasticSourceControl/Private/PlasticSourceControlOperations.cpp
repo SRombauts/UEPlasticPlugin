@@ -12,6 +12,7 @@
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"
 #include "SourceControlOperations.h"
+#include "ISourceControlModule.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 

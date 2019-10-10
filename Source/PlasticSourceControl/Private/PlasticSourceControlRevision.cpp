@@ -9,6 +9,7 @@
 
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"
+#include "ISourceControlModule.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -36,11 +37,15 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 	{
 		bCommandSuccessful = true; // if the temp file already exists, reuse it directly
 	}
-	else
+	else if (State)
 	{
 		// Format the revision specification of the file, like revid:1230@repo@server:8087
 		const FString RevisionSpecification = FString::Printf(TEXT("revid:%d@%s"), RevisionId, *State->RepSpec);
 		bCommandSuccessful = PlasticSourceControlUtils::RunDumpToFile(PathToPlasticBinary, RevisionSpecification, InOutFilename);
+	}
+	else
+	{
+		bCommandSuccessful = false;
 	}
 	return bCommandSuccessful;
 }
