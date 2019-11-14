@@ -253,11 +253,6 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			}
 		}
 	}
-	else
-	{
-		// @todo: debug log
-		UE_LOG(LogSourceControl, Log, TEXT("'exit'"));
-	}
 	// Return output as error if result code is an error
 	if (!bResult)
 	{

@@ -61,7 +61,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.FillWidth(1.0f)
 				[
 					SNew(STextBlock)
-					.Text(LOCTEXT("BinaryPathLabel", "Plastic SCM Path"))
+					.Text(LOCTEXT("PathLabel", "Plastic SCM Path"))
 					.Font(Font)
 				]
 				+SHorizontalBox::Slot()
@@ -206,7 +206,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				[
 					SNew(SEditableTextBox)
 					.Text(this, &SPlasticSourceControlSettings::GetServerUrl)
-					.HintText(LOCTEXT("ServerUrl", "Enter the Server URL"))
+					.HintText(LOCTEXT("EnterServerUrl", "Enter the Server URL"))
 					.OnTextCommitted(this, &SPlasticSourceControlSettings::OnServerUrlCommited)
 					.Font(Font)
 				]
