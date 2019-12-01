@@ -222,7 +222,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
 			// In case of timeout, ask the blocking 'cm shell' process to exit, and detach from it immediatly: it will be relaunched by next command
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%d): '%s' %d TIMEOUT after %lfs output:\n%s"), ShellCommandCounter, *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%d): '%s' %d TIMEOUT after %lfs output (%d chars):\n%s"), ShellCommandCounter, *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
 			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
 			FPlatformProcess::CloseProc(ShellProcessHandle);
 			_CleanupBackgroundCommandLineShell();
@@ -235,21 +235,21 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%d): '%s' 'cm shell' stopped after %lfs output:\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%d): '%s' 'cm shell' stopped after %lfs output (%d chars):\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
 		}
 		else if (!bResult)
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand(%d): '%s' (in %lfs) output:\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand(%d): '%s' (in %lfs) output (%d chars):\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
 		}
 		else
 		{
 			if (PreviousLogLen > 0)
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) output:\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen).Left(4096)); // Limit result size to 4096 characters
+				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) output (%d chars):\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen).Left(4096)); // Limit result size to 4096 characters
 			}
 			else
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) output:\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Left(4096)); // Limit result size to 4096 characters
+				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) output (%d chars):\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
 			}
 		}
 	}
