@@ -1218,191 +1218,34 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 	return bResult;
 }
 
-
 /**
- * Translate file actions from Plastic 'cm log' command to keywords used by the Editor UI.
- *
- * @see SHistoryRevisionListRowContent::GenerateWidgetForColumn(): "add", "edit", "delete", "branch" and "integrate"
-*/
-FString TranslateAction(const FString& InAction)
-{
-	if (InAction.Equals(TEXT("Added")))
-	{
-		return TEXT("add");
-	}
-	else if (InAction.Equals(TEXT("Moved")))
-	{
-		return TEXT("branch");
-	}
-	else if (InAction.Equals(TEXT("Deleted")))
-	{
-		return TEXT("delete");
-	}
-	else // if (InAction.Equals(TEXT("Changed")))
-	{
-		return TEXT("edit");
-	}
-}
-
-/**
- * Parse the array of strings results of a 'cm log --xml' command
- *
- * Example cm log results:
-<?xml version="1.0" encoding="utf-8"?>
-<LogList>
-  <Changeset>
-    <ObjId>989</ObjId>
-    <ChangesetId>2</ChangesetId>
-    <Branch>/main</Branch>
-    <Comment>Ignore Collections and Developers content</Comment>
-    <Owner>dev</Owner>
-    <GUID>a985c487-0f54-45c5-b0ef-9b87c4c3c3f9</GUID>
-    <Changes>
-      <Item>
-        <Branch>/main</Branch>
-        <RevNo>2</RevNo>
-        <Owner>dev</Owner>
-        <RevId>985</RevId>
-        <ParentRevId>282</ParentRevId>
-        <SrcCmPath>/ignore.conf</SrcCmPath>
-        <SrcParentItemId>2</SrcParentItemId>
-        <DstCmPath>/ignore.conf</DstCmPath>
-        <DstParentItemId>2</DstParentItemId>
-        <Date>2016-04-18T10:44:49.0000000+02:00</Date>
-        <Type>Changed</Type>
-      </Item>
-    </Changes>
-    <Date>2016-04-18T10:44:49.0000000+02:00</Date>
-  </Changeset>
-</LogList>
-*/
-static void ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlRevision& OutSourceControlRevision)
-{
-	static const FString LogList(TEXT("LogList"));
-	static const FString Changeset(TEXT("Changeset"));
-	static const FString Comment(TEXT("Comment"));
-	static const FString Date(TEXT("Date"));
-	static const FString Owner(TEXT("Owner"));
-	static const FString Changes(TEXT("Changes"));
-	static const FString Item(TEXT("Item"));
-	static const FString RevId(TEXT("RevId"));
-	static const FString ParentRevId(TEXT("ParentRevId"));
-	static const FString SrcCmPath(TEXT("SrcCmPath"));
-	static const FString DstCmPath(TEXT("DstCmPath"));
-	static const FString Type(TEXT("Type"));
-
-	const FXmlNode* LogListNode = InXmlResult.GetRootNode();
-	if (LogListNode == nullptr || LogListNode->GetTag() != LogList)
-	{
-		return;
-	}
-
-	const FXmlNode* ChangesetNode = LogListNode->FindChildNode(Changeset);
-	if (ChangesetNode == nullptr)
-	{
-		return;
-	}
-
-	const FXmlNode* CommentNode = ChangesetNode->FindChildNode(Comment);
-	if (CommentNode != nullptr)
-	{
-		OutSourceControlRevision.Description = CommentNode->GetContent();
-	}
-	const FXmlNode* OwnerNode = ChangesetNode->FindChildNode(Owner);
-	if (OwnerNode != nullptr)
-	{
-		OutSourceControlRevision.UserName = OwnerNode->GetContent();
-	}
-	const FXmlNode* DateNode = ChangesetNode->FindChildNode(Date);
-	if (DateNode != nullptr)
-	{	//                           |--|
-		//    2016-04-18T10:44:49.0000000+02:00
-		// => 2016-04-18T10:44:49.000+02:00
-		const FString DateIso = DateNode->GetContent().LeftChop(10) + DateNode->GetContent().RightChop(27);
-		FDateTime::ParseIso8601(*DateIso, OutSourceControlRevision.Date);
-	}
-
-	const FXmlNode* ChangesNode = ChangesetNode->FindChildNode(Changes);
-	if (ChangesNode == nullptr)
-	{
-		return;
-	}
-
-	// Iterate on files to find the one we are tracking
-	for (const FXmlNode* ItemNode : ChangesNode->GetChildrenNodes())
-	{
-		int32 RevisionId = -1;
-		const FXmlNode* RevIdNode = ItemNode->FindChildNode(RevId);
-		if (RevIdNode != nullptr)
-		{
-			RevisionId = FCString::Atoi(*RevIdNode->GetContent());
-		}
-		// Is this about the file we are looking for?
-		if (RevisionId == OutSourceControlRevision.RevisionId)
-		{
-			const FXmlNode* DstCmPathNode = ItemNode->FindChildNode(DstCmPath);
-			if (DstCmPathNode != nullptr)
-			{
-				OutSourceControlRevision.Filename = DstCmPathNode->GetContent();
-
-				const FXmlNode* SrcCmPathNode = ItemNode->FindChildNode(SrcCmPath);
-				const FXmlNode* ParentRevIdNode = ItemNode->FindChildNode(ParentRevId);
-				// Detect case of rename ("branch" in Perforce vocabulary)
-				if (ParentRevIdNode != nullptr && SrcCmPathNode != nullptr && !SrcCmPathNode->GetContent().Equals(DstCmPathNode->GetContent()))
-				{
-					TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> MovedFromRevision = MakeShareable(new FPlasticSourceControlRevision);
-					MovedFromRevision->Filename = SrcCmPathNode->GetContent();
-					MovedFromRevision->RevisionId = FCString::Atoi(*ParentRevIdNode->GetContent());
-	
-					OutSourceControlRevision.BranchSource = MovedFromRevision;
-				}
-			}
-			const FXmlNode* TypeNode = ItemNode->FindChildNode(Type);
-			if (TypeNode != nullptr)
-			{
-				OutSourceControlRevision.Action = TranslateAction(TypeNode->GetContent());
-			}
-			// 	Do not stop at first match, because in case of rename there are multiple log nodes: Changed+Moved (in this order)
-		}
-	}
-}
-
-// Run "cm log" on the changeset provided by the "history" command to get extra info about the change at a specific revision
-static bool RunLogCommand(const FString& InChangeset, const FString& InRepSpec, FPlasticSourceControlRevision& OutSourceControlRevision)
-{
-	const FString RepositorySpecification = FString::Printf(TEXT("cs:%s@%s"), *InChangeset, *InRepSpec);
-
-	FString Results;
-	FString Errors;
-	TArray<FString> Parameters;
-	Parameters.Add(RepositorySpecification);
-	Parameters.Add(TEXT("--xml"));
-	Parameters.Add(TEXT("--encoding=\"utf-8\""));
-
-	// Uses the raw RunCommandInternal() that does not split results in an array of strings, for XML parsing
-	bool bResult = RunCommandInternal(TEXT("log"), Parameters, TArray<FString>(), EConcurrency::Synchronous, Results, Errors);
-	if (bResult)
-	{
-		FXmlFile XmlFile;
-		bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
-		if (bResult)
-		{
-			ParseLogResults(XmlFile, OutSourceControlRevision);
-		}
-	}
-	return bResult;
-}
-
-/**
- * Parse results of the 'cm history --format="{1};{6}"' command ("Changeset number" and "Revision id"),
- * then run "cm log" on each revision to get extra info about the change (description, date, filename, branch, action)
+ * Parse results of the 'cm history --xml' command.
  * 
- * Results of the history command are with one changeset number and revision id by line, like that:
-14;176
-17;220
-18;223
+ * Results of the history command looks like that:
+<RevisionHistoriesResult>
+  <RevisionHistories>
+	<RevisionHistory>
+	  <ItemName>C:/Users/sebas/workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset</ItemName>
+	  <Revisions>
+		<Revision>
+		  <RevisionSpec>C:/Users/sebas/workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset#cs:7</RevisionSpec>
+		  <Branch>/main</Branch>
+		  <CreationDate>2019-10-14T09:52:07.0000000+02:00</CreationDate>
+		  <RevisionType>bin</RevisionType>
+		  <ChangesetNumber>7</ChangesetNumber>
+		  <Owner>sebas</Owner>
+		  <Comment>New tests</Comment>
+		  <b>UE4PlasticPluginDev</b>
+		  <c>localhost:8087</c>
+		  <d>UE4PlasticPluginDev@localhost:8087</d>
+		</Revision>
+		...
+	  </Revisions>
+	</RevisionHistory>
+  </RevisionHistories>
+</RevisionHistoriesResult>
 */
-static bool ParseHistoryResults(const TArray<FString>& InResults, FPlasticSourceControlState& InOutState)
+static bool ParseHistoryResults(const FXmlFile& InXmlResult, FPlasticSourceControlState& InOutState)
 {
 	bool bResult = true;
 
@@ -1410,24 +1253,67 @@ static bool ParseHistoryResults(const TArray<FString>& InResults, FPlasticSource
 	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
 
-	InOutState.History.Reserve(InResults.Num());
+	static const FString RevisionHistoriesResult(TEXT("RevisionHistoriesResult"));
+	static const FString RevisionHistories(TEXT("RevisionHistories"));
+	static const FString RevisionHistory(TEXT("RevisionHistory"));
+	static const FString ItemName(TEXT("ItemName"));
+	static const FString Revisions(TEXT("Revisions"));
+	static const FString Revision(TEXT("Revision"));
+	static const FString ChangesetNumber(TEXT("ChangesetNumber"));
+	static const FString Comment(TEXT("Comment"));
+	static const FString CreationDate(TEXT("CreationDate"));
+	static const FString Owner(TEXT("Owner"));
+
+	const FXmlNode* RevisionHistoriesResultNode = InXmlResult.GetRootNode();
+	if (RevisionHistoriesResultNode == nullptr || RevisionHistoriesResultNode->GetTag() != RevisionHistoriesResult)
+	{
+		return false;
+	}
+
+	const FXmlNode* RevisionHistoriesNode = RevisionHistoriesResultNode->FindChildNode(RevisionHistories);
+	if (RevisionHistoriesNode == nullptr)
+	{
+		return false;
+	}
+
+	const FXmlNode* RevisionHistoriyNode = RevisionHistoriesNode->FindChildNode(RevisionHistory);
+	if (RevisionHistoriyNode == nullptr)
+	{
+		return false;
+	}
+
+	const FXmlNode* ItemNameNode = RevisionHistoriyNode->FindChildNode(ItemName);
+
+	const FXmlNode* RevisionsNode = RevisionHistoriyNode->FindChildNode(Revisions);
+	if (RevisionsNode == nullptr)
+	{
+		return false;
+	}
+
+	const TArray<FXmlNode*>& RevisionNodes = RevisionsNode->GetChildrenNodes();
+	InOutState.History.Reserve(RevisionNodes.Num());
 
 	// parse history in reverse: needed to get most recent at the top (implied by the UI)
-	for (int32 Index = InResults.Num() - 1; Index >= 0; Index--)
+	for (int32 Index = RevisionNodes.Num() - 1; Index >= 0; Index--)
 	{
-		const FString& Result = InResults[Index];
-		if (bResult)
+		if (const FXmlNode* RevisionNode = RevisionNodes[Index])
 		{
-			TArray<FString> Infos;
-			const int32 NbElmts = Result.ParseIntoArray(Infos, TEXT(";"));
-			if (NbElmts == 2)
+			const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShareable(new FPlasticSourceControlRevision);
+			SourceControlRevision->State = &InOutState;
+			SourceControlRevision->Filename = ItemNameNode ? ItemNameNode->GetContent() : TEXT("");
+			SourceControlRevision->RevisionId = Index + 1;
+
+			if (Index == 0)
+				SourceControlRevision->Action = TEXT("add");
+			else
+				SourceControlRevision->Action = TEXT("edit");
+
+			const FXmlNode* ChangesetNumberNode = RevisionNode->FindChildNode(ChangesetNumber);
+			if (ChangesetNumberNode != nullptr)
 			{
-				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShareable(new FPlasticSourceControlRevision);
-				SourceControlRevision->State = &InOutState;
-				const FString& Changeset = Infos[0];
-				const FString& RevisionId = Infos[1];
+				const FString& Changeset = ChangesetNumberNode->GetContent();
 				SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset); // Value now used in the Revision column and in the Asset Menu History
-				SourceControlRevision->RevisionId = FCString::Atoi(*RevisionId); // 
+
 				// Also append depot name to the revision, but only when it is different from the default one (ie for xlinks sub repository)
 				if (InOutState.RepSpec != RootRepSpec)
 				{
@@ -1439,35 +1325,57 @@ static bool ParseHistoryResults(const TArray<FString>& InResults, FPlasticSource
 				{
 					SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s"), *Changeset);
 				}
-
-				// Run "cm log" on the changeset number
-				bResult = RunLogCommand(Changeset, InOutState.RepSpec, *SourceControlRevision);
-				InOutState.History.Add(SourceControlRevision);
 			}
-			else
+			const FXmlNode* CommentNode = RevisionNode->FindChildNode(Comment);
+			if (CommentNode != nullptr)
 			{
-				bResult = false;
+				SourceControlRevision->Description = CommentNode->GetContent();
 			}
+			const FXmlNode* OwnerNode = RevisionNode->FindChildNode(Owner);
+			if (OwnerNode != nullptr)
+			{
+				SourceControlRevision->UserName = OwnerNode->GetContent();
+			}
+			const FXmlNode* DateNode = RevisionNode->FindChildNode(CreationDate);
+			if (DateNode != nullptr)
+			{	//                           |--|
+				//    2016-04-18T10:44:49.0000000+02:00
+				// => 2016-04-18T10:44:49.000+02:00
+				const FString DateIso = DateNode->GetContent().LeftChop(10) + DateNode->GetContent().RightChop(27);
+				FDateTime::ParseIso8601(*DateIso, SourceControlRevision->Date);
+			}
+
+			InOutState.History.Add(SourceControlRevision);
+		}
+		else
+		{
+			bResult = false;
 		}
 	}
 
 	return bResult;
 }
 
-// Run a Plastic "history" command and multiple "log" commands and parse them.
+// Run a Plastic "history" command and parse it's XML result.
 bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, FPlasticSourceControlState& InOutState)
 {
-	TArray<FString> Results;
+	FString Results;
+	FString Errors;
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--format=\"{1};{6}\"")); // Get "Changeset number" and "Revision id" of each revision of the asset
-	TArray<FString> OneFile;
-	OneFile.Add(*InFile);
+	//	Parameters.Add(TEXT("--format=\"{1};{6}\"")); // Get "Changeset number" and "Revision id" of each revision of the asset
+	Parameters.Add(TEXT("--xml"));
+	Parameters.Add(TEXT("--encoding=\"utf-8\""));
+	TArray<FString> OneFile{*InFile};
 
-	bool bResult = RunCommand(TEXT("history"), Parameters, OneFile, EConcurrency::Synchronous, Results, OutErrorMessages);
+	bool bResult = RunCommandInternal(TEXT("history"), Parameters, OneFile, EConcurrency::Synchronous, Results, Errors);
 	if (bResult)
 	{
-		bResult = ParseHistoryResults(Results, InOutState);
+		FXmlFile XmlFile;
+		bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+
+		bResult = ParseHistoryResults(XmlFile, InOutState);
 	}
+	OutErrorMessages.Add(Errors);
 
 	return bResult;
 }
