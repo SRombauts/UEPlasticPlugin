@@ -28,7 +28,7 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 		// create the diff dir if we don't already have it (Plastic wont)
 		IFileManager::Get().MakeDirectory(*FPaths::DiffDir(), true);
 		// create a unique temp file name based on the unique revision Id
-		const FString TempFileName = FString::Printf(TEXT("%stemp-%d-%s"), *FPaths::DiffDir(), RevisionId, *FPaths::GetCleanFilename(Filename));
+		const FString TempFileName = FString::Printf(TEXT("%stemp-%d-%s"), *FPaths::DiffDir(), ChangesetNumber, *FPaths::GetCleanFilename(Filename));
 		InOutFilename = FPaths::ConvertRelativePathToFull(TempFileName);
 	}
 
@@ -39,8 +39,8 @@ bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
 	}
 	else if (State)
 	{
-		// Format the revision specification of the file, like revid:1230@repo@server:8087
-		const FString RevisionSpecification = FString::Printf(TEXT("revid:%d@%s"), RevisionId, *State->RepSpec);
+		// Format the revision specification of the file, like rev:Content/BP.uasset#cs:12@repo@server:8087
+		const FString RevisionSpecification = FString::Printf(TEXT("rev:%s#cs:%d@%s"), *Filename, ChangesetNumber, *State->RepSpec);
 		bCommandSuccessful = PlasticSourceControlUtils::RunDumpToFile(PathToPlasticBinary, RevisionSpecification, InOutFilename);
 	}
 	else
