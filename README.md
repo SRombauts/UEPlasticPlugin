@@ -4,7 +4,8 @@ Unreal Engine 4 Plastic SCM Source Control Plugin
 [![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
 [![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
-This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4** (UE 4.11 to 4.22)
+This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4** (UE 4.11 to 4.24).
+It has now been integrated in Unreal Engine and is shipping with it since UE4.24 (in a version equivalent to 1.4.6+). See the Status section bellow for more details
 
 It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml) or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
 It is a complementary tool improving efficiency in your daily workflow with assets in Editor.
@@ -80,7 +81,9 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 
 ### Status
 
-#### Version 1.4.5 2019/04/27 for UE4.22:
+This version here is the development version, so it can contain additional fixes, performance improvements or new features.
+
+#### Version 1.4.6 2019/09/14 for UE4.23:
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
