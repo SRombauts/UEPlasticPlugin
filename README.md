@@ -174,5 +174,6 @@ If you want to help, Merge Requests are very welcome!
 
 ### Copyright
 
-Copyright (c) 2016-2018 Codice Software - Sébastien Rombauts (sebastien.rombauts@gmail.com)
+Copyright (c) 2016-2018 Codice Software
+Developped by Sébastien Rombauts (sebastien.rombauts@gmail.com)
 <a href="https://www.paypal.me/SRombauts" title="Pay Me a Beer! Donate with PayPal:)"><img src="https://www.paypalobjects.com/webstatic/paypalme/images/pp_logo_small.png" width="118"></a>

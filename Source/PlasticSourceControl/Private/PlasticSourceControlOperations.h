@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
+// Copyright (c) 2016-2020 Codice Software
 
 // Specialization of classes defineds in Engine\Source\Developer\SourceControl\Public\SourceControlOperations.h
 

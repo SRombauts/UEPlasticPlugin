@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Codice Software - Sebastien Rombauts (sebastien.rombauts@gmail.com)
+// Copyright (c) 2016-2020 Codice Software
 
 #include "PlasticSourceControlState.h"
 #include "ISourceControlModule.h"
