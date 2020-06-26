@@ -193,7 +193,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			[
 				SNew(SHorizontalBox)
 				.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
-				.ToolTipText(LOCTEXT("ServerUrl_Tooltip", "Enter the Server URL in the form address:port (localhost:8087)"))
+				.ToolTipText(LOCTEXT("ServerUrl_Tooltip", "Enter the Server URL in the form address:port (eg. localhost:8087 or Organization@cloud)"))
 				+SHorizontalBox::Slot()
 				.FillWidth(1.0f)
 				[
