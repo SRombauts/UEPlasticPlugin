@@ -83,7 +83,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 
 This version here is the development version, so it can contain additional fixes, performance improvements or new features.
 
-#### Version 1.4.7 2020/04/01 for UE4.24:
+#### Version 1.4.8 2020/06/26 for UE4.25:
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
@@ -174,6 +174,6 @@ If you want to help, Merge Requests are very welcome!
 
 ### Copyright
 
-Copyright (c) 2016-2018 Codice Software
+Copyright (c) 2016-2020 Codice Software
 Developped by Sébastien Rombauts (sebastien.rombauts@gmail.com)
 <a href="https://www.paypal.me/SRombauts" title="Pay Me a Beer! Donate with PayPal:)"><img src="https://www.paypalobjects.com/webstatic/paypalme/images/pp_logo_small.png" width="118"></a>
