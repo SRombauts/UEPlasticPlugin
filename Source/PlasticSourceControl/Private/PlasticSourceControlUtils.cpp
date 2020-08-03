@@ -1200,9 +1200,9 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 	FString Errors;
 
 	// start with the Plastic command itself, then add revspec and temp filename to dump
-	FString FullCommand = TEXT("cat ");
+	FString FullCommand = TEXT("cat \"");
 	FullCommand += InRevSpec;
-	FullCommand += TEXT(" --raw --file=\"");
+	FullCommand += TEXT("\" --raw --file=\"");
 	FullCommand += InDumpFileName;
 	FullCommand += TEXT("\"");
 
