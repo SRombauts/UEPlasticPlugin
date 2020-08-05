@@ -15,53 +15,15 @@ Since UE4 does not manage C++ source code, but only assets, the plugin is especi
 
 ## User Guide
 
-Source Control Login window, to create a new workspace/a new repository:
-![Source Control Login window - create a new workspace](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
-
-Source Control status tooltip, when hovering the Source Control icon in toolbar:
-![Source Control Status Tooltip](Screenshots/UE4PlasticPlugin-SourceControlStatus.png)
-
-Source Control top Menu, extended with commands specific to Plastic SCM:
-![Source Control Top Menu](Screenshots/UE4PlasticPlugin-SourceControlMenu.png)
-
-Submit Files to Source Control window, to check-in assets:
-![Submit Files to Source Control](Screenshots/UE4PlasticPlugin-SubmitFiles.png)
-
-File History window, to see the changelog of an asset:
-![History of a file](Screenshots/UE4PlasticPlugin-History.png)
-
-Visual Diffing of different revision of a Blueprint:
-<img src="https://cdn2.unrealengine.com/blog/DiffTool-1009x542-719850393.png" width="720">
-
-### Status Icons
-
-![New/Unsaved asset](Screenshots/Icons/UE4PlasticPlugin-New.png)
-![Added to Source Control](Screenshots/Icons/UE4PlasticPlugin-Added.png)
-![Controlled/Unchanged](Screenshots/Icons/UE4PlasticPlugin-Controlled.png)
-![Changed but not Checked-Out](Screenshots/Icons/UE4PlasticPlugin-Changed.png)
-
-![Checked-Out](Screenshots/Icons/UE4PlasticPlugin-CheckedOut.png)
-![Moved/Renamed](Screenshots/Icons/UE4PlasticPlugin-Renamed.png)
-![Checkd-Out/Locked by someone else](Screenshots/Icons/UE4PlasticPlugin-CheckedOutOther.png)
-![Not up-to-date/new revision in repository](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
-
-### Unreal Documentation
-
-- [Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
-- [Source Control Inside Unreal Editor](https://docs.unrealengine.com/latest/INT/Engine/Basics/SourceControl/InEditor/)
-
-- [Diffing Unreal Assets](https://www.unrealengine.com/blog/diffing-unreal-assets)
-- [Diffing Blueprints (Video)](https://www.unrealengine.com/blog/diffing-blueprints)
-
 ### Plugin Setup
 
-#### Unreal integrated plugin
+#### Unreal default version of the plugin
 
 A version of this PlasticSCM plugin has now been integrated in Unreal Engine and is shipping with it since UE4.24.
 
-This is the easiest way to get started with Plastic SCM in Unreal Engine, but it will always be lagging behind the latest release here.
+Why: This is the easiest way to get started with Plastic SCM in Unreal Engine, but it will always be lagging behind the latest release here.
 
-#### Manual installation from the latest release here
+#### Manual installation from the latest version here
 
 Why: if you want the latest features, performance improvements and bug fixes that are missing from Unreal integrated plugin.
 
@@ -78,7 +40,7 @@ Why: if you want the latest features, performance improvements and bug fixes tha
 
 #### How to build from sources
 
-If your project is already a C++ project, you only have to re-generate Visual Studio project files (step 4 bellow) and the plugin will get rebuild the next time you compile your project.
+Why: If your project is already a C++ project, you only have to re-generate Visual Studio project files (step 4 bellow) and the plugin will get rebuild the next time you compile your project.
 
 Else, if you want to rebuild the plugin for a Blueprint project:
 
@@ -93,24 +55,78 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 
 ### Project Setup
 
+#### Enable Source Control
+
+Launch you Unreal project, click on the Source Control icon "Connect to Source"
+![Source Control Connect](Screenshots/UE4PlasticPlugin-ConnectToSourceControl.png)
+
+Then select "Plastic SCM" plugin
+![Source Control Connect - Select Provider](Screenshots/UE4PlasticPlugin-SelectProvider.png)
+
 #### Create a new workspace & repository directly from Unreal
 
-Launch you Unreal project, click on the Source Control icon "Connect to Source", select "Plastic SCM".
+Source Control Login window, to create a new workspace/a new repository, click on "Initialize workspace" (exemple of a cloud repository):
+![Source Control Login window - create a new workspace on cloud](Screenshots/UE4PlasticPlugin-CreateWorkspaceCloud.png)
 
-Source Control Login window, to create a new workspace/a new repository, click on "Initialize workspace":
-![Source Control Login window - create a new workspace](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
+Or on a server runing on localhost:
+![Source Control Login window - create a new workspace on localhost](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
 
 This creates an appropriate ignore.conf file, add all relevant files to source control (.uproject, Config & Content subdirectories)
 and can also do the initial commit automatically at the end.
 
 Wait for this to succeed before acception source control settings to not lock the UI & mess with the initialization!
+![Source Control Login window - checking files in source control](Screenshots/UE4PlasticPlugin-CheckinInProgress.png)
+
+### Status Icons
+
+![New/Unsaved asset](Screenshots/Icons/UE4PlasticPlugin-New.png)
+![Added to Source Control](Screenshots/Icons/UE4PlasticPlugin-Added.png)
+![Controlled/Unchanged](Screenshots/Icons/UE4PlasticPlugin-Controlled.png)
+![Changed but not Checked-Out](Screenshots/Icons/UE4PlasticPlugin-Changed.png)
+
+![Checked-Out](Screenshots/Icons/UE4PlasticPlugin-CheckedOut.png)
+![Moved/Renamed](Screenshots/Icons/UE4PlasticPlugin-Renamed.png)
+![Checkd-Out/Locked by someone else](Screenshots/Icons/UE4PlasticPlugin-CheckedOutOther.png)
+![Not up-to-date/new revision in repository](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
+
+#### Source Control Menu
+
+Source Control status tooltip, when hovering the Source Control icon in toolbar:
+![Source Control Status Tooltip](Screenshots/UE4PlasticPlugin-SourceControlStatus.png)
+
+Source Control top Menu, extended with commands specific to Plastic SCM:
+![Source Control Top Menu](Screenshots/UE4PlasticPlugin-SourceControlMenu.png)
+
+#### Source Control Windows
+
+Submit Files to Source Control window, to check-in assets:
+![Submit Files to Source Control](Screenshots/UE4PlasticPlugin-SubmitFiles.png)
+
+File History window, to see the changelog of an asset:
+![History of a file](Screenshots/UE4PlasticPlugin-History.png)
+
+Visual Diffing of different revision of a Blueprint:
+<img src="https://cdn2.unrealengine.com/blog/DiffTool-1009x542-719850393.png" width="720">
+
+#### Redirectors
+
+When Source Control is enabled Unreal creates a redirector whenever an asset is renamed or moved,
+so that other developers relying on it's old name / location can still work with other assets referencing it.
+
+This means, you end up with two files that you have to submit, even if by default they don't show up in the Content Browser.
+
+You can show them in the Content Browser using a dedicated filter:
+![Source Control - Show Redirectors](Screenshots/UE4PlasticPlugin-ShowRedirectors.png)
+
+You can also delete them recursively using the context menu "Fix Up Redirectors in Folder":
+![Source Control - Show Redirectors](Screenshots/UE4PlasticPlugin-FixUpRedirectorsInFolder.png)
 
 #### Worfklow
 
 Unreal Engine workflow with binary assets works best with mostly only one branch (regardless of the source control used).
 
-TODO: list limitations working with branches, and possible workflow
-TODO: describe how to use Gluon to enable working without always getting latest version before a submit
+- TODO: list limitations working with branches, and possible workflow
+- TODO: describe how to use Gluon to enable working without always getting latest version before a submit
 
 ### Server Setup
 
@@ -131,6 +147,14 @@ For instance:
 On Plastic Cloud, you can just setup lock rules like that:
 
     /Content
+
+### Unreal Documentation
+
+- [Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
+- [Source Control Inside Unreal Editor](https://docs.unrealengine.com/latest/INT/Engine/Basics/SourceControl/InEditor/)
+
+- [Diffing Unreal Assets](https://www.unrealengine.com/blog/diffing-unreal-assets)
+- [Diffing Blueprints (Video)](https://www.unrealengine.com/blog/diffing-blueprints)
 
 ### Status
 
