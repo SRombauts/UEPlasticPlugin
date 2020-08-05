@@ -4,7 +4,7 @@ Unreal Engine 4 Plastic SCM Source Control Plugin
 [![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
 [![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
-This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4** (UE 4.11 to 4.24).
+This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4** (UE 4.11 to 4.25).
 It has now been integrated in Unreal Engine and is shipping with it since UE4.24 (in a version equivalent to 1.4.6+). See the Status section bellow for more details
 
 It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml) or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
@@ -12,6 +12,8 @@ It is a complementary tool improving efficiency in your daily workflow with asse
 
 It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints. It also helps importing an existing UE4 Project into source control, with appropriate *ignore.conf* file.
 Since UE4 does not manage C++ source code, but only assets, the plugin is especially useful for GDs and artists.
+
+## User Guide
 
 Source Control Login window, to create a new workspace/a new repository:
 ![Source Control Login window - create a new workspace](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
@@ -31,7 +33,7 @@ File History window, to see the changelog of an asset:
 Visual Diffing of different revision of a Blueprint:
 <img src="https://cdn2.unrealengine.com/blog/DiffTool-1009x542-719850393.png" width="720">
 
-Status Icons:
+### Status Icons
 
 ![New/Unsaved asset](Screenshots/Icons/UE4PlasticPlugin-New.png)
 ![Added to Source Control](Screenshots/Icons/UE4PlasticPlugin-Added.png)
@@ -43,7 +45,7 @@ Status Icons:
 ![Checkd-Out/Locked by someone else](Screenshots/Icons/UE4PlasticPlugin-CheckedOutOther.png)
 ![Not up-to-date/new revision in repository](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
 
-### References
+### Unreal Documentation
 
 - [Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
 - [Source Control Inside Unreal Editor](https://docs.unrealengine.com/latest/INT/Engine/Basics/SourceControl/InEditor/)
@@ -51,20 +53,30 @@ Status Icons:
 - [Diffing Unreal Assets](https://www.unrealengine.com/blog/diffing-unreal-assets)
 - [Diffing Blueprints (Video)](https://www.unrealengine.com/blog/diffing-blueprints)
 
-### Quick setup from binary release
+### Plugin Setup
+
+#### Unreal integrated plugin
+
+A version of this PlasticSCM plugin has now been integrated in Unreal Engine and is shipping with it since UE4.24.
+
+This is the easiest way to get started with Plastic SCM in Unreal Engine, but it will always be lagging behind the latest release here.
+
+#### Manual installation from the latest release here
+
+Why: if you want the latest features, performance improvements and bug fixes that are missing from Unreal integrated plugin.
 
 1. Download the [latest binary release UE4PlasticPlugin-x.x.x.zip](https://github.com/SRombauts/UE4PlasticPlugin/releases) targeting your UE4 version.
 2. Either:
-    1. Unzip the content of the ZIP in the root of the Unreal Engine 4.x project folder.
-       That should create a "Plugins/" folder into your project.
+    1. Unzip the content of the ZIP directly at the root of your project folder.
+       This creates a "Plugins/UE4PlasticPlugin/" subdirectory into your project.
        This is the way to go to use Plastic SCM only on a specific project.
     2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
-       (for instance "C:\Program Files\Epic Games\4.18\Engine\")
-       That should create a "UE4PlasticPlugin" folder into the "Plugins/" subdirectory.
+       (for instance "C:\Program Files\Epic Games\4.25\Engine\")
+       This creates a "UE4PlasticPlugin" folder into the "Plugins/" subdirectory.
        This is the way to enable Plastic SCM for all Unreal Engine projects.
-3. Then, launch Unreal Engine 4.x, click on the Source Control icon "Connect to Source", select "Plastic SCM".
+3. Then, launch you Unreal project, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
-### How to build from sources
+#### How to build from sources
 
 If your project is already a C++ project, you only have to re-generate Visual Studio project files (step 4 bellow) and the plugin will get rebuild the next time you compile your project.
 
@@ -78,6 +90,47 @@ Else, if you want to rebuild the plugin for a Blueprint project:
 5. In Visual Studio, **Reload All** and **Build Solution** in **Development Editor** mode. That's it, the plugin is built (resulting dlls are located in _Plugins\UE4PlasticPlugin\Binaries\Win64_).
 
 To release the plugin, zip the _Plugins_ folder. But before that, remove the _Intermediate_, _Screenshots_ and _.git_ folders, and also the big *.pdb files in _Plugins\UE4PlasticPlugin\Binaries\Win64_.
+
+### Project Setup
+
+#### Create a new workspace & repository directly from Unreal
+
+Launch you Unreal project, click on the Source Control icon "Connect to Source", select "Plastic SCM".
+
+Source Control Login window, to create a new workspace/a new repository, click on "Initialize workspace":
+![Source Control Login window - create a new workspace](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
+
+This creates an appropriate ignore.conf file, add all relevant files to source control (.uproject, Config & Content subdirectories)
+and can also do the initial commit automatically at the end.
+
+Wait for this to succeed before acception source control settings to not lock the UI & mess with the initialization!
+
+#### Worfklow
+
+Unreal Engine workflow with binary assets works best with mostly only one branch (regardless of the source control used).
+
+TODO: list limitations working with branches, and possible workflow
+TODO: describe how to use Gluon to enable working without always getting latest version before a submit
+
+### Server Setup
+
+#### Locking UE4 assets
+
+Binary assets should be locked for exclusive access to avoid merge conflicts.
+
+To lock all assets on the whole `Content` directory, you need to put a `lock.conf` in your server directory (for instance `C:\Program Files\PlasticSCM5\server`) with this content:
+
+    rep:default lockserver:mainsvr:8084
+    \Content
+
+For instance:
+
+    rep:UE4PlasticPluginDev lockserver:localhost:8087
+    \Content
+
+On Plastic Cloud, you can just setup lock rules like that:
+
+    /Content
 
 ### Status
 
@@ -135,23 +188,6 @@ This version here is the development version, so it can contain additional fixes
 - tags: get labels (used for crash when the full Engine is under Plastic SCM)
 - annotate: blame (used for crash when the full Engine is under Plastic SCM)
 
-### Locking UE4 assets
-Binary assets should be locked for exclusive access to avoid merge conflicts.
-
-To lock all assets on the whole `Content` directory, you need to put a `lock.conf` in your server directory (for instance `C:\Program Files\PlasticSCM5\server`) with this content:
-
-```
-rep:default lockserver:mainsvr:8084
-\Content
-```
-
-For instance:
-
-```
-rep:UE4PlasticPluginDev lockserver:localhost:8087
-\Content
-```
-
 ### Support
 
 You can always ask questions in [Unreal Engine forums](https://forums.unrealengine.com/showthread.php?108688-Plastic-SCM-Source-Control-Provider/page2).
@@ -170,7 +206,7 @@ To report an issue, please use the [Github issue-tracker](https://github.com/SRo
 
 #### Use merge requests
 
-If you want to help, Merge Requests are very welcome!
+If you want to help, [Github Pull Requests](https://github.com/SRombauts/UE4PlasticPlugin/pulls) are welcome!
 
 ### Copyright
 
