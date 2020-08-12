@@ -128,7 +128,7 @@ Unreal Engine workflow with binary assets works best with mostly only one branch
 - TODO: list limitations working with branches, and possible workflow
 - TODO: describe how to use Gluon to enable working without always getting latest version before a submit
 
-### Server Setup
+### Plastic SCM Setup
 
 #### Locking UE4 assets
 
@@ -147,6 +147,17 @@ For instance:
 On Plastic Cloud, you can just setup lock rules like that:
 
     /Content
+
+#### Visual Diff of Blueprint from Plastic SCM GUI
+
+In "Preferences -> Diff tools" add a new config for uasset and move it up **before** the existing `$binary` one:
+![Diff tools](Screenshots/UE4PlasticPlugin-GUIDiffTools.png)
+
+The command line needs the quoted path to the UE4Editor.exe, the quoted patch to your ".uproject" file, -diff, thant the source & destination files variables also quoted
+
+    "C:\Program Files\Epic Games\UE_4.25\Engine\Binaries\Win64\UE4Editor.exe" "C:\wkspaces\MyProject\MyProject.uproject" -diff "@sourcefile" "@destinationfile"
+
+![uasset diff](Screenshots/UE4PlasticPlugin-GUIDiffUasset.png)
 
 ### Unreal Documentation
 
