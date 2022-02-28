@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Codice Software
+// Copyright (c) 2016-2022 Codice Software
 
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlCommand.h"
@@ -20,7 +20,7 @@
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
-static FName ProviderName("Plastic SCM");
+static FName ProviderName("Plastic SCM 2");
 
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {

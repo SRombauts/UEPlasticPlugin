@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Codice Software
+// Copyright (c) 2016-2022 Codice Software
 
 #pragma once
 
