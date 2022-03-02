@@ -252,7 +252,7 @@ bool FPlasticSourceControlState::CanCheckIn() const
 		|| WorkspaceState == EWorkspaceState::Replaced
 		|| WorkspaceState == EWorkspaceState::CheckedOut;
 
-	UE_LOG(LogSourceControl, Log, TEXT("%s CanCheckIn=%d"), *LocalFilename, bCanCheckIn);
+	UE_LOG(LogSourceControl, Verbose, TEXT("%s CanCheckIn=%d"), *LocalFilename, bCanCheckIn);
 
 	return bCanCheckIn;
 }
@@ -264,7 +264,7 @@ bool FPlasticSourceControlState::CanCheckout() const
 								|| WorkspaceState == EWorkspaceState::Replaced)		// In source control, merged, waiting for checkin to conclude the merge 
 								&& IsCurrent(); // Is up to date (at the revision of the repo)
 
-	UE_LOG(LogSourceControl, Log, TEXT("%s CanCheckout=%d"), *LocalFilename, bCanCheckout);
+	UE_LOG(LogSourceControl, Verbose, TEXT("%s CanCheckout=%d"), *LocalFilename, bCanCheckout);
 
 	return bCanCheckout;
 }
@@ -277,7 +277,7 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 							|| WorkspaceState == EWorkspaceState::Replaced // Workaround to enable checkin
 							|| WorkspaceState == EWorkspaceState::Changed; // Workaround to enable checkin  NOTE: Comment to enable checkout on prompt of a Changed file (see above)
 
-	if (bIsCheckedOut) UE_LOG(LogSourceControl, Log, TEXT("%s IsCheckedOut"), *LocalFilename);
+	if (bIsCheckedOut) UE_LOG(LogSourceControl, Verbose, TEXT("%s IsCheckedOut"), *LocalFilename);
 
 	return bIsCheckedOut;
 }
@@ -290,8 +290,7 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 	}
 	const bool bIsLockedByOther = WorkspaceState == EWorkspaceState::LockedByOther;
 
-	// @todo: temporary debug log
-	// if (bIsLockedByOther) UE_LOG(LogSourceControl, Log, TEXT("%s IsCheckedOutOther by '%s' (%s)"), *LocalFilename, *LockedBy, *LockedWhere);
+	if (bIsLockedByOther) UE_LOG(LogSourceControl, VeryVerbose, TEXT("%s IsCheckedOutOther by '%s' (%s)"), *LocalFilename, *LockedBy, *LockedWhere);
 
 	return bIsLockedByOther;
 }
@@ -341,8 +340,7 @@ bool FPlasticSourceControlState::IsCurrent() const
 	// NOTE: Deleted assets get a "-1" HeadRevision which we do not want to override the real icon state
 	const bool bIsCurrent = (LocalRevisionChangeset == DepotRevisionChangeset) || (WorkspaceState == EWorkspaceState::Deleted);
 
-	// @todo: temporary debug log
-	// if (bIsCurrent) UE_LOG(LogSourceControl, Log, TEXT("%s IsCurrent"), *LocalFilename, );
+	if (bIsCurrent) UE_LOG(LogSourceControl, VeryVerbose, TEXT("%s IsCurrent"), *LocalFilename);
 	
 	return bIsCurrent;
 }
@@ -429,7 +427,7 @@ bool FPlasticSourceControlState::IsModified() const
 							|| WorkspaceState == EWorkspaceState::Changed
 							|| WorkspaceState == EWorkspaceState::Conflicted;
 
-	UE_LOG(LogSourceControl, Log, TEXT("%s IsModified=%d"), *LocalFilename, bIsModified);
+	UE_LOG(LogSourceControl, Verbose, TEXT("%s IsModified=%d"), *LocalFilename, bIsModified);
 
 	return bIsModified;
 }

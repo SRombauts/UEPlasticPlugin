@@ -126,7 +126,7 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Log, TEXT("LaunchBackgroundPlasticShell: '%s %s' ok (handle %d)"), *InPathToPlasticBinary, *FullCommand, ShellProcessHandle.Get());
+		UE_LOG(LogSourceControl, Verbose, TEXT("LaunchBackgroundPlasticShell: '%s %s' ok (handle %d)"), *InPathToPlasticBinary, *FullCommand, ShellProcessHandle.Get());
 		ShellCommandCounter = 0;
 	}
 
@@ -150,14 +150,14 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 {
 	bool bResult = false;
 
+	ShellCommandCounter++;
+
 	// Detect previous crash of cm.exe and restart 'cm shell'
 	if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
 		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand(%d): 'cm shell' has stopped. Restarting!"), ShellCommandCounter);
 		_RestartBackgroundCommandLineShell();
 	}
-
-	ShellCommandCounter++;
 
 	// Start with the Plastic command itself ("status", "log", "chekin"...)
 	FString FullCommand = InCommand;
@@ -173,9 +173,8 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		FullCommand += File;
 		FullCommand += TEXT("\"");
 	}
-	// @todo: temporary debug logs (without the end-of-line)
 	const FString LoggableCommand = FullCommand.Left(256); // Limit command log size to 256 characters
-	UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (%d chars, %d files)"), ShellCommandCounter, *LoggableCommand, FullCommand.Len()+1, InFiles.Num());
+	UE_LOG(LogSourceControl, Verbose, TEXT("RunCommand(%d): '%s' (%d chars, %d files)"), ShellCommandCounter, *LoggableCommand, FullCommand.Len()+1, InFiles.Num());
 	FullCommand += TEXT('\n'); // Finalize the command line
 
 	// Send command to 'cm shell' process
@@ -247,9 +246,14 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			{
 				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) output (%d chars):\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen).Left(4096)); // Limit result size to 4096 characters
 			}
+			else if (OutResults.Len() <= 200) // Limit result size to 200 characters
+			{
+				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) output (%d chars):\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults);
+			}
 			else
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) output (%d chars):\n%s"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
+				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) (output %d chars not displayed)"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len());
+				UE_LOG(LogSourceControl, VeryVerbose, TEXT("\n%s"), *OutResults.Left(4096));; // Limit result size to 4096 characters
 			}
 		}
 	}
@@ -742,13 +746,13 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 		}
 		FileState.TimeStamp.Now();
 
-		// @todo: temporary debug log (only for the first few files)
-		if (OutStates.Num() < 20) UE_LOG(LogSourceControl, Log, TEXT("%s = %d:%s"), *File, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
+		// debug log (only for the first few files)
+		if (OutStates.Num() < 20) UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *File, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
 
 		OutStates.Add(MoveTemp(FileState));
 	}
-	// @todo: temporary debug log (if too many files)
-	if (OutStates.Num() > 20) UE_LOG(LogSourceControl, Log, TEXT("[...] %d more files"), OutStates.Num() - 20);
+	// debug log (if too many files)
+	if (OutStates.Num() > 20) UE_LOG(LogSourceControl, Verbose, TEXT("[...] %d more files"), OutStates.Num() - 20);
 }
 
 /**
@@ -781,8 +785,7 @@ static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<
 			FileState.WorkspaceState = WorkspaceState;
 			FileState.TimeStamp.Now();
 
-			// @todo: temporary debug log
-			UE_LOG(LogSourceControl, Log, TEXT("%s = %d:%s"), *File, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
+			UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *File, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
 
 			OutStates.Add(MoveTemp(FileState));
 		}
@@ -862,8 +865,7 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 			// Find recursively all files in the directory: this enable getting the list of "Controlled" (unchanged) assets
 			FFileVisitor FileVisitor;
 			FPlatformFileManager::Get().GetPlatformFile().IterateDirectoryRecursively(*Path, FileVisitor);
-			// @todo: temporary debug log
-			UE_LOG(LogSourceControl, Log, TEXT("RunStatus(%s): 1) special case for status of a directory containing %d file(s) (%s)"), *InFiles[0], FileVisitor.Files.Num(), *Path);
+			UE_LOG(LogSourceControl, Verbose, TEXT("RunStatus(%s): 1) special case for status of a directory containing %d file(s) (%s)"), *InFiles[0], FileVisitor.Files.Num(), *Path);
 			ParseFileStatusResult(FileVisitor.Files, Results, OutStates, OutChangeset, OutBranchName);
 			// The above cannot detect assets removed / locally deleted since there is no file left to enumerate (either by the Content Browser or by File Manager)
 			// => so we also parse the status results to explicitly look for Removed/Deleted assets
@@ -873,8 +875,7 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 		else
 		{
 			// 2) General case for one or more files in the same directory.
-			// @todo: temporary debug log
-			UE_LOG(LogSourceControl, Log, TEXT("RunStatus(%s...): 2) general case for %d file(s) in a directory (%s)"), *InFiles[0], InFiles.Num(), *Path);
+			UE_LOG(LogSourceControl, Verbose, TEXT("RunStatus(%s...): 2) general case for %d file(s) in a directory (%s)"), *InFiles[0], InFiles.Num(), *Path);
 			ParseFileStatusResult(InFiles, Results, OutStates, OutChangeset, OutBranchName);
 		}
 	}
@@ -946,16 +947,15 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 		// If a file is locked by someone but not checked-out locally (or moved/renamed) this means it is locked by someone else or elsewhere
 		if ((FileState.WorkspaceState != EWorkspaceState::CheckedOut) && (FileState.WorkspaceState != EWorkspaceState::Moved) && (0 < FileState.LockedBy.Len())) 
 		{
-			// @todo: temporary debug log
-			UE_LOG(LogSourceControl, Log, TEXT("LockedByOther(%s) by '%s!=%s' (or %s!=%s)"), *File, *FileState.LockedBy, *Provider.GetUserName(), *FileState.LockedWhere, *Provider.GetWorkspaceName());
+			UE_LOG(LogSourceControl, Verbose, TEXT("LockedByOther(%s) by '%s!=%s' (or %s!=%s)"), *File, *FileState.LockedBy, *Provider.GetUserName(), *FileState.LockedWhere, *Provider.GetWorkspaceName());
 			FileState.WorkspaceState = EWorkspaceState::LockedByOther;
 		}
 
-		// @todo: temporary debug log (only for the first few files)
-		if (IdxResult < 20) UE_LOG(LogSourceControl, Log, TEXT("%s: %d;%d %s by '%s' (%s)"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.RepSpec, *FileState.LockedBy, *FileState.LockedWhere);
+		// debug log (only for the first few files)
+		if (IdxResult < 20) UE_LOG(LogSourceControl, Verbose, TEXT("%s: %d;%d %s by '%s' (%s)"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.RepSpec, *FileState.LockedBy, *FileState.LockedWhere);
 	}
-	// @todo: temporary debug log (if too many files)
-	if (InResults.Num() > 20) UE_LOG(LogSourceControl, Log, TEXT("[...] %d more files"), InResults.Num() - 20);
+	// debug log (if too many files)
+	if (InResults.Num() > 20) UE_LOG(LogSourceControl, Verbose, TEXT("[...] %d more files"), InResults.Num() - 20);
 }
 
 /**
@@ -1054,8 +1054,7 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 		FString MergeProgressContent;
 		if (FFileHelper::LoadFileToString(MergeProgressContent, *MergeProgressFilename))
 		{
-			// @todo: temporary debug logs
-			UE_LOG(LogSourceControl, Log, TEXT("RunCheckMergeStatus: %s:\n%s"), *MergeProgressFilename, *MergeProgressContent);
+			UE_LOG(LogSourceControl, Verbose, TEXT("RunCheckMergeStatus: %s:\n%s"), *MergeProgressFilename, *MergeProgressContent);
 			// Content is in one line, looking like the following:
 			// Target: mount:56e62dd7-241f-41e9-8c6b-dd4ca4513e62#/#UE4MergeTest@localhost:8087 merged from: Merge 4
 			// Target: mount:56e62dd7-241f-41e9-8c6b-dd4ca4513e62#/#UE4MergeTest@localhost:8087 merged from: Cherrypicking 3
@@ -1112,8 +1111,7 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 							UE_LOG(LogSourceControl, Log, TEXT("State.LocalFilename: '%s'"), *State.LocalFilename);
 							if (State.LocalFilename.EndsWith(MergeConflict.Filename, ESearchCase::CaseSensitive))
 							{
-								// @todo: temporary debug log
-								UE_LOG(LogSourceControl, Log, TEXT("MergeConflict '%s' found Base cs:%d From cs:%d"), *MergeConflict.Filename, MergeConflict.BaseChangeset, MergeConflict.SourceChangeset);
+								UE_LOG(LogSourceControl, Verbose, TEXT("MergeConflict '%s' found Base cs:%d From cs:%d"), *MergeConflict.Filename, MergeConflict.BaseChangeset, MergeConflict.SourceChangeset);
 								State.WorkspaceState = EWorkspaceState::Conflicted;
 								State.PendingMergeFilename = MergeConflict.Filename;
 								State.PendingMergeBaseChangeset = MergeConflict.BaseChangeset;
@@ -1159,10 +1157,9 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo,
 		}
 	}
 
-	// @todo: temporary debug log
 	if (InFiles.Num() > 0)
 	{
-		UE_LOG(LogSourceControl, Log, TEXT("RunUpdateStatus: %d file(s)/%d directory(ies) ('%s'...)"), InFiles.Num(), GroupOfFiles.Num(), *InFiles[0]);
+		UE_LOG(LogSourceControl, Verbose, TEXT("RunUpdateStatus: %d file(s)/%d directory(ies) ('%s'...)"), InFiles.Num(), GroupOfFiles.Num(), *InFiles[0]);
 	}
 	else
 	{
@@ -1206,8 +1203,7 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 	FullCommand += InDumpFileName;
 	FullCommand += TEXT("\"");
 
-	// @todo: temporary debug logs
-	UE_LOG(LogSourceControl, Log, TEXT("RunDumpToFile: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
+	UE_LOG(LogSourceControl, Verbose, TEXT("RunDumpToFile: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
 	const bool bResult = FPlatformProcess::ExecProcess(*InPathToPlasticBinary, *FullCommand, &ReturnCode, &Results, &Errors);
 	UE_LOG(LogSourceControl, Log, TEXT("RunDumpToFile: ExecProcess ReturnCode=%d Results='%s'"), ReturnCode, *Results);
 	if (!bResult || !Errors.IsEmpty())
