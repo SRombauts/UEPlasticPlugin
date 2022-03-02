@@ -545,24 +545,24 @@ bool IsMoveOperation(const FString& InOrigin)
 			Promise->SetValue(MoveTemp(AssetsData));
 		});
 		const TArray<FAssetData> AssetsData = Promise->GetFuture().Get();
-		UE_LOG(LogSourceControl, Log, TEXT("PackageName: %s, AssetsData: Num=%d"), *PackageName, AssetsData.Num());
+		UE_LOG(LogSourceControl, Log, TEXT("IsMoveOperation: PackageName: %s, AssetsData: Num=%d"), *PackageName, AssetsData.Num());
 		if (AssetsData.Num() > 0)
 		{
 			const FAssetData& AssetData = AssetsData[0];
 			if (!AssetData.IsRedirector())
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("%s is a plain asset, so it's a duplicate/copy"), *InOrigin);
+				UE_LOG(LogSourceControl, Log, TEXT("IsMoveOperation: %s is a plain asset, so it's a duplicate/copy"), *InOrigin);
 				bIsMoveOperation = false;
 			}
 			else
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("%s is a redirector, so it's a move/rename"), *InOrigin);
+				UE_LOG(LogSourceControl, Log, TEXT("IsMoveOperation: %s is a redirector, so it's a move/rename"), *InOrigin);
 			}
 		}
 		else
 		{
 			// no asset in package (no redirector) so it should be a rename/move of a newly Added (not Controlled/Checked-In) file
-			UE_LOG(LogSourceControl, Log, TEXT("%s does not have asset in package (ie. no redirector) so it's a move/rename of a newly added file"), *InOrigin);
+			UE_LOG(LogSourceControl, Log, TEXT("IsMoveOperation: %s does not have asset in package (ie. no redirector) so it's a move/rename of a newly added file"), *InOrigin);
 		}
 	}
 
@@ -594,7 +594,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			const bool bReplace = true;
 			const bool bEvenIfReadOnly = true;
 			const FString TempFileName = FPaths::CreateTempFilename(*FPaths::ProjectLogDir(), TEXT("Plastic-MoveTemp"), TEXT(".uasset"));
-			UE_LOG(LogSourceControl, Log, TEXT("Move '%s' -> '%d'"), *Origin, *TempFileName);
+			UE_LOG(LogSourceControl, Log, TEXT("Move '%s' -> '%s'"), *Origin, *TempFileName);
 			InCommand.bCommandSuccessful = IFileManager::Get().Move(*TempFileName, *Origin, bReplace, bEvenIfReadOnly);
 			// - revert the 'cm add' that was applied to the destination by the Editor
 			if (InCommand.bCommandSuccessful)
@@ -606,7 +606,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			// - move back the asset from the destination to it's original location
 			if (InCommand.bCommandSuccessful)
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("Move '%s' -> '%d'"), *Destination, *Origin);
+				UE_LOG(LogSourceControl, Log, TEXT("Move '%s' -> '%s'"), *Destination, *Origin);
 				InCommand.bCommandSuccessful = IFileManager::Get().Move(*Origin, *Destination, bReplace, bEvenIfReadOnly);
 			}
 			// - execute a 'cm move' command to the destination to redo the actual job
@@ -628,7 +628,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			// - restore the redirector file (if it exists) to it's former location
 			if (InCommand.bCommandSuccessful)
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("Move '%s' -> '%d'"), *TempFileName, *Origin);
+				UE_LOG(LogSourceControl, Log, TEXT("Move '%s' -> '%s'"), *TempFileName, *Origin);
 				InCommand.bCommandSuccessful = IFileManager::Get().Move(*Origin, *TempFileName, bReplace, bEvenIfReadOnly);
 			}
 			// - add the redirector file (if it exists) to source control
