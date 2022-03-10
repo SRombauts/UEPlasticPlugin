@@ -253,7 +253,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			else
 			{
 				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) (output %d chars not displayed)"), ShellCommandCounter, *LoggableCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len());
-				UE_LOG(LogSourceControl, VeryVerbose, TEXT("\n%s"), *OutResults.Left(4096));; // Limit result size to 4096 characters
+				UE_LOG(LogSourceControl, Verbose, TEXT("\n%s"), *OutResults.Left(4096));; // Limit result size to 4096 characters
 			}
 		}
 	}
@@ -811,6 +811,8 @@ public:
 /**
  * @brief Run a "status" command for a directory to get workspace file states
  *
+ *  ie. Changed, CheckedOut, Copied, Replaced, Added, Private, Ignored, Deleted, LocallyDeleted, Moved, LocallyMoved
+ *
  *  It is either a command for a whole directory (ie. "Content/", in case of "Submit to Source Control"),
  * or for one or more files all on a same directory (by design, since we group files by directory in RunUpdateStatus())
  *
@@ -959,7 +961,9 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 }
 
 /**
- * @brief Run a Plastic "fileinfo" command to update status of given files.
+ * @brief Run a "fileinfo" command to update complementary status information of given files.
+ *
+ * ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere
  *
  * @param[in]		InForceFileinfo		Also force execute the fileinfo command required to do get RepSpec of xlinks when getting history (or for diffs)
  * @param[in]		InConcurrency		Is the command running in the background, or blocking the main thread
@@ -1170,11 +1174,13 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo,
 	for (const auto& Files : GroupOfFiles)
 	{
 		// Run a "status" command on the directory to get workspace file states.
+		// (ie. Changed, CheckedOut, Copied, Replaced, Added, Private, Ignored, Deleted, LocallyDeleted, Moved, LocallyMoved)
 		TArray<FPlasticSourceControlState> States;
 		const bool bGroupOk = RunStatus(Files.Value, InConcurrency, OutErrorMessages, States, OutChangeset, OutBranchName);
 		if (bGroupOk && (States.Num() > 0))
 		{
-			// Run a "fileinfo" command to update status of given files.
+			// Run a "fileinfo" command to update complementary status information of given files.
+			// (ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere)
 			// In case of "directory status", there is no explicit file in the group (it contains only the directory) 
 			// => work on the list of files discovered by RunStatus()
 			bResults &= RunFileinfo(InForceFileinfo, InConcurrency, OutErrorMessages, States);
