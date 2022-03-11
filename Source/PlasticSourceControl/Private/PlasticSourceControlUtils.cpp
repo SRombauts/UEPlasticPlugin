@@ -130,7 +130,7 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 	else
 	{
 		const double ElapsedTime = (FPlatformTime::Seconds() - StartTimestamp);
-		UE_LOG(LogSourceControl, Verbose, TEXT("LaunchBackgroundPlasticShell: '%s %s' ok (in %lfs, handle %d)"), *InPathToPlasticBinary, *FullCommand, ElapsedTime, ShellProcessHandle.Get());
+		UE_LOG(LogSourceControl, Verbose, TEXT("_StartBackgroundPlasticShell: '%s %s' ok (in %lfs, handle %d)"), *InPathToPlasticBinary, *FullCommand, ElapsedTime, ShellProcessHandle.Get());
 		ShellCommandCounter = 0;
 		ShellCumulatedTime = ElapsedTime;
 	}
