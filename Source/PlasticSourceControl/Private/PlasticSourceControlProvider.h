@@ -147,6 +147,9 @@ private:
     /** Version of the Plastic SCM executable used */
     FString PlasticScmVersion;
 
+	/** Version of the Plastic SCM plugin */
+	FString PluginVersion;
+
 	/** Path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */
 	FString PathToWorkspaceRoot;
 

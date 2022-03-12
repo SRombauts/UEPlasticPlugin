@@ -30,7 +30,8 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
 		if(Plugin.IsValid())
 		{
-			UE_LOG(LogSourceControl, Log, TEXT("Plastic SCM plugin '%s'"), *(Plugin->GetDescriptor().VersionName));
+			PluginVersion = Plugin->GetDescriptor().VersionName;
+			UE_LOG(LogSourceControl, Log, TEXT("Plastic SCM plugin '%s'"), *PluginVersion);
 		}
 
 		CheckPlasticAvailability();
@@ -116,6 +117,7 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 {
 	FFormatNamedArguments Args;
     Args.Add( TEXT("PlasticScmVersion"), FText::FromString(PlasticScmVersion) );
+    Args.Add( TEXT("PluginVersion"), FText::FromString(PluginVersion) );
 	Args.Add( TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot) );
 	Args.Add( TEXT("WorkspaceName"), FText::FromString(WorkspaceName) );
 	Args.Add( TEXT("BranchName"), FText::FromString(BranchName) );
@@ -130,7 +132,7 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	}
 	Args.Add( TEXT("UserName"), FText::FromString(UserName) );
 
-	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Plastic SCM {PlasticScmVersion}\nWorkspace: {WorkspaceName} ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: {UserName}"), Args );
+	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Plastic SCM {PlasticScmVersion} (plugin v{PluginVersion})\nWorkspace: {WorkspaceName} ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: {UserName}"), Args );
 }
 
 /** Quick check if source control is enabled */
