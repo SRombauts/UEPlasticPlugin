@@ -183,7 +183,7 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	case EWorkspaceState::Conflicted:
 		return LOCTEXT("ContentsConflict", "Contents Conflict");
 	case EWorkspaceState::LockedByOther:
-		return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by: {0}"), FText::FromString(LockedBy));
+		return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by: {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
 	case EWorkspaceState::Private:
 		return LOCTEXT("NotControlled", "Not Under Source Control");
 	}
@@ -219,6 +219,8 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 		return LOCTEXT("Modified_Tooltip", "Item has been modified");
 	case EWorkspaceState::Conflicted:
 		return LOCTEXT("ContentsConflict_Tooltip", "The contents of the item conflict with updates received from the repository.");
+	case EWorkspaceState::LockedByOther:
+		return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by: {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
 	case EWorkspaceState::Private:
 		return LOCTEXT("NotControlled_Tooltip", "Item is not under version control.");
 	}
