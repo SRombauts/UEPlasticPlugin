@@ -493,7 +493,7 @@ static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int
 {
 	bool bResult = true;
 
-	// Get workspace status, in the form "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087" (disabled by the "--nostatus" flag)
+	// Get workspace config, in the form "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087" (from the "--wkconfig" flag)
 	//                                or "cs:41@rep:UE4PlasticPlugin@repserver:SRombauts@cloud" (when connected directly to the cloud)
 	if (InInfoMessages.Num() > 0)
 	{
@@ -518,7 +518,13 @@ static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int
 	// Get the branch name, in the form "Branch /main@UE4PlasticPluginDev" (enabled by the "--wkconfig" flag)
 	if (InInfoMessages.Num() > 1)
 	{
-		OutBranchName = InInfoMessages[1];
+		static const FString BranchPrefix(TEXT("Branch "));
+		const FString& BranchInfo = InInfoMessages[1];
+		const int32 BranchIndex = BranchInfo.Find(BranchPrefix, ESearchCase::CaseSensitive);
+		if (BranchIndex > INDEX_NONE)
+		{
+			OutBranchName = BranchInfo;
+		}
 	}
 
 	return bResult;
@@ -535,8 +541,8 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	if (bIsNewVersion80163000) {
 		Parameters.Add(TEXT("--compact"));
 	}
-	Parameters.Add(TEXT("--wkconfig")); // Branch name. TODO Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000 => by default in xml format
-	Parameters.Add(TEXT("--nochanges")); // No file status // TODO: The option "--nochanges" has been renamed to "--header", and outputs just the workspace status.
+	// NOTE: --wkconfig results in two network calls GetBranchInfoByName & GetLastChangesetOnBranch so it's okay to do it once here but not all the time
+	Parameters.Add(TEXT("--wkconfig")); // Branch name. NOTE: Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/8.0.16.3000
 	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	if (bResult)
 	{
@@ -719,7 +725,7 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
 
-	// Parse the first two lines with Changeset number and Branch name
+	// Parse the first two lines with Changeset number and Branch name (the second being requested only once at init)
 	FString RepositoryName, ServerUrl;
 	ParseWorkspaceInformation(InResults, OutChangeset, RepositoryName, ServerUrl, OutBranchName);
 
@@ -846,7 +852,6 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	if (bIsNewVersion80163000) {
 		Parameters.Add(TEXT("--compact"));
 	}
-	Parameters.Add(TEXT("--wkconfig")); // Branch name. TODO Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000 => by default in xml format
 	Parameters.Add(TEXT("--noheaders"));
 	Parameters.Add(TEXT("--controlledchanged --changed --localdeleted --localmoved --private --ignored"));
 	// "cm status" only operate on one path (file or folder) at a time, so use one folder path for multiple files in a directory
