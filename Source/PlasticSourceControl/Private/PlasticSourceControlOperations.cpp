@@ -237,6 +237,7 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--parents"));
+	Parameters.Add(TEXT("?")); // Note: this is a workaround to trigger the Plastic's SkipIgnored internal flag until we can provide an updated version with a proper --skipignored flag.
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (-1 != InCommand.ChangesetNumber)
 	{
