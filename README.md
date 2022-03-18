@@ -132,17 +132,25 @@ Unreal Engine workflow with binary assets works best with mostly only one branch
 
 #### Locking UE4 assets
 
+[Administrator guide - Chapter 7: Configuring exclusive checkout (Lock)](https://www.plasticscm.com/documentation/administration/plastic-scm-version-control-administrator-guide#Chapter7:Configuringexclusivecheckout(Lock))
+
 Binary assets should be locked for exclusive access to avoid merge conflicts.
 
 To lock all assets on the whole `Content` directory, you need to put a `lock.conf` in your server directory (for instance `C:\Program Files\PlasticSCM5\server`) with this content:
 
-    rep:default lockserver:mainsvr:8084
-    \Content
+    rep:reponame lockserver:servername:8084
+    /Content
 
 For instance:
 
     rep:UE4PlasticPluginDev lockserver:localhost:8087
-    \Content
+    /Content
+
+or:
+
+    rep:UE4PlasticPluginDev lockserver:localhost:8087
+    *.uasset
+    *.umap
 
 On Plastic Cloud, you can just setup lock rules like that:
 
