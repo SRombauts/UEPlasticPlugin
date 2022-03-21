@@ -986,9 +986,11 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 static bool RunFileinfo(const bool InForceFileinfo, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	bool bResult = true;
-	TArray<FString> Files;
+	TArray<FString> AllFiles;
+	TArray<FString> SelectedFiles;
 	for (const auto& State : InOutStates)
 	{
+		AllFiles.Add(State.GetFilename());
 		// Optimize by not issuing "fileinfo" commands on "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
 		// This can greatly reduce the time needed to do some basic operation like "Add to source control" when using a distant server or the Plastic Cloud.
 		// this can't work with xlink file when we want to update the history
@@ -1001,16 +1003,22 @@ static bool RunFileinfo(const bool InForceFileinfo, const EConcurrency::Type InC
 		//	||	(State.WorkspaceState == EWorkspaceState::LockedByOther) // we do not have this info at this stage, cf. ParseFileinfoResults()
 			)
 		{
-			Files.Add(State.GetFilename());
+			SelectedFiles.Add(State.GetFilename());
 		}
 	}
-	if (Files.Num() > 0)
+	// The above optimization can only be used if all files are optimized out (avoiding the "fileinfo" command entirely)
+	// else we have to keep them all since ParseFileinfoResults() expect the same number of lines of results as there are files listed in the query
+	if (SelectedFiles.Num() > 0 && SelectedFiles.Num() < AllFiles.Num())
+	{
+		SelectedFiles = MoveTemp(AllFiles);
+	}
+	if (SelectedFiles.Num() > 0)
 	{
 		TArray<FString> Results;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
-		bResult = RunCommand(TEXT("fileinfo"), Parameters, Files, InConcurrency, Results, ErrorMessages);
+		bResult = RunCommand(TEXT("fileinfo"), Parameters, SelectedFiles, InConcurrency, Results, ErrorMessages);
 		OutErrorMessages.Append(ErrorMessages);
 		if (bResult)
 		{
