@@ -13,8 +13,20 @@
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
-bool FPlasticSourceControlRevision::Get( FString& InOutFilename ) const
+bool FPlasticSourceControlRevision::Get(
+	FString& InOutFilename
+#if ENGINE_MAJOR_VERSION == 5
+	, EConcurrency::Type InConcurrency /* = EConcurrency::Synchronous */
+#endif
+) const
 {
+#if ENGINE_MAJOR_VERSION == 5
+	if (InConcurrency != EConcurrency::Synchronous)
+	{
+		UE_LOG(LogSourceControl, Warning, TEXT("Only EConcurrency::Synchronous is tested/supported for this operation."));
+	}
+#endif
+
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 	if (!State)
