@@ -493,7 +493,7 @@ static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int
 {
 	bool bResult = true;
 
-	// Get workspace config, in the form "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087" (from the "--wkconfig" flag)
+	// Get workspace status, in the form "cs:41@rep:UE4PlasticPlugin@repserver:localhost:8087" (disabled by the "--nostatus" flag)
 	//                                or "cs:41@rep:UE4PlasticPlugin@repserver:SRombauts@cloud" (when connected directly to the cloud)
 	if (InInfoMessages.Num() > 0)
 	{
