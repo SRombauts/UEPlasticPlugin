@@ -44,10 +44,12 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 
 	ChildSlot
 	[
+#if ENGINE_MAJOR_VERSION == 4
 		SNew(SBorder)
 		.BorderImage( FEditorStyle::GetBrush("DetailsView.CategoryBottom"))
 		.Padding(FMargin(0.0f, 3.0f, 0.0f, 0.0f))
 		[
+#endif
 			SNew(SVerticalBox)
 			// Path to the Plastic SCM binary
 			+SVerticalBox::Slot()
@@ -136,13 +138,13 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			[
 				SNew(SHorizontalBox)
 				.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
-				.ToolTipText(LOCTEXT("WorkspaceNotFound_Tooltip", "No Workspace found at the level or above the current Project"))
+				.ToolTipText(LOCTEXT("WorkspaceNotFound_Tooltip", "No Workspace found at the level or above the current Project. Use the form to create a new one."))
 				+SHorizontalBox::Slot()
 				.FillWidth(1.0f)
 				.HAlign(HAlign_Center)
 				[
 					SNew(STextBlock)
-					.Text(LOCTEXT("WorkspaceNotFound", "Current Project is not contained in a Plastic SCM Workspace. Fill the form below to initialize a new Workspace."))
+					.Text(LOCTEXT("WorkspaceNotFound", "Current Project is not in a Plastic SCM Workspace. Create a new one:"))
 					.Font(Font)
 				]
 			]
@@ -158,7 +160,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.FillWidth(1.0f)
 				[
 					SNew(STextBlock)
-					.Text(LOCTEXT("WorkspaceRepositoryName", "Workspace and Repository Name"))
+					.Text(LOCTEXT("WorkspaceRepositoryName", "Workspace & Repository"))
 					.ToolTipText(LOCTEXT("WorkspaceRepositoryName_Tooltip", "Enter the Name of the new Workspace and Repository to create or use"))
 					.Font(Font)
 				]
@@ -228,7 +230,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedCreateIgnoreFile)
 				]
 				+SHorizontalBox::Slot()
-				.FillWidth(2.9f)
+				.FillWidth(2.0f)
 				.VAlign(VAlign_Center)
 				[
 					SNew(STextBlock)
@@ -253,15 +255,15 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedInitialCommit)
 				]
 				+SHorizontalBox::Slot()
-				.FillWidth(0.9f)
+				.FillWidth(0.6f)
 				.VAlign(VAlign_Center)
 				[
 					SNew(STextBlock)
-					.Text(LOCTEXT("InitialCommit", "Make the initial Plastic SCM Checkin"))
+					.Text(LOCTEXT("InitialCommit", "Initial Checkin"))
 					.Font(Font)
 				]
 				+SHorizontalBox::Slot()
-				.FillWidth(2.0f)
+				.FillWidth(1.4f)
 				.Padding(2.0f)
 				[
 					SNew(SMultiLineEditableTextBox)
@@ -287,7 +289,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedUpdateStatusAtStartup)
 				]
 				+SHorizontalBox::Slot()
-				.FillWidth(2.9f)
+				.FillWidth(2.0f)
 				.VAlign(VAlign_Center)
 				[
 					SNew(STextBlock)
@@ -295,7 +297,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.Font(Font)
 				]
 			]
-			// Button to create a new Workspace
+			// Option to enable Source Control Verbose logs
 			+SVerticalBox::Slot()
 			.AutoHeight()
 			.Padding(2.0f)
@@ -311,7 +313,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedEnableVerboseLogs)
 				]
 				+SHorizontalBox::Slot()
-				.FillWidth(2.9f)
+				.FillWidth(2.0f)
 				.VAlign(VAlign_Center)
 				[
 					SNew(STextBlock)
@@ -319,6 +321,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.Font(Font)
 				]
 			]
+			// Button to create a new Workspace
 			+SVerticalBox::Slot()
 			.FillHeight(2.5f)
 			.Padding(4.0f)
@@ -356,7 +359,9 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.HAlign(HAlign_Center)
 				]
 			]
+#if ENGINE_MAJOR_VERSION == 4
 		]
+#endif
 	];
 }
 
