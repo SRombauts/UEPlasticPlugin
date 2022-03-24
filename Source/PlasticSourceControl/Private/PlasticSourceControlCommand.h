@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Misc/IQueuedWork.h"
 #include "ISourceControlProvider.h"
+#include "IPlasticSourceControlWorker.h"
 
 /**
  * Used to execute Plastic commands multi-threaded.
@@ -13,7 +14,7 @@ class FPlasticSourceControlCommand : public IQueuedWork
 {
 public:
 
-	FPlasticSourceControlCommand(const TSharedRef<class ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, const TSharedRef<class IPlasticSourceControlWorker, ESPMode::ThreadSafe>& InWorker, const FSourceControlOperationComplete& InOperationCompleteDelegate = FSourceControlOperationComplete() );
+	FPlasticSourceControlCommand(const FSourceControlOperationRef& InOperation, const FPlasticSourceControlWorkerRef& InWorker, const FSourceControlOperationComplete& InOperationCompleteDelegate = FSourceControlOperationComplete() );
 
 	/**
 	 * This is where the real thread work is done. All work that is done for
@@ -40,10 +41,10 @@ public:
 	FString PathToWorkspaceRoot;
 
 	/** Operation we want to perform - contains outward-facing parameters & results */
-	TSharedRef<class ISourceControlOperation, ESPMode::ThreadSafe> Operation;
+	FSourceControlOperationRef Operation;
 
 	/** The object that will actually do the work */
-	TSharedRef<class IPlasticSourceControlWorker, ESPMode::ThreadSafe> Worker;
+	FPlasticSourceControlWorkerRef Worker;
 
 	/** Delegate to notify when this operation completes */
 	FSourceControlOperationComplete OperationCompleteDelegate;

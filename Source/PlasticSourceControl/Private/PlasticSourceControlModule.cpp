@@ -8,7 +8,7 @@
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
 template<typename Type>
-static TSharedRef<IPlasticSourceControlWorker, ESPMode::ThreadSafe> CreateWorker()
+static FPlasticSourceControlWorkerRef CreateWorker()
 {
 	return MakeShareable( new Type() );
 }

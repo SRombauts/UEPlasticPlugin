@@ -3,11 +3,10 @@
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
 #include "ISourceControlOperation.h"
-#include "IPlasticSourceControlWorker.h"
 #include "Modules/ModuleManager.h"
 
 
-FPlasticSourceControlCommand::FPlasticSourceControlCommand(const TSharedRef<class ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, const TSharedRef<class IPlasticSourceControlWorker, ESPMode::ThreadSafe>& InWorker, const FSourceControlOperationComplete& InOperationCompleteDelegate)
+FPlasticSourceControlCommand::FPlasticSourceControlCommand(const FSourceControlOperationRef& InOperation, const FPlasticSourceControlWorkerRef& InWorker, const FSourceControlOperationComplete& InOperationCompleteDelegate)
 	: Operation(InOperation)
 	, Worker(InWorker)
 	, OperationCompleteDelegate(InOperationCompleteDelegate)
