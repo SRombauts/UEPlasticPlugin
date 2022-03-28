@@ -237,6 +237,13 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--parents"));
+	// Note: this is a workaround to trigger the Plastic's "SkipIgnored" internal flag meaning "don't add file that are ignored":
+	//			options.SkipIgnored = cla.GetWildCardArguments().Count > 0;
+	//		 It's behavior is similar as Subversion:
+	//  		if you explicitely add one file that is ignored, "cm" will happily accept it and add it,
+	//			if you try to add a set of files with a pattern, "cm" will skip the files that are ignored and only add the other ones
+	// TODO: provide an updated version of "cm" with a proper --skipignored flag (or with a better naming).
+	Parameters.Add(TEXT("?"));
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (-1 != InCommand.ChangesetNumber)
 	{
