@@ -989,38 +989,33 @@ static bool RunFileinfo(const bool InForceFileinfo, const EConcurrency::Type InC
 {
 	bool bResult = true;
 	TArray<FString> AllFiles;
-	TArray<FString> SelectedFiles;
+	bool bRequireFileinfo = InForceFileinfo;
 	for (const auto& State : InOutStates)
 	{
 		AllFiles.Add(State.GetFilename());
-		// Optimize by not issuing "fileinfo" commands on "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
-		// This can greatly reduce the time needed to do some basic operation like "Add to source control" when using a distant server or the Plastic Cloud.
-		// this can't work with xlink file when we want to update the history
-		// we need to know that we are running a fileinfo command to get the history, that's the role of InForceFileinfo
-		if (	(InForceFileinfo)
-			||	(State.WorkspaceState == EWorkspaceState::Controlled)
+		// Optimize by not issuing a "fileinfo" commands if all files are "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
+		// This greatly reduce the time needed to do some operations like "Add to source control" or "Move/Rename/Copy" when using a distant server.
+		// This can't work with xlink file when we want to update the history;
+		// we need to know that we are running a fileinfo command to get the history, that's the role of InForceFileinfo used above
+		if (	(State.WorkspaceState == EWorkspaceState::Controlled)
 			||	(State.WorkspaceState == EWorkspaceState::Changed)
 			||	(State.WorkspaceState == EWorkspaceState::Replaced)
 			||	(State.WorkspaceState == EWorkspaceState::Conflicted)
-		//	||	(State.WorkspaceState == EWorkspaceState::LockedByOther) // we do not have this info at this stage, cf. ParseFileinfoResults()
 			)
 		{
-			SelectedFiles.Add(State.GetFilename());
+			bRequireFileinfo = true;
 		}
 	}
 	// The above optimization can only be used if all files are optimized out (avoiding the "fileinfo" command entirely)
-	// else we have to keep them all since ParseFileinfoResults() expect the same number of lines of results as there are files listed in the query
-	if (SelectedFiles.Num() > 0 && SelectedFiles.Num() < AllFiles.Num())
-	{
-		SelectedFiles = MoveTemp(AllFiles);
-	}
-	if (SelectedFiles.Num() > 0)
+	// else we have to run the "fileinfo" command on all of them
+	// since ParseFileinfoResults() expect the same number of lines of results as there are files listed in the query
+	if (bRequireFileinfo)
 	{
 		TArray<FString> Results;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
-		bResult = RunCommand(TEXT("fileinfo"), Parameters, SelectedFiles, InConcurrency, Results, ErrorMessages);
+		bResult = RunCommand(TEXT("fileinfo"), Parameters, AllFiles, InConcurrency, Results, ErrorMessages);
 		OutErrorMessages.Append(ErrorMessages);
 		if (bResult)
 		{
