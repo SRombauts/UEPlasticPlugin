@@ -890,7 +890,13 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 			// The above cannot detect assets removed / locally deleted since there is no file left to enumerate (either by the Content Browser or by File Manager)
 			// => so we also parse the status results to explicitly look for Removed/Deleted assets
 			if (Results.Num() > 0)
-				Results.RemoveAt(0, 1);// Before that, remove the first line, Changeset
+			{
+				Results.RemoveAt(0, 1);// Before that, remove the first line (Workspace/Changeset info)
+			}
+			else
+			{
+				UE_LOG(LogSourceControl, Error, TEXT("RunStatus(%s): the status of the '%s' directory didn't return any header to remove"), *InFiles[0], *Path);
+			}
 			ParseDirectoryStatusResult(Results, OutStates);
 		}
 		else
