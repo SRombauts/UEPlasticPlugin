@@ -51,11 +51,11 @@ void Terminate();
 
 /**
  * Find the root of the Plastic workspace, looking from the GameDir and upward in its parent directories
- * @param InPathToGameDir		The path to the Game Directory
- * @param OutWorkspaceRoot		The path to the root directory of the Plastic workspace if found, else the path to the GameDir
+ * @param InPath				The path to start the search from (typically the Game Directory)
+ * @param OutWorkspaceRoot		The path to the root directory of the Plastic workspace if found, else the InPath
  * @returns true if the command succeeded and returned no errors
  */
-bool FindRootDirectory(const FString& InPathToGameDir, FString& OutWorkspaceRoot);
+bool GetWorkspacePath(const FString& InPath, FString& OutWorkspaceRoot);
 
 /**
  * Get Plastic SCM cli version
