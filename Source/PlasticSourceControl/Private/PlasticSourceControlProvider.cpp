@@ -175,6 +175,14 @@ ECommandResult::Type FPlasticSourceControlProvider::GetState( const TArray<FStri
 	return ECommandResult::Succeeded;
 }
 
+#if ENGINE_MAJOR_VERSION == 5
+// TODO UE5 Changelist
+ECommandResult::Type FPlasticSourceControlProvider::GetState(const TArray<FSourceControlChangelistRef>& InChangelists, TArray<FSourceControlChangelistStateRef>& OutState, EStateCacheUsage::Type InStateCacheUsage)
+{
+	return ECommandResult::Failed;
+}
+#endif
+
 TArray<FSourceControlStateRef> FPlasticSourceControlProvider::GetCachedStateByPredicate(TFunctionRef<bool(const FSourceControlStateRef&)> Predicate) const
 {
 	TArray<FSourceControlStateRef> Result;
@@ -204,7 +212,14 @@ void FPlasticSourceControlProvider::UnregisterSourceControlStateChanged_Handle( 
 	OnSourceControlStateChanged.Remove( Handle );
 }
 
-ECommandResult::Type FPlasticSourceControlProvider::Execute( const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency, const FSourceControlOperationComplete& InOperationCompleteDelegate )
+ECommandResult::Type FPlasticSourceControlProvider::Execute(
+	const FSourceControlOperationRef& InOperation,
+#if ENGINE_MAJOR_VERSION == 5
+	FSourceControlChangelistPtr InChangelist,
+#endif
+	const TArray<FString>& InFiles,
+	EConcurrency::Type InConcurrency,
+	const FSourceControlOperationComplete& InOperationCompleteDelegate )
 {
 	if(!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "MakeWorkspace"))
 	{
@@ -387,6 +402,14 @@ TArray< TSharedRef<ISourceControlLabel> > FPlasticSourceControlProvider::GetLabe
 	// Reserved for internal use by Epic Games with Perforce only
 	return Tags;
 }
+
+#if ENGINE_MAJOR_VERSION == 5
+// TODO UE5 Changelist
+TArray<FSourceControlChangelistRef> FPlasticSourceControlProvider::GetChangelists( EStateCacheUsage::Type InStateCacheUsage )
+{
+	return TArray<FSourceControlChangelistRef>();
+}
+#endif
 
 #if SOURCE_CONTROL_WITH_SLATE
 TSharedRef<class SWidget> FPlasticSourceControlProvider::MakeSettingsWidget() const

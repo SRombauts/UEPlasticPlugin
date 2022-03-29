@@ -20,7 +20,12 @@ public:
 	}
 
 	/** ISourceControlRevision interface */
-	virtual bool Get( FString& InOutFilename ) const override;
+	virtual bool Get(
+		FString& InOutFilename
+#if ENGINE_MAJOR_VERSION == 5
+		, EConcurrency::Type InConcurrency = EConcurrency::Synchronous
+#endif
+	) const override;
 	virtual bool GetAnnotated( TArray<FAnnotationLine>& OutLines ) const override;
 	virtual bool GetAnnotated( FString& InOutFilename ) const override;
 	virtual const FString& GetFilename() const override;

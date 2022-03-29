@@ -957,6 +957,8 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 
+	ensureMsgf(InResults.Num() == InOutStates.Num(), TEXT("The fileinfo command should gives the same number of infos as the status command"));
+
 	// Iterate on all files and all status of the result (assuming same number of line of results than number of file states)
 	for (int32 IdxResult = 0; IdxResult < InResults.Num(); IdxResult++)
 	{
@@ -998,31 +1000,34 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 static bool RunFileinfo(const bool InForceFileinfo, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	bool bResult = true;
-	TArray<FString> Files;
+	TArray<FString> AllFiles;
+	bool bRequireFileinfo = InForceFileinfo;
 	for (const auto& State : InOutStates)
 	{
-		// Optimize by not issuing "fileinfo" commands on "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
-		// This can greatly reduce the time needed to do some basic operation like "Add to source control" when using a distant server or the Plastic Cloud.
-		// this can't work with xlink file when we want to update the history
-		// we need to know that we are running a fileinfo command to get the history, that's the role of InForceFileinfo
-		if (	(InForceFileinfo)
-			||	(State.WorkspaceState == EWorkspaceState::Controlled)
+		AllFiles.Add(State.GetFilename());
+		// Optimize by not issuing a "fileinfo" commands if all files are "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
+		// This greatly reduce the time needed to do some operations like "Add to source control" or "Move/Rename/Copy" when using a distant server.
+		// This can't work with xlink file when we want to update the history;
+		// we need to know that we are running a fileinfo command to get the history, that's the role of InForceFileinfo used above
+		if (	(State.WorkspaceState == EWorkspaceState::Controlled)
 			||	(State.WorkspaceState == EWorkspaceState::Changed)
 			||	(State.WorkspaceState == EWorkspaceState::Replaced)
 			||	(State.WorkspaceState == EWorkspaceState::Conflicted)
-		//	||	(State.WorkspaceState == EWorkspaceState::LockedByOther) // we do not have this info at this stage, cf. ParseFileinfoResults()
 			)
 		{
-			Files.Add(State.GetFilename());
+			bRequireFileinfo = true;
 		}
 	}
-	if (Files.Num() > 0)
+	// The above optimization can only be used if all files are optimized out (avoiding the "fileinfo" command entirely)
+	// else we have to run the "fileinfo" command on all of them
+	// since ParseFileinfoResults() expect the same number of lines of results as there are files listed in the query
+	if (bRequireFileinfo)
 	{
 		TArray<FString> Results;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
-		bResult = RunCommand(TEXT("fileinfo"), Parameters, Files, InConcurrency, Results, ErrorMessages);
+		bResult = RunCommand(TEXT("fileinfo"), Parameters, AllFiles, InConcurrency, Results, ErrorMessages);
 		OutErrorMessages.Append(ErrorMessages);
 		if (bResult)
 		{
