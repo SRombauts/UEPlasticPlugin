@@ -84,6 +84,8 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 	return nullptr;
 }
 
+#if ENGINE_MAJOR_VERSION == 4
+
 FName FPlasticSourceControlState::GetIconName() const
 {
 	if (!IsCurrent())
@@ -154,6 +156,45 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	}
 }
 
+#elif ENGINE_MAJOR_VERSION == 5
+
+FSlateIcon FPlasticSourceControlState::GetIcon() const
+{
+	if (!IsCurrent())
+	{
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(),"Perforce.NotAtHeadRevision");
+	}
+
+	switch (WorkspaceState)
+	{
+	case EWorkspaceState::CheckedOut:
+	case EWorkspaceState::Replaced: // Merged (waiting for checkin)
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.CheckedOut");
+	case EWorkspaceState::Added:
+	case EWorkspaceState::Copied:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.OpenForAdd");
+	case EWorkspaceState::Moved:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.Branched");
+	case EWorkspaceState::Deleted:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.MarkedForDelete");
+	case EWorkspaceState::Conflicted:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotAtHeadRevision");
+	case EWorkspaceState::LockedByOther:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.CheckedOutByOtherUser", NAME_None, "SourceControl.LockOverlay");
+	case EWorkspaceState::Private: // Not controlled
+	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
+	case EWorkspaceState::LocallyDeleted:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotInDepot");
+	case EWorkspaceState::Unknown:
+	case EWorkspaceState::Ignored:
+	case EWorkspaceState::Controlled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
+	default:
+		return FSlateIcon();
+	}
+}
+
+#endif
+
 FText FPlasticSourceControlState::GetDisplayName() const
 {
 	switch(WorkspaceState)
@@ -183,7 +224,7 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	case EWorkspaceState::Conflicted:
 		return LOCTEXT("ContentsConflict", "Contents Conflict");
 	case EWorkspaceState::LockedByOther:
-		return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by: {0}"), FText::FromString(LockedBy));
+		return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by: {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
 	case EWorkspaceState::Private:
 		return LOCTEXT("NotControlled", "Not Under Source Control");
 	}
@@ -219,6 +260,8 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 		return LOCTEXT("Modified_Tooltip", "Item has been modified");
 	case EWorkspaceState::Conflicted:
 		return LOCTEXT("ContentsConflict_Tooltip", "The contents of the item conflict with updates received from the repository.");
+	case EWorkspaceState::LockedByOther:
+		return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by: {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
 	case EWorkspaceState::Private:
 		return LOCTEXT("NotControlled_Tooltip", "Item is not under version control.");
 	}
