@@ -96,6 +96,8 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
  * @returns true if the command succeeded and returned no errors
  */
 bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages);
+// Run a Plastic command - output is a string.
+bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, FString& OutResults, FString& OutErrors);
 
 /**
  * Run a Plastic "status" command and parse it.
