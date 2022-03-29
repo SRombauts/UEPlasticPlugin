@@ -179,7 +179,7 @@ The command line needs the quoted path to the UE4Editor.exe, the quoted patch to
 
 This version here is the development version, so it can contain additional fixes, performance improvements or new features.
 
-#### Version 1.4.9 2022/03/12 for UE4.27.2:
+#### Version 1.4.11 2022/03/29 for UE4.27.2:
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
