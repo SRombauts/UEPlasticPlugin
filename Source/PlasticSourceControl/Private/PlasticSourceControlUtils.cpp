@@ -518,7 +518,13 @@ static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int
 	// Get the branch name, in the form "Branch /main@UE4PlasticPluginDev" (enabled by the "--wkconfig" flag)
 	if (InInfoMessages.Num() > 1)
 	{
-		OutBranchName = InInfoMessages[1];
+		static const FString BranchPrefix(TEXT("Branch "));
+		const FString& BranchInfo = InInfoMessages[1];
+		const int32 BranchIndex = BranchInfo.Find(BranchPrefix, ESearchCase::CaseSensitive);
+		if (BranchIndex > INDEX_NONE)
+		{
+			OutBranchName = BranchInfo;
+		}
 	}
 
 	return bResult;
@@ -535,8 +541,8 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	if (bIsNewVersion80163000) {
 		Parameters.Add(TEXT("--compact"));
 	}
-	Parameters.Add(TEXT("--wkconfig")); // Branch name. TODO Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000 => by default in xml format
-	Parameters.Add(TEXT("--nochanges")); // No file status // TODO: The option "--nochanges" has been renamed to "--header", and outputs just the workspace status.
+	// NOTE: --wkconfig results in two network calls GetBranchInfoByName & GetLastChangesetOnBranch so it's okay to do it once here but not all the time
+	Parameters.Add(TEXT("--wkconfig")); // Branch name. NOTE: Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/8.0.16.3000
 	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	if (bResult)
 	{
@@ -719,7 +725,7 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
 
-	// Parse the first two lines with Changeset number and Branch name
+	// Parse the first two lines with Changeset number and Branch name (the second being requested only once at init)
 	FString RepositoryName, ServerUrl;
 	ParseWorkspaceInformation(InResults, OutChangeset, RepositoryName, ServerUrl, OutBranchName);
 
@@ -846,7 +852,6 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 	if (bIsNewVersion80163000) {
 		Parameters.Add(TEXT("--compact"));
 	}
-	Parameters.Add(TEXT("--wkconfig")); // Branch name. TODO Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000 => by default in xml format
 	Parameters.Add(TEXT("--noheaders"));
 	Parameters.Add(TEXT("--controlledchanged --changed --localdeleted --localmoved --private --ignored"));
 	// "cm status" only operate on one path (file or folder) at a time, so use one folder path for multiple files in a directory
@@ -884,7 +889,14 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 			ParseFileStatusResult(FileVisitor.Files, Results, OutStates, OutChangeset, OutBranchName);
 			// The above cannot detect assets removed / locally deleted since there is no file left to enumerate (either by the Content Browser or by File Manager)
 			// => so we also parse the status results to explicitly look for Removed/Deleted assets
-			Results.RemoveAt(0, 2); // Before that, remove the first two line Changeset, and BranchName
+			if (Results.Num() > 0)
+			{
+				Results.RemoveAt(0, 1);// Before that, remove the first line (Workspace/Changeset info)
+			}
+			else
+			{
+				UE_LOG(LogSourceControl, Error, TEXT("RunStatus(%s): the status of the '%s' directory didn't return any header to remove"), *InFiles[0], *Path);
+			}
 			ParseDirectoryStatusResult(Results, OutStates);
 		}
 		else
@@ -945,6 +957,8 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 
+	ensureMsgf(InResults.Num() == InOutStates.Num(), TEXT("The fileinfo command should gives the same number of infos as the status command"));
+
 	// Iterate on all files and all status of the result (assuming same number of line of results than number of file states)
 	for (int32 IdxResult = 0; IdxResult < InResults.Num(); IdxResult++)
 	{
@@ -986,31 +1000,34 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 static bool RunFileinfo(const bool InForceFileinfo, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	bool bResult = true;
-	TArray<FString> Files;
+	TArray<FString> AllFiles;
+	bool bRequireFileinfo = InForceFileinfo;
 	for (const auto& State : InOutStates)
 	{
-		// Optimize by not issuing "fileinfo" commands on "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
-		// This can greatly reduce the time needed to do some basic operation like "Add to source control" when using a distant server or the Plastic Cloud.
-		// this can't work with xlink file when we want to update the history
-		// we need to know that we are running a fileinfo command to get the history, that's the role of InForceFileinfo
-		if (	(InForceFileinfo)
-			||	(State.WorkspaceState == EWorkspaceState::Controlled)
+		AllFiles.Add(State.GetFilename());
+		// Optimize by not issuing a "fileinfo" commands if all files are "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
+		// This greatly reduce the time needed to do some operations like "Add to source control" or "Move/Rename/Copy" when using a distant server.
+		// This can't work with xlink file when we want to update the history;
+		// we need to know that we are running a fileinfo command to get the history, that's the role of InForceFileinfo used above
+		if (	(State.WorkspaceState == EWorkspaceState::Controlled)
 			||	(State.WorkspaceState == EWorkspaceState::Changed)
 			||	(State.WorkspaceState == EWorkspaceState::Replaced)
 			||	(State.WorkspaceState == EWorkspaceState::Conflicted)
-		//	||	(State.WorkspaceState == EWorkspaceState::LockedByOther) // we do not have this info at this stage, cf. ParseFileinfoResults()
 			)
 		{
-			Files.Add(State.GetFilename());
+			bRequireFileinfo = true;
 		}
 	}
-	if (Files.Num() > 0)
+	// The above optimization can only be used if all files are optimized out (avoiding the "fileinfo" command entirely)
+	// else we have to run the "fileinfo" command on all of them
+	// since ParseFileinfoResults() expect the same number of lines of results as there are files listed in the query
+	if (bRequireFileinfo)
 	{
 		TArray<FString> Results;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
-		bResult = RunCommand(TEXT("fileinfo"), Parameters, Files, InConcurrency, Results, ErrorMessages);
+		bResult = RunCommand(TEXT("fileinfo"), Parameters, AllFiles, InConcurrency, Results, ErrorMessages);
 		OutErrorMessages.Append(ErrorMessages);
 		if (bResult)
 		{
