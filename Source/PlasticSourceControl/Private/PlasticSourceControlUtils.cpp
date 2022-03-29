@@ -84,8 +84,8 @@ static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 
 namespace PlasticSourceControlUtils
 {
-// Command-line interface paramters and output format changed with version 8.0.16.3000
-// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
+// Command-line interface parameters and output format changed with version 8.0.16.3000
+// For more details, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
 static bool				bIsNewVersion80163000 = false;
 
 // In/Out Pipes for the 'cm shell' persistent process
@@ -451,8 +451,7 @@ void GetPlasticScmVersion(FString& OutPlasticScmVersion)
 	{
 		OutPlasticScmVersion = InfoMessages[0];
 
-		// Command-line format output changed with version 8.0.16.3000, plugin will crash unless we demand the old format.
-		// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
+		// Command-line format output changed with version 8.0.16.3000
 		bIsNewVersion80163000 = !PlasticScmVersionLess(OutPlasticScmVersion, "8.0.16.3000");
 	}
 }
@@ -536,10 +535,15 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
 
-	// Command-line format output changed with version 8.0.16.3000, plugin will crash unless we demand the old format.
-	// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
-	if (bIsNewVersion80163000) {
+	// Command-line format output changed with version 8.0.16.3000, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
+	if (bIsNewVersion80163000)
+	{
 		Parameters.Add(TEXT("--compact"));
+		Parameters.Add(TEXT("--header")); // Only prints the workspace status. No file status.
+	}
+	else
+	{
+		Parameters.Add(TEXT("--nochanges")); // Only prints the workspace status. No file status.
 	}
 	// NOTE: --wkconfig results in two network calls GetBranchInfoByName & GetLastChangesetOnBranch so it's okay to do it once here but not all the time
 	Parameters.Add(TEXT("--wkconfig")); // Branch name. NOTE: Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/8.0.16.3000
@@ -699,7 +703,7 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
 }
 
 /**
- * @brief Parse the array of strings results of a 'cm status --noheaders --controlledchanged --changed --localdeleted --localmoved --private --ignored' command
+ * @brief Parse the array of strings results of a 'cm status --noheaders --all --ignored' command
  *
  * Called in case of a regular status command for one or multiple files (not for a whole directory). 
  *
@@ -775,7 +779,7 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 }
 
 /**
- * @brief Parse the array of strings results of a 'cm status --noheaders --controlledchanged --changed --localdeleted --localmoved --private --ignored' command
+ * @brief Parse the array of strings results of a 'cm status --noheaders --all --ignored' command
  *
  * Called in case of a "directory status" (no file listed in the command) ONLY to detect Removed/Deleted files !
  *
@@ -847,13 +851,14 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 
 	TArray<FString> Parameters;
 
-	// Command-line format output changed with version 8.0.16.3000, plugin will crash unless we demand the old format.
-	// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
-	if (bIsNewVersion80163000) {
+	// Command-line format output changed with version 8.0.16.3000, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
+	if (bIsNewVersion80163000)
+	{
 		Parameters.Add(TEXT("--compact"));
 	}
 	Parameters.Add(TEXT("--noheaders"));
-	Parameters.Add(TEXT("--controlledchanged --changed --localdeleted --localmoved --private --ignored"));
+	Parameters.Add(TEXT("--all"));
+	Parameters.Add(TEXT("--ignored"));
 	// "cm status" only operate on one path (file or folder) at a time, so use one folder path for multiple files in a directory
 	const FString Path = FPaths::GetPath(*InFiles[0]);
 	TArray<FString> OnePath;
