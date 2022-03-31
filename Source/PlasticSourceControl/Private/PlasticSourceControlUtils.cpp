@@ -1488,4 +1488,16 @@ void RemoveRedundantErrors(FPlasticSourceControlCommand& InCommand, const FStrin
 	}
 }
 
+void SwitchVerboseLogs(const bool bInEnable)
+{
+	if (bInEnable && LogSourceControl.GetVerbosity() < ELogVerbosity::Verbose)
+	{
+		LogSourceControl.SetVerbosity(ELogVerbosity::Verbose);
+	}
+	else if (!bInEnable && LogSourceControl.GetVerbosity() == ELogVerbosity::Verbose)
+	{
+		LogSourceControl.SetVerbosity(ELogVerbosity::Log);
+	}
+}
+
 }

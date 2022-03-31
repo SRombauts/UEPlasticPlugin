@@ -668,6 +668,8 @@ void SPlasticSourceControlSettings::OnCheckedEnableVerboseLogs(ECheckBoxState Ne
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	PlasticSourceControl.AccessSettings().SetEnableVerboseLogs(NewCheckedState == ECheckBoxState::Checked);
 	PlasticSourceControl.AccessSettings().SaveSettings();
+
+	PlasticSourceControlUtils::SwitchVerboseLogs(NewCheckedState == ECheckBoxState::Checked);
 }
 
 ECheckBoxState SPlasticSourceControlSettings::IsEnableVerboseLogsChecked() const

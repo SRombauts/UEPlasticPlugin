@@ -144,4 +144,11 @@ bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates);
  */
 void RemoveRedundantErrors(FPlasticSourceControlCommand& InCommand, const FString& InFilter);
 
+/**
+ * Change LogSourceControl verbosity level at startup and when toggled from the Plastic Source Control Settings
+ *
+ * Override to Verbose or back to Log, but only if the current log verbosity is not already set to VeryVerbose
+ */
+void SwitchVerboseLogs(const bool bInEnable);
+
 }
