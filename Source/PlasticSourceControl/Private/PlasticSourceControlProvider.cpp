@@ -35,6 +35,13 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		}
 
 		CheckPlasticAvailability();
+
+		// Override the source control logs verbosity level if needed based on settings
+		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+		if (PlasticSourceControl.AccessSettings().GetEnableVerboseLogs())
+		{
+			PlasticSourceControlUtils::SwitchVerboseLogs(true);
+		}
 	}
 
 	// bForceConnection: not used anymore
