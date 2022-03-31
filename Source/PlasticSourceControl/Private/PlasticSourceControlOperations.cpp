@@ -75,7 +75,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 					// Then, update the status of assets in Content/ directory and also Config files,
 					// but only on real (re-)connection (but not each time Login() is called by Rename or Fixup Redirector command to check connection)
 					// and only if enabled in the settings
-					if (!PlasticSourceControl.GetProvider().IsAvailable() && PlasticSourceControl.AccessSettings().UpdateStatusAtStartup())
+					if (!PlasticSourceControl.GetProvider().IsAvailable() && PlasticSourceControl.AccessSettings().GetUpdateStatusAtStartup())
 					{
 						TArray<FString> ProjectDirs;
 						ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));

@@ -53,7 +53,9 @@ private:
 
 	void OnCheckedUpdateStatusAtStartup(ECheckBoxState NewCheckedState);
 	ECheckBoxState IsUpdateStatusAtStartupChecked() const;
-	bool UpdateStatusAtStartup() const;
+
+	void OnCheckedEnableVerboseLogs(ECheckBoxState NewCheckedState);
+	ECheckBoxState IsEnableVerboseLogsChecked() const;
 
 	void OnCheckedInitialCommit(ECheckBoxState NewCheckedState);
 	bool bAutoInitialCommit;
