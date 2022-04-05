@@ -1,17 +1,17 @@
-Unreal Engine 4 Plastic SCM Source Control Plugin
--------------------------------------------------
+Unreal Engine Plastic SCM Source Control Plugin
+-----------------------------------------------
 
 [![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
 [![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
-This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4** (UE 4.11 to 4.27).
+This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0).
 It has now been integrated in Unreal Engine and is shipping with it since UE4.24 (in a version equivalent to 1.4.6+). See the Status section bellow for more details
 
 It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml) or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
 It is a complementary tool improving efficiency in your daily workflow with assets in Editor.
 
-It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints. It also helps importing an existing UE4 Project into source control, with appropriate *ignore.conf* file.
-Since UE4 does not manage C++ source code, but only assets, the plugin is especially useful for GDs and artists.
+It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints. It also helps importing an existing Unreal Project into source control, with appropriate *ignore.conf* file.
+Since Unreal does not manage C++ source code, but only assets, the plugin is especially useful for GDs and artists.
 
 ## User Guide
 
@@ -45,7 +45,7 @@ Why: If your project is already a C++ project, you only have to re-generate Visu
 Else, if you want to rebuild the plugin for a Blueprint project:
 
 0. You need Visual Studio 2015 or 2017 with C++ language support (free Community Edition is fine).
-1. Launch the Unreal Engine 4 Editor, create a new C++ **Basic Code** Project (No Starter Content), for instance UE4PlasticSCM. This should launch Visual Studio, build the game project, and open it into the Editor.
+1. Launch the Unreal Engine Editor, create a new C++ **Basic Code** Project (No Starter Content), for instance UnrealPlasticSCM. This should launch Visual Studio, build the game project, and open it into the Editor.
 2. Close the Editor, then using the file explorer, create a new **Plugins** directory at the root of your project.
 3. Clone the source code of the plugin into this _Plugins_ directory (for instance _Plugins\UE4PlasticPlugin_).
 4. Right-click on your project's **.uproject** file, **Generate Visual Studio project files**.
@@ -208,6 +208,10 @@ This version here is the development version, so it can contain additional fixes
 - Windows only
 
 #### Feature Requests
+- Unreal Engine 5.0 full support
+  - One File Per Actor
+  - Changelists
+- Branches support, to check outdated files vs. remote across multiple branches
 - Mac OS X Support
 - add a setting to pass the --update option to "checkin"
 - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
@@ -217,7 +221,6 @@ This version here is the development version, so it can contain additional fixes
 - add dedicated icon for Replaced/Merged files
 
 #### Known issues
-- Revert "Unchanged only" does nothing because Plastic SCM cli lacks a "checked-out but unchanged" status.
 - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
 - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
 - #18 Error messages with accents are not correctly handled/displayed (for instance connection error in French)
