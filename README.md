@@ -233,7 +233,16 @@ This version here is the development version, so it can contain additional fixes
 
 ### Support
 
-You can always ask questions in [Unreal Engine forums](https://forums.unrealengine.com/showthread.php?108688-Plastic-SCM-Source-Control-Provider/page2).
+You can always ask for support in:
+- [Plastic SCM support](https://www.plasticscm.com/support)
+- [Plastic SCM forums](https://forum.plasticscm.com/)
+- [Unreal Engine forums](https://forums.unrealengine.com/)
+- [Unreal Slackers Discord community](https://discord.gg/unreal-slackers)
+
+#### Enable logging for Plastic SCM ==
+
+To help diagnose any issue related to the underlying Plastic SCM "cm" Command Line Interface,
+[enable logging for Plastic SCM](https://www.plasticscm.com/documentation/technical-articles/kb-enabling-logging-for-plastic-scm-part-i).
 
 #### Report an issue
 
