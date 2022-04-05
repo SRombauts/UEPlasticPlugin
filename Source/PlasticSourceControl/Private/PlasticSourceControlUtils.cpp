@@ -19,6 +19,7 @@
 #include "Modules/ModuleManager.h"
 #include "XmlParser.h"
 #include "ISourceControlModule.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #if PLATFORM_LINUX
 #include <sys/ioctl.h>

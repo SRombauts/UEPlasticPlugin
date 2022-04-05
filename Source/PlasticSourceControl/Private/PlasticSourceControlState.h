@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "ISourceControlState.h"
 #include "PlasticSourceControlRevision.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 namespace EWorkspaceState
 {
