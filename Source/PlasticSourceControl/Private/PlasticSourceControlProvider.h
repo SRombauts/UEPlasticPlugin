@@ -7,6 +7,7 @@
 #include "IPlasticSourceControlWorker.h"
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlMenu.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 DECLARE_DELEGATE_RetVal(FPlasticSourceControlWorkerRef, FGetPlasticSourceControlWorker)
 

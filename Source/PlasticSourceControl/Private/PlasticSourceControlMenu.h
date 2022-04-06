@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "ISourceControlProvider.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 class FToolBarBuilder;
 class FMenuBuilder;
+struct FToolMenuSection;
 
 /** Plastic SCM extension of the Source Control toolbar menu */
 class FPlasticSourceControlMenu
@@ -29,9 +31,13 @@ private:
 	TArray<UPackage*>	UnlinkPackages(const TArray<FString>& InPackageNames);
 	void				ReloadPackages(TArray<UPackage*>& InPackagesToReload);
 
-	void AddMenuExtension(FMenuBuilder& Builder);
+#if ENGINE_MAJOR_VERSION == 4
+	void AddMenuExtension(FMenuBuilder& Menu);
 
 	TSharedRef<class FExtender> OnExtendLevelEditorViewMenu(const TSharedRef<class FUICommandList> CommandList);
+#elif ENGINE_MAJOR_VERSION == 5
+	void AddMenuExtension(FToolMenuSection& Menu);
+#endif
 
 	void DisplayInProgressNotification(const FText& InOperationInProgressString);
 	void RemoveInProgressNotification();
@@ -39,7 +45,9 @@ private:
 	void DisplayFailureNotification(const FName& InOperationName);
 
 private:
+#if ENGINE_MAJOR_VERSION == 4
 	FDelegateHandle ViewMenuExtenderHandle;
+#endif
 
 	/** Loaded packages to reload after a Sync or Revert operation */
 	TArray<UPackage*> PackagesToReload;

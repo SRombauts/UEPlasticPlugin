@@ -22,31 +22,51 @@
 
 #include "Logging/MessageLog.h"
 
-static const FName PlasticSourceControlMenuTabName("PlasticSourceControlMenu");
+#if ENGINE_MAJOR_VERSION == 5
+#include "ToolMenus.h"
+#include "ToolMenuContext.h"
+#include "ToolMenuMisc.h"
+#endif
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
 void FPlasticSourceControlMenu::Register()
 {
-	// Register the extension with the level editor
-	FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
-	if (LevelEditorModule)
+	// Register the menu extension with the level editor
+#if ENGINE_MAJOR_VERSION == 4
+	if (FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor"))
 	{
 		FLevelEditorModule::FLevelEditorMenuExtender ViewMenuExtender = FLevelEditorModule::FLevelEditorMenuExtender::CreateRaw(this, &FPlasticSourceControlMenu::OnExtendLevelEditorViewMenu);
 		auto& MenuExtenders = LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders();
 		MenuExtenders.Add(ViewMenuExtender);
 		ViewMenuExtenderHandle = MenuExtenders.Last().GetHandle();
 	}
+#elif ENGINE_MAJOR_VERSION == 5
+	FToolMenuOwnerScoped SourceControlMenuOwner("PlasticSourceControlMenu");
+	if (UToolMenus* ToolMenus = UToolMenus::Get())
+	{
+		UToolMenu* SourceControlMenu = ToolMenus->ExtendMenu("StatusBar.ToolBar.SourceControl");
+		FToolMenuSection& Section = SourceControlMenu->AddSection("PlasticSourceControlActions", LOCTEXT("SourceControlMenuHeadingActions", "Plastic SCM"), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
+
+		AddMenuExtension(Section);
+	}
+#endif
 }
 
 void FPlasticSourceControlMenu::Unregister()
 {
 	// Unregister the level editor extensions
-	FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
-	if (LevelEditorModule)
+#if ENGINE_MAJOR_VERSION == 4
+	if (FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor"))
 	{
 		LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders().RemoveAll([=](const FLevelEditorModule::FLevelEditorMenuExtender& Extender) { return Extender.GetHandle() == ViewMenuExtenderHandle; });
 	}
+#elif ENGINE_MAJOR_VERSION == 5
+	if (UToolMenus* ToolMenus = UToolMenus::Get())
+	{
+		UToolMenus::Get()->UnregisterOwnerByName("PlasticSourceControlMenu");
+	}
+#endif
 }
 
 bool FPlasticSourceControlMenu::IsSourceControlConnected() const
@@ -84,7 +104,7 @@ bool FPlasticSourceControlMenu::SaveDirtyPackages()
 TArray<FString> FPlasticSourceControlMenu::ListAllPackages()
 {
 	TArray<FString> PackageRelativePaths;
-	FPackageName::FindPackagesInDirectory(PackageRelativePaths, *FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+	FPackageName::FindPackagesInDirectory(PackageRelativePaths, FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
 
 	TArray<FString> PackageNames;
 	PackageNames.Reserve(PackageRelativePaths.Num());
@@ -388,9 +408,16 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 	}
 }
 
-void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Builder)
+#if ENGINE_MAJOR_VERSION == 4
+void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Menu)
+#elif ENGINE_MAJOR_VERSION == 5
+void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
+#endif
 {
-	Builder.AddMenuEntry(
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"PlasticSync",
+#endif
 		LOCTEXT("PlasticSync",			"Sync/Update Workspace"),
 		LOCTEXT("PlasticSyncTooltip",	"Update all files in the workspace to the latest version."),
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Sync"),
@@ -400,7 +427,10 @@ void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Builder)
 		)
 	);
 
-	Builder.AddMenuEntry(
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"PlasticRevertUnchanged",
+#endif
 		LOCTEXT("PlasticRevertUnchanged",			"Revert Unchanged"),
 		LOCTEXT("PlasticRevertUnchangedTooltip",	"Revert checked-out but unchanged files in the workspace."),
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Revert"),
@@ -410,7 +440,10 @@ void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Builder)
 		)
 	);
 
-	Builder.AddMenuEntry(
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"PlasticRevertAll",
+#endif
 		LOCTEXT("PlasticRevertAll",			"Revert All"),
 		LOCTEXT("PlasticRevertAllTooltip",	"Revert all files in the workspace to their controlled/unchanged state."),
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Revert"),
@@ -420,7 +453,10 @@ void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Builder)
 		)
 	);
 
-	Builder.AddMenuEntry(
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"PlasticRefresh",
+#endif
 		LOCTEXT("PlasticRefresh",			"Refresh"),
 		LOCTEXT("PlasticRefreshTooltip",	"Update the source control status of all files in the workspace."),
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Refresh"),
@@ -431,6 +467,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Builder)
 	);
 }
 
+#if ENGINE_MAJOR_VERSION == 4
 TSharedRef<FExtender> FPlasticSourceControlMenu::OnExtendLevelEditorViewMenu(const TSharedRef<FUICommandList> CommandList)
 {
 	TSharedRef<FExtender> Extender(new FExtender());
@@ -443,5 +480,6 @@ TSharedRef<FExtender> FPlasticSourceControlMenu::OnExtendLevelEditorViewMenu(con
 
 	return Extender;
 }
+#endif
 
 #undef LOCTEXT_NAMESPACE

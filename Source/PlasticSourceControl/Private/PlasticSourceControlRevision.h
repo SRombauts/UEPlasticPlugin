@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "ISourceControlRevision.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 class FPlasticSourceControlState;
 

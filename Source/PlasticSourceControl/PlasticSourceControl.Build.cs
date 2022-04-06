@@ -25,5 +25,10 @@ public class PlasticSourceControl : ModuleRules
 				"AssetRegistry",
 			}
 		);
+
+		if (Target.Version.MajorVersion == 5)
+		{
+			PrivateDependencyModuleNames.Add("ToolMenus");
+		}
 	}
 }

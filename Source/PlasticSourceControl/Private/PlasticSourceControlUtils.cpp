@@ -5,7 +5,11 @@
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlState.h"
+#if ENGINE_MAJOR_VERSION == 4
 #include "HAL/PlatformFilemanager.h"
+#elif ENGINE_MAJOR_VERSION == 5
+#include "HAL/PlatformFileManager.h"
+#endif
 #include "HAL/PlatformProcess.h"
 #include "HAL/FileManager.h"
 #include "Misc/ScopeLock.h"
@@ -15,6 +19,7 @@
 #include "Modules/ModuleManager.h"
 #include "XmlParser.h"
 #include "ISourceControlModule.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #if PLATFORM_LINUX
 #include <sys/ioctl.h>
