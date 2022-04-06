@@ -84,8 +84,8 @@ static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 
 namespace PlasticSourceControlUtils
 {
-// Command-line interface paramters and output format changed with version 8.0.16.3000
-// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
+// Command-line interface parameters and output format changed with version 8.0.16.3000
+// For more details, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
 static bool				bIsNewVersion80163000 = false;
 
 // In/Out Pipes for the 'cm shell' persistent process
@@ -160,7 +160,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	// Detect previous crash of cm.exe and restart 'cm shell'
 	if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand(%d): 'cm shell' has stopped. Restarting!"), ShellCommandCounter);
+		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: 'cm shell' has stopped. Restarting! (count %d)"), ShellCommandCounter);
 		_RestartBackgroundCommandLineShell();
 	}
 
@@ -179,7 +179,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		FullCommand += TEXT("\"");
 	}
 	const FString LoggableCommand = FullCommand.Left(256); // Limit command log size to 256 characters
-	UE_LOG(LogSourceControl, Verbose, TEXT("RunCommand(%d): '%s' (%d chars, %d files)"), ShellCommandCounter, *LoggableCommand, FullCommand.Len()+1, InFiles.Num());
+	UE_LOG(LogSourceControl, Verbose, TEXT("RunCommand: '%s' (%d chars, %d files)"), *LoggableCommand, FullCommand.Len()+1, InFiles.Num());
 	FullCommand += TEXT('\n'); // Finalize the command line
 
 	// Send command to 'cm shell' process
@@ -219,14 +219,14 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		{
 			// In case of long running operation, start to print intermediate output from cm shell (like percentage of progress)
 			// (but only when running Asynchronous commands, since Synchronous commands block the main thread until they finish)
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' in progress for %lfs...\n%s"), ShellCommandCounter, *InCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' in progress for %lfs...\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
 			PreviousLogLen = OutResults.Len();
 			LastLog = FPlatformTime::Seconds(); // freshen the timestamp of last log
 		}
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
 			// In case of timeout, ask the blocking 'cm shell' process to exit, and detach from it immediatly: it will be relaunched by next command
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%d): '%s' %d TIMEOUT after %lfs output (%d chars):\n%s"), ShellCommandCounter, *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' %d TIMEOUT after %lfs output (%d chars):\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
 			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
 			FPlatformProcess::CloseProc(ShellProcessHandle);
 			_CleanupBackgroundCommandLineShell();
@@ -241,27 +241,27 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%d): '%s' 'cm shell' stopped after %lfs output (%d chars):\n%s"), ShellCommandCounter, *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' 'cm shell' stopped after %lfs output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
 		}
 		else if (!bResult)
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand(%d): '%s' (in %lfs) output (%d chars):\n%s"), ShellCommandCounter, *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' (in %lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
 		}
 		else
 		{
 			if (PreviousLogLen > 0)
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) output (%d chars):\n%s"), ShellCommandCounter, *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Mid(PreviousLogLen).Left(4096)); // Limit result size to 4096 characters
+				UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' (in %lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Mid(PreviousLogLen).Left(4096)); // Limit result size to 4096 characters
 			}
 			else
 			{
 				if (OutResults.Len() <= 200) // Limit result size to 200 characters
 				{
-					UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) output (%d chars):\n%s"), ShellCommandCounter, *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults);
+					UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' (in %lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults);
 				}
 				else
 				{
-					UE_LOG(LogSourceControl, Log, TEXT("RunCommand(%d): '%s' (in %lfs) (output %d chars not displayed)"), ShellCommandCounter, *LoggableCommand, ElapsedTime, OutResults.Len());
+					UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' (in %lfs) (output %d chars not displayed)"), *LoggableCommand, ElapsedTime, OutResults.Len());
 					UE_LOG(LogSourceControl, Verbose, TEXT("\n%s"), *OutResults.Left(4096));; // Limit result size to 4096 characters
 				}
 			}
@@ -274,7 +274,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	}
 
 	ShellCumulatedTime += ElapsedTime;
-	UE_LOG(LogSourceControl, Verbose, TEXT("RunCommand(%d): cumulated time spent in shell: %lfs"), ShellCommandCounter, ShellCumulatedTime);
+	UE_LOG(LogSourceControl, Verbose, TEXT("RunCommand: cumulated time spent in shell: %lfs (count %d)"), ShellCumulatedTime, ShellCommandCounter);
 
 	return bResult;
 }
@@ -336,7 +336,7 @@ bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParam
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Error, TEXT("RunCommand(%d): '%s': cm shell not running"), ShellCommandCounter, *InCommand);
+		UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s': cm shell not running (count %d)"), *InCommand, ShellCommandCounter);
 		OutErrors = InCommand + ": Plastic SCM shell not running!";
 	}
 
@@ -451,8 +451,7 @@ void GetPlasticScmVersion(FString& OutPlasticScmVersion)
 	{
 		OutPlasticScmVersion = InfoMessages[0];
 
-		// Command-line format output changed with version 8.0.16.3000, plugin will crash unless we demand the old format.
-		// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
+		// Command-line format output changed with version 8.0.16.3000
 		bIsNewVersion80163000 = !PlasticScmVersionLess(OutPlasticScmVersion, "8.0.16.3000");
 	}
 }
@@ -536,10 +535,15 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
 
-	// Command-line format output changed with version 8.0.16.3000, plugin will crash unless we demand the old format.
-	// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
-	if (bIsNewVersion80163000) {
+	// Command-line format output changed with version 8.0.16.3000, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
+	if (bIsNewVersion80163000)
+	{
 		Parameters.Add(TEXT("--compact"));
+		Parameters.Add(TEXT("--header")); // Only prints the workspace status. No file status.
+	}
+	else
+	{
+		Parameters.Add(TEXT("--nochanges")); // Only prints the workspace status. No file status.
 	}
 	// NOTE: --wkconfig results in two network calls GetBranchInfoByName & GetLastChangesetOnBranch so it's okay to do it once here but not all the time
 	Parameters.Add(TEXT("--wkconfig")); // Branch name. NOTE: Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/8.0.16.3000
@@ -699,7 +703,7 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
 }
 
 /**
- * @brief Parse the array of strings results of a 'cm status --noheaders --controlledchanged --changed --localdeleted --localmoved --private --ignored' command
+ * @brief Parse the array of strings results of a 'cm status --noheaders --all --ignored' command
  *
  * Called in case of a regular status command for one or multiple files (not for a whole directory). 
  *
@@ -775,7 +779,7 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 }
 
 /**
- * @brief Parse the array of strings results of a 'cm status --noheaders --controlledchanged --changed --localdeleted --localmoved --private --ignored' command
+ * @brief Parse the array of strings results of a 'cm status --noheaders --all --ignored' command
  *
  * Called in case of a "directory status" (no file listed in the command) ONLY to detect Removed/Deleted files !
  *
@@ -847,13 +851,14 @@ static bool RunStatus(const TArray<FString>& InFiles, const EConcurrency::Type I
 
 	TArray<FString> Parameters;
 
-	// Command-line format output changed with version 8.0.16.3000, plugin will crash unless we demand the old format.
-	// For more details, see https://www.plasticscm.com/download/releasenotes/oldernotes?release=8.0.16.3000
-	if (bIsNewVersion80163000) {
+	// Command-line format output changed with version 8.0.16.3000, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
+	if (bIsNewVersion80163000)
+	{
 		Parameters.Add(TEXT("--compact"));
 	}
 	Parameters.Add(TEXT("--noheaders"));
-	Parameters.Add(TEXT("--controlledchanged --changed --localdeleted --localmoved --private --ignored"));
+	Parameters.Add(TEXT("--all"));
+	Parameters.Add(TEXT("--ignored"));
 	// "cm status" only operate on one path (file or folder) at a time, so use one folder path for multiple files in a directory
 	const FString Path = FPaths::GetPath(*InFiles[0]);
 	TArray<FString> OnePath;
@@ -1257,19 +1262,19 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 <RevisionHistoriesResult>
   <RevisionHistories>
 	<RevisionHistory>
-	  <ItemName>C:/Users/sebas/workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset</ItemName>
+	  <ItemName>C:/Workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset</ItemName>
 	  <Revisions>
 		<Revision>
-		  <RevisionSpec>C:/Users/sebas/workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset#cs:7</RevisionSpec>
+		  <RevisionSpec>C:/Workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset#cs:7</RevisionSpec>
 		  <Branch>/main</Branch>
-		  <CreationDate>2019-10-14T09:52:07.0000000+02:00</CreationDate>
+		  <CreationDate>2019-10-14T09:52:07+02:00</CreationDate>
 		  <RevisionType>bin</RevisionType>
 		  <ChangesetNumber>7</ChangesetNumber>
-		  <Owner>sebas</Owner>
+		  <Owner>SRombauts</Owner>
 		  <Comment>New tests</Comment>
-		  <b>UE4PlasticPluginDev</b>
-		  <c>localhost:8087</c>
-		  <d>UE4PlasticPluginDev@localhost:8087</d>
+		  <Repository>UE4PlasticPluginDev</Repository>
+		  <Server>localhost:8087</Server>
+		  <RepositorySpec>UE4PlasticPluginDev@localhost:8087</RepositorySpec>
 		</Revision>
 		...
 	  </Revisions>
