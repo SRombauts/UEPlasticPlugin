@@ -151,4 +151,10 @@ void RemoveRedundantErrors(FPlasticSourceControlCommand& InCommand, const FStrin
  */
 void SwitchVerboseLogs(const bool bInEnable);
 
+/**
+ * Find the best(longest) common directory between two paths, terminated by a slash, returning an empty string if none.
+ * Assumes that both input strings are already normalized paths, slash delimited, for performance reason.
+ */
+FString FindCommonDirectory(const FString& InPath1, const FString& InPath2);
+
 }

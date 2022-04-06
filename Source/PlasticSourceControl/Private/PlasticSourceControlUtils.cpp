@@ -888,24 +888,20 @@ static bool RunStatus(const FString& InDir, const TArray<FString>& InFiles, cons
 	OutErrorMessages.Append(ErrorMessages);
 	if (bResult)
 	{
-		if (1 == InFiles.Num() && FPaths::DirectoryExists(InFiles[0]))
+		if (1 == InFiles.Num() && (InFiles[0] == InDir))
 		{
 			// 1) Special case for "status" of a directory: requires a specific parse logic.
 			//   (this is triggered by the "Submit to Source Control" top menu button)
 			// Find recursively all files in the directory: this enable getting the list of "Controlled" (unchanged) assets
 			FFileVisitor FileVisitor;
 			FPlatformFileManager::Get().GetPlatformFile().IterateDirectoryRecursively(*InDir, FileVisitor);
-			UE_LOG(LogSourceControl, Verbose, TEXT("RunStatus(%s): 1) special case for status of a directory containing %d file(s) (%s)"), *InFiles[0], FileVisitor.Files.Num(), *InDir);
+			UE_LOG(LogSourceControl, Verbose, TEXT("RunStatus(%s): 1) special case for status of a directory containing %d file(s)"), *InDir, FileVisitor.Files.Num());
 			ParseFileStatusResult(FileVisitor.Files, Results, OutStates, OutChangeset, OutBranchName);
 			// The above cannot detect assets removed / locally deleted since there is no file left to enumerate (either by the Content Browser or by File Manager)
 			// => so we also parse the status results to explicitly look for Removed/Deleted assets
 			if (Results.Num() > 0)
 			{
 				Results.RemoveAt(0, 1);// Before that, remove the first line (Workspace/Changeset info)
-			}
-			else
-			{
-				UE_LOG(LogSourceControl, Error, TEXT("RunStatus(%s): the status of the '%s' directory didn't return any header to remove"), *InFiles[0], *InDir);
 			}
 			ParseDirectoryStatusResult(Results, OutStates);
 		}
@@ -1173,6 +1169,28 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 	return bResult;
 }
 
+FString FindCommonDirectory(const FString& InPath1, const FString& InPath2)
+{
+	const int32 MinLen = FMath::Min(InPath1.Len(), InPath2.Len());
+	int32 IndexAfterLastCommonSeparator = 0;
+	for (int32 Index = 0; Index < MinLen; Index++)
+	{
+		if (InPath1[Index] != InPath2[Index])
+			break;
+		if (InPath1[Index] == TEXT('/'))
+			IndexAfterLastCommonSeparator = Index + 1;
+	}
+	return InPath1.Left(IndexAfterLastCommonSeparator);
+}
+
+// Structure to group all files belonging to a root dir, storing their best/longest common directory
+struct FFilesInCommonDir
+{
+	// Best/longest common directory, slash terminated, based on FindCommonDirectory()
+	FString			CommonDir;
+	TArray<FString>	Files;
+};
+
 // Run a batch of Plastic "status" and "fileinfo" commands to update status of given files and directories.
 bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
@@ -1195,7 +1213,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo,
 	};
 
 	// 1) So here we group files by path (ie. by subdirectory)
-	TMap<FString, TArray<FString>> GroupOfFiles;
+	TMap<FString, FFilesInCommonDir> GroupOfFiles;
 	for (const FString& File : InFiles)
 	{
 		bool bDirFound = false;
@@ -1203,16 +1221,21 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo,
 		{
 			if (File.StartsWith(RootDir))
 			{
-				TArray<FString>* Group = GroupOfFiles.Find(RootDir);
-				if (Group != nullptr)
+				FFilesInCommonDir* ExistingGroup = GroupOfFiles.Find(RootDir);
+				if (ExistingGroup != nullptr)
 				{
-					Group->Add(File);
+					// See if we have to update the CommonDir
+					if (!File.StartsWith(ExistingGroup->CommonDir))
+					{
+						// the file is not in the same path, we need to find their common dir
+						ExistingGroup->CommonDir = FindCommonDirectory(ExistingGroup->CommonDir, File);
+					}
+					ExistingGroup->Files.Add(File);
 				}
 				else
 				{
-					TArray<FString> NewGroup;
-					NewGroup.Add(File);
-					GroupOfFiles.Add(RootDir, NewGroup);
+					FString Path = FPaths::GetPath(File) + TEXT("/");
+					GroupOfFiles.Add(RootDir, { MoveTemp(Path), {File}});
 				}
 
 				bDirFound = true;
@@ -1220,21 +1243,20 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo,
 			}
 		}
 
-		// this means the file isn't part of our root directories 
-		// should be a edge case so we simply add its directory to the group
+		// If the file isn't part of our root directories, we simply add its directory as a new group.
+		// It means that the group is dedicated to the directory, and as such its CommonDir is the directory itself.
+		// This should be an edge case (typically the uproject file) .
 		if (!bDirFound)
 		{
-			const FString Path = FPaths::GetPath(File);
-			TArray<FString>* Group = GroupOfFiles.Find(Path);
-			if (Group != nullptr)
+			FString Path = FPaths::GetPath(File) + TEXT("/");
+			FFilesInCommonDir* ExistingGroup = GroupOfFiles.Find(Path);
+			if (ExistingGroup != nullptr)
 			{
-				Group->Add(File);
+				ExistingGroup->Files.Add(File);
 			}
 			else
 			{
-				TArray<FString> NewGroup;
-				NewGroup.Add(File);
-				GroupOfFiles.Add(Path, NewGroup);
+				GroupOfFiles.Add(Path, { MoveTemp(Path), {File} });
 			}
 		}
 	}
@@ -1249,14 +1271,12 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo,
 	}
 
 	// 2) then we can batch Plastic status operation by subdirectory
-	TArray<FString> Dirs;
-	GroupOfFiles.GetKeys(Dirs);
-	for (const auto& Dir : Dirs)
+	for (auto& Group : GroupOfFiles)
 	{
 		// Run a "status" command on the directory to get workspace file states.
 		// (ie. Changed, CheckedOut, Copied, Replaced, Added, Private, Ignored, Deleted, LocallyDeleted, Moved, LocallyMoved)
 		TArray<FPlasticSourceControlState> States;
-		const bool bGroupOk = RunStatus(Dir, GroupOfFiles[Dir], InConcurrency, OutErrorMessages, States, OutChangeset, OutBranchName);
+		const bool bGroupOk = RunStatus(MoveTemp(Group.Value.CommonDir), MoveTemp(Group.Value.Files), InConcurrency, OutErrorMessages, States, OutChangeset, OutBranchName);
 		if (bGroupOk && (States.Num() > 0))
 		{
 			// Run a "fileinfo" command to update complementary status information of given files.
