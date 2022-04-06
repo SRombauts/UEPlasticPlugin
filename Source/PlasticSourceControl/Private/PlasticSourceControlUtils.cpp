@@ -1196,6 +1196,9 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo,
 {
 	bool bResults = true;
 
+	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FString& WorkspaceRoot = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
+
 	// The "status" command only operate on one directory-tree at a time (whole tree recursively)
 	// not on different folders with no common root.
 	// But "Submit to Source Control" ask for the State of many different directories,
@@ -1216,6 +1219,13 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool InForceFileinfo,
 	TMap<FString, FFilesInCommonDir> GroupOfFiles;
 	for (const FString& File : InFiles)
 	{
+		// Discard all file/paths that are not under the workspace root (typically excluding the Engine content)
+		if (!File.StartsWith(WorkspaceRoot))
+		{
+			UE_LOG(LogSourceControl, Verbose, TEXT("%s is out of the Workspace"), *File);
+			continue;
+		}
+
 		bool bDirFound = false;
 		for (const auto& RootDir : RootDirs)
 		{
