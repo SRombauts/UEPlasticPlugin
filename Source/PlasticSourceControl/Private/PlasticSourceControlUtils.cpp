@@ -998,46 +998,60 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
  *
  * ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere
  *
+ * @param[in]		bInWholeDirectory	If executed on a whole directory (typically Content/) for a "Submit Content" operation, optimize fileinfo more agressively
  * @param			bInUpdateHistory	If getting the history of a file, force execute the fileinfo command required to get RepSpec of XLinks (history view or visual diff)
  * @param[in]		InConcurrency		Is the command running in the background, or blocking the main thread
  * @param[out]		OutErrorMessages	Error messages from the "fileinfo" command
  * @param[in,out]	InOutStates			List of file states in the directory, gathered by the "status" command, completed by results of the "fileinfo" command
  */
-static bool RunFileinfo(const bool bInUpdateHistory, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
+static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistory, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	bool bResult = true;
-	TArray<FString> AllFiles;
-	bool bRequireFileinfo = bInUpdateHistory;
-	for (const auto& State : InOutStates)
+	TArray<FString> SelectedFiles;
+
+	TArray<FPlasticSourceControlState> SelectedStates;
+	TArray<FPlasticSourceControlState> OptimizedStates;
+	for (FPlasticSourceControlState& State : InOutStates)
 	{
-		AllFiles.Add(State.GetFilename());
-		// Optimize by not issuing a "fileinfo" commands if all files are "Added"/"Deleted"/"NotControled"/"Ignored" but also "CheckedOut" and "Moved" files.
-		// This greatly reduce the time needed to do some operations like "Add to source control" or "Move/Rename/Copy" when using a distant server.
-		// This can't work with xlink file when we want to update the history;
-		// we need to know that we are running a fileinfo command to get the history, that's the role of bInUpdateHistory used above
-		if (	(State.WorkspaceState == EWorkspaceState::Controlled)
-			||	(State.WorkspaceState == EWorkspaceState::Changed)
-			||	(State.WorkspaceState == EWorkspaceState::Replaced)
-			||	(State.WorkspaceState == EWorkspaceState::Conflicted)
+		// 1) Issue a "fileinfo" command for controled files (to know if they are up to date and can be checked-out or checked-in)
+		// but only if controlled unchanged, or locally changed,
+		// optimizing for files that are CheckedOut/Added/Deleted/Moved/Copied/Replaced/NotControled/Ignored/Private/Unknown
+		// (since there is no point to check if they are up to date in these cases; they are already checkedout or not controlld).
+		// This greatly reduce the time needed to do some operations like "Add" or "Move/Rename/Copy" when there is some latency with the server (eg cloud).
+		//
+		// 2) bInWholeDirectory: In the case of a "whole directory status" triggered by the "Submit Content" operation,
+		// don't even issue a "fileinfo" command for unchanged Controlled files since they won't be considered them for submit.
+		// This greatly reduce the time needed to open the Submit window.
+		// 
+		// 3) bInUpdateHistory: When the plugin needs to update the history, it needs to know if it's on a XLink,
+		// so the fileinfo command is required here to get the RepSpec
+		if (bInUpdateHistory
+			||	(	(State.WorkspaceState == EWorkspaceState::Controlled) && !bInWholeDirectory)
+				||	(State.WorkspaceState == EWorkspaceState::Changed)
 			)
 		{
-			bRequireFileinfo = true;
+			SelectedFiles.Add(State.GetFilename());
+			SelectedStates.Add(MoveTemp(State));
+		}
+		else
+		{
+			OptimizedStates.Add(MoveTemp(State));
 		}
 	}
-	// The above optimization can only be used if all files are optimized out (avoiding the "fileinfo" command entirely)
-	// else we have to run the "fileinfo" command on all of them
-	// since ParseFileinfoResults() expect the same number of lines of results as there are files listed in the query
-	if (bRequireFileinfo)
+	InOutStates = MoveTemp(OptimizedStates);
+
+	if (SelectedStates.Num())
 	{
 		TArray<FString> Results;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
-		bResult = RunCommand(TEXT("fileinfo"), Parameters, AllFiles, InConcurrency, Results, ErrorMessages);
+		bResult = RunCommand(TEXT("fileinfo"), Parameters, SelectedFiles, InConcurrency, Results, ErrorMessages);
 		OutErrorMessages.Append(ErrorMessages);
 		if (bResult)
 		{
-			ParseFileinfoResults(Results, InOutStates);
+			ParseFileinfoResults(Results, SelectedStates);
+			InOutStates.Append(MoveTemp(SelectedStates));
 		}
 	}
 
@@ -1283,6 +1297,8 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 	// 2) then we can batch Plastic status operation by subdirectory
 	for (auto& Group : GroupOfFiles)
 	{
+		const bool bWholeDirectory = (1 == Group.Value.Files.Num() && (Group.Value.CommonDir == Group.Value.Files[0]));	
+
 		// Run a "status" command on the directory to get workspace file states.
 		// (ie. Changed, CheckedOut, Copied, Replaced, Added, Private, Ignored, Deleted, LocallyDeleted, Moved, LocallyMoved)
 		TArray<FPlasticSourceControlState> States;
@@ -1293,7 +1309,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 			// (ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere)
 			// In case of "directory status", there is no explicit file in the group (it contains only the directory) 
 			// => work on the list of files discovered by RunStatus()
-			bResults &= RunFileinfo(bInUpdateHistory, InConcurrency, OutErrorMessages, States);
+			bResults &= RunFileinfo(bWholeDirectory, bInUpdateHistory, InConcurrency, OutErrorMessages, States);
 		}
 		OutStates.Append(MoveTemp(States));
 	}
