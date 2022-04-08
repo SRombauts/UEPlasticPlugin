@@ -885,7 +885,7 @@ static bool RunStatus(const FString& InDir, const TArray<FString>& InFiles, cons
 	{
 		FPaths::NormalizeFilename(Results[IdxResult]);
 	}
-	OutErrorMessages.Append(ErrorMessages);
+	OutErrorMessages.Append(MoveTemp(ErrorMessages));
 	if (bResult)
 	{
 		if (1 == InFiles.Num() && (InFiles[0] == InDir))
@@ -1047,7 +1047,7 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
 		bResult = RunCommand(TEXT("fileinfo"), Parameters, SelectedFiles, InConcurrency, Results, ErrorMessages);
-		OutErrorMessages.Append(ErrorMessages);
+		OutErrorMessages.Append(MoveTemp(ErrorMessages));
 		if (bResult)
 		{
 			ParseFileinfoResults(Results, SelectedStates);
@@ -1154,7 +1154,7 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 					Parameters.Add(TEXT("--machinereadable"));
 					// call 'cm merge cs:xxx --machinereadable' (only dry-run, whithout the --merge parameter)
 					bResult = RunCommand(TEXT("merge"), Parameters, TArray<FString>(), EConcurrency::Synchronous, Results, ErrorMessages);
-					OutErrorMessages.Append(ErrorMessages);
+					OutErrorMessages.Append(MoveTemp(ErrorMessages));
 					// Parse the result, one line for each conflicted files:
 					for (const FString& Result : Results)
 					{
