@@ -78,6 +78,9 @@ public:
 	/** Whether we are running multi-treaded in the background, or blocking the main thread */
 	EConcurrency::Type Concurrency;
 
+	/** Timestamp of when the command was issued */
+	const double StartTimestamp;
+
 	/** Files to perform this operation on */
 	TArray< FString > Files;
 

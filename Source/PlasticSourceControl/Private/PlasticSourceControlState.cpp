@@ -295,7 +295,7 @@ bool FPlasticSourceControlState::CanCheckIn() const
 		|| WorkspaceState == EWorkspaceState::Replaced
 		|| WorkspaceState == EWorkspaceState::CheckedOut;
 
-	UE_LOG(LogSourceControl, Verbose, TEXT("%s CanCheckIn=%d"), *LocalFilename, bCanCheckIn);
+	if (!IsUnknown()) UE_LOG(LogSourceControl, Verbose, TEXT("%s CanCheckIn=%d"), *LocalFilename, bCanCheckIn);
 
 	return bCanCheckIn;
 }
@@ -307,7 +307,7 @@ bool FPlasticSourceControlState::CanCheckout() const
 								|| WorkspaceState == EWorkspaceState::Replaced)		// In source control, merged, waiting for checkin to conclude the merge 
 								&& IsCurrent(); // Is up to date (at the revision of the repo)
 
-	UE_LOG(LogSourceControl, Verbose, TEXT("%s CanCheckout=%d"), *LocalFilename, bCanCheckout);
+	if (!IsUnknown()) UE_LOG(LogSourceControl, Verbose, TEXT("%s CanCheckout=%d"), *LocalFilename, bCanCheckout);
 
 	return bCanCheckout;
 }
