@@ -135,7 +135,7 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 	else
 	{
 		const double ElapsedTime = (FPlatformTime::Seconds() - StartTimestamp);
-		UE_LOG(LogSourceControl, Verbose, TEXT("_StartBackgroundPlasticShell: '%s %s' ok (in %lfs, handle %d)"), *InPathToPlasticBinary, *FullCommand, ElapsedTime, ShellProcessHandle.Get());
+		UE_LOG(LogSourceControl, Verbose, TEXT("_StartBackgroundPlasticShell: '%s %s' ok (in %.3lfs, handle %d)"), *InPathToPlasticBinary, *FullCommand, ElapsedTime, ShellProcessHandle.Get());
 		ShellCommandCounter = 0;
 		ShellCumulatedTime = ElapsedTime;
 	}
@@ -224,14 +224,14 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		{
 			// In case of long running operation, start to print intermediate output from cm shell (like percentage of progress)
 			// (but only when running Asynchronous commands, since Synchronous commands block the main thread until they finish)
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' in progress for %lfs...\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' in progress for %.3lfs...\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
 			PreviousLogLen = OutResults.Len();
 			LastLog = FPlatformTime::Seconds(); // freshen the timestamp of last log
 		}
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
 			// In case of timeout, ask the blocking 'cm shell' process to exit, and detach from it immediatly: it will be relaunched by next command
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' %d TIMEOUT after %lfs output (%d chars):\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' %d TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
 			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
 			FPlatformProcess::CloseProc(ShellProcessHandle);
 			_CleanupBackgroundCommandLineShell();
@@ -246,27 +246,27 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' 'cm shell' stopped after %lfs output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' 'cm shell' stopped after %.3lfs output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
 		}
 		else if (!bResult)
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' (in %lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' (in %.3lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
 		}
 		else
 		{
 			if (PreviousLogLen > 0)
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' (in %lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Mid(PreviousLogLen).Left(4096)); // Limit result size to 4096 characters
+				UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' (in %.3lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Mid(PreviousLogLen).Left(4096)); // Limit result size to 4096 characters
 			}
 			else
 			{
 				if (OutResults.Len() <= 200) // Limit result size to 200 characters
 				{
-					UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' (in %lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults);
+					UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' (in %.3lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults);
 				}
 				else
 				{
-					UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' (in %lfs) (output %d chars not displayed)"), *LoggableCommand, ElapsedTime, OutResults.Len());
+					UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' (in %.3lfs) (output %d chars not displayed)"), *LoggableCommand, ElapsedTime, OutResults.Len());
 					UE_LOG(LogSourceControl, Verbose, TEXT("\n%s"), *OutResults.Left(4096));; // Limit result size to 4096 characters
 				}
 			}
@@ -279,7 +279,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	}
 
 	ShellCumulatedTime += ElapsedTime;
-	UE_LOG(LogSourceControl, Verbose, TEXT("RunCommand: cumulated time spent in shell: %lfs (count %d)"), ShellCumulatedTime, ShellCommandCounter);
+	UE_LOG(LogSourceControl, Verbose, TEXT("RunCommand: cumulated time spent in shell: %.3lfs (count %d)"), ShellCumulatedTime, ShellCommandCounter);
 
 	return bResult;
 }
