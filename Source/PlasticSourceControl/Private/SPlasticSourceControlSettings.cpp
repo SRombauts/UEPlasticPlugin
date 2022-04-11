@@ -271,7 +271,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.Font(Font)
 				]
 			]
-			// Option to enable the Update Status operation at Editor Startup
+			// Option to run an Update Status operation at Editor Startup
 			+SVerticalBox::Slot()
 			.AutoHeight()
 			.Padding(2.0f)
@@ -296,6 +296,29 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				]
 			]
 			// Button to create a new Workspace
+			+SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(2.0f)
+			.VAlign(VAlign_Center)
+			[
+				SNew(SHorizontalBox)
+				.ToolTipText(LOCTEXT("EnableVerboseLogs_Tooltip", "Override LogSourceControl default verbosity level to Verbose (except if already set to VeryVerbose)."))
+				+SHorizontalBox::Slot()
+				.FillWidth(0.1f)
+				[
+					SNew(SCheckBox)
+					.IsChecked(SPlasticSourceControlSettings::IsEnableVerboseLogsChecked())
+					.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedEnableVerboseLogs)
+				]
+				+SHorizontalBox::Slot()
+				.FillWidth(2.9f)
+				.VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("EnableVerboseLogs", "Enable Source Control Verbose logs"))
+					.Font(Font)
+				]
+			]
 			+SVerticalBox::Slot()
 			.FillHeight(2.5f)
 			.Padding(4.0f)
@@ -634,15 +657,25 @@ void SPlasticSourceControlSettings::OnCheckedUpdateStatusAtStartup(ECheckBoxStat
 	PlasticSourceControl.AccessSettings().SaveSettings();
 }
 
-bool SPlasticSourceControlSettings::UpdateStatusAtStartup() const
-{
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	return PlasticSourceControl.AccessSettings().UpdateStatusAtStartup();
-}
-
 ECheckBoxState SPlasticSourceControlSettings::IsUpdateStatusAtStartupChecked() const
 {
-	return (UpdateStatusAtStartup() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
+	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	return PlasticSourceControl.AccessSettings().GetUpdateStatusAtStartup() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+void SPlasticSourceControlSettings::OnCheckedEnableVerboseLogs(ECheckBoxState NewCheckedState)
+{
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	PlasticSourceControl.AccessSettings().SetEnableVerboseLogs(NewCheckedState == ECheckBoxState::Checked);
+	PlasticSourceControl.AccessSettings().SaveSettings();
+
+	PlasticSourceControlUtils::SwitchVerboseLogs(NewCheckedState == ECheckBoxState::Checked);
+}
+
+ECheckBoxState SPlasticSourceControlSettings::IsEnableVerboseLogsChecked() const
+{
+	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	return PlasticSourceControl.AccessSettings().GetEnableVerboseLogs() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
 /** Path to the "ignore.conf" file */
