@@ -597,46 +597,29 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			UE_LOG(LogSourceControl, Log, TEXT("Moving %s to %s..."), *Origin, *Destination);
 			// In case of rename, we have to undo what the Editor (created a redirector and added the dest asset), and then redo it with Plastic SCM
-			// - backup the redirector (if it exists) to a temp file
-			const bool bReplace = true;
-			const bool bEvenIfReadOnly = true;
-			const FString TempFileName = FPaths::CreateTempFilename(*FPaths::ProjectLogDir(), TEXT("Plastic-MoveTemp"), TEXT(".uasset"));
-			UE_LOG(LogSourceControl, Log, TEXT("Move '%s' -> '%s'"), *Origin, *TempFileName);
-			InCommand.bCommandSuccessful = IFileManager::Get().Move(*TempFileName, *Origin, bReplace, bEvenIfReadOnly);
 			// - revert the 'cm add' that was applied to the destination by the Editor
-			if (InCommand.bCommandSuccessful)
 			{
 				TArray<FString> DestinationFiles;
 				DestinationFiles.Add(Destination);
 				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), DestinationFiles, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 			}
-			// - move back the asset from the destination to it's original location
+			// - execute a 'cm move --nomoveondisk' command to the destination to tell cm what happened
 			if (InCommand.bCommandSuccessful)
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("Move '%s' -> '%s'"), *Destination, *Origin);
-				InCommand.bCommandSuccessful = IFileManager::Get().Move(*Origin, *Destination, bReplace, bEvenIfReadOnly);
-			}
-			// - execute a 'cm move' command to the destination to redo the actual job
-			if (InCommand.bCommandSuccessful)
-			{
+				TArray<FString> Parameters;
+				Parameters.Add(TEXT("--nomoveondisk"));
 				TArray<FString> Files;
 				Files.Add(Origin);
 				Files.Add(Destination);
 				// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 				if (-1 != InCommand.ChangesetNumber)
 				{
-					InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("move"), TArray<FString>(), Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+					InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("move"), Parameters, Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 				}
 				else
 				{
-					InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial move"), TArray<FString>(), Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+					InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial move"), Parameters, Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 				}
-			}
-			// - restore the redirector file (if it exists) to it's former location
-			if (InCommand.bCommandSuccessful)
-			{
-				UE_LOG(LogSourceControl, Log, TEXT("Move '%s' -> '%s'"), *TempFileName, *Origin);
-				InCommand.bCommandSuccessful = IFileManager::Get().Move(*Origin, *TempFileName, bReplace, bEvenIfReadOnly);
 			}
 			// - add the redirector file (if it exists) to source control
 			if (InCommand.bCommandSuccessful)
