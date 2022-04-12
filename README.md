@@ -179,7 +179,7 @@ The command line needs the quoted path to the UE4Editor.exe, the quoted patch to
 
 This version here is the development version, so it can contain additional fixes, performance improvements or new features.
 
-#### Version 1.4.11 2022/03/29 for UE4.27.2:
+#### Version 1.4.12 2022/04/12 for UE 4.27.2 and UE 5.0.0:
 - manage connection to the server
 - show current branch name and CL in status text
 - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
@@ -209,8 +209,8 @@ This version here is the development version, so it can contain additional fixes
 
 #### Feature Requests
 - Unreal Engine 5.0 full support
-  - One File Per Actor
   - Changelists
+  - One File Per Actor
 - Branches support, to check outdated files vs. remote across multiple branches
 - Mac OS X Support
 - add a setting to pass the --update option to "checkin"
