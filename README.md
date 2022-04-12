@@ -138,15 +138,15 @@ Binary assets should be locked for exclusive access to avoid merge conflicts.
 
 To lock all assets on the whole `Content` directory, you need to put a `lock.conf` in your server directory (for instance `C:\Program Files\PlasticSCM5\server`) with this content:
 
-    rep:reponame lockserver:servername:8084
+    rep:<repname> [lockserver:[<server>:<port>]]
     /Content
 
-For instance:
+For instance the more generic one would be:
 
-    rep:UE4PlasticPluginDev lockserver:localhost:8087
+    rep:*
     /Content
 
-or:
+or to be more specific to one repository:
 
     rep:UE4PlasticPluginDev lockserver:localhost:8087
     *.uasset
@@ -204,7 +204,8 @@ This version here is the development version, so it can contain additional fixes
 - [Partial Checkin (like Gluon, for artists)](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
 - Plastic Cloud is fully supported
 - xlinks sub-repositories (for Plugins for instance)
-- support legacy status command from PlasticSCM version 8.0.16.3000 (crash fix)
+- Toggle verbose logs from the Source Control settings UI
+- Run 'cm' CLI commands directly from the Unreal Editor Console, Blueprints of C++ code.
 - Windows only
 
 #### Feature Requests
