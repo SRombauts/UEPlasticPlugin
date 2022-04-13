@@ -1,16 +1,21 @@
-Unreal Engine Plastic SCM Source Control Plugin
------------------------------------------------
+Plastic SCM plugin for Unreal Engine
+------------------------------------
 
-[![release](https://img.shields.io/github/release/SRombauts/UE4PlasticPlugin.svg)](https://github.com/SRombauts/UE4PlasticPlugin/releases)
+[![release](https://img.shields.io/github/release/PlasticSCM/UE4PlasticPlugin.svg)](https://github.com/PlasticSCM/UE4PlasticPlugin/releases)
 [![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
-This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0).
-It has now been integrated in Unreal Engine and is shipping with it since UE4.24 (in a version equivalent to 1.4.6+). See the Status section bellow for more details
+This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Provider plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0).
+An old version of it has been integrated in Unreal Engine 4.24 and is shipping with it since then (equivalent to 1.4.6+).
+But if you have a project of a certain size, chances are you need to upgrade manually to a version we provide from Github
+in order to benefit of all the performance improvements we have made since then.
+See the Status section bellow for more details.
 
-It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml) or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
+It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml)
+or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
 It is a complementary tool improving efficiency in your daily workflow with assets in Editor.
 
-It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints. It also helps importing an existing Unreal Project into source control, with appropriate *ignore.conf* file.
+It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints.
+It also helps importing an existing Unreal Project into source control, with appropriate *ignore.conf* file.
 Since Unreal does not manage C++ source code, but only assets, the plugin is especially useful for GDs and artists.
 
 ## User Guide
@@ -19,7 +24,7 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
 
 #### Unreal default version of the plugin
 
-A version of this PlasticSCM plugin has now been integrated in Unreal Engine and is shipping with it since UE4.24.
+An old version of this PlasticSCM plugin has now been integrated in Unreal Engine and is shipping with it since UE4.24.
 
 Why: This is the easiest way to get started with Plastic SCM in Unreal Engine, but it will always be lagging behind the latest release here.
 
@@ -27,7 +32,7 @@ Why: This is the easiest way to get started with Plastic SCM in Unreal Engine, b
 
 Why: if you want the latest features, performance improvements and bug fixes that are missing from Unreal integrated plugin.
 
-1. Download the [latest binary release UE4PlasticPlugin-x.x.x.zip](https://github.com/SRombauts/UE4PlasticPlugin/releases) targeting your UE4 version.
+1. Download the [latest binary release UE4PlasticPlugin-x.x.x.zip](https://github.com/PlasticSCM/UE4PlasticPlugin/releases) targeting your UE4 version.
 2. Either:
     1. Unzip the content of the ZIP directly at the root of your project folder.
        This creates a "Plugins/UE4PlasticPlugin/" subdirectory into your project.
@@ -262,10 +267,9 @@ To report an issue, please use the [Github issue-tracker](https://github.com/SRo
 
 #### Use merge requests
 
-If you want to help, [Github Pull Requests](https://github.com/SRombauts/UE4PlasticPlugin/pulls) are welcome!
+If you want to help, [Github Pull Requests](https://github.com/PlasticSCM/UE4PlasticPlugin/pulls) are welcome!
 
 ### Copyright
 
-Copyright (c) 2016-2020 Codice Software
+Copyright (c) 2016-2022 Codice Software
 Developped by Sébastien Rombauts (sebastien.rombauts@gmail.com)
-<a href="https://www.paypal.me/SRombauts" title="Pay Me a Beer! Donate with PayPal:)"><img src="https://www.paypalobjects.com/webstatic/paypalme/images/pp_logo_small.png" width="118"></a>
