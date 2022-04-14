@@ -144,14 +144,40 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 }
 
 // Internal function (called under the critical section)
+static void _ExitBackgroundCommandLineShell()
+{
+	if (ShellProcessHandle.IsValid())
+	{
+		if (FPlatformProcess::IsProcRunning(ShellProcessHandle))
+		{
+			// Tell the 'cm shell' to exit
+			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
+			// And wait up to one second for its termination
+			const double Timeout = 1.0;
+			const double StartTimestamp = FPlatformTime::Seconds();
+			while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
+			{
+				if ((FPlatformTime::Seconds() - StartTimestamp) > Timeout)
+				{
+					UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefuly in %lfs."), Timeout);
+					break;
+				}
+				FPlatformProcess::Sleep(0.01f);
+			}
+		}
+		FPlatformProcess::CloseProc(ShellProcessHandle);
+		_CleanupBackgroundCommandLineShell();
+	}
+}
+
+// Internal function (called under the critical section)
 static void _RestartBackgroundCommandLineShell()
 {
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
 
-	FPlatformProcess::CloseProc(ShellProcessHandle);
-	_CleanupBackgroundCommandLineShell();
+	_ExitBackgroundCommandLineShell();
 	_StartBackgroundPlasticShell(PathToPlasticBinary, WorkingDirectory);
 }
 
@@ -282,33 +308,6 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	UE_LOG(LogSourceControl, Verbose, TEXT("RunCommand: cumulated time spent in shell: %.3lfs (count %d)"), ShellCumulatedTime, ShellCommandCounter);
 
 	return bResult;
-}
-
-// Internal function (called under the critical section)
-static void _ExitBackgroundCommandLineShell()
-{
-	if (ShellProcessHandle.IsValid())
-	{
-		if (FPlatformProcess::IsProcRunning(ShellProcessHandle))
-		{
-			// Tell the 'cm shell' to exit
-			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
-			// And wait up to one second for its termination
-			const double Timeout = 1.0;
-			const double StartTimestamp = FPlatformTime::Seconds();
-			while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
-			{
-				if ((FPlatformTime::Seconds() - StartTimestamp) > Timeout)
-				{
-					UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefuly in %lfs."), Timeout);
-					break;
-				}
-				FPlatformProcess::Sleep(0.01f);
-			}
-		}
-		FPlatformProcess::CloseProc(ShellProcessHandle);
-		_CleanupBackgroundCommandLineShell();
-	}
 }
 
 // Launch the Plastic SCM background 'cm shell' process in background for optimized successive commands (thread-safe)
