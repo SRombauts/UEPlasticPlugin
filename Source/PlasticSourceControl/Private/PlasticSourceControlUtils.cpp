@@ -65,7 +65,10 @@ const FString& FScopedTempFile::GetFilename() const
 	return Filename;
 }
 
+#if ENGINE_MAJOR_VERSION == 4
+
 // Needed to SetHandleInformation() on WritePipe for input (opposite of ReadPipe, for output) (idem FInteractiveProcess)
+// Note: this has been implemented in Unreal Engine 5.0 in january 2022
 static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 {
 #if PLATFORM_WINDOWS
@@ -87,13 +90,15 @@ static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 #endif // PLATFORM_WINDOWS
 }
 
+#endif
+
 namespace PlasticSourceControlUtils
 {
 // Command-line interface parameters and output format changed with version 8.0.16.3000
 // For more details, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
 static bool				bIsNewVersion80163000 = false;
 
-// In/Out Pipes for the 'cm shell' persistent process
+// In/Out Pipes for the 'cm shell' persistent child process
 static void*			ShellOutputPipeRead = nullptr;
 static void*			ShellOutputPipeWrite = nullptr;
 static void*			ShellInputPipeRead = nullptr;
@@ -106,8 +111,8 @@ static double			ShellCumulatedTime = 0.;
 // Internal function to cleanup (called under the critical section)
 static void _CleanupBackgroundCommandLineShell()
 {
-	FPlatformProcess::ClosePipe(ShellInputPipeRead, ShellInputPipeWrite);
 	FPlatformProcess::ClosePipe(ShellOutputPipeRead, ShellOutputPipeWrite);
+	FPlatformProcess::ClosePipe(ShellInputPipeRead, ShellInputPipeWrite);
 	ShellOutputPipeRead = ShellOutputPipeWrite = nullptr;
 	ShellInputPipeRead = ShellInputPipeWrite = nullptr;
 }
@@ -123,8 +128,13 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 
 	const double StartTimestamp = FPlatformTime::Seconds();
 
-	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite));	// For reading from child process
-	verify(CreatePipeWrite(ShellInputPipeRead, ShellInputPipeWrite));	// For writing to child process
+#if ENGINE_MAJOR_VERSION == 4
+	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite));		// For reading outputs from cm shell child process
+	verify(             CreatePipeWrite(ShellInputPipeRead, ShellInputPipeWrite));			// For writing commands to cm shell child process
+#elif ENGINE_MAJOR_VERSION == 5
+	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite, false));	// For reading outputs from cm shell child process
+	verify(FPlatformProcess::CreatePipe(ShellInputPipeRead, ShellInputPipeWrite, true));	// For writing commands to cm shell child process
+#endif
 
 	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
 	if (!ShellProcessHandle.IsValid())
