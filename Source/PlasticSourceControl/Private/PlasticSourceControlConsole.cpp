@@ -1,3 +1,5 @@
+// Copyright (c) 2016-2022 Codice Software
+
 #include "PlasticSourceControlConsole.h"
 
 #include "HAL/IConsoleManager.h"
