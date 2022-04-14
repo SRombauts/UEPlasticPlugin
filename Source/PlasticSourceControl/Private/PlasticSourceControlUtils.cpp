@@ -266,11 +266,10 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		}
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
-			// In case of timeout, ask the blocking 'cm shell' process to exit, and detach from it immediatly: it will be relaunched by next command
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' %d TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
-			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
-			FPlatformProcess::CloseProc(ShellProcessHandle);
-			_CleanupBackgroundCommandLineShell();
+			// In case of timeout, ask the blocking 'cm shell' process to exit, detach from it and restart it immediatly
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
+			_RestartBackgroundCommandLineShell();
+			return false;
 		}
 
 		FPlatformProcess::Sleep(0.001f);
