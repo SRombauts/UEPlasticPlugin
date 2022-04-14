@@ -343,22 +343,10 @@ void Terminate()
 // Run command (thread-safe)
 bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, FString& OutResults, FString& OutErrors)
 {
-	bool bResult = false;
-
 	// Protect public APIs from multi-thread access
 	FScopeLock Lock(&ShellCriticalSection);
 
-	if (ShellProcessHandle.IsValid())
-	{
-		bResult = _RunCommandInternal(InCommand, InParameters, InFiles, InConcurrency, OutResults, OutErrors);
-	}
-	else
-	{
-		UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s': cm shell not running (count %d)"), *InCommand, ShellCommandCounter);
-		OutErrors = InCommand + ": Plastic SCM shell not running!";
-	}
-
-	return bResult;
+	return _RunCommandInternal(InCommand, InParameters, InFiles, InConcurrency, OutResults, OutErrors);
 }
 
 // Basic parsing or results & errors from the Plastic command line process
