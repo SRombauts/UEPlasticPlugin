@@ -287,17 +287,28 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 // Internal function (called under the critical section)
 static void _ExitBackgroundCommandLineShell()
 {
-	// Tell the 'cm shell' to exit
-	FString Results, Errors;
-	_RunCommandInternal(TEXT("exit"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, Results, Errors);
-	// And wait up to one seconde for its termination
-	int timeout = 100;
-	while (FPlatformProcess::IsProcRunning(ShellProcessHandle) && (0 < timeout--))
+	if (ShellProcessHandle.IsValid())
 	{
-		FPlatformProcess::Sleep(0.01f);
+		if (FPlatformProcess::IsProcRunning(ShellProcessHandle))
+		{
+			// Tell the 'cm shell' to exit
+			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
+			// And wait up to one second for its termination
+			const double Timeout = 1.0;
+			const double StartTimestamp = FPlatformTime::Seconds();
+			while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
+			{
+				if ((FPlatformTime::Seconds() - StartTimestamp) > Timeout)
+				{
+					UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefuly in %lfs."), Timeout);
+					break;
+				}
+				FPlatformProcess::Sleep(0.01f);
+			}
+		}
+		FPlatformProcess::CloseProc(ShellProcessHandle);
+		_CleanupBackgroundCommandLineShell();
 	}
-	FPlatformProcess::CloseProc(ShellProcessHandle);
-	_CleanupBackgroundCommandLineShell();
 }
 
 // Launch the Plastic SCM background 'cm shell' process in background for optimized successive commands (thread-safe)
@@ -307,10 +318,7 @@ bool LaunchBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FS
 	FScopeLock Lock(&ShellCriticalSection);
 
 	// terminate previous shell if one is already running
-	if (ShellProcessHandle.IsValid())
-	{
-		_ExitBackgroundCommandLineShell();
-	}
+	_ExitBackgroundCommandLineShell();
 
 	return _StartBackgroundPlasticShell(InPathToPlasticBinary, InWorkingDirectory);
 }
@@ -321,10 +329,7 @@ void Terminate()
 	// Protect public APIs from multi-thread access
 	FScopeLock Lock(&ShellCriticalSection);
 
-	if (ShellProcessHandle.IsValid())
-	{
-		_ExitBackgroundCommandLineShell();
-	}
+	_ExitBackgroundCommandLineShell();
 }
 
 // Run command (thread-safe)
