@@ -312,7 +312,8 @@ void FPlasticSourceControlMenu::RefreshClicked()
 		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 		TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> RefreshOperation = ISourceControlOperation::Create<FUpdateStatus>();
-		RefreshOperation->SetCheckingAllFiles(true);
+		// This is the flag used by the Content Browser's "Checkout" filter to trigger a full status update
+		RefreshOperation->SetGetOpenedOnly(true);
 		const ECommandResult::Type Result = Provider.Execute(RefreshOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 		if (Result == ECommandResult::Succeeded)
 		{

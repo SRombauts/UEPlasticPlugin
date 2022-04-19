@@ -72,15 +72,14 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 				if (InCommand.bCommandSuccessful)
 				{
-					// Then, update the status of assets in Content/ directory and also Config files,
+					// Now update the status of assets in the Content directory
 					// but only on real (re-)connection (but not each time Login() is called by Rename or Fixup Redirector command to check connection)
 					// and only if enabled in the settings
 					if (!PlasticSourceControl.GetProvider().IsAvailable() && PlasticSourceControl.AccessSettings().GetUpdateStatusAtStartup())
 					{
-						TArray<FString> ProjectDirs;
-						ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-						ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
-						PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+						TArray<FString> ContentDir;
+						ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+						PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 					}
 				}
 				else
@@ -371,11 +370,10 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 	// revert the checkout of all unchanged files recursively
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("uncounchanged"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 
-	// Now update the status of assets in Content/ directory and also Config files
-	TArray<FString> ProjectDirs;
-	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
-	PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	// Now update the status of assets in the Content directory
+	TArray<FString> ContentDir;
+	ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+	PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
 }
@@ -407,11 +405,10 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
 
-	// Now update the status of assets in Content/ directory and also Config files
-	TArray<FString> ProjectDirs;
-	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-	ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
-	PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	// Now update the status of assets in the Content directory
+	TArray<FString> ContentDir;
+	ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+	PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
 }
@@ -463,9 +460,9 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FUpdateStatus>(InCommand.Operation);
 
-	// @todo: temporary debug log
-	UE_LOG(LogSourceControl, Log, TEXT("status (of %d files, ShouldCheckAllFiles=%d, ShouldUpdateHistory=%d, ShouldGetOpenedOnly=%d, ShouldUpdateModifiedState=%d)"),
-		InCommand.Files.Num(), Operation->ShouldCheckAllFiles()?1:0, Operation->ShouldUpdateHistory()?1:0, Operation->ShouldGetOpenedOnly()?1:0, Operation->ShouldUpdateModifiedState()?1:0);
+	// Note: ShouldCheckAllFiles is never set to true (SetCheckingAllFiles)
+	UE_LOG(LogSourceControl, Log, TEXT("status (of %d files, ShouldUpdateHistory=%d, ShouldGetOpenedOnly=%d, ShouldUpdateModifiedState=%d)"),
+		InCommand.Files.Num(), Operation->ShouldUpdateHistory(), Operation->ShouldGetOpenedOnly(), Operation->ShouldUpdateModifiedState());
 
 	if (InCommand.Files.Num() > 0)
 	{
@@ -515,16 +512,19 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 			}
 		}
 	}
-	else
+	// no path provided: only update the status of assets in Content/ directory if requested
+	// Perforce "opened files" are those that have been modified (or added/deleted): that is what we get with a simple status from the root
+	// This is called by the "CheckOut" Content Browser filter as well as our source control Refresh menu.
+	else if (Operation->ShouldGetOpenedOnly())
 	{
-		// no path provided: only update the status of assets in Content/ directory and also Config files
 		TArray<FString> ProjectDirs;
 		ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-		ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 
-	// don't use the ShouldUpdateModifiedState() hint here as it is specific to Perforce: the above normal Plastic status has already told us this information (like Git and Mercurial)
+	// TODO: re-evaluate how to optimize this heavy operation using some of these hints flags
+	// - ShouldGetOpenedOnly hint would be to call for all a whole workspace status update
+	// - ShouldUpdateModifiedState hint not used as the above normal Plastic status has already told us this information (like Git and Mercurial)
 
 	return InCommand.bCommandSuccessful;
 }
@@ -691,11 +691,10 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		// detect the special case of a Sync of the root folder:
 		if ((InCommand.Files.Num() == 1) && (InCommand.Files.Last() == InCommand.PathToWorkspaceRoot))
 		{
-			// only update the status of assets in Content/ directory and also Config files
-			TArray<FString> ProjectDirs;
-			ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-			ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir()));
-			PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+			// only update the status of assets in the Content directory
+			TArray<FString> ContentDir;
+			ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+			PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 		}
 		// else: optim, no need to update the status of our files since this is done immediately after by the Editor
 	}
