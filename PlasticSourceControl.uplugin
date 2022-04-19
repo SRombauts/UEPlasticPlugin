@@ -7,9 +7,9 @@
 	"Category": "Source Control",
 	"CreatedBy": "Codice Software.",
 	"CreatedByURL": "http://srombauts.github.com",
-	"DocsURL": "https://www.plasticscm.com/documentation.html",
+	"DocsURL": "https://www.plasticscm.com/documentation",
 	"MarketplaceURL": "",
-	"SupportURL": "https://www.plasticscm.com/support.html",
+	"SupportURL": "https://www.plasticscm.com/support",
 	"EnabledByDefault": true,
 	"CanContainContent": false,
 	"IsBetaVersion": false,
@@ -18,7 +18,10 @@
 		{
 			"Name": "PlasticSourceControl",
 			"Type": "Editor",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64"
+			]
 		},
 		{
 			"Name": "XmlParser2",
