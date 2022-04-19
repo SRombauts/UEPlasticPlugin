@@ -35,7 +35,7 @@ bool FPlasticSourceControlRevision::Get(
 	}
 
 	// if a filename for the temp file wasn't supplied generate a unique-ish one
-	if(InOutFilename.Len() == 0)
+	if (InOutFilename.Len() == 0)
 	{
 		// create the diff dir if we don't already have it (Plastic wont)
 		IFileManager::Get().MakeDirectory(*FPaths::DiffDir(), true);
@@ -45,7 +45,7 @@ bool FPlasticSourceControlRevision::Get(
 	}
 
 	bool bCommandSuccessful;
-	if(FPaths::FileExists(InOutFilename))
+	if (FPaths::FileExists(InOutFilename))
 	{
 		bCommandSuccessful = true; // if the temp file already exists, reuse it directly
 	}

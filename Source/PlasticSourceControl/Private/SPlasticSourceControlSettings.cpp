@@ -370,7 +370,7 @@ void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const bool bChanged = PlasticSourceControl.AccessSettings().SetBinaryPath(InText.ToString());
-	if(bChanged)
+	if (bChanged)
 	{
 		// Re-Check provided Plastic binary path for each change
 		PlasticSourceControl.GetProvider().CheckPlasticAvailability();

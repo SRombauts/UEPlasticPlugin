@@ -310,7 +310,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	InCommand.bCommandSuccessful = true;
 
-	for(const FString& File : InCommand.Files)
+	for (const FString& File : InCommand.Files)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(File);
 

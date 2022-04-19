@@ -43,7 +43,7 @@ namespace PlasticSourceControlConstants
 FScopedTempFile::FScopedTempFile(const FText& InText)
 {
 	Filename = FPaths::CreateTempFilename(*FPaths::ProjectLogDir(), TEXT("Plastic-Temp"), TEXT(".txt"));
-	if(!FFileHelper::SaveStringToFile(InText.ToString(), *Filename, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
+	if (!FFileHelper::SaveStringToFile(InText.ToString(), *Filename, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
 	{
 		UE_LOG(LogSourceControl, Error, TEXT("Failed to write to temp file: %s"), *Filename);
 	}
@@ -51,9 +51,9 @@ FScopedTempFile::FScopedTempFile(const FText& InText)
 
 FScopedTempFile::~FScopedTempFile()
 {
-	if(FPaths::FileExists(Filename))
+	if (FPaths::FileExists(Filename))
 	{
-		if(!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*Filename))
+		if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*Filename))
 		{
 			UE_LOG(LogSourceControl, Error, TEXT("Failed to delete temp file: %s"), *Filename);
 		}
@@ -381,7 +381,7 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 	auto TrimTrailing = [](FString& Str, const TCHAR Char)
 	{
 		int32 Len = Str.Len();
-		while(Len && Str[Len - 1] == Char)
+		while (Len && Str[Len - 1] == Char)
 		{
 			Str = Str.LeftChop(1);
 			Len = Str.Len();
@@ -391,15 +391,15 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 	TrimTrailing(OutWorkspaceRoot, '\\');
 	TrimTrailing(OutWorkspaceRoot, '/');
 
-	while(!bFound && !OutWorkspaceRoot.IsEmpty())
+	while (!bFound && !OutWorkspaceRoot.IsEmpty())
 	{
 		// Look for the ".plastic" subdirectory present at the root of every Plastic workspace
 		PathToPlasticSubdirectory = OutWorkspaceRoot / TEXT(".plastic");
 		bFound = IFileManager::Get().DirectoryExists(*PathToPlasticSubdirectory);
-		if(!bFound)
+		if (!bFound)
 		{
 			int32 LastSlashIndex;
-			if(OutWorkspaceRoot.FindLastChar(TEXT('/'), LastSlashIndex))
+			if (OutWorkspaceRoot.FindLastChar(TEXT('/'), LastSlashIndex))
 			{
 				OutWorkspaceRoot = OutWorkspaceRoot.Left(LastSlashIndex);
 			}
@@ -1541,7 +1541,7 @@ struct FRemoveRedundantErrors
 
 	bool operator()(const FString& String) const
 	{
-		if(String.Contains(Filter))
+		if (String.Contains(Filter))
 		{
 			return true;
 		}
@@ -1556,9 +1556,9 @@ struct FRemoveRedundantErrors
 void RemoveRedundantErrors(FPlasticSourceControlCommand& InCommand, const FString& InFilter)
 {
 	bool bFoundRedundantError = false;
-	for(const FString& ErrorMessage : InCommand.ErrorMessages)
+	for (const FString& ErrorMessage : InCommand.ErrorMessages)
 	{
-		if(ErrorMessage.Contains(InFilter, ESearchCase::CaseSensitive, ESearchDir::FromEnd))
+		if (ErrorMessage.Contains(InFilter, ESearchCase::CaseSensitive, ESearchDir::FromEnd))
 		{
 			InCommand.InfoMessages.Add(ErrorMessage);
 			bFoundRedundantError = true;
@@ -1568,7 +1568,7 @@ void RemoveRedundantErrors(FPlasticSourceControlCommand& InCommand, const FStrin
 	InCommand.ErrorMessages.RemoveAll( FRemoveRedundantErrors(InFilter) );
 
 	// if we have no error messages now, assume success!
-	if(bFoundRedundantError && InCommand.ErrorMessages.Num() == 0 && !InCommand.bCommandSuccessful)
+	if (bFoundRedundantError && InCommand.ErrorMessages.Num() == 0 && !InCommand.bCommandSuccessful)
 	{
 		InCommand.bCommandSuccessful = true;
 	}

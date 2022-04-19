@@ -28,7 +28,7 @@ bool FPlasticSourceControlSettings::SetBinaryPath(const FString& InString)
 {
 	FScopeLock ScopeLock(&CriticalSection);
 	const bool bChanged = (BinaryPath != InString);
-	if(bChanged)
+	if (bChanged)
 	{
 		BinaryPath = InString;
 	}

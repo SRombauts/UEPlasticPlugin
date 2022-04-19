@@ -25,10 +25,10 @@ static FName ProviderName("Plastic SCM 2");
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {
 	// Init() is called multiple times at startup: do not check Plastic SCM each time
-	if(!bPlasticAvailable)
+	if (!bPlasticAvailable)
 	{
 		const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
-		if(Plugin.IsValid())
+		if (Plugin.IsValid())
 		{
 			PluginVersion = Plugin->GetDescriptor().VersionName;
 			UE_LOG(LogSourceControl, Log, TEXT("Plastic SCM plugin '%s'"), *PluginVersion);
@@ -51,17 +51,17 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 {
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	FString PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	if(PathToPlasticBinary.IsEmpty())
+	if (PathToPlasticBinary.IsEmpty())
 	{
 		// Try to find Plastic binary, and update settings accordingly
 		PathToPlasticBinary = PlasticSourceControlUtils::FindPlasticBinaryPath();
-		if(!PathToPlasticBinary.IsEmpty())
+		if (!PathToPlasticBinary.IsEmpty())
 		{
 			PlasticSourceControl.AccessSettings().SetBinaryPath(PathToPlasticBinary);
 		}
 	}
 
-	if(!PathToPlasticBinary.IsEmpty())
+	if (!PathToPlasticBinary.IsEmpty())
 	{
 		// Find the path to the root Plastic directory (if any, else uses the ProjectDir)
 		const FString PathToProjectDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
@@ -69,14 +69,14 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 		// Launch the Plastic SCM cli shell on the background to issue all commands during this session
 		bPlasticAvailable = PlasticSourceControlUtils::LaunchBackgroundPlasticShell(PathToPlasticBinary, PathToWorkspaceRoot);
-		if(bPlasticAvailable)
+		if (bPlasticAvailable)
 		{
 			PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
 
 			// Get user name (from the global Plastic SCM client config)
 			PlasticSourceControlUtils::GetUserName(UserName);
 
-			if(!bWorkspaceFound)
+			if (!bWorkspaceFound)
 			{
 				UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::ProjectDir());
 			}
@@ -106,7 +106,7 @@ void FPlasticSourceControlProvider::Close()
 TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlProvider::GetStateInternal(const FString& Filename) const
 {
 	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe>* State = StateCache.Find(Filename);
-	if(State != NULL)
+	if (State != NULL)
 	{
 		// found cached item
 		return (*State);
@@ -161,20 +161,20 @@ const FName& FPlasticSourceControlProvider::GetName(void) const
 
 ECommandResult::Type FPlasticSourceControlProvider::GetState( const TArray<FString>& InFiles, TArray< TSharedRef<ISourceControlState, ESPMode::ThreadSafe> >& OutState, EStateCacheUsage::Type InStateCacheUsage )
 {
-	if(!IsEnabled())
+	if (!IsEnabled())
 	{
 		return ECommandResult::Failed;
 	}
 
 	const TArray<FString> AbsoluteFiles = SourceControlHelpers::AbsoluteFilenames(InFiles);
 
-	if(InStateCacheUsage == EStateCacheUsage::ForceUpdate)
+	if (InStateCacheUsage == EStateCacheUsage::ForceUpdate)
 	{
 		UE_LOG(LogSourceControl, Log, TEXT("GetState: ForceUpdate"));
 		Execute(ISourceControlOperation::Create<FUpdateStatus>(), AbsoluteFiles);
 	}
 
-	for(const FString& AbsoluteFile : AbsoluteFiles)
+	for (const FString& AbsoluteFile : AbsoluteFiles)
 	{
 		OutState.Add(GetStateInternal(AbsoluteFile));
 	}
@@ -193,10 +193,10 @@ ECommandResult::Type FPlasticSourceControlProvider::GetState(const TArray<FSourc
 TArray<FSourceControlStateRef> FPlasticSourceControlProvider::GetCachedStateByPredicate(TFunctionRef<bool(const FSourceControlStateRef&)> Predicate) const
 {
 	TArray<FSourceControlStateRef> Result;
-	for(const auto& CacheItem : StateCache)
+	for (const auto& CacheItem : StateCache)
 	{
 		FSourceControlStateRef State = CacheItem.Value;
-		if(Predicate(State))
+		if (Predicate(State))
 		{
 			Result.Add(State);
 		}
@@ -228,7 +228,7 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute(
 	EConcurrency::Type InConcurrency,
 	const FSourceControlOperationComplete& InOperationCompleteDelegate )
 {
-	if(!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "MakeWorkspace"))
+	if (!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "MakeWorkspace"))
 	{
 		UE_LOG(LogSourceControl, Warning, TEXT("'%s': only Connect operation allowed whithout a workspace"), *InOperation->GetName().ToString());
 		return ECommandResult::Failed;
@@ -236,7 +236,7 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute(
 
 	// Query to see if we allow this operation
 	TSharedPtr<IPlasticSourceControlWorker, ESPMode::ThreadSafe> Worker = CreateWorker(InOperation->GetName());
-	if(!Worker.IsValid())
+	if (!Worker.IsValid())
 	{
 		// this operation is unsupported by this source control provider
 		FFormatNamedArguments Arguments;
@@ -251,7 +251,7 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute(
 	Command->OperationCompleteDelegate = InOperationCompleteDelegate;
 
 	// fire off operation
-	if(InConcurrency == EConcurrency::Synchronous)
+	if (InConcurrency == EConcurrency::Synchronous)
 	{
 		Command->bAutoDelete = false;
 
@@ -294,7 +294,7 @@ bool FPlasticSourceControlProvider::UsesCheckout() const
 TSharedPtr<IPlasticSourceControlWorker, ESPMode::ThreadSafe> FPlasticSourceControlProvider::CreateWorker(const FName& InOperationName) const
 {
 	const FGetPlasticSourceControlWorker* Operation = WorkersMap.Find(InOperationName);
-	if(Operation != nullptr)
+	if (Operation != nullptr)
 	{
 		return Operation->Execute();
 	}
@@ -311,12 +311,12 @@ void FPlasticSourceControlProvider::OutputCommandMessages(const FPlasticSourceCo
 {
 	FMessageLog SourceControlLog("SourceControl");
 
-	for(int32 ErrorIndex = 0; ErrorIndex < InCommand.ErrorMessages.Num(); ++ErrorIndex)
+	for (int32 ErrorIndex = 0; ErrorIndex < InCommand.ErrorMessages.Num(); ++ErrorIndex)
 	{
 		SourceControlLog.Error(FText::FromString(InCommand.ErrorMessages[ErrorIndex]));
 	}
 
-	for(int32 InfoIndex = 0; InfoIndex < InCommand.InfoMessages.Num(); ++InfoIndex)
+	for (int32 InfoIndex = 0; InfoIndex < InCommand.InfoMessages.Num(); ++InfoIndex)
 	{
 		SourceControlLog.Info(FText::FromString(InCommand.InfoMessages[InfoIndex]));
 	}
@@ -361,10 +361,10 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 void FPlasticSourceControlProvider::Tick()
 {	
 	bool bStatesUpdated = false;
-	for(int32 CommandIndex = 0; CommandIndex < CommandQueue.Num(); ++CommandIndex)
+	for (int32 CommandIndex = 0; CommandIndex < CommandQueue.Num(); ++CommandIndex)
 	{
 		FPlasticSourceControlCommand& Command = *CommandQueue[CommandIndex];
-		if(Command.bExecuteProcessed)
+		if (Command.bExecuteProcessed)
 		{
 			// Remove command from the queue
 			CommandQueue.RemoveAt(CommandIndex);
@@ -385,7 +385,7 @@ void FPlasticSourceControlProvider::Tick()
 			Command.OperationCompleteDelegate.ExecuteIfBound(Command.Operation, Result);
 
 			// commands that are left in the array during a tick need to be deleted
-			if(Command.bAutoDelete)
+			if (Command.bAutoDelete)
 			{
 				// Only delete commands that are not running 'synchronously'
 				delete &Command;
@@ -397,7 +397,7 @@ void FPlasticSourceControlProvider::Tick()
 		}
 	}
 
-	if(bStatesUpdated)
+	if (bStatesUpdated)
 	{
 		OnSourceControlStateChanged.Broadcast();
 	}
@@ -440,7 +440,7 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		IssueCommand( InCommand );
 
 		// ... then wait for its completion (thus making it synchronous)
-		while(!InCommand.bExecuteProcessed)
+		while (!InCommand.bExecuteProcessed)
 		{
 			// Tick the command queue and update progress.
 			Tick();
@@ -454,7 +454,7 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		// always do one more Tick() to make sure the command queue is cleaned up.
 		Tick();
 
-		if(InCommand.bCommandSuccessful)
+		if (InCommand.bCommandSuccessful)
 		{
 			Result = ECommandResult::Succeeded;
 		}
@@ -482,7 +482,7 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 
 ECommandResult::Type FPlasticSourceControlProvider::IssueCommand(FPlasticSourceControlCommand& InCommand)
 {
-	if(GThreadPool != nullptr)
+	if (GThreadPool != nullptr)
 	{
 		// Queue this to our worker thread(s) for resolving
 		GThreadPool->AddQueuedWork(&InCommand);

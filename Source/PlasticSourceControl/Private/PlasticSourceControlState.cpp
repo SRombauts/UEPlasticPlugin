@@ -46,9 +46,9 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 
 TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlState::FindHistoryRevision( int32 RevisionNumber ) const
 {
-	for(const auto& Revision : History)
+	for (const auto& Revision : History)
 	{
-		if(Revision->GetRevisionNumber() == RevisionNumber)
+		if (Revision->GetRevisionNumber() == RevisionNumber)
 		{
 			return Revision;
 		}
@@ -59,9 +59,9 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 
 TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlState::FindHistoryRevision(const FString& InRevision) const
 {
-	for(const auto& Revision : History)
+	for (const auto& Revision : History)
 	{
-		if(Revision->GetRevision() == InRevision)
+		if (Revision->GetRevision() == InRevision)
 		{
 			return Revision;
 		}
@@ -72,10 +72,10 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 
 TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlState::GetBaseRevForMerge() const
 {
-	for(const auto& Revision : History)
+	for (const auto& Revision : History)
 	{
 		// look for the the SHA1 id of the file, not the commit id (revision)
-		if(Revision->ChangesetNumber == PendingMergeBaseChangeset)
+		if (Revision->ChangesetNumber == PendingMergeBaseChangeset)
 		{
 			return Revision;
 		}
@@ -93,7 +93,7 @@ FName FPlasticSourceControlState::GetIconName() const
 		return FName("Perforce.NotAtHeadRevision");
 	}
 
-	switch(WorkspaceState)
+	switch (WorkspaceState)
 	{
 	case EWorkspaceState::CheckedOut:
 	case EWorkspaceState::Replaced: // Merged (waiting for checkin) TODO: would need a dedicated icon
@@ -128,7 +128,7 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 		return FName("Perforce.NotAtHeadRevision_Small");
 	}
 
-	switch(WorkspaceState)
+	switch (WorkspaceState)
 	{
 	case EWorkspaceState::CheckedOut:
 	case EWorkspaceState::Replaced: // Merged (waiting for checkin)
@@ -197,7 +197,7 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 
 FText FPlasticSourceControlState::GetDisplayName() const
 {
-	switch(WorkspaceState)
+	switch (WorkspaceState)
 	{
 	case EWorkspaceState::Unknown:
 		return LOCTEXT("Unknown", "Unknown");
@@ -234,7 +234,7 @@ FText FPlasticSourceControlState::GetDisplayName() const
 
 FText FPlasticSourceControlState::GetDisplayTooltip() const
 {
-	switch(WorkspaceState)
+	switch (WorkspaceState)
 	{
 	case EWorkspaceState::Unknown:
 		return LOCTEXT("Unknown_Tooltip", "Unknown source control state");
