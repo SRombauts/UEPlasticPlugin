@@ -609,8 +609,7 @@ void SPlasticSourceControlSettings::DisplaySuccessNotification(const FName& InOp
 	Info.bUseSuccessFailIcons = true;
 	Info.Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
 	FSlateNotificationManager::Get().AddNotification(Info);
-	// @todo temporary debug log
-	UE_LOG(LogSourceControl, Log, TEXT("%s"), *NotificationText.ToString());
+	UE_LOG(LogSourceControl, Verbose, TEXT("%s"), *NotificationText.ToString());
 }
 
 // Display a temporary failure notification at the end of the operation
@@ -620,7 +619,6 @@ void SPlasticSourceControlSettings::DisplayFailureNotification(const FName& InOp
 	FNotificationInfo Info(NotificationText);
 	Info.ExpireDuration = 8.0f;
 	FSlateNotificationManager::Get().AddNotification(Info);
-	// @todo temporary debug log
 	UE_LOG(LogSourceControl, Error, TEXT("%s"), *NotificationText.ToString());
 }
 

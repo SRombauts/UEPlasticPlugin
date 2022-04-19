@@ -736,7 +736,6 @@ bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		TArray<FString> OneFile;
 		OneFile.Add(State->PendingMergeFilename);
 
-		// @todo temporary debug log
 		UE_LOG(LogSourceControl, Log, TEXT("resolve %s"), *State->PendingMergeFilename);
 
 		// Mark the conflicted file as resolved
