@@ -96,7 +96,7 @@ FName FPlasticSourceControlState::GetIconName() const
 	switch (WorkspaceState)
 	{
 	case EWorkspaceState::CheckedOut:
-	case EWorkspaceState::Replaced: // Merged (waiting for checkin) TODO: would need a dedicated icon
+	case EWorkspaceState::Replaced: // Merged (waiting for checkin)
 		return FName("Perforce.CheckedOut");
 	case EWorkspaceState::Added:
 	case EWorkspaceState::Copied:
@@ -104,8 +104,8 @@ FName FPlasticSourceControlState::GetIconName() const
 	case EWorkspaceState::Moved:
 		return FName("Perforce.Branched");
 	case EWorkspaceState::Deleted: // Deleted & Missing files does not show in Content Browser
-		return FName("Perforce.MarkedForDelete");
 	case EWorkspaceState::LocallyDeleted: // Deleted & Missing files does not show in Content Browser
+		return FName("Perforce.MarkedForDelete");
 	case EWorkspaceState::Conflicted:
 		return FName("Perforce.NotAtHeadRevision");
 	case EWorkspaceState::LockedByOther:
@@ -139,8 +139,8 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	case EWorkspaceState::Moved:
 		return FName("Perforce.Branched_Small");
 	case EWorkspaceState::Deleted:
-		return FName("Perforce.MarkedForDelete_Small");
 	case EWorkspaceState::LocallyDeleted: // TODO: would need a dedicated icon
+		return FName("Perforce.MarkedForDelete_Small");
 	case EWorkspaceState::Conflicted: // TODO: would need a dedicated icon
 		return FName("Perforce.NotAtHeadRevision_Small");
 	case EWorkspaceState::LockedByOther:
@@ -176,14 +176,14 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	case EWorkspaceState::Moved:
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.Branched");
 	case EWorkspaceState::Deleted:
+	case EWorkspaceState::LocallyDeleted:
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.MarkedForDelete");
 	case EWorkspaceState::Conflicted:
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotAtHeadRevision");
 	case EWorkspaceState::LockedByOther:
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.CheckedOutByOtherUser", NAME_None, "SourceControl.LockOverlay");
 	case EWorkspaceState::Private: // Not controlled
-	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
-	case EWorkspaceState::LocallyDeleted:
+	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotInDepot");
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:
