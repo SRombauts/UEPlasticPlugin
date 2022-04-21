@@ -2,6 +2,9 @@
 
 #include "PlasticSourceControlState.h"
 #include "ISourceControlModule.h"
+#if ENGINE_MAJOR_VERSION == 5
+#include "Styling/AppStyle.h"
+#endif
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl.State"
 

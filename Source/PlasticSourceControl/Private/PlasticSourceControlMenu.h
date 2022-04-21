@@ -6,7 +6,6 @@
 #include "ISourceControlProvider.h"
 #include "Runtime/Launch/Resources/Version.h"
 
-class FToolBarBuilder;
 class FMenuBuilder;
 struct FToolMenuSection;
 

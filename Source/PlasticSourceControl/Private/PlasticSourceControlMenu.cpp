@@ -55,7 +55,7 @@ void FPlasticSourceControlMenu::Register()
 
 void FPlasticSourceControlMenu::Unregister()
 {
-	// Unregister the level editor extensions
+	// Unregister the menu extension from the level editor
 #if ENGINE_MAJOR_VERSION == 4
 	if (FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor"))
 	{

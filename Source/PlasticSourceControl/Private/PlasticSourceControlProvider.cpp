@@ -267,12 +267,12 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute(
 	}
 }
 
-bool FPlasticSourceControlProvider::CanCancelOperation( const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation ) const
+bool FPlasticSourceControlProvider::CanCancelOperation( const FSourceControlOperationRef& InOperation ) const
 {
 	return false;
 }
 
-void FPlasticSourceControlProvider::CancelOperation( const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation )
+void FPlasticSourceControlProvider::CancelOperation( const FSourceControlOperationRef& InOperation )
 {
 }
 
