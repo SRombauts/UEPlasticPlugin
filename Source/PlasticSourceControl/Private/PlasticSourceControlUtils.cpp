@@ -65,7 +65,10 @@ const FString& FScopedTempFile::GetFilename() const
 	return Filename;
 }
 
+#if ENGINE_MAJOR_VERSION == 4
+
 // Needed to SetHandleInformation() on WritePipe for input (opposite of ReadPipe, for output) (idem FInteractiveProcess)
+// Note: this has been implemented in Unreal Engine 5.0 in january 2022
 static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 {
 #if PLATFORM_WINDOWS
@@ -87,13 +90,15 @@ static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 #endif // PLATFORM_WINDOWS
 }
 
+#endif
+
 namespace PlasticSourceControlUtils
 {
 // Command-line interface parameters and output format changed with version 8.0.16.3000
 // For more details, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
 static bool				bIsNewVersion80163000 = false;
 
-// In/Out Pipes for the 'cm shell' persistent process
+// In/Out Pipes for the 'cm shell' persistent child process
 static void*			ShellOutputPipeRead = nullptr;
 static void*			ShellOutputPipeWrite = nullptr;
 static void*			ShellInputPipeRead = nullptr;
@@ -106,8 +111,8 @@ static double			ShellCumulatedTime = 0.;
 // Internal function to cleanup (called under the critical section)
 static void _CleanupBackgroundCommandLineShell()
 {
-	FPlatformProcess::ClosePipe(ShellInputPipeRead, ShellInputPipeWrite);
 	FPlatformProcess::ClosePipe(ShellOutputPipeRead, ShellOutputPipeWrite);
+	FPlatformProcess::ClosePipe(ShellInputPipeRead, ShellInputPipeWrite);
 	ShellOutputPipeRead = ShellOutputPipeWrite = nullptr;
 	ShellInputPipeRead = ShellInputPipeWrite = nullptr;
 }
@@ -123,8 +128,13 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 
 	const double StartTimestamp = FPlatformTime::Seconds();
 
-	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite));	// For reading from child process
-	verify(CreatePipeWrite(ShellInputPipeRead, ShellInputPipeWrite));	// For writing to child process
+#if ENGINE_MAJOR_VERSION == 4
+	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite));		// For reading outputs from cm shell child process
+	verify(             CreatePipeWrite(ShellInputPipeRead, ShellInputPipeWrite));			// For writing commands to cm shell child process
+#elif ENGINE_MAJOR_VERSION == 5
+	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite, false));	// For reading outputs from cm shell child process
+	verify(FPlatformProcess::CreatePipe(ShellInputPipeRead, ShellInputPipeWrite, true));	// For writing commands to cm shell child process
+#endif
 
 	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
 	if (!ShellProcessHandle.IsValid())
@@ -144,14 +154,40 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 }
 
 // Internal function (called under the critical section)
+static void _ExitBackgroundCommandLineShell()
+{
+	if (ShellProcessHandle.IsValid())
+	{
+		if (FPlatformProcess::IsProcRunning(ShellProcessHandle))
+		{
+			// Tell the 'cm shell' to exit
+			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
+			// And wait up to one second for its termination
+			const double Timeout = 1.0;
+			const double StartTimestamp = FPlatformTime::Seconds();
+			while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
+			{
+				if ((FPlatformTime::Seconds() - StartTimestamp) > Timeout)
+				{
+					UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefuly in %lfs."), Timeout);
+					break;
+				}
+				FPlatformProcess::Sleep(0.01f);
+			}
+		}
+		FPlatformProcess::CloseProc(ShellProcessHandle);
+		_CleanupBackgroundCommandLineShell();
+	}
+}
+
+// Internal function (called under the critical section)
 static void _RestartBackgroundCommandLineShell()
 {
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
 
-	FPlatformProcess::CloseProc(ShellProcessHandle);
-	_CleanupBackgroundCommandLineShell();
+	_ExitBackgroundCommandLineShell();
 	_StartBackgroundPlasticShell(PathToPlasticBinary, WorkingDirectory);
 }
 
@@ -230,11 +266,10 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		}
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
-			// In case of timeout, ask the blocking 'cm shell' process to exit, and detach from it immediatly: it will be relaunched by next command
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' %d TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, bResult, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
-			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
-			FPlatformProcess::CloseProc(ShellProcessHandle);
-			_CleanupBackgroundCommandLineShell();
+			// In case of timeout, ask the blocking 'cm shell' process to exit, detach from it and restart it immediatly
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
+			_RestartBackgroundCommandLineShell();
+			return false;
 		}
 
 		FPlatformProcess::Sleep(0.001f);
@@ -284,22 +319,6 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	return bResult;
 }
 
-// Internal function (called under the critical section)
-static void _ExitBackgroundCommandLineShell()
-{
-	// Tell the 'cm shell' to exit
-	FString Results, Errors;
-	_RunCommandInternal(TEXT("exit"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, Results, Errors);
-	// And wait up to one seconde for its termination
-	int timeout = 100;
-	while (FPlatformProcess::IsProcRunning(ShellProcessHandle) && (0 < timeout--))
-	{
-		FPlatformProcess::Sleep(0.01f);
-	}
-	FPlatformProcess::CloseProc(ShellProcessHandle);
-	_CleanupBackgroundCommandLineShell();
-}
-
 // Launch the Plastic SCM background 'cm shell' process in background for optimized successive commands (thread-safe)
 bool LaunchBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FString& InWorkingDirectory)
 {
@@ -307,10 +326,7 @@ bool LaunchBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FS
 	FScopeLock Lock(&ShellCriticalSection);
 
 	// terminate previous shell if one is already running
-	if (ShellProcessHandle.IsValid())
-	{
-		_ExitBackgroundCommandLineShell();
-	}
+	_ExitBackgroundCommandLineShell();
 
 	return _StartBackgroundPlasticShell(InPathToPlasticBinary, InWorkingDirectory);
 }
@@ -321,31 +337,16 @@ void Terminate()
 	// Protect public APIs from multi-thread access
 	FScopeLock Lock(&ShellCriticalSection);
 
-	if (ShellProcessHandle.IsValid())
-	{
-		_ExitBackgroundCommandLineShell();
-	}
+	_ExitBackgroundCommandLineShell();
 }
 
 // Run command (thread-safe)
 bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, FString& OutResults, FString& OutErrors)
 {
-	bool bResult = false;
-
 	// Protect public APIs from multi-thread access
 	FScopeLock Lock(&ShellCriticalSection);
 
-	if (ShellProcessHandle.IsValid())
-	{
-		bResult = _RunCommandInternal(InCommand, InParameters, InFiles, InConcurrency, OutResults, OutErrors);
-	}
-	else
-	{
-		UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s': cm shell not running (count %d)"), *InCommand, ShellCommandCounter);
-		OutErrors = InCommand + ": Plastic SCM shell not running!";
-	}
-
-	return bResult;
+	return _RunCommandInternal(InCommand, InParameters, InFiles, InConcurrency, OutResults, OutErrors);
 }
 
 // Basic parsing or results & errors from the Plastic command line process
