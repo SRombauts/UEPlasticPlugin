@@ -484,7 +484,8 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 					FString& File = InCommand.Files[IdxFile];
 					FPlasticSourceControlState& State = States[IdxFile];
 
-					if (State.IsSourceControlled())
+					// Cannot fetch the history of file not already submitted to source control
+					if (State.IsSourceControlled() && !State.IsAdded())
 					{
 						// Get the history of the file (on all branches)
 						InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, InCommand.ErrorMessages, State);
