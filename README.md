@@ -89,10 +89,20 @@ Wait for this to succeed before acception source control settings to not lock th
 ![Controlled/Unchanged](Screenshots/Icons/UE4PlasticPlugin-Controlled.png)
 ![Changed but not Checked-Out](Screenshots/Icons/UE4PlasticPlugin-Changed.png)
 
+1. **New**, unsaved asset (not yet present on disk).
+2. **Added** to source control (saved on disk).
+3. Source **Controlled** but not changed, or **Ignored**
+4. Locally **Changed** without checkout, or **Private** ie not source controlled 
+
 ![Checked-Out](Screenshots/Icons/UE4PlasticPlugin-CheckedOut.png)
 ![Moved/Renamed](Screenshots/Icons/UE4PlasticPlugin-Renamed.png)
 ![Checkd-Out/Locked by someone else](Screenshots/Icons/UE4PlasticPlugin-CheckedOutOther.png)
 ![Not up-to-date/new revision in repository](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
+
+5. **Checked-out** for modification, and Locked to prevent other from making modifications (if Locks are enabled on the server)
+6. **Renamed** or **Moved**
+7. **Locked somewhere else**, by someone else or in another workspace (if Locks are enabled on the server)
+8. **Not at head revision**, the asset has been submitted with a newer revision on the same branch
 
 #### Source Control Menu
 
