@@ -292,7 +292,7 @@ bool FPlasticSourceControlState::CanCheckIn() const
 	const bool bCanCheckIn = WorkspaceState == EWorkspaceState::Added
 		|| WorkspaceState == EWorkspaceState::Deleted
 		|| WorkspaceState == EWorkspaceState::LocallyDeleted
-		|| WorkspaceState == EWorkspaceState::Changed // NOTE: Comment to enable checkout on prompt of a Changed file (see bellow)
+		|| WorkspaceState == EWorkspaceState::Changed
 		|| WorkspaceState == EWorkspaceState::Moved
 		|| WorkspaceState == EWorkspaceState::Copied
 		|| WorkspaceState == EWorkspaceState::Replaced
@@ -319,9 +319,9 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 {
 	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
 							|| WorkspaceState == EWorkspaceState::Moved
-							|| WorkspaceState == EWorkspaceState::Conflicted
-							|| WorkspaceState == EWorkspaceState::Replaced // Workaround to enable checkin
-							|| WorkspaceState == EWorkspaceState::Changed; // Workaround to enable checkin  NOTE: Comment to enable checkout on prompt of a Changed file (see above)
+							|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merged
+							|| WorkspaceState == EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge 
+							|| WorkspaceState == EWorkspaceState::Changed;		// Note: Workaround to enable checkin (still required by UE5.0)
 
 	if (bIsCheckedOut) UE_LOG(LogSourceControl, Verbose, TEXT("%s IsCheckedOut"), *LocalFilename);
 
