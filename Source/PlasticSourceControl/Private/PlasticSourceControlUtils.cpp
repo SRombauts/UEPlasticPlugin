@@ -1016,7 +1016,7 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 	for (FPlasticSourceControlState& State : InOutStates)
 	{
 		// 1) Issue a "fileinfo" command for controled files (to know if they are up to date and can be checked-out or checked-in)
-		// but only if controlled unchanged, or locally changed,
+		// but only if controlled unchanged, or locally changed / locally deleted,
 		// optimizing for files that are CheckedOut/Added/Deleted/Moved/Copied/Replaced/NotControled/Ignored/Private/Unknown
 		// (since there is no point to check if they are up to date in these cases; they are already checkedout or not controlld).
 		// This greatly reduce the time needed to do some operations like "Add" or "Move/Rename/Copy" when there is some latency with the server (eg cloud).
@@ -1028,8 +1028,9 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 		// 3) bInUpdateHistory: When the plugin needs to update the history, it needs to know if it's on a XLink,
 		// so the fileinfo command is required here to get the RepSpec
 		if (bInUpdateHistory
-			||	(	(State.WorkspaceState == EWorkspaceState::Controlled) && !bInWholeDirectory)
-				||	(State.WorkspaceState == EWorkspaceState::Changed)
+			|| ((State.WorkspaceState == EWorkspaceState::Controlled) && !bInWholeDirectory)
+			||	(State.WorkspaceState == EWorkspaceState::Changed)
+			||	(State.WorkspaceState == EWorkspaceState::LocallyDeleted)
 			)
 		{
 			SelectedFiles.Add(State.LocalFilename);
