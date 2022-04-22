@@ -289,14 +289,16 @@ const FDateTime& FPlasticSourceControlState::GetTimeStamp() const
 // Deleted and Missing assets cannot appear in the Content Browser but does appear in Submit to Source Control Window
 bool FPlasticSourceControlState::CanCheckIn() const
 {
-	const bool bCanCheckIn = WorkspaceState == EWorkspaceState::Added
+	const bool bCanCheckIn =
+		(  WorkspaceState == EWorkspaceState::Added
 		|| WorkspaceState == EWorkspaceState::Deleted
 		|| WorkspaceState == EWorkspaceState::LocallyDeleted
 		|| WorkspaceState == EWorkspaceState::Changed
 		|| WorkspaceState == EWorkspaceState::Moved
 		|| WorkspaceState == EWorkspaceState::Copied
 		|| WorkspaceState == EWorkspaceState::Replaced
-		|| WorkspaceState == EWorkspaceState::CheckedOut;
+		|| WorkspaceState == EWorkspaceState::CheckedOut
+		) && !IsConflicted() && IsCurrent();
 
 	if (!IsUnknown()) UE_LOG(LogSourceControl, Verbose, TEXT("%s CanCheckIn=%d"), *LocalFilename, bCanCheckIn);
 
