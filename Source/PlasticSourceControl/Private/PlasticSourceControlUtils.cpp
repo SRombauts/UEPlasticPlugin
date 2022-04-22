@@ -236,7 +236,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
 		FString Output = FPlatformProcess::ReadPipe(ShellOutputPipeRead);
-		if (0 < Output.Len())
+		if (!Output.IsEmpty())
 		{
 			LastActivity = FPlatformTime::Seconds(); // freshen the timestamp while cm is still actively outputting information
 			OutResults.Append(MoveTemp(Output));
@@ -249,7 +249,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 				{
 					const FString Result = OutResults.Mid(IndexCommandResult + 14, IndexEndResult - IndexCommandResult - 14);
 					const int32 ResultCode = FCString::Atoi(*Result);
-					bResult = (0 == ResultCode);
+					bResult = (ResultCode == 0);
 					// remove the CommandResult line from the OutResults
 					OutResults.RemoveAt(IndexCommandResult, OutResults.Len() - IndexCommandResult);
 					break;
@@ -851,7 +851,7 @@ public:
  */
 static bool RunStatus(const FString& InDir, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
-	ensure(0 < InFiles.Num());
+	check(InFiles.Num() > 0);
 
 	TArray<FString> Parameters;
 
@@ -979,7 +979,7 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
 
 		// If a file is locked but not checked-out locally (or moved/renamed) this means it is locked by someone else or elsewhere
-		if ((FileState.WorkspaceState != EWorkspaceState::CheckedOut) && (FileState.WorkspaceState != EWorkspaceState::Moved) && (0 < FileState.LockedBy.Len())) 
+		if ((FileState.WorkspaceState != EWorkspaceState::CheckedOut) && (FileState.WorkspaceState != EWorkspaceState::Moved) && !FileState.LockedBy.IsEmpty()) 
 		{
 			UE_LOG(LogSourceControl, Verbose, TEXT("LockedByOther(%s) by '%s!=%s' (or %s!=%s)"), *File, *FileState.LockedBy, *Provider.GetUserName(), *FileState.LockedWhere, *Provider.GetWorkspaceName());
 			FileState.WorkspaceState = EWorkspaceState::LockedByOther;

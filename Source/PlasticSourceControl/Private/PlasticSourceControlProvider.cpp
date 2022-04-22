@@ -328,7 +328,7 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 	{
 		// Is connection successful?
 		bServerAvailable = InCommand.bCommandSuccessful;
-		bWorkspaceFound = (InCommand.WorkspaceName.Len() > 0);
+		bWorkspaceFound = !InCommand.WorkspaceName.IsEmpty();
 
 		WorkspaceName = InCommand.WorkspaceName;
 		RepositoryName = InCommand.RepositoryName;

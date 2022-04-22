@@ -173,7 +173,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	// make a temp file to place our commit message in
 	FScopedTempFile CommitMsgFile(Operation->GetDescription());
-	if (CommitMsgFile.GetFilename().Len() > 0)
+	if (!CommitMsgFile.GetFilename().IsEmpty())
 	{
 		TArray<FString> Parameters;
 		FString ParamCommitMsgFilename = TEXT("--commentsfile=\"");
