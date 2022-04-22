@@ -785,24 +785,22 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 }
 
 /**
- * @brief Parse the array of strings results of a 'cm status --noheaders --all --ignored' command
- *
- * Called in case of a "directory status" (no file listed in the command) ONLY to detect Removed/Deleted files !
+ * @brief Detect Deleted files in case of a "whole directory status" (no file listed in the command)
+ * 
+ * Parse the array of strings results of a 'cm status --noheaders --all --ignored' command
  *
  * @param[in]	InResults	Lines of results from the "status" command
  * @param[out]	OutStates	States of files for witch the status has been gathered
  *
  * @see #ParseFileStatusResult() above for an example of a cm status results
 */
-static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
+static void ParseDirectoryStatusResultForDeleted(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
 
 	// Iterate on each line of result of the status command
-	// NOTE: in case of rename by editor, there are two results: checkouted AND renamed
-	// => we want to get the second one, witch is always the rename, so we just iterate and the second state will overwrite the first one
 	for (const FString& Result : InResults)
 	{
 		const FString RelativeFilename = FilenameFromPlasticStatus(Result);
@@ -904,7 +902,7 @@ static bool RunStatus(const FString& InDir, const TArray<FString>& InFiles, cons
 			{
 				Results.RemoveAt(0, 1);// Before that, remove the first line (Workspace/Changeset info)
 			}
-			ParseDirectoryStatusResult(Results, OutStates);
+			ParseDirectoryStatusResultForDeleted(Results, OutStates);
 		}
 		else
 		{
@@ -1308,7 +1306,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 		{
 			// Run a "fileinfo" command to update complementary status information of given files.
 			// (ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere)
-			// In case of "directory status", there is no explicit file in the group (it contains only the directory) 
+			// In case of "whole directory status", there is no explicit file in the group (it contains only the directory) 
 			// => work on the list of files discovered by RunStatus()
 			bResults &= RunFileinfo(bWholeDirectory, bInUpdateHistory, InConcurrency, OutErrorMessages, States);
 		}
