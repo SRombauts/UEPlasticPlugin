@@ -1425,7 +1425,10 @@ static bool ParseHistoryResults(const FXmlFile& InXmlResult, FPlasticSourceContr
 	InOutState.History.Reserve(RevisionNodes.Num());
 
 	// parse history in reverse: needed to get most recent at the top (implied by the UI)
-	for (int32 Index = RevisionNodes.Num() - 1; Index >= 0; Index--)
+	// Note: limit to last 100 changes, like Perforce
+	static const int32 MaxRevisions = 100;
+	const int32 MinIndex = FMath::Max(0, RevisionNodes.Num() - MaxRevisions);
+	for (int32 Index = RevisionNodes.Num() - 1; Index >= MinIndex; Index--)
 	{
 		if (const FXmlNode* RevisionNode = RevisionNodes[Index])
 		{
