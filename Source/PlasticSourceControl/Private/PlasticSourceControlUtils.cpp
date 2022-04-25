@@ -879,14 +879,15 @@ static bool RunStatus(const FString& InDir, const TArray<FString>& InFiles, cons
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
 	const bool bResult = RunCommand(TEXT("status"), Parameters, OnePath, InConcurrency, Results, ErrorMessages);
-	// Normalize paths in the result (convert all '\' to '/')
-	for (int32 IdxResult = 0; IdxResult < Results.Num(); IdxResult++)
-	{
-		FPaths::NormalizeFilename(Results[IdxResult]);
-	}
 	OutErrorMessages.Append(MoveTemp(ErrorMessages));
 	if (bResult)
 	{
+		// Normalize paths in the result (convert all '\' to '/')
+		for (FString& Result : Results)
+		{
+			FPaths::NormalizeFilename(Result);
+		}
+
 		if (1 == InFiles.Num() && (InFiles[0] == InDir))
 		{
 			// 1) Special case for "status" of a directory: requires a specific parse logic.
