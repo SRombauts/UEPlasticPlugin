@@ -730,7 +730,7 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
  */
-static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
+static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
@@ -740,9 +740,10 @@ static void ParseFileStatusResult(const TArray<FString>& InFiles, const TArray<F
 	ParseWorkspaceInformation(InResults, OutChangeset, RepositoryName, ServerUrl, OutBranchName);
 
 	// Iterate on each file explicitly listed in the command
-	for (const FString& File : InFiles)
+	for (FString& InFile : InFiles)
 	{
-		FPlasticSourceControlState FileState(File);
+		FPlasticSourceControlState FileState(MoveTemp(InFile));
+		const FString& File = FileState.LocalFilename;
 
 		// Search the file in the list of status
 		// NOTE: in case of rename by editor, there are two results: checked-out AND renamed
@@ -811,7 +812,7 @@ static void ParseDirectoryStatusResultForDeleted(const TArray<FString>& InResult
 			FileState.WorkspaceState = WorkspaceState;
 			FileState.TimeStamp.Now();
 
-			UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.GetFilename(), static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
+			UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.LocalFilename, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
 
 			OutStates.Add(MoveTemp(FileState));
 		}
@@ -849,7 +850,7 @@ public:
  * @param[out]	OutChangeset		The current Changeset Number
  * @param[out]	OutBranchName		Name of the current checked-out branch
  */
-static bool RunStatus(const FString& InDir, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
+static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
 	check(InFiles.Num() > 0);
 
@@ -897,7 +898,7 @@ static bool RunStatus(const FString& InDir, const TArray<FString>& InFiles, cons
 			FFileVisitor FileVisitor;
 			FPlatformFileManager::Get().GetPlatformFile().IterateDirectoryRecursively(*InDir, FileVisitor);
 			UE_LOG(LogSourceControl, Verbose, TEXT("RunStatus(%s): 1) special case for status of a directory containing %d file(s)"), *InDir, FileVisitor.Files.Num());
-			ParseFileStatusResult(FileVisitor.Files, Results, OutStates, OutChangeset, OutBranchName);
+			ParseFileStatusResult(MoveTemp(FileVisitor.Files), Results, OutStates, OutChangeset, OutBranchName);
 			// The above cannot detect assets removed / locally deleted since there is no file left to enumerate (either by the Content Browser or by File Manager)
 			// => so we also parse the status results to explicitly look for Removed/Deleted assets
 			if (Results.Num() > 0)
@@ -910,7 +911,7 @@ static bool RunStatus(const FString& InDir, const TArray<FString>& InFiles, cons
 		{
 			// 2) General case for one or more files in the same directory.
 			UE_LOG(LogSourceControl, Verbose, TEXT("RunStatus(%s...): 2) general case for %d file(s) in a directory (%s)"), *InFiles[0], InFiles.Num(), *InDir);
-			ParseFileStatusResult(InFiles, Results, OutStates, OutChangeset, OutBranchName);
+			ParseFileStatusResult(MoveTemp(InFiles), Results, OutStates, OutChangeset, OutBranchName);
 		}
 	}
 
@@ -971,7 +972,7 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 	{
 		const FString& Fileinfo = InResults[IdxResult];
 		FPlasticSourceControlState& FileState = InOutStates[IdxResult];
-		const FString& File = FileState.GetFilename();
+		const FString& File = FileState.LocalFilename;
 		FPlasticFileinfoParser FileinfoParser(Fileinfo);
 
 		FileState.LocalRevisionChangeset = FileinfoParser.RevisionChangeset;
@@ -1031,7 +1032,7 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 				||	(State.WorkspaceState == EWorkspaceState::Changed)
 			)
 		{
-			SelectedFiles.Add(State.GetFilename());
+			SelectedFiles.Add(State.LocalFilename);
 			SelectedStates.Add(MoveTemp(State));
 		}
 		else
@@ -1303,7 +1304,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 		// Run a "status" command on the directory to get workspace file states.
 		// (ie. Changed, CheckedOut, Copied, Replaced, Added, Private, Ignored, Deleted, LocallyDeleted, Moved, LocallyMoved)
 		TArray<FPlasticSourceControlState> States;
-		const bool bGroupOk = RunStatus(MoveTemp(Group.Value.CommonDir), MoveTemp(Group.Value.Files), InConcurrency, OutErrorMessages, States, OutChangeset, OutBranchName);
+		const bool bGroupOk = RunStatus(Group.Value.CommonDir, MoveTemp(Group.Value.Files), InConcurrency, OutErrorMessages, States, OutChangeset, OutBranchName);
 		if (bGroupOk && (States.Num() > 0))
 		{
 			// Run a "fileinfo" command to update complementary status information of given files.

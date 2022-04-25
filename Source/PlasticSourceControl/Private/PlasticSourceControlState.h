@@ -35,8 +35,8 @@ class FPlasticSourceControlState : public ISourceControlState, public TSharedFro
 {
 public:
 
-	FPlasticSourceControlState(const FString& InLocalFilename)
-		: LocalFilename(InLocalFilename)
+	FPlasticSourceControlState(FString&& InLocalFilename)
+		: LocalFilename(MoveTemp(InLocalFilename))
 		, WorkspaceState(EWorkspaceState::Unknown)
 		, DepotRevisionChangeset(-1)
 		, LocalRevisionChangeset(-1)
