@@ -863,11 +863,12 @@ static bool RunStatus(const FString& InDir, const TArray<FString>& InFiles, cons
 	Parameters.Add(TEXT("--noheaders"));
 	Parameters.Add(TEXT("--all"));
 	Parameters.Add(TEXT("--ignored"));
-	// "cm status" only operate on one path (file or folder) at a time, so use one folder path for multiple files in a directory
+	// "cm status" only operate on one path (file or directory) at a time, so use one common path for multiple files in a directory
 	TArray<FString> OnePath;
 	// Only one file: optim very useful for the .uproject file at the root to avoid parsing the whole repository
-	// (does not work if file does not exist anymore)
-	if ((1 == InFiles.Num()) && (FPaths::FileExists(InFiles[0])))
+	// (but doesn't work if the file is deleted)
+	const bool bSingleFile = (InFiles.Num() == 1) && (FPaths::FileExists(InFiles[0]));
+	if (bSingleFile)
 	{
 		OnePath.Add(InFiles[0]);
 	}
@@ -887,7 +888,8 @@ static bool RunStatus(const FString& InDir, const TArray<FString>& InFiles, cons
 			FPaths::NormalizeFilename(Result);
 		}
 
-		if (1 == InFiles.Num() && (InFiles[0] == InDir))
+		const bool bWholeDirectory = (InFiles.Num() == 1) && (InFiles[0] == InDir);
+		if (bWholeDirectory)
 		{
 			// 1) Special case for "status" of a directory: requires a specific parse logic.
 			//   (this is triggered by the "Submit to Source Control" top menu button)
@@ -1296,7 +1298,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 	// 2) then we can batch Plastic status operation by subdirectory
 	for (auto& Group : GroupOfFiles)
 	{
-		const bool bWholeDirectory = (1 == Group.Value.Files.Num() && (Group.Value.CommonDir == Group.Value.Files[0]));	
+		const bool bWholeDirectory = ((Group.Value.Files.Num() == 1) && (Group.Value.CommonDir == Group.Value.Files[0]));	
 
 		// Run a "status" command on the directory to get workspace file states.
 		// (ie. Changed, CheckedOut, Copied, Replaced, Added, Private, Ignored, Deleted, LocallyDeleted, Moved, LocallyMoved)
