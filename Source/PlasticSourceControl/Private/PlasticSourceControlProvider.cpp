@@ -103,9 +103,9 @@ void FPlasticSourceControlProvider::Close()
 	UserName.Empty();
 }
 
-TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlProvider::GetStateInternal(const FString& Filename) const
+TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlProvider::GetStateInternal(const FString& InFilename) const
 {
-	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe>* State = StateCache.Find(Filename);
+	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe>* State = StateCache.Find(InFilename);
 	if (State != NULL)
 	{
 		// found cached item
@@ -114,8 +114,8 @@ TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceContro
 	else
 	{
 		// cache an unknown state for this item
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> NewState = MakeShareable( new FPlasticSourceControlState(Filename) );
-		StateCache.Add(Filename, NewState);
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> NewState = MakeShareable(new FPlasticSourceControlState(InFilename));
+		StateCache.Add(InFilename, NewState);
 		return NewState;
 	}
 }

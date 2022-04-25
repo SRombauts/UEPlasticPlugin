@@ -124,7 +124,7 @@ public:
 	}
 
 	/** Helper function used to update state cache */
-	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> GetStateInternal(const FString& Filename) const;
+	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> GetStateInternal(const FString& InFilename) const;
 
 	/**
 	 * Register a worker with the provider.
