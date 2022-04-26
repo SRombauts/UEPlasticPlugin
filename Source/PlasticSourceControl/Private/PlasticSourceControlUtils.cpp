@@ -1442,8 +1442,7 @@ static bool ParseHistoryResults(const FXmlFile& InXmlResult, FPlasticSourceContr
 			else
 				SourceControlRevision->Action = TEXT("edit");
 
-			const FXmlNode* ChangesetNumberNode = RevisionNode->FindChildNode(ChangesetNumber);
-			if (ChangesetNumberNode != nullptr)
+			if (const FXmlNode* ChangesetNumberNode = RevisionNode->FindChildNode(ChangesetNumber))
 			{
 				const FString& Changeset = ChangesetNumberNode->GetContent();
 				SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset); // Value now used in the Revision column and in the Asset Menu History
@@ -1460,18 +1459,15 @@ static bool ParseHistoryResults(const FXmlFile& InXmlResult, FPlasticSourceContr
 					SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s"), *Changeset);
 				}
 			}
-			const FXmlNode* CommentNode = RevisionNode->FindChildNode(Comment);
-			if (CommentNode != nullptr)
+			if (const FXmlNode* CommentNode = RevisionNode->FindChildNode(Comment))
 			{
 				SourceControlRevision->Description = CommentNode->GetContent();
 			}
-			const FXmlNode* OwnerNode = RevisionNode->FindChildNode(Owner);
-			if (OwnerNode != nullptr)
+			if (const FXmlNode* OwnerNode = RevisionNode->FindChildNode(Owner))
 			{
 				SourceControlRevision->UserName = OwnerNode->GetContent();
 			}
-			const FXmlNode* DateNode = RevisionNode->FindChildNode(CreationDate);
-			if (DateNode != nullptr)
+			if (const FXmlNode* DateNode = RevisionNode->FindChildNode(CreationDate))
 			{
 				FString DateIso = DateNode->GetContent();
 				const int len = DateIso.Len();
