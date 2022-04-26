@@ -103,7 +103,7 @@ bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParam
  * Run a Plastic "status" command and parse it.
  *
  * @param	InFiles				The files to be operated on
- * @param	bInUpdateHistory	If getting the history of a file, force execute the fileinfo command required to do get RepSpec of xlinks (history view or visual diff)
+ * @param	bInUpdateHistory	If getting the history of files, force execute the fileinfo command required to do get RepSpec of xlinks (history view or visual diff)
  * @param	InConcurrency		Is the command running in the background, or blocking the main thread
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  * @param	OutStates			States of the files
@@ -126,11 +126,10 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 /**
  * Run a Plastic "history" and "log" commands and parse it.
  *
- * @param	InFile				The file to be operated on
+ * @param	InOutStates			The file states to update with the history
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
- * @param	InOutState			The status to update with the history of the file
  */
-bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, FPlasticSourceControlState& InOutState);
+bool RunGetHistory(TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages);
 
 /**
  * Helper function for various commands to update cached states.
