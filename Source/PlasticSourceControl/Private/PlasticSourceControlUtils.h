@@ -126,10 +126,11 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 /**
  * Run a Plastic "history" and "log" commands and parse it.
  *
+ * @param	bInUpdateHistory	If getting the history of files, versus only checking the heads of branches to detect newer commits
  * @param	InOutStates			The file states to update with the history
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  */
-bool RunGetHistory(TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages);
+bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages);
 
 /**
  * Helper function for various commands to update cached states.

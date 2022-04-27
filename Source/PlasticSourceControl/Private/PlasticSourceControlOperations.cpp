@@ -46,6 +46,16 @@ FText FPlasticMakeWorkspace::GetInProgressString() const
 	return LOCTEXT("SourceControl_MakeWorkspace", "Create a new Repository and initialize the Workspace");
 }
 
+static bool AreAllFiles(const TArray<FString>& InFiles)
+{
+	for (const FString& File : InFiles)
+	{
+		if (File.IsEmpty() || File[File.Len() - 1] == TEXT('/'))
+			return false;
+	}
+	return true;
+}
+
 
 FName FPlasticConnectWorker::GetName() const
 {
@@ -480,7 +490,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		if (Operation->ShouldUpdateHistory())
 		{
 			// Get the history of the files (on all branches)
-			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(States, InCommand.ErrorMessages);
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(true, States, InCommand.ErrorMessages);
 
 			// Special case for conflicts
 			for (FPlasticSourceControlState& State : States)
@@ -505,6 +515,12 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 					}
 				}
 			}
+		}
+		else if (AreAllFiles(InCommand.Files))
+		{
+			// Get only the last revision of the files (checking all branches)
+			// in order to warn the user if the file has been changed on another branch
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(false, States, InCommand.ErrorMessages);
 		}
 	}
 	// no path provided: only update the status of assets in Content/ directory if requested

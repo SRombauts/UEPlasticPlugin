@@ -80,6 +80,11 @@ public:
 			RepSpec = MoveTemp(InState.RepSpec);
 			DepotRevisionChangeset = InState.DepotRevisionChangeset;
 			LocalRevisionChangeset = InState.LocalRevisionChangeset;
+
+			HeadBranch = MoveTemp(InState.HeadBranch);
+			HeadChangeList = MoveTemp(InState.HeadChangeList);
+			HeadUserName = MoveTemp(InState.HeadUserName);
+			HeadModTime = MoveTemp(InState.HeadModTime);
 		}
 		// Don't override "fileinfo" information in case of an optimized/lightweight "whole folder status" triggered by a global Submit Content or Refresh
 		// and regenerate the LockedByOther state based on LockedBy
@@ -125,9 +130,9 @@ public:
 	virtual bool IsCheckedOutOther(FString* Who = nullptr) const override;
 	virtual bool IsCheckedOutInOtherBranch(const FString& CurrentBranch = FString()) const override;
 	virtual bool IsModifiedInOtherBranch(const FString& CurrentBranch = FString()) const override;
-	virtual bool IsCheckedOutOrModifiedInOtherBranch(const FString& CurrentBranch = FString()) const override;
-	virtual TArray<FString> GetCheckedOutBranches() const override;
-	virtual FString GetOtherUserBranchCheckedOuts() const override;
+	virtual bool IsCheckedOutOrModifiedInOtherBranch(const FString& CurrentBranch = FString()) const override { return IsCheckedOutInOtherBranch(CurrentBranch) || IsModifiedInOtherBranch(CurrentBranch); }
+	virtual TArray<FString> GetCheckedOutBranches() const override { return TArray<FString>(); }
+	virtual FString GetOtherUserBranchCheckedOuts() const override { return FString(); }
 	virtual bool GetOtherBranchHeadModification(FString& HeadBranchOut, FString& ActionOut, int32& HeadChangeListOut) const override;
 	virtual bool IsCurrent() const override;
 	virtual bool IsSourceControlled() const override;
@@ -182,9 +187,18 @@ public:
 	/** Original name in case of a Moved/Renamed file */
 	FString MovedFrom;
 
-	/** Whether the file is a binary file or not */
-//	bool bBinary;
-
 	/** The timestamp of the last update */
 	FDateTime TimeStamp;
+
+	/** The branch with the head change list */
+	FString HeadBranch;
+
+	/** The user of the last modification */
+	FString HeadUserName;
+
+	/** The last file modification time */
+	int64 HeadModTime;
+
+	/** The change list the last modification */
+	int32 HeadChangeList;
 };

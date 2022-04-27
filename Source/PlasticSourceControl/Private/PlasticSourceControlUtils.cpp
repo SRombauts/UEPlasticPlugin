@@ -1380,7 +1380,7 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
   </RevisionHistories>
 </RevisionHistoriesResult>
 */
-static bool ParseHistoryResults(const FXmlFile& InXmlResult, TArray<FPlasticSourceControlState>& InOutStates)
+static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InXmlResult, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
@@ -1436,7 +1436,10 @@ static bool ParseHistoryResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 		}
 
 		const TArray<FXmlNode*>& RevisionNodes = RevisionsNode->GetChildrenNodes();
-		InOutState.History.Reserve(RevisionNodes.Num());
+		if (bInUpdateHistory)
+		{
+			InOutState.History.Reserve(RevisionNodes.Num());
+		}
 
 		// parse history in reverse: needed to get most recent at the top (implied by the UI)
 		// Note: limit to last 100 changes, like Perforce
@@ -1462,7 +1465,7 @@ static bool ParseHistoryResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 					SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset); // Value now used in the Revision column and in the Asset Menu History
 
 					// Also append depot name to the revision, but only when it is different from the default one (ie for xlinks sub repository)
-					if (InOutState.RepSpec != RootRepSpec)
+					if (!InOutState.RepSpec.IsEmpty() && (InOutState.RepSpec != RootRepSpec))
 					{
 						TArray<FString> RepSpecs;
 						InOutState.RepSpec.ParseIntoArray(RepSpecs, TEXT("@"));
@@ -1498,7 +1501,23 @@ static bool ParseHistoryResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 					SourceControlRevision->Branch = BranchNode->GetContent();
 				}
 
-				InOutState.History.Add(SourceControlRevision);
+				// Detect and skip more recent changesets on other branches (ie above the RevisionHeadChangeset)
+				if (SourceControlRevision->ChangesetNumber > InOutState.DepotRevisionChangeset)
+				{
+					InOutState.HeadBranch = SourceControlRevision->Branch;
+					InOutState.HeadChangeList = SourceControlRevision->ChangesetNumber;
+					InOutState.HeadUserName = SourceControlRevision->UserName;
+					InOutState.HeadModTime = SourceControlRevision->Date.ToUnixTimestamp();
+				}
+				else if (bInUpdateHistory)
+				{
+					InOutState.History.Add(SourceControlRevision);
+				}
+
+				if (!bInUpdateHistory)
+				{
+					break; // if not updating the history, just getting the head of the latest branch is enough
+				}
 			}
 		}
 	}
@@ -1507,7 +1526,7 @@ static bool ParseHistoryResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 }
 
 // Run a Plastic "history" command and parse it's XML result.
-bool RunGetHistory(TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages)
+bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages)
 {
 	FString Results;
 	FString Errors;
@@ -1520,6 +1539,10 @@ bool RunGetHistory(TArray<FPlasticSourceControlState>& InOutStates, TArray<FStri
 	Files.Reserve(InOutStates.Num());
 	for (const FPlasticSourceControlState& State : InOutStates)
 	{
+		// When getting only the last revision, optimize out if DepotRevisionChangeset is invalid (ie "fileinfo" was optimized out, eg for checked-out files)
+		if (!bInUpdateHistory && State.DepotRevisionChangeset == ISourceControlState::INVALID_REVISION)
+			continue;
+
 		if (State.IsSourceControlled() && !State.IsAdded())
 		{
 			Files.Add(State.LocalFilename);
@@ -1534,7 +1557,7 @@ bool RunGetHistory(TArray<FPlasticSourceControlState>& InOutStates, TArray<FStri
 		bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
 		if (bResult)
 		{
-			bResult = ParseHistoryResults(XmlFile, InOutStates);
+			bResult = ParseHistoryResults(bInUpdateHistory, XmlFile, InOutStates);
 		}
 	}
 
