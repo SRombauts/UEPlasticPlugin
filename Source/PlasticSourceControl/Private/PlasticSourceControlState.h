@@ -35,19 +35,24 @@ class FPlasticSourceControlState : public ISourceControlState, public TSharedFro
 {
 public:
 
-	FPlasticSourceControlState(const FString& InLocalFilename)
-		: LocalFilename(InLocalFilename)
+	FPlasticSourceControlState(FString&& InLocalFilename)
+		: LocalFilename(MoveTemp(InLocalFilename))
 		, WorkspaceState(EWorkspaceState::Unknown)
-		, DepotRevisionChangeset(-1)
-		, LocalRevisionChangeset(-1)
+		, DepotRevisionChangeset(INVALID_REVISION)
+		, LocalRevisionChangeset(INVALID_REVISION)
 		, TimeStamp(0)
 	{
 	}
 
+	FPlasticSourceControlState() = delete;
 	FPlasticSourceControlState(const FPlasticSourceControlState& InState) = delete;
 	const FPlasticSourceControlState& operator=(const FPlasticSourceControlState& InState) = delete;
 
 	FPlasticSourceControlState(FPlasticSourceControlState&& InState)
+		: WorkspaceState(EWorkspaceState::Unknown)
+		, DepotRevisionChangeset(INVALID_REVISION)
+		, LocalRevisionChangeset(INVALID_REVISION)
+		, TimeStamp(0)
 	{
 		Move(MoveTemp(InState));
 	}
@@ -62,16 +67,26 @@ public:
 	{
 		History = MoveTemp(InState.History);
 		LocalFilename = MoveTemp(InState.LocalFilename);
-		RepSpec = MoveTemp(InState.RepSpec);
+		WorkspaceState = InState.WorkspaceState;
 		PendingMergeFilename = MoveTemp(InState.PendingMergeFilename);
 		PendingMergeBaseChangeset = InState.PendingMergeBaseChangeset;
 		PendingMergeSourceChangeset = InState.PendingMergeSourceChangeset;
 		PendingMergeParameters = MoveTemp(InState.PendingMergeParameters);
-		LockedBy = MoveTemp(InState.LockedBy);
-		LockedWhere = MoveTemp(InState.LockedWhere);
-		WorkspaceState = InState.WorkspaceState;
-		DepotRevisionChangeset = InState.DepotRevisionChangeset;
-		LocalRevisionChangeset = InState.LocalRevisionChangeset;
+		// Update "fileinfo" information only if the command was issued
+		if (InState.DepotRevisionChangeset != INVALID_REVISION)
+		{
+			LockedBy = MoveTemp(InState.LockedBy);
+			LockedWhere = MoveTemp(InState.LockedWhere);
+			RepSpec = MoveTemp(InState.RepSpec);
+			DepotRevisionChangeset = InState.DepotRevisionChangeset;
+			LocalRevisionChangeset = InState.LocalRevisionChangeset;
+		}
+		// Don't override "fileinfo" information in case of an optimized/lightweight "whole folder status" triggered by a global Submit Content or Refresh
+		// and regenerate the LockedByOther state based on LockedBy
+		else if (!IsCheckedOut() && !LockedBy.IsEmpty())
+		{
+			WorkspaceState = EWorkspaceState::LockedByOther;
+		}
 		MovedFrom = MoveTemp(InState.MovedFrom);
 		TimeStamp = InState.TimeStamp;
 

@@ -114,7 +114,7 @@ TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceContro
 	else
 	{
 		// cache an unknown state for this item
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> NewState = MakeShareable(new FPlasticSourceControlState(InFilename));
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> NewState = MakeShareable(new FPlasticSourceControlState(FString(InFilename)));
 		StateCache.Add(InFilename, NewState);
 		return NewState;
 	}
@@ -328,7 +328,7 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 	{
 		// Is connection successful?
 		bServerAvailable = InCommand.bCommandSuccessful;
-		bWorkspaceFound = (InCommand.WorkspaceName.Len() > 0);
+		bWorkspaceFound = !InCommand.WorkspaceName.IsEmpty();
 
 		WorkspaceName = InCommand.WorkspaceName;
 		RepositoryName = InCommand.RepositoryName;
