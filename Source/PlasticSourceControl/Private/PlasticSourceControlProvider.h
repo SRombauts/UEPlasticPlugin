@@ -5,9 +5,11 @@
 #include "CoreMinimal.h"
 #include "ISourceControlProvider.h"
 #include "IPlasticSourceControlWorker.h"
-#include "PlasticSourceControlState.h"
+#include "PlasticSourceControlConsole.h"
 #include "PlasticSourceControlMenu.h"
 #include "Runtime/Launch/Resources/Version.h"
+
+class FPlasticSourceControlState;
 
 DECLARE_DELEGATE_RetVal(FPlasticSourceControlWorkerRef, FGetPlasticSourceControlWorker)
 
@@ -188,7 +190,7 @@ private:
 	int32 ChangesetNumber;
 
 	/** State cache */
-	mutable TMap<FString, TSharedRef<class FPlasticSourceControlState, ESPMode::ThreadSafe> > StateCache;
+	mutable TMap<FString, TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> > StateCache;
 
 	/** The currently registered source control operations */
 	TMap<FName, FGetPlasticSourceControlWorker> WorkersMap;
@@ -201,4 +203,7 @@ private:
 
 	/** Source Control Menu Extension */
 	FPlasticSourceControlMenu PlasticSourceControlMenu;
+
+	/** Source Control Console commands */
+	FPlasticSourceControlConsole PlasticSourceControlConsole;
 };

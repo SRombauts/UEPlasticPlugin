@@ -1,13 +1,16 @@
 // Copyright (c) 2016-2022 Codice Software
 
 #include "PlasticSourceControlProvider.h"
+
 #include "PlasticSourceControlCommand.h"
-#include "ISourceControlModule.h"
 #include "PlasticSourceControlModule.h"
-#include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlOperations.h"
+#include "PlasticSourceControlSettings.h"
+#include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlSettings.h"
+
+#include "ISourceControlModule.h"
 #include "Logging/MessageLog.h"
 #include "ScopedSourceControlProgress.h"
 #include "SourceControlHelpers.h"
@@ -76,6 +79,9 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			// Get user name (from the global Plastic SCM client config)
 			PlasticSourceControlUtils::GetUserName(UserName);
 
+			// Register Console Commands
+			PlasticSourceControlConsole.Register();
+
 			if (!bWorkspaceFound)
 			{
 				UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::ProjectDir());
@@ -96,6 +102,8 @@ void FPlasticSourceControlProvider::Close()
 	PlasticSourceControlUtils::Terminate();
 	// Remove all extensions to the "Source Control" menu in the Editor Toolbar
 	PlasticSourceControlMenu.Unregister();
+	// Unregister Console Commands
+	PlasticSourceControlConsole.Unregister();
 
 	bServerAvailable = false;
 	bPlasticAvailable = false;

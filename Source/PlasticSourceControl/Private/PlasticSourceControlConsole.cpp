@@ -7,15 +7,23 @@
 
 #include "PlasticSourceControlUtils.h"
 
-// Auto-registered console commands:
-// No re-register on hot reload, and unregistered only once on editor shutdown.
-static FAutoConsoleCommand g_executePlasticConsoleCommand(TEXT("cm"),
-	TEXT("PlasticSCM Command Line Interface.\n")
-	TEXT("Run any 'cm' command directly from the Unreal Editor Console.\n")
-	TEXT("Type 'cm showcommands' to get a command list."),
-	FConsoleCommandWithArgsDelegate::CreateStatic(&PlasticSourceControlConsole::ExecutePlasticConsoleCommand));
+void FPlasticSourceControlConsole::Register()
+{
+	CmConsoleCommand = MakeUnique<FAutoConsoleCommand>(
+		TEXT("cm"),
+		TEXT("PlasticSCM Command Line Interface.\n")
+		TEXT("Run any 'cm' command directly from the Unreal Editor Console.\n")
+		TEXT("Type 'cm showcommands' to get a command list."),
+		FConsoleCommandWithArgsDelegate::CreateRaw(this, &FPlasticSourceControlConsole::ExecutePlasticConsoleCommand)
+	);
+}
 
-void PlasticSourceControlConsole::ExecutePlasticConsoleCommand(const TArray<FString>& a_args)
+void FPlasticSourceControlConsole::Unregister()
+{
+	CmConsoleCommand.Reset();
+}
+
+void FPlasticSourceControlConsole::ExecutePlasticConsoleCommand(const TArray<FString>& a_args)
 {
 	// If called with no argument, explicitely call "cm help" instead to mimic the cm CLI behavior.
 	if (a_args.Num() < 1)
