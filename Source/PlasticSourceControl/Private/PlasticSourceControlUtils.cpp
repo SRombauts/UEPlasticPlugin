@@ -1392,6 +1392,7 @@ static bool ParseHistoryResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 	static const FString ItemName(TEXT("ItemName"));
 	static const FString Revisions(TEXT("Revisions"));
 	static const FString Revision(TEXT("Revision"));
+	static const FString Branch(TEXT("Branch"));
 	static const FString ChangesetNumber(TEXT("ChangesetNumber"));
 	static const FString Comment(TEXT("Comment"));
 	static const FString CreationDate(TEXT("CreationDate"));
@@ -1491,6 +1492,10 @@ static bool ParseHistoryResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 						DateIso = DateNode->GetContent().LeftChop(10) + DateNode->GetContent().RightChop(27);
 					}
 					FDateTime::ParseIso8601(*DateIso, SourceControlRevision->Date);
+				}
+				if (const FXmlNode* BranchNode = RevisionNode->FindChildNode(Branch))
+				{
+					SourceControlRevision->Branch = BranchNode->GetContent();
 				}
 
 				InOutState.History.Add(SourceControlRevision);
