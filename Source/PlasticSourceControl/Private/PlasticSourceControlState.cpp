@@ -243,7 +243,7 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	case EWorkspaceState::Controlled:
 		return LOCTEXT("Controlled", "Controlled");
 	case EWorkspaceState::CheckedOut:
-		return LOCTEXT("CheckedOut", "CheckedOut");
+		return LOCTEXT("CheckedOut", "Checked-out");
 	case EWorkspaceState::Added:
 		return LOCTEXT("Added", "Added");
 	case EWorkspaceState::Moved:
@@ -259,7 +259,7 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	case EWorkspaceState::Changed:
 		return LOCTEXT("Changed", "Changed");
 	case EWorkspaceState::Conflicted:
-		return LOCTEXT("ContentsConflict", "Contents Conflict");
+		return LOCTEXT("ContentsConflict", "Conflicted");
 	case EWorkspaceState::LockedByOther:
 		return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by: {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
 	case EWorkspaceState::Private:
@@ -273,7 +273,7 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 {
 	if (!IsCurrent())
 	{
-		return LOCTEXT("NotCurrent_Tooltip", "The file(s) are not at the head revision");
+		return LOCTEXT("NotCurrent_Tooltip", "Not at the head revision");
 	}
 	else if (WorkspaceState != EWorkspaceState::LockedByOther)
 	{
@@ -288,33 +288,33 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 	switch (WorkspaceState)
 	{
 	case EWorkspaceState::Unknown:
-		return LOCTEXT("Unknown_Tooltip", "Unknown source control state");
+		return LOCTEXT("Unknown_Tooltip", "The file status is unknown");
 	case EWorkspaceState::Ignored:
-		return LOCTEXT("Ignored_Tooltip", "Item is being ignored.");
+		return LOCTEXT("Ignored_Tooltip", "The file is ignored");
 	case EWorkspaceState::Controlled:
-		return LOCTEXT("Pristine_Tooltip", "There are no modifications");
+		return LOCTEXT("Pristine_Tooltip", "The file has no modification");
 	case EWorkspaceState::CheckedOut:
-		return LOCTEXT("CheckedOut_Tooltip", "Item is checked out");
+		return LOCTEXT("CheckedOut_Tooltip", "The file is checked out");
 	case EWorkspaceState::Added:
-		return LOCTEXT("Added_Tooltip", "Item has been added");
+		return LOCTEXT("Added_Tooltip", "The file has been added");
 	case EWorkspaceState::Moved:
-		return LOCTEXT("Moved_Tooltip", "Item has been moved or renamed");
+		return LOCTEXT("Moved_Tooltip", "The file has been moved or renamed");
 	case EWorkspaceState::Copied:
-		return LOCTEXT("Copied_Tooltip", "Item has been copied");
+		return LOCTEXT("Copied_Tooltip", "The file has been copied");
 	case EWorkspaceState::Replaced:
-		return LOCTEXT("Replaced_Tooltip", "Item has been replaced / merged");
+		return LOCTEXT("Replaced_Tooltip", "The file has been replaced / merged");
 	case EWorkspaceState::Deleted:
-		return LOCTEXT("Deleted_Tooltip", "Item is scheduled for deletion");
+		return LOCTEXT("Deleted_Tooltip", "The file has been deleted");
 	case EWorkspaceState::LocallyDeleted:
-		return LOCTEXT("LocallyDeleted_Tooltip", "Item is missing");
+		return LOCTEXT("LocallyDeleted_Tooltip", "The file is missing");
 	case EWorkspaceState::Changed:
-		return LOCTEXT("Modified_Tooltip", "Item has been modified");
+		return LOCTEXT("Modified_Tooltip", "The file has been modified");
 	case EWorkspaceState::Conflicted:
-		return LOCTEXT("ContentsConflict_Tooltip", "The contents of the item conflict with updates received from the repository.");
+		return LOCTEXT("ContentsConflict_Tooltip", "The content of the file conflict with updates received from the repository");
 	case EWorkspaceState::LockedByOther:
-		return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by: {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
+		return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
 	case EWorkspaceState::Private:
-		return LOCTEXT("NotControlled_Tooltip", "Item is not under version control.");
+		return LOCTEXT("NotControlled_Tooltip", "The file is not under version control");
 	}
 
 	return FText();
