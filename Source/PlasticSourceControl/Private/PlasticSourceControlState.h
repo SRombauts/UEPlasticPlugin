@@ -82,6 +82,7 @@ public:
 			LocalRevisionChangeset = InState.LocalRevisionChangeset;
 
 			HeadBranch = MoveTemp(InState.HeadBranch);
+			HeadAction = MoveTemp(InState.HeadAction);
 			HeadChangeList = MoveTemp(InState.HeadChangeList);
 			HeadUserName = MoveTemp(InState.HeadUserName);
 			HeadModTime = MoveTemp(InState.HeadModTime);
@@ -193,12 +194,15 @@ public:
 	/** The branch with the head change list */
 	FString HeadBranch;
 
+	/** The type of action of the last modification */
+	FString HeadAction;
+
 	/** The user of the last modification */
 	FString HeadUserName;
 
 	/** The last file modification time */
 	int64 HeadModTime;
 
-	/** The change list the last modification */
+	/** The change list of the last modification */
 	int32 HeadChangeList;
 };

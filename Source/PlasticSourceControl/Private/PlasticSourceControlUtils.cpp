@@ -1350,7 +1350,7 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 }
 
 /**
- * Parse results of the 'cm history --xml --encoding="utf-8"' command.
+ * Parse results of the 'cm history --moveddeleted --xml --encoding="utf-8"' command.
  * 
  * Results of the history command looks like that:
 <RevisionHistoriesResult>
@@ -1371,6 +1371,19 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 		  <RepositorySpec>UE4PlasticPluginDev@localhost:8087</RepositorySpec>
 		</Revision>
 		...
+		<Revision>
+		  <RevisionSpec>C:/Workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset#cs:12</RevisionSpec>
+		  <Branch>Removed /Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset</Branch>
+		  <CreationDate>2022-04-28T16:00:37+02:00</CreationDate>
+		  <RevisionType />
+		  <ChangesetNumber>12</ChangesetNumber>
+		  <Owner>sebastien.rombauts</Owner>
+		  <Comment />
+		  <Repository>UE4PlasticPluginDev</Repository>
+		  <Server>localhost:8087</Server>
+		  <RepositorySpec>UE4PlasticPluginDev@localhost:8087</RepositorySpec>
+		</Revision>
+
 	  </Revisions>
 	</RevisionHistory>
 	<RevisionHistory>
@@ -1393,10 +1406,11 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 	static const FString Revisions(TEXT("Revisions"));
 	static const FString Revision(TEXT("Revision"));
 	static const FString Branch(TEXT("Branch"));
-	static const FString ChangesetNumber(TEXT("ChangesetNumber"));
-	static const FString Comment(TEXT("Comment"));
 	static const FString CreationDate(TEXT("CreationDate"));
+	static const FString RevisionType(TEXT("RevisionType"));
+	static const FString ChangesetNumber(TEXT("ChangesetNumber"));
 	static const FString Owner(TEXT("Owner"));
+	static const FString Comment(TEXT("Comment"));
 
 	const FXmlNode* RevisionHistoriesResultNode = InXmlResult.GetRootNode();
 	if (RevisionHistoriesResultNode == nullptr || RevisionHistoriesResultNode->GetTag() != RevisionHistoriesResult)
@@ -1454,10 +1468,18 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				SourceControlRevision->Filename = Filename;
 				SourceControlRevision->RevisionId = Index + 1;
 
-				if (Index == 0)
-					SourceControlRevision->Action = TEXT("add");
-				else
-					SourceControlRevision->Action = TEXT("edit");
+				if (const FXmlNode* RevisionTypeNode = RevisionNode->FindChildNode(RevisionType))
+				{
+					if (!RevisionTypeNode->GetContent().IsEmpty())
+					{
+						if (Index == 0)
+							SourceControlRevision->Action = TEXT("add");
+						else
+							SourceControlRevision->Action = TEXT("edit");
+					}
+					else
+						SourceControlRevision->Action = TEXT("delete");
+				}
 
 				if (const FXmlNode* ChangesetNumberNode = RevisionNode->FindChildNode(ChangesetNumber))
 				{
@@ -1505,6 +1527,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				if (SourceControlRevision->ChangesetNumber > InOutState.DepotRevisionChangeset)
 				{
 					InOutState.HeadBranch = SourceControlRevision->Branch;
+					InOutState.HeadAction = SourceControlRevision->Action;
 					InOutState.HeadChangeList = SourceControlRevision->ChangesetNumber;
 					InOutState.HeadUserName = SourceControlRevision->UserName;
 					InOutState.HeadModTime = SourceControlRevision->Date.ToUnixTimestamp();
@@ -1531,7 +1554,7 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 	FString Results;
 	FString Errors;
 	TArray<FString> Parameters;
-	//	Parameters.Add(TEXT("--format=\"{1};{6}\"")); // Get "Changeset number" and "Revision id" of each revision of the asset
+	Parameters.Add(TEXT("--moveddeleted"));
 	Parameters.Add(TEXT("--xml"));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 
