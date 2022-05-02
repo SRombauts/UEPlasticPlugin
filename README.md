@@ -82,6 +82,32 @@ and can also do the initial commit automatically at the end.
 Wait for this to succeed before acception source control settings to not lock the UI & mess with the initialization!
 ![Source Control Login window - checking files in source control](Screenshots/UE4PlasticPlugin-CheckinInProgress.png)
 
+#### Source Control settings
+
+![Source Control Settings](Screenshots/UE4PlasticPlugin-SourceControlSettings.png)
+
+Source control settings can be changed using the Source Control menu,
+and are saved locally in `Saved\Config\WindowsEditor\SourceControlSettings.ini`.
+
+##### Sharing settings
+
+In order to share this with the team, copy and rename this file into `Config\DefaultSourceControlSettings.ini`,
+add it to source control and submit it.
+
+The minimal useful setting would be selecting the proper provider,
+but it can be useful to set a few settings if different than the defaults:
+
+```ini
+[SourceControl.SourceControlSettings]
+Provider=Plastic SCM 2
+
+[PlasticSourceControl.PlasticSourceControlSettings]
+BinaryPath=cm
+UpdateStatusAtStartup=False
+UpdateStatusOtherBranches=True
+EnableVerboseLogs=False
+```
+
 ### Status Icons
 
 ![New/Unsaved asset](Screenshots/Icons/UE4PlasticPlugin-New.png)
