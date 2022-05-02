@@ -490,7 +490,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		if (Operation->ShouldUpdateHistory())
 		{
 			// Get the history of the files (on all branches)
-			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(true, States, InCommand.ErrorMessages);
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(Operation->ShouldUpdateHistory(), States, InCommand.ErrorMessages);
 
 			// Special case for conflicts
 			for (FPlasticSourceControlState& State : States)
@@ -516,11 +516,15 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 				}
 			}
 		}
-		else if (AreAllFiles(InCommand.Files))
+		else
 		{
-			// Get only the last revision of the files (checking all branches)
-			// in order to warn the user if the file has been changed on another branch
-			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(false, States, InCommand.ErrorMessages);
+			const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+			if (PlasticSourceControl.AccessSettings().GetUpdateStatusOtherBranches() && AreAllFiles(InCommand.Files))
+			{
+				// Get only the last revision of the files (checking all branches)
+				// in order to warn the user if the file has been changed on another branch
+				InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(Operation->ShouldUpdateHistory(), States, InCommand.ErrorMessages);
+			}
 		}
 	}
 	// no path provided: only update the status of assets in Content/ directory if requested
@@ -530,7 +534,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	{
 		TArray<FString> ProjectDirs;
 		ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, Operation->ShouldUpdateHistory(), InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 
 	// TODO: re-evaluate how to optimize this heavy operation using some of these hints flags

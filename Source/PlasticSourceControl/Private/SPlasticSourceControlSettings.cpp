@@ -297,6 +297,30 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 					.Font(Font)
 				]
 			]
+			// Option to call History as part of Update Status operation to check for potential recent changes in other branches
+			+SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(2.0f)
+			.VAlign(VAlign_Center)
+			[
+				SNew(SHorizontalBox)
+				.ToolTipText(LOCTEXT("UpdateStatusOtherBranches_Tooltip", "Enable Update status to detect changesets on other branches (can be slow)."))
+				+SHorizontalBox::Slot()
+				.FillWidth(0.1f)
+				[
+					SNew(SCheckBox)
+					.IsChecked(SPlasticSourceControlSettings::IsUpdateStatusOtherBranchesChecked())
+					.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedUpdateStatusOtherBranches)
+				]
+				+SHorizontalBox::Slot()
+				.FillWidth(2.0f)
+				.VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("UpdateStatusOtherBranches", "Update status also check branch history."))
+					.Font(Font)
+				]
+			]
 			// Option to enable Source Control Verbose logs
 			+SVerticalBox::Slot()
 			.AutoHeight()
@@ -539,8 +563,7 @@ void SPlasticSourceControlSettings::LaunchCheckInOperation()
 	TSharedRef<FCheckIn, ESPMode::ThreadSafe> CheckInOperation = ISourceControlOperation::Create<FCheckIn>();
 	CheckInOperation->SetDescription(InitialCommitMessage);
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const TArray<FString> ProjectFiles = GetProjectFiles();
-	ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(CheckInOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
+	ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(CheckInOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
 	if (Result == ECommandResult::Succeeded)
 	{
 		DisplayInProgressNotification(CheckInOperation->GetInProgressString());
@@ -664,6 +687,19 @@ ECheckBoxState SPlasticSourceControlSettings::IsUpdateStatusAtStartupChecked() c
 {
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	return PlasticSourceControl.AccessSettings().GetUpdateStatusAtStartup() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+void SPlasticSourceControlSettings::OnCheckedUpdateStatusOtherBranches(ECheckBoxState NewCheckedState)
+{
+	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	PlasticSourceControl.AccessSettings().SetUpdateStatusOtherBranches(NewCheckedState == ECheckBoxState::Checked);
+	PlasticSourceControl.AccessSettings().SaveSettings();
+}
+
+ECheckBoxState SPlasticSourceControlSettings::IsUpdateStatusOtherBranchesChecked() const
+{
+	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	return PlasticSourceControl.AccessSettings().GetUpdateStatusOtherBranches() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
 void SPlasticSourceControlSettings::OnCheckedEnableVerboseLogs(ECheckBoxState NewCheckedState)
