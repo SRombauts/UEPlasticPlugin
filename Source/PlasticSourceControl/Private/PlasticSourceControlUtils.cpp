@@ -396,7 +396,7 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 	{
 		// Look for the ".plastic" subdirectory present at the root of every Plastic workspace
 		PathToPlasticSubdirectory = OutWorkspaceRoot / TEXT(".plastic");
-		bFound = IFileManager::Get().DirectoryExists(*PathToPlasticSubdirectory);
+		bFound = FPaths::DirectoryExists(*PathToPlasticSubdirectory);
 		if (!bFound)
 		{
 			int32 LastSlashIndex;
