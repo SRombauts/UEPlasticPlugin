@@ -1551,6 +1551,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 // Run a Plastic "history" command and parse it's XML result.
 bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages)
 {
+	bool bResult = true;
 	FString Results;
 	FString Errors;
 	TArray<FString> Parameters;
@@ -1571,16 +1572,18 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 			Files.Add(State.LocalFilename);
 		}
 	}
-
-	bool bResult = RunCommandInternal(TEXT("history"), Parameters, Files, EConcurrency::Synchronous, Results, Errors);
-	OutErrorMessages.Add(MoveTemp(Errors));
-	if (bResult)
+	if (Files.Num() > 0)
 	{
-		FXmlFile XmlFile;
-		bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+		bResult = RunCommandInternal(TEXT("history"), Parameters, Files, EConcurrency::Synchronous, Results, Errors);
+		OutErrorMessages.Add(MoveTemp(Errors));
 		if (bResult)
 		{
-			bResult = ParseHistoryResults(bInUpdateHistory, XmlFile, InOutStates);
+			FXmlFile XmlFile;
+			bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+			if (bResult)
+			{
+				bResult = ParseHistoryResults(bInUpdateHistory, XmlFile, InOutStates);
+			}
 		}
 	}
 
