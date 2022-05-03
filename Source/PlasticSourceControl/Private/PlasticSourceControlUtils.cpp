@@ -1001,7 +1001,7 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
  * ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere
  *
  * @param[in]		bInWholeDirectory	If executed on a whole directory (typically Content/) for a "Submit Content" operation, optimize fileinfo more agressively
- * @param			bInUpdateHistory	If getting the history of a file, force execute the fileinfo command required to get RepSpec of XLinks (history view or visual diff)
+ * @param			bInUpdateHistory	If getting the history of files, force execute the fileinfo command required to get RepSpec of XLinks (history view or visual diff)
  * @param[in]		InConcurrency		Is the command running in the background, or blocking the main thread
  * @param[out]		OutErrorMessages	Error messages from the "fileinfo" command
  * @param[in,out]	InOutStates			List of file states in the directory, gathered by the "status" command, completed by results of the "fileinfo" command
@@ -1025,7 +1025,7 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 		// don't even issue a "fileinfo" command for unchanged Controlled files since they won't be considered them for submit.
 		// This greatly reduce the time needed to open the Submit window.
 		// 
-		// 3) bInUpdateHistory: When the plugin needs to update the history, it needs to know if it's on a XLink,
+		// 3) bInUpdateHistory: When the plugin needs to update the history of files, it needs to know if it's on a XLink,
 		// so the fileinfo command is required here to get the RepSpec
 		if (bInUpdateHistory
 			|| ((State.WorkspaceState == EWorkspaceState::Controlled) && !bInWholeDirectory)
@@ -1350,7 +1350,7 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 }
 
 /**
- * Parse results of the 'cm history --xml' command.
+ * Parse results of the 'cm history --moveddeleted --xml --encoding="utf-8"' command.
  * 
  * Results of the history command looks like that:
 <RevisionHistoriesResult>
@@ -1371,15 +1371,30 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 		  <RepositorySpec>UE4PlasticPluginDev@localhost:8087</RepositorySpec>
 		</Revision>
 		...
+		<Revision>
+		  <RevisionSpec>C:/Workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset#cs:12</RevisionSpec>
+		  <Branch>Removed /Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset</Branch>
+		  <CreationDate>2022-04-28T16:00:37+02:00</CreationDate>
+		  <RevisionType />
+		  <ChangesetNumber>12</ChangesetNumber>
+		  <Owner>sebastien.rombauts</Owner>
+		  <Comment />
+		  <Repository>UE4PlasticPluginDev</Repository>
+		  <Server>localhost:8087</Server>
+		  <RepositorySpec>UE4PlasticPluginDev@localhost:8087</RepositorySpec>
+		</Revision>
+
 	  </Revisions>
+	</RevisionHistory>
+	<RevisionHistory>
+	  <ItemName>C:/Workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_YetAnother.uasset</ItemName>
+		...
 	</RevisionHistory>
   </RevisionHistories>
 </RevisionHistoriesResult>
 */
-static bool ParseHistoryResults(const FXmlFile& InXmlResult, FPlasticSourceControlState& InOutState)
+static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InXmlResult, TArray<FPlasticSourceControlState>& InOutStates)
 {
-	bool bResult = true;
-
 	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
@@ -1390,10 +1405,12 @@ static bool ParseHistoryResults(const FXmlFile& InXmlResult, FPlasticSourceContr
 	static const FString ItemName(TEXT("ItemName"));
 	static const FString Revisions(TEXT("Revisions"));
 	static const FString Revision(TEXT("Revision"));
-	static const FString ChangesetNumber(TEXT("ChangesetNumber"));
-	static const FString Comment(TEXT("Comment"));
+	static const FString Branch(TEXT("Branch"));
 	static const FString CreationDate(TEXT("CreationDate"));
+	static const FString RevisionType(TEXT("RevisionType"));
+	static const FString ChangesetNumber(TEXT("ChangesetNumber"));
 	static const FString Owner(TEXT("Owner"));
+	static const FString Comment(TEXT("Comment"));
 
 	const FXmlNode* RevisionHistoriesResultNode = InXmlResult.GetRootNode();
 	if (RevisionHistoriesResultNode == nullptr || RevisionHistoriesResultNode->GetTag() != RevisionHistoriesResult)
@@ -1407,111 +1424,168 @@ static bool ParseHistoryResults(const FXmlFile& InXmlResult, FPlasticSourceContr
 		return false;
 	}
 
-	const FXmlNode* RevisionHistoriyNode = RevisionHistoriesNode->FindChildNode(RevisionHistory);
-	if (RevisionHistoriyNode == nullptr)
+	const TArray<FXmlNode*>& RevisionHistoryNodes = RevisionHistoriesNode->GetChildrenNodes();
+	for (const FXmlNode* RevisionHistoryNode : RevisionHistoryNodes)
 	{
-		return false;
-	}
-
-	const FXmlNode* ItemNameNode = RevisionHistoriyNode->FindChildNode(ItemName);
-
-	const FXmlNode* RevisionsNode = RevisionHistoriyNode->FindChildNode(Revisions);
-	if (RevisionsNode == nullptr)
-	{
-		return false;
-	}
-
-	const TArray<FXmlNode*>& RevisionNodes = RevisionsNode->GetChildrenNodes();
-	InOutState.History.Reserve(RevisionNodes.Num());
-
-	// parse history in reverse: needed to get most recent at the top (implied by the UI)
-	for (int32 Index = RevisionNodes.Num() - 1; Index >= 0; Index--)
-	{
-		if (const FXmlNode* RevisionNode = RevisionNodes[Index])
+		const FXmlNode* ItemNameNode = RevisionHistoryNode->FindChildNode(ItemName);
+		if (ItemNameNode == nullptr)
 		{
-			const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShareable(new FPlasticSourceControlRevision);
-			SourceControlRevision->State = &InOutState;
-			SourceControlRevision->Filename = ItemNameNode ? ItemNameNode->GetContent() : TEXT("");
-			SourceControlRevision->RevisionId = Index + 1;
-
-			if (Index == 0)
-				SourceControlRevision->Action = TEXT("add");
-			else
-				SourceControlRevision->Action = TEXT("edit");
-
-			const FXmlNode* ChangesetNumberNode = RevisionNode->FindChildNode(ChangesetNumber);
-			if (ChangesetNumberNode != nullptr)
-			{
-				const FString& Changeset = ChangesetNumberNode->GetContent();
-				SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset); // Value now used in the Revision column and in the Asset Menu History
-
-				// Also append depot name to the revision, but only when it is different from the default one (ie for xlinks sub repository)
-				if (InOutState.RepSpec != RootRepSpec)
-				{
-					TArray<FString> RepSpecs;
-					InOutState.RepSpec.ParseIntoArray(RepSpecs, TEXT("@"));
-					SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s@%s"), *Changeset, *RepSpecs[0]);
-				}
-				else
-				{
-					SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s"), *Changeset);
-				}
-			}
-			const FXmlNode* CommentNode = RevisionNode->FindChildNode(Comment);
-			if (CommentNode != nullptr)
-			{
-				SourceControlRevision->Description = CommentNode->GetContent();
-			}
-			const FXmlNode* OwnerNode = RevisionNode->FindChildNode(Owner);
-			if (OwnerNode != nullptr)
-			{
-				SourceControlRevision->UserName = OwnerNode->GetContent();
-			}
-			const FXmlNode* DateNode = RevisionNode->FindChildNode(CreationDate);
-			if (DateNode != nullptr)
-			{
-				FString DateIso = DateNode->GetContent();
-				const int len = DateIso.Len();
-				if (DateIso.Len() > 29)
-				{	//                           |--|
-					//    2016-04-18T10:44:49.0000000+02:00
-					// => 2016-04-18T10:44:49.000+02:00
-					DateIso = DateNode->GetContent().LeftChop(10) + DateNode->GetContent().RightChop(27);
-				}
-				FDateTime::ParseIso8601(*DateIso, SourceControlRevision->Date);
-			}
-
-			InOutState.History.Add(SourceControlRevision);
+			continue;
 		}
-		else
+
+		const FString Filename = ItemNameNode->GetContent();
+		FPlasticSourceControlState* InOutStatePtr = InOutStates.FindByPredicate(
+			[&Filename](const FPlasticSourceControlState& State) { return State.LocalFilename == Filename; }
+		);
+		if (InOutStatePtr == nullptr)
 		{
-			bResult = false;
+			continue;
+		}
+		FPlasticSourceControlState& InOutState = *InOutStatePtr;
+
+		const FXmlNode* RevisionsNode = RevisionHistoryNode->FindChildNode(Revisions);
+		if (RevisionsNode == nullptr)
+		{
+			continue;
+		}
+
+		const TArray<FXmlNode*>& RevisionNodes = RevisionsNode->GetChildrenNodes();
+		if (bInUpdateHistory)
+		{
+			InOutState.History.Reserve(RevisionNodes.Num());
+		}
+
+		// parse history in reverse: needed to get most recent at the top (implied by the UI)
+		// Note: limit to last 100 changes, like Perforce
+		static const int32 MaxRevisions = 100;
+		const int32 MinIndex = FMath::Max(0, RevisionNodes.Num() - MaxRevisions);
+		for (int32 Index = RevisionNodes.Num() - 1; Index >= MinIndex; Index--)
+		{
+			if (const FXmlNode* RevisionNode = RevisionNodes[Index])
+			{
+				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShareable(new FPlasticSourceControlRevision);
+				SourceControlRevision->State = &InOutState;
+				SourceControlRevision->Filename = Filename;
+				SourceControlRevision->RevisionId = Index + 1;
+
+				if (const FXmlNode* RevisionTypeNode = RevisionNode->FindChildNode(RevisionType))
+				{
+					if (!RevisionTypeNode->GetContent().IsEmpty())
+					{
+						if (Index == 0)
+							SourceControlRevision->Action = TEXT("add");
+						else
+							SourceControlRevision->Action = TEXT("edit");
+					}
+					else
+						SourceControlRevision->Action = TEXT("delete");
+				}
+
+				if (const FXmlNode* ChangesetNumberNode = RevisionNode->FindChildNode(ChangesetNumber))
+				{
+					const FString& Changeset = ChangesetNumberNode->GetContent();
+					SourceControlRevision->ChangesetNumber = FCString::Atoi(*Changeset); // Value now used in the Revision column and in the Asset Menu History
+
+					// Also append depot name to the revision, but only when it is different from the default one (ie for xlinks sub repository)
+					if (!InOutState.RepSpec.IsEmpty() && (InOutState.RepSpec != RootRepSpec))
+					{
+						TArray<FString> RepSpecs;
+						InOutState.RepSpec.ParseIntoArray(RepSpecs, TEXT("@"));
+						SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s@%s"), *Changeset, *RepSpecs[0]);
+					}
+					else
+					{
+						SourceControlRevision->Revision = FString::Printf(TEXT("cs:%s"), *Changeset);
+					}
+				}
+				if (const FXmlNode* CommentNode = RevisionNode->FindChildNode(Comment))
+				{
+					SourceControlRevision->Description = CommentNode->GetContent();
+				}
+				if (const FXmlNode* OwnerNode = RevisionNode->FindChildNode(Owner))
+				{
+					SourceControlRevision->UserName = OwnerNode->GetContent();
+				}
+				if (const FXmlNode* DateNode = RevisionNode->FindChildNode(CreationDate))
+				{
+					FString DateIso = DateNode->GetContent();
+					const int len = DateIso.Len();
+					if (DateIso.Len() > 29)
+					{	//                           |--|
+						//    2016-04-18T10:44:49.0000000+02:00
+						// => 2016-04-18T10:44:49.000+02:00
+						DateIso = DateNode->GetContent().LeftChop(10) + DateNode->GetContent().RightChop(27);
+					}
+					FDateTime::ParseIso8601(*DateIso, SourceControlRevision->Date);
+				}
+				if (const FXmlNode* BranchNode = RevisionNode->FindChildNode(Branch))
+				{
+					SourceControlRevision->Branch = BranchNode->GetContent();
+				}
+
+				// Detect and skip more recent changesets on other branches (ie above the RevisionHeadChangeset)
+				if (SourceControlRevision->ChangesetNumber > InOutState.DepotRevisionChangeset)
+				{
+					InOutState.HeadBranch = SourceControlRevision->Branch;
+					InOutState.HeadAction = SourceControlRevision->Action;
+					InOutState.HeadChangeList = SourceControlRevision->ChangesetNumber;
+					InOutState.HeadUserName = SourceControlRevision->UserName;
+					InOutState.HeadModTime = SourceControlRevision->Date.ToUnixTimestamp();
+				}
+				else if (bInUpdateHistory)
+				{
+					InOutState.History.Add(SourceControlRevision);
+				}
+
+				if (!bInUpdateHistory)
+				{
+					break; // if not updating the history, just getting the head of the latest branch is enough
+				}
+			}
 		}
 	}
 
-	return bResult;
+	return true;
 }
 
 // Run a Plastic "history" command and parse it's XML result.
-bool RunGetHistory(const FString& InFile, TArray<FString>& OutErrorMessages, FPlasticSourceControlState& InOutState)
+bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages)
 {
+	bool bResult = true;
 	FString Results;
 	FString Errors;
 	TArray<FString> Parameters;
-	//	Parameters.Add(TEXT("--format=\"{1};{6}\"")); // Get "Changeset number" and "Revision id" of each revision of the asset
+	Parameters.Add(TEXT("--moveddeleted"));
 	Parameters.Add(TEXT("--xml"));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
-	TArray<FString> OneFile{*InFile};
 
-	bool bResult = RunCommandInternal(TEXT("history"), Parameters, OneFile, EConcurrency::Synchronous, Results, Errors);
-	if (bResult)
+	TArray<FString> Files;
+	Files.Reserve(InOutStates.Num());
+	for (const FPlasticSourceControlState& State : InOutStates)
 	{
-		FXmlFile XmlFile;
-		bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+		// When getting only the last revision, optimize out if DepotRevisionChangeset is invalid (ie "fileinfo" was optimized out, eg for checked-out files)
+		if (!bInUpdateHistory && State.DepotRevisionChangeset == ISourceControlState::INVALID_REVISION)
+			continue;
 
-		bResult = ParseHistoryResults(XmlFile, InOutState);
+		if (State.IsSourceControlled() && !State.IsAdded())
+		{
+			Files.Add(State.LocalFilename);
+		}
 	}
-	OutErrorMessages.Add(Errors);
+	if (Files.Num() > 0)
+	{
+		bResult = RunCommandInternal(TEXT("history"), Parameters, Files, EConcurrency::Synchronous, Results, Errors);
+		OutErrorMessages.Add(MoveTemp(Errors));
+		if (bResult)
+		{
+			FXmlFile XmlFile;
+			bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+			if (bResult)
+			{
+				bResult = ParseHistoryResults(bInUpdateHistory, XmlFile, InOutStates);
+			}
+		}
+	}
 
 	return bResult;
 }

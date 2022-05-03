@@ -54,6 +54,9 @@ private:
 	void OnCheckedUpdateStatusAtStartup(ECheckBoxState NewCheckedState);
 	ECheckBoxState IsUpdateStatusAtStartupChecked() const;
 
+	void OnCheckedUpdateStatusOtherBranches(ECheckBoxState NewCheckedState);
+	ECheckBoxState IsUpdateStatusOtherBranchesChecked() const;
+
 	void OnCheckedEnableVerboseLogs(ECheckBoxState NewCheckedState);
 	ECheckBoxState IsEnableVerboseLogsChecked() const;
 

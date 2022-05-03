@@ -95,6 +95,13 @@ FName FPlasticSourceControlState::GetIconName() const
 	{
 		return FName("Perforce.NotAtHeadRevision");
 	}
+	else if (WorkspaceState != EWorkspaceState::CheckedOut && WorkspaceState != EWorkspaceState::LockedByOther)
+	{
+		if (IsModifiedInOtherBranch())
+		{
+			return FName("Perforce.ModifiedOtherBranch");
+		}
+	}
 
 	switch (WorkspaceState)
 	{
@@ -129,6 +136,13 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	if (!IsCurrent())
 	{
 		return FName("Perforce.NotAtHeadRevision_Small");
+	}
+	else if (WorkspaceState != EWorkspaceState::CheckedOut && WorkspaceState != EWorkspaceState::LockedByOther)
+	{
+		if (IsModifiedInOtherBranch())
+		{
+			return FName("Perforce.ModifiedOtherBranch_Small");
+		}
 	}
 
 	switch (WorkspaceState)
@@ -167,6 +181,13 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	{
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(),"Perforce.NotAtHeadRevision");
 	}
+	else if (WorkspaceState != EWorkspaceState::CheckedOut && WorkspaceState != EWorkspaceState::LockedByOther)
+	{
+		if (IsModifiedInOtherBranch())
+		{
+			return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.ModifiedOtherBranch");
+		}
+	}
 
 	switch (WorkspaceState)
 	{
@@ -200,6 +221,19 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 
 FText FPlasticSourceControlState::GetDisplayName() const
 {
+	if (!IsCurrent())
+	{
+		return LOCTEXT("NotCurrent", "Not current");
+	}
+	else if (WorkspaceState != EWorkspaceState::LockedByOther)
+	{
+		if (IsModifiedInOtherBranch())
+		{
+			FNumberFormattingOptions NoCommas;
+			NoCommas.UseGrouping = false;
+			return FText::Format(LOCTEXT("ModifiedOtherBranch", "Modified in {0} CS:{1} by {2}"), FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName));
+		}
+	}
 	switch (WorkspaceState)
 	{
 	case EWorkspaceState::Unknown:
@@ -209,7 +243,7 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	case EWorkspaceState::Controlled:
 		return LOCTEXT("Controlled", "Controlled");
 	case EWorkspaceState::CheckedOut:
-		return LOCTEXT("CheckedOut", "CheckedOut");
+		return LOCTEXT("CheckedOut", "Checked-out");
 	case EWorkspaceState::Added:
 		return LOCTEXT("Added", "Added");
 	case EWorkspaceState::Moved:
@@ -225,7 +259,7 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	case EWorkspaceState::Changed:
 		return LOCTEXT("Changed", "Changed");
 	case EWorkspaceState::Conflicted:
-		return LOCTEXT("ContentsConflict", "Contents Conflict");
+		return LOCTEXT("ContentsConflict", "Conflicted");
 	case EWorkspaceState::LockedByOther:
 		return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by: {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
 	case EWorkspaceState::Private:
@@ -237,36 +271,50 @@ FText FPlasticSourceControlState::GetDisplayName() const
 
 FText FPlasticSourceControlState::GetDisplayTooltip() const
 {
+	if (!IsCurrent())
+	{
+		return LOCTEXT("NotCurrent_Tooltip", "Not at the head revision");
+	}
+	else if (WorkspaceState != EWorkspaceState::LockedByOther)
+	{
+		if (IsModifiedInOtherBranch())
+		{
+			FNumberFormattingOptions NoCommas;
+			NoCommas.UseGrouping = false;
+			return FText::Format(LOCTEXT("ModifiedOtherBranch_Tooltip", "Modified in {0} CS:{1} by {2}"), FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName));
+		}
+	}
+
 	switch (WorkspaceState)
 	{
 	case EWorkspaceState::Unknown:
-		return LOCTEXT("Unknown_Tooltip", "Unknown source control state");
+		return LOCTEXT("Unknown_Tooltip", "The file status is unknown");
 	case EWorkspaceState::Ignored:
-		return LOCTEXT("Ignored_Tooltip", "Item is being ignored.");
+		return LOCTEXT("Ignored_Tooltip", "The file is ignored");
 	case EWorkspaceState::Controlled:
-		return LOCTEXT("Pristine_Tooltip", "There are no modifications");
+		return LOCTEXT("Pristine_Tooltip", "The file has no modification");
 	case EWorkspaceState::CheckedOut:
-		return LOCTEXT("CheckedOut_Tooltip", "Item is checked out");
+		return LOCTEXT("CheckedOut_Tooltip", "The file is checked out");
 	case EWorkspaceState::Added:
-		return LOCTEXT("Added_Tooltip", "Item has been added");
+		return LOCTEXT("Added_Tooltip", "The file has been added");
 	case EWorkspaceState::Moved:
-		return LOCTEXT("Moved_Tooltip", "Item has been moved or renamed");
+		return LOCTEXT("Moved_Tooltip", "The file has been moved or renamed");
 	case EWorkspaceState::Copied:
-		return LOCTEXT("Copied_Tooltip", "Item has been copied");
+		return LOCTEXT("Copied_Tooltip", "The file has been copied");
 	case EWorkspaceState::Replaced:
-		return LOCTEXT("Replaced_Tooltip", "Item has been replaced / merged");
+		return LOCTEXT("Replaced_Tooltip", "The file has been replaced / merged");
 	case EWorkspaceState::Deleted:
-		return LOCTEXT("Deleted_Tooltip", "Item is scheduled for deletion");
+		return LOCTEXT("Deleted_Tooltip", "The file has been deleted");
 	case EWorkspaceState::LocallyDeleted:
-		return LOCTEXT("LocallyDeleted_Tooltip", "Item is missing");
+		return LOCTEXT("LocallyDeleted_Tooltip", "The file is missing");
 	case EWorkspaceState::Changed:
-		return LOCTEXT("Modified_Tooltip", "Item has been modified");
+		return LOCTEXT("Modified_Tooltip", "The file has been modified");
 	case EWorkspaceState::Conflicted:
-		return LOCTEXT("ContentsConflict_Tooltip", "The contents of the item conflict with updates received from the repository.");
+		return LOCTEXT("ContentsConflict_Tooltip", "The content of the file conflict with updates received from the repository");
 	case EWorkspaceState::LockedByOther:
-		return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by: {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
+		return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
 	case EWorkspaceState::Private:
-		return LOCTEXT("NotControlled_Tooltip", "Item is not under version control.");
+		return LOCTEXT("NotControlled_Tooltip", "The file is not under version control");
 	}
 
 	return FText();
@@ -345,33 +393,17 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 
 
 /** Get whether this file is checked out in a different branch, if no branch is specified defaults to FEngineVerion current branch */
-bool FPlasticSourceControlState::IsCheckedOutInOtherBranch(const FString& CurrentBranch) const
+bool FPlasticSourceControlState::IsCheckedOutInOtherBranch(const FString& CurrentBranch /* = FString() */) const
 {
+	// Note: to my knowledge, it's not possible to detect that with PlasticSCM withouth the Locks,
+	// which are already detected by fileinfo LockedBy/LockedWhere and reported by IsCheckedOutOther() above
 	return false;
 }
 
 /** Get whether this file is modified in a different branch, if no branch is specified defaults to FEngineVerion current branch */
-bool FPlasticSourceControlState::IsModifiedInOtherBranch(const FString& CurrentBranch) const
+bool FPlasticSourceControlState::IsModifiedInOtherBranch(const FString& CurrentBranch /* = FString() */) const
 {
-	return false;
-}
-
-/** Get whether this file is checked out or modified in a different branch, if no branch is specified defaults to FEngineVerion current branch */
-bool FPlasticSourceControlState::IsCheckedOutOrModifiedInOtherBranch(const FString& CurrentBranch) const
-{
-	return false;
-}
-
-/** Get the other branches this file is checked out in */
-TArray<FString> FPlasticSourceControlState::GetCheckedOutBranches() const
-{
-	return TArray<FString>();
-}
-
-/** Get the user info for checkouts on other branches */
-FString FPlasticSourceControlState::GetOtherUserBranchCheckedOuts() const
-{
-	return FString();
+	return !HeadBranch.IsEmpty();
 }
 
 /** Get head modification information for other branches
@@ -379,9 +411,12 @@ FString FPlasticSourceControlState::GetOtherUserBranchCheckedOuts() const
 */
 bool FPlasticSourceControlState::GetOtherBranchHeadModification(FString& HeadBranchOut, FString& ActionOut, int32& HeadChangeListOut) const
 {
-	return false;
-}
+	HeadBranchOut = HeadBranch;
+	ActionOut = TEXT("edit");
+	HeadChangeListOut = HeadChangeList;
 
+	return !HeadBranch.IsEmpty();
+}
 
 bool FPlasticSourceControlState::IsCurrent() const
 {

@@ -106,8 +106,8 @@ const FString& FPlasticSourceControlRevision::GetUserName() const
 
 const FString& FPlasticSourceControlRevision::GetClientSpec() const
 {
-	static FString EmptyString(TEXT("")); // NOTE Workspace/Clientspec of the submitter (Perforce only)
-	return EmptyString;
+	// Note: show Branch instead of the Workspace of the submitter since it's Perforce only
+	return Branch;
 }
 
 const FString& FPlasticSourceControlRevision::GetAction() const

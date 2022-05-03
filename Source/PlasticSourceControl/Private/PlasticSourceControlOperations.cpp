@@ -46,6 +46,16 @@ FText FPlasticMakeWorkspace::GetInProgressString() const
 	return LOCTEXT("SourceControl_MakeWorkspace", "Create a new Repository and initialize the Workspace");
 }
 
+static bool AreAllFiles(const TArray<FString>& InFiles)
+{
+	for (const FString& File : InFiles)
+	{
+		if (File.IsEmpty() || File[File.Len() - 1] == TEXT('/'))
+			return false;
+	}
+	return true;
+}
+
 
 FName FPlasticConnectWorker::GetName() const
 {
@@ -474,42 +484,46 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 			UE_LOG(LogSourceControl, Error, TEXT("FPlasticUpdateStatusWorker(ErrorMessages.Num()=%d) => checkconnection"), InCommand.ErrorMessages.Num());
 			// In case of error, execute a 'checkconnection' command to check the connectivity of the server.
 			InCommand.bConnectionDropped = !PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+			return false;
 		}
-		else
-		{
-			if (Operation->ShouldUpdateHistory())
-			{
-				for (int32 IdxFile = 0; IdxFile < States.Num(); IdxFile++)
-				{
-					FString& File = InCommand.Files[IdxFile];
-					FPlasticSourceControlState& State = States[IdxFile];
 
-					// Cannot fetch the history of file not already submitted to source control
-					if (State.IsSourceControlled() && !State.IsAdded())
+		if (Operation->ShouldUpdateHistory())
+		{
+			// Get the history of the files (on all branches)
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(Operation->ShouldUpdateHistory(), States, InCommand.ErrorMessages);
+
+			// Special case for conflicts
+			for (FPlasticSourceControlState& State : States)
+			{
+				if (State.IsConflicted())
+				{
+					// In case of a merge conflict, we need to put the tip of the "remote branch" on top of the history
+					UE_LOG(LogSourceControl, Log, TEXT("%s: PendingMergeSourceChangeset %d"), *State.LocalFilename, State.PendingMergeSourceChangeset);
+					for (int32 IdxRevision = 0; IdxRevision < State.History.Num(); IdxRevision++)
 					{
-						// Get the history of the file (on all branches)
-						InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(File, InCommand.ErrorMessages, State);
-						if (State.IsConflicted())
+						const auto& Revision = State.History[IdxRevision];
+						if (Revision->ChangesetNumber == State.PendingMergeSourceChangeset)
 						{
-							// In case of a merge conflict, we need to put the tip of the "remote branch" on top of the history
-							UE_LOG(LogSourceControl, Log, TEXT("%s: PendingMergeSourceChangeset %d"), *State.LocalFilename, State.PendingMergeSourceChangeset);
-							for (int32 IdxRevision = 0; IdxRevision < State.History.Num(); IdxRevision++)
+							// If the Source Changeset is not already at the top of the History, duplicate it there.
+							if (IdxRevision > 0)
 							{
-								const auto& Revision = State.History[IdxRevision];
-								if (Revision->ChangesetNumber == State.PendingMergeSourceChangeset)
-								{
-									// If the Source Changeset is not already at the top of the History, duplicate it there.
-									if (IdxRevision > 0)
-									{
-										const auto RevisionCopy = Revision;
-										State.History.Insert(RevisionCopy, 0);
-									}
-									break;
-								}
+								const auto RevisionCopy = Revision;
+								State.History.Insert(RevisionCopy, 0);
 							}
+							break;
 						}
 					}
 				}
+			}
+		}
+		else
+		{
+			const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+			if (PlasticSourceControl.AccessSettings().GetUpdateStatusOtherBranches() && AreAllFiles(InCommand.Files))
+			{
+				// Get only the last revision of the files (checking all branches)
+				// in order to warn the user if the file has been changed on another branch
+				InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(Operation->ShouldUpdateHistory(), States, InCommand.ErrorMessages);
 			}
 		}
 	}
@@ -520,7 +534,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	{
 		TArray<FString> ProjectDirs;
 		ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, Operation->ShouldUpdateHistory(), InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 
 	// TODO: re-evaluate how to optimize this heavy operation using some of these hints flags

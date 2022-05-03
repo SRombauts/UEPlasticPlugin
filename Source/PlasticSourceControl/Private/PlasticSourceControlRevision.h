@@ -64,6 +64,9 @@ public:
 	/** The user that made the change */
 	FString UserName;
 
+	/** Branch where the change was made */
+	FString Branch;
+
 	/** The action (add, edit, branch etc.) performed at this revision */
 	FString Action;
 
