@@ -412,7 +412,7 @@ bool FPlasticSourceControlState::IsModifiedInOtherBranch(const FString& CurrentB
 bool FPlasticSourceControlState::GetOtherBranchHeadModification(FString& HeadBranchOut, FString& ActionOut, int32& HeadChangeListOut) const
 {
 	HeadBranchOut = HeadBranch;
-	ActionOut = TEXT("edit");
+	ActionOut = HeadAction;
 	HeadChangeListOut = HeadChangeList;
 
 	return !HeadBranch.IsEmpty();
