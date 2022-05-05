@@ -21,6 +21,8 @@ public:
 	void RevertUnchangedClicked();
 	void RevertAllClicked();
 	void RefreshClicked();
+	void VisitDocsURLClicked();
+	void VisitSupportURLClicked();
 
 private:
 	bool IsSourceControlConnected() const;

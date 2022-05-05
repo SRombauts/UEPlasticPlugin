@@ -10,6 +10,7 @@
 #include "ISourceControlOperation.h"
 #include "SourceControlOperations.h"
 
+#include "Interfaces/IPluginManager.h"
 #include "LevelEditor.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Framework/Notifications/NotificationManager.h"
@@ -46,7 +47,7 @@ void FPlasticSourceControlMenu::Register()
 	if (UToolMenus* ToolMenus = UToolMenus::Get())
 	{
 		UToolMenu* SourceControlMenu = ToolMenus->ExtendMenu("StatusBar.ToolBar.SourceControl");
-		FToolMenuSection& Section = SourceControlMenu->AddSection("PlasticSourceControlActions", LOCTEXT("SourceControlMenuHeadingActions", "Plastic SCM"), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
+		FToolMenuSection& Section = SourceControlMenu->AddSection("PlasticSourceControlActions", LOCTEXT("PlasticSourceControlMenuHeadingActions", "Plastic SCM"), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
 
 		AddMenuExtension(Section);
 	}
@@ -334,6 +335,26 @@ void FPlasticSourceControlMenu::RefreshClicked()
 	}
 }
 
+void FPlasticSourceControlMenu::VisitDocsURLClicked()
+{
+	// Grab the URL from the uplugin file
+	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
+	if (Plugin.IsValid())
+	{
+		FPlatformProcess::LaunchURL(*Plugin->GetDescriptor().DocsURL, NULL, NULL);
+	}
+}
+
+void FPlasticSourceControlMenu::VisitSupportURLClicked()
+{
+	// Grab the URL from the uplugin file
+	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
+	if (Plugin.IsValid())
+	{
+		FPlatformProcess::LaunchURL(*Plugin->GetDescriptor().SupportURL, NULL, NULL);
+	}
+}
+
 // Display an ongoing notification during the whole operation
 void FPlasticSourceControlMenu::DisplayInProgressNotification(const FText& InOperationInProgressString)
 {
@@ -463,6 +484,32 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Refresh"),
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RefreshClicked),
+			FCanExecuteAction()
+		)
+	);
+
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"PlasticDocsURL",
+#endif
+		LOCTEXT("PlasticDocsURL",			"Plugin's Documentation"),
+		LOCTEXT("PlasticDocsURLTooltip",	"Visit documentation of the plugin on Github."),
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "Icons.Documentation"),
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitDocsURLClicked),
+			FCanExecuteAction()
+		)
+	);
+
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"PlasticSupportURL",
+#endif
+		LOCTEXT("PlasticSupportURL",		"Plastic SCM Support"),
+		LOCTEXT("PlasticSupportURLTooltip",	"Visit official support for Plastic SCM."),
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "Icons.Support"),
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitSupportURLClicked),
 			FCanExecuteAction()
 		)
 	);
