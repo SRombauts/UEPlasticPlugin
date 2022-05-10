@@ -386,7 +386,14 @@ void FPlasticSourceControlProvider::Tick()
 			// dump any messages to output log
 			OutputCommandMessages(Command);
 
-			UE_LOG(LogSourceControl, Verbose, TEXT("%s processed in %.3lfs"), *Command.Operation->GetName().ToString(), (FPlatformTime::Seconds() - Command.StartTimestamp));
+			if (Command.Files.Num())
+			{
+				UE_LOG(LogSourceControl, Log, TEXT("%s of %d files processed in %.3lfs"), *Command.Operation->GetName().ToString(), Command.Files.Num(), (FPlatformTime::Seconds() - Command.StartTimestamp));
+			}
+			else
+			{
+				UE_LOG(LogSourceControl, Log, TEXT("%s processed in %.3lfs"), *Command.Operation->GetName().ToString(), (FPlatformTime::Seconds() - Command.StartTimestamp));
+			}
 
 			// run the completion delegate callback if we have one bound
 			ECommandResult::Type Result = Command.bCommandSuccessful ? ECommandResult::Succeeded : ECommandResult::Failed;
