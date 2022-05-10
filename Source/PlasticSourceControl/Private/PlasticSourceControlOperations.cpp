@@ -323,41 +323,50 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 
-	InCommand.bCommandSuccessful = true;
+	TArray<FString> ChangedFiles;
+	TArray<FString> CheckedOutFiles;
 
 	for (const FString& File : InCommand.Files)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(File);
 
-		TArray<FString> Files;
-		Files.Add(State->LocalFilename);
-
 		if (EWorkspaceState::Changed == State->WorkspaceState)
 		{
-			// revert the changes of the given file in workspace
-			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+			// only revert the changes of the given file in workspace
+			ChangedFiles.Add(State->LocalFilename);
 		}
 		else
 		{
+			CheckedOutFiles.Add(State->LocalFilename);
 			// in case of a Moved/Renamed, find the rename origin to revert both at once
 			if (EWorkspaceState::Moved == State->WorkspaceState)
 			{
-				Files.Add(State->MovedFrom);
+				CheckedOutFiles.Add(State->MovedFrom);
 
 				// Delete the redirector
 				IFileManager::Get().Delete(*State->MovedFrom);
 			}
+		}
+	}
 
-			// revert the checkout and any changes of the given file in workspace
-			// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-			if (-1 != InCommand.ChangesetNumber)
-			{
-				InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), TArray<FString>(), Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
-			}
-			else
-			{
-				InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), TArray<FString>(), Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
-			}
+	InCommand.bCommandSuccessful = true;
+
+	if (ChangedFiles.Num() > 0)
+	{
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), ChangedFiles, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+
+	if (CheckedOutFiles.Num() > 0)
+	{
+		// revert the checkout and any changes of the given file in workspace
+		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+		if (-1 != InCommand.ChangesetNumber)
+		{
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), TArray<FString>(), CheckedOutFiles, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+		else
+		{
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), TArray<FString>(), CheckedOutFiles, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 	}
 
