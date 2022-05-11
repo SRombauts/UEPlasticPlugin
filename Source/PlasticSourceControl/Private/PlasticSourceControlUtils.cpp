@@ -1575,7 +1575,6 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 	if (Files.Num() > 0)
 	{
 		bResult = RunCommandInternal(TEXT("history"), Parameters, Files, EConcurrency::Synchronous, Results, Errors);
-		OutErrorMessages.Add(MoveTemp(Errors));
 		if (bResult)
 		{
 			FXmlFile XmlFile;
@@ -1584,6 +1583,10 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 			{
 				bResult = ParseHistoryResults(bInUpdateHistory, XmlFile, InOutStates);
 			}
+		}
+		if (!Errors.IsEmpty())
+		{
+			OutErrorMessages.Add(MoveTemp(Errors));
 		}
 	}
 
