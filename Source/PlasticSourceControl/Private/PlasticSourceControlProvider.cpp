@@ -56,6 +56,8 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 	FString PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 	if (PathToPlasticBinary.IsEmpty())
 	{
+		bPlasticAvailable = false;
+
 		// Try to find Plastic binary, and update settings accordingly
 		PathToPlasticBinary = PlasticSourceControlUtils::FindPlasticBinaryPath();
 		if (!PathToPlasticBinary.IsEmpty())
@@ -87,10 +89,6 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 				UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::ProjectDir());
 			}
 		}
-	}
-	else
-	{
-		bPlasticAvailable = false;
 	}
 }
 
