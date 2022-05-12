@@ -150,13 +150,13 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Plastic SCM {PlasticScmVersion} (plugin v{PluginVersion})\nWorkspace: {WorkspaceName} ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: {UserName}"), Args );
 }
 
-/** Quick check if source control is enabled */
+/** Quick check if source control is enabled. Specifically, it returns true if a source control provider is set (regardless of whether the provider is available) and false if no provider is set. So all providers except the stub DefaultSourceProvider will return true. */
 bool FPlasticSourceControlProvider::IsEnabled() const
 {
-	return bWorkspaceFound;
+	return true;
 }
 
-/** Quick check if source control is available for use (useful for server-based providers) */
+/** Quick check if source control is available for use (return whether the server is available or not) */
 bool FPlasticSourceControlProvider::IsAvailable() const
 {
 	return bServerAvailable;
