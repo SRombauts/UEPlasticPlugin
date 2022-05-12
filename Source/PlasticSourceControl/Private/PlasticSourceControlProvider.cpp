@@ -317,14 +317,14 @@ void FPlasticSourceControlProvider::OutputCommandMessages(const FPlasticSourceCo
 {
 	FMessageLog SourceControlLog("SourceControl");
 
-	for (int32 ErrorIndex = 0; ErrorIndex < InCommand.ErrorMessages.Num(); ++ErrorIndex)
+	for (const FString& ErrorMessage : InCommand.ErrorMessages)
 	{
-		SourceControlLog.Error(FText::FromString(InCommand.ErrorMessages[ErrorIndex]));
+		SourceControlLog.Error(FText::FromString(ErrorMessage));
 	}
 
-	for (int32 InfoIndex = 0; InfoIndex < InCommand.InfoMessages.Num(); ++InfoIndex)
+	for (const FString& InfoMessage : InCommand.InfoMessages)
 	{
-		SourceControlLog.Info(FText::FromString(InCommand.InfoMessages[InfoIndex]));
+		SourceControlLog.Info(FText::FromString(InfoMessage));
 	}
 }
 
