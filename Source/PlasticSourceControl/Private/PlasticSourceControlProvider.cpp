@@ -47,7 +47,21 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		}
 	}
 
-	// bForceConnection: not used anymore
+	if (bForceConnection && !bServerAvailable)
+	{
+		// Execute a 'checkconnection' command to set bServerAvailable based on the connectivity of the server
+		TArray<FString> InfoMessages, ErrorMessages;
+		const bool bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+		bServerAvailable = bCommandSuccessful;
+		if (!bCommandSuccessful)
+		{
+			FMessageLog SourceControlLog("SourceControl");
+			for (const FString& ErrorMessage : ErrorMessages)
+			{
+				SourceControlLog.Error(FText::FromString(ErrorMessage));
+			}
+		}
+	}
 }
 
 void FPlasticSourceControlProvider::CheckPlasticAvailability()
