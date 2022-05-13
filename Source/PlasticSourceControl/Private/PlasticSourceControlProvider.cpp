@@ -47,7 +47,21 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		}
 	}
 
-	// bForceConnection: not used anymore
+	if (bForceConnection && !bServerAvailable)
+	{
+		// Execute a 'checkconnection' command to set bServerAvailable based on the connectivity of the server
+		TArray<FString> InfoMessages, ErrorMessages;
+		const bool bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+		bServerAvailable = bCommandSuccessful;
+		if (!bCommandSuccessful)
+		{
+			FMessageLog SourceControlLog("SourceControl");
+			for (const FString& ErrorMessage : ErrorMessages)
+			{
+				SourceControlLog.Error(FText::FromString(ErrorMessage));
+			}
+		}
+	}
 }
 
 void FPlasticSourceControlProvider::CheckPlasticAvailability()
@@ -56,6 +70,8 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 	FString PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
 	if (PathToPlasticBinary.IsEmpty())
 	{
+		bPlasticAvailable = false;
+
 		// Try to find Plastic binary, and update settings accordingly
 		PathToPlasticBinary = PlasticSourceControlUtils::FindPlasticBinaryPath();
 		if (!PathToPlasticBinary.IsEmpty())
@@ -87,10 +103,6 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 				UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::ProjectDir());
 			}
 		}
-	}
-	else
-	{
-		bPlasticAvailable = false;
 	}
 }
 
@@ -150,13 +162,13 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Plastic SCM {PlasticScmVersion} (plugin v{PluginVersion})\nWorkspace: {WorkspaceName} ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: {UserName}"), Args );
 }
 
-/** Quick check if source control is enabled */
+/** Quick check if source control is enabled. Specifically, it returns true if a source control provider is set (regardless of whether the provider is available) and false if no provider is set. So all providers except the stub DefaultSourceProvider will return true. */
 bool FPlasticSourceControlProvider::IsEnabled() const
 {
-	return bWorkspaceFound;
+	return true;
 }
 
-/** Quick check if source control is available for use (useful for server-based providers) */
+/** Quick check if source control is available for use (return whether the server is available or not) */
 bool FPlasticSourceControlProvider::IsAvailable() const
 {
 	return bServerAvailable;
@@ -319,14 +331,14 @@ void FPlasticSourceControlProvider::OutputCommandMessages(const FPlasticSourceCo
 {
 	FMessageLog SourceControlLog("SourceControl");
 
-	for (int32 ErrorIndex = 0; ErrorIndex < InCommand.ErrorMessages.Num(); ++ErrorIndex)
+	for (const FString& ErrorMessage : InCommand.ErrorMessages)
 	{
-		SourceControlLog.Error(FText::FromString(InCommand.ErrorMessages[ErrorIndex]));
+		SourceControlLog.Error(FText::FromString(ErrorMessage));
 	}
 
-	for (int32 InfoIndex = 0; InfoIndex < InCommand.InfoMessages.Num(); ++InfoIndex)
+	for (const FString& InfoMessage : InCommand.InfoMessages)
 	{
-		SourceControlLog.Info(FText::FromString(InCommand.InfoMessages[InfoIndex]));
+		SourceControlLog.Info(FText::FromString(InfoMessage));
 	}
 }
 
