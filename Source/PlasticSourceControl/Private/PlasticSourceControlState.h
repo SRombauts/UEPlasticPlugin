@@ -4,8 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "ISourceControlState.h"
-#include "PlasticSourceControlRevision.h"
+#include "ISourceControlRevision.h"
+
 #include "Runtime/Launch/Resources/Version.h"
+
+#if ENGINE_MAJOR_VERSION == 5
+#include "PlasticSourceControlChangelist.h"
+#endif
+
+class FPlasticSourceControlRevision;
 
 namespace EWorkspaceState
 {
@@ -178,6 +185,11 @@ public:
 
 	/** Original name in case of a Moved/Renamed file */
 	FString MovedFrom;
+
+#if ENGINE_MAJOR_VERSION == 5
+	/** Changelist containing this file */
+	FPlasticSourceControlChangelist Changelist;
+#endif
 
 	/** The timestamp of the last update */
 	FDateTime TimeStamp = 0;

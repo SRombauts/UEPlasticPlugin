@@ -2,6 +2,7 @@
 
 #include "PlasticSourceControlProvider.h"
 
+#include "PlasticSourceControlChangelistState.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProjectSettings.h"
@@ -129,7 +130,7 @@ void FPlasticSourceControlProvider::Close()
 	UserName.Empty();
 }
 
-TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlProvider::GetStateInternal(const FString& InFilename) const
+TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlProvider::GetStateInternal(const FString& InFilename)
 {
 	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe>* State = StateCache.Find(InFilename);
 	if (State != NULL)
@@ -145,6 +146,25 @@ TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceContro
 		return NewState;
 	}
 }
+
+#if ENGINE_MAJOR_VERSION == 5
+TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> FPlasticSourceControlProvider::GetStateInternal(const FPlasticSourceControlChangelist& InChangelist)
+{
+	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe>* State = ChangelistsStateCache.Find(InChangelist);
+	if (State != NULL)
+	{
+		// found cached item
+		return (*State);
+	}
+	else
+	{
+		// cache an unknown state for this item
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> NewState = MakeShareable(new FPlasticSourceControlChangelistState(InChangelist));
+		ChangelistsStateCache.Add(InChangelist, NewState);
+		return NewState;
+	}
+}
+#endif
 
 FText FPlasticSourceControlProvider::GetStatusText() const
 {
@@ -242,11 +262,49 @@ ECommandResult::Type FPlasticSourceControlProvider::GetState(const TArray<FStrin
 }
 
 #if ENGINE_MAJOR_VERSION == 5
-// TODO UE5 Changelist
 ECommandResult::Type FPlasticSourceControlProvider::GetState(const TArray<FSourceControlChangelistRef>& InChangelists, TArray<FSourceControlChangelistStateRef>& OutState, EStateCacheUsage::Type InStateCacheUsage)
 {
-	return ECommandResult::Failed;
+	if (!IsEnabled())
+	{
+		return ECommandResult::Failed;
+	}
+
+	if (InStateCacheUsage == EStateCacheUsage::ForceUpdate)
+	{
+		TSharedRef<class FUpdatePendingChangelistsStatus, ESPMode::ThreadSafe> UpdatePendingChangelistsOperation = ISourceControlOperation::Create<FUpdatePendingChangelistsStatus>();
+		UpdatePendingChangelistsOperation->SetChangelistsToUpdate(InChangelists);
+
+		ISourceControlProvider::Execute(UpdatePendingChangelistsOperation, EConcurrency::Synchronous);
+	}
+
+	for (FSourceControlChangelistRef Changelist : InChangelists)
+	{
+		FPlasticSourceControlChangelistRef PlasticChangelist = StaticCastSharedRef<FPlasticSourceControlChangelist>(Changelist);
+		OutState.Add(GetStateInternal(PlasticChangelist.Get()));
+	}
+
+	return ECommandResult::Succeeded;
 }
+
+bool FPlasticSourceControlProvider::RemoveChangelistFromCache(const FPlasticSourceControlChangelist& Changelist)
+{
+	return ChangelistsStateCache.Remove(Changelist) > 0;
+}
+
+TArray<FSourceControlChangelistStateRef> FPlasticSourceControlProvider::GetCachedStateByPredicate(TFunctionRef<bool(const FSourceControlChangelistStateRef&)> Predicate) const
+{
+	TArray<FSourceControlChangelistStateRef> Result;
+	for (const auto& CacheItem : ChangelistsStateCache)
+	{
+		FSourceControlChangelistStateRef State = CacheItem.Value;
+		if (Predicate(State))
+		{
+			Result.Add(State);
+		}
+	}
+	return Result;
+}
+
 #endif
 
 TArray<FSourceControlStateRef> FPlasticSourceControlProvider::GetCachedStateByPredicate(TFunctionRef<bool(const FSourceControlStateRef&)> Predicate) const
@@ -290,6 +348,7 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute(
 	if (!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "MakeWorkspace"))
 	{
 		UE_LOG(LogSourceControl, Warning, TEXT("'%s': only Connect operation allowed without a workspace"), *InOperation->GetName().ToString());
+		InOperationCompleteDelegate.ExecuteIfBound(InOperation, ECommandResult::Failed);
 		return ECommandResult::Failed;
 	}
 
@@ -308,6 +367,11 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute(
 	FPlasticSourceControlCommand* Command = new FPlasticSourceControlCommand(InOperation, Worker.ToSharedRef());
 	Command->Files = SourceControlHelpers::AbsoluteFilenames(InFiles);
 	Command->OperationCompleteDelegate = InOperationCompleteDelegate;
+
+#if ENGINE_MAJOR_VERSION == 5
+	TSharedPtr<FPlasticSourceControlChangelist, ESPMode::ThreadSafe> ChangelistPtr = StaticCastSharedPtr<FPlasticSourceControlChangelist>(InChangelist);
+	Command->Changelist = ChangelistPtr ? ChangelistPtr.ToSharedRef().Get() : FPlasticSourceControlChangelist();
+#endif
 
 	// fire off operation
 	if (InConcurrency == EConcurrency::Synchronous)
@@ -342,7 +406,8 @@ bool FPlasticSourceControlProvider::UsesLocalReadOnlyState() const
 
 bool FPlasticSourceControlProvider::UsesChangelists() const
 {
-	return false; // We don't want to show ChangeList column anymore (Plastic SCM term would be ChangeSet)
+	// TODO this is the wrong usage for UsesChangelists()
+	return true; // We don't want to show ChangeList column anymore (Plastic SCM term would be ChangeSet) BUT we need this to display the changelists in the source control menu
 }
 
 bool FPlasticSourceControlProvider::UsesCheckout() const
@@ -490,10 +555,24 @@ TArray< TSharedRef<ISourceControlLabel> > FPlasticSourceControlProvider::GetLabe
 }
 
 #if ENGINE_MAJOR_VERSION == 5
-// TODO UE5 Changelist
 TArray<FSourceControlChangelistRef> FPlasticSourceControlProvider::GetChangelists(EStateCacheUsage::Type InStateCacheUsage)
 {
-	return TArray<FSourceControlChangelistRef>();
+	if (!IsEnabled())
+	{
+		return TArray<FSourceControlChangelistRef>();
+	}
+
+	if (InStateCacheUsage == EStateCacheUsage::ForceUpdate)
+	{
+		TSharedRef<class FUpdatePendingChangelistsStatus, ESPMode::ThreadSafe> UpdatePendingChangelistsOperation = ISourceControlOperation::Create<FUpdatePendingChangelistsStatus>();
+		UpdatePendingChangelistsOperation->SetUpdateAllChangelists(true);
+
+		ISourceControlProvider::Execute(UpdatePendingChangelistsOperation, EConcurrency::Synchronous);
+	}
+
+	TArray<FSourceControlChangelistRef> Changelists;
+	Algo::Transform(ChangelistsStateCache, Changelists, [](const auto& Pair) { return MakeShared<FPlasticSourceControlChangelist, ESPMode::ThreadSafe>(Pair.Key); });
+	return Changelists;
 }
 #endif
 
