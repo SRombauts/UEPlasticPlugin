@@ -9,7 +9,7 @@ class FAutoConsoleCommand;
 /**
  * Editor only console commands.
  *
- *  Such commands can be executed from the editor output log window, but also from command line arguments,
+ * Such commands can be executed from the editor output log window, but also from command line arguments,
  * from Editor Blueprints utilities, or from C++ Code using. eg. GEngine->Exec("cm status");
  */
 class FPlasticSourceControlConsole
