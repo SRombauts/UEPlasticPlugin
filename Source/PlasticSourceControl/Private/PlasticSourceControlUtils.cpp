@@ -777,12 +777,18 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 		FileState.TimeStamp.Now();
 
 		// debug log (only for the first few files)
-		if (OutStates.Num() < 20) UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *File, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
+		if (OutStates.Num() < 20)
+		{
+			UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *File, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
+		}
 
 		OutStates.Add(MoveTemp(FileState));
 	}
 	// debug log (if too many files)
-	if (OutStates.Num() > 20) UE_LOG(LogSourceControl, Verbose, TEXT("[...] %d more files"), OutStates.Num() - 20);
+	if (OutStates.Num() > 20)
+	{
+		UE_LOG(LogSourceControl, Verbose, TEXT("[...] %d more files"), OutStates.Num() - 20);
+	}
 }
 
 /**
@@ -989,10 +995,16 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 		}
 
 		// debug log (only for the first few files)
-		if (IdxResult < 20) UE_LOG(LogSourceControl, Verbose, TEXT("%s: %d;%d %s by '%s' (%s)"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.RepSpec, *FileState.LockedBy, *FileState.LockedWhere);
+		if (IdxResult < 20)
+		{
+			UE_LOG(LogSourceControl, Verbose, TEXT("%s: %d;%d %s by '%s' (%s)"), *File, FileState.LocalRevisionChangeset, FileState.DepotRevisionChangeset, *FileState.RepSpec, *FileState.LockedBy, *FileState.LockedWhere);
+		}
 	}
 	// debug log (if too many files)
-	if (InResults.Num() > 20) UE_LOG(LogSourceControl, Verbose, TEXT("[...] %d more files"), InResults.Num() - 20);
+	if (InResults.Num() > 20)
+	{
+		UE_LOG(LogSourceControl, Verbose, TEXT("[...] %d more files"), InResults.Num() - 20);
+	}
 }
 
 /**
@@ -1473,12 +1485,18 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 					if (!RevisionTypeNode->GetContent().IsEmpty())
 					{
 						if (Index == 0)
+						{
 							SourceControlRevision->Action = TEXT("add");
+						}
 						else
+						{
 							SourceControlRevision->Action = TEXT("edit");
+						}
 					}
 					else
+					{
 						SourceControlRevision->Action = TEXT("delete");
+					}
 				}
 
 				if (const FXmlNode* ChangesetNumberNode = RevisionNode->FindChildNode(ChangesetNumber))
