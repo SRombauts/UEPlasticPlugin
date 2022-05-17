@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+class FAutoConsoleCommand;
+
 /**
  * Editor only console commands.
  *

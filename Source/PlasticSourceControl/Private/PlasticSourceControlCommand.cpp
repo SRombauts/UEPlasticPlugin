@@ -4,6 +4,7 @@
 #include "PlasticSourceControlModule.h"
 #include "ISourceControlOperation.h"
 #include "Modules/ModuleManager.h"
+#include "HAL/PlatformTime.h"
 
 
 FPlasticSourceControlCommand::FPlasticSourceControlCommand(const FSourceControlOperationRef& InOperation, const FPlasticSourceControlWorkerRef& InWorker, const FSourceControlOperationComplete& InOperationCompleteDelegate)

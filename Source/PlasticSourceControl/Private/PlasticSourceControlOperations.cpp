@@ -7,7 +7,7 @@
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlUtils.h"
 
-#include "AssetRegistryModule.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"
