@@ -16,7 +16,11 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Misc/MessageDialog.h"
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+#include "Styling/AppStyle.h"
+#else
 #include "EditorStyleSet.h"
+#endif
 
 #include "PackageTools.h"
 #include "FileHelpers.h"
@@ -391,7 +395,11 @@ void FPlasticSourceControlMenu::DisplaySucessNotification(const FName& InOperati
 	);
 	FNotificationInfo Info(NotificationText);
 	Info.bUseSuccessFailIcons = true;
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+	Info.Image = FAppStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
+#else
 	Info.Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
+#endif
 	FSlateNotificationManager::Get().AddNotification(Info);
 	UE_LOG(LogSourceControl, Log, TEXT("%s"), *NotificationText.ToString());
 }
@@ -442,7 +450,11 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		LOCTEXT("PlasticSync",			"Sync/Update Workspace"),
 		LOCTEXT("PlasticSyncTooltip",	"Update all files in the workspace to the latest version."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Sync"),
+#else
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Sync"),
+#endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::SyncProjectClicked),
 			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::IsSourceControlConnected)
@@ -455,7 +467,11 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		LOCTEXT("PlasticRevertUnchanged",			"Revert Unchanged"),
 		LOCTEXT("PlasticRevertUnchangedTooltip",	"Revert checked-out but unchanged files in the workspace."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Revert"),
+#else
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Revert"),
+#endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RevertUnchangedClicked),
 			FCanExecuteAction()
@@ -468,7 +484,11 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		LOCTEXT("PlasticRevertAll",			"Revert All"),
 		LOCTEXT("PlasticRevertAllTooltip",	"Revert all files in the workspace to their controlled/unchanged state."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Revert"),
+#else
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Revert"),
+#endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RevertAllClicked),
 			FCanExecuteAction()
@@ -481,7 +501,11 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		LOCTEXT("PlasticRefresh",			"Refresh"),
 		LOCTEXT("PlasticRefreshTooltip",	"Update the source control status of all files in the workspace."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Refresh"),
+#else
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Refresh"),
+#endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RefreshClicked),
 			FCanExecuteAction()
@@ -494,7 +518,11 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		LOCTEXT("PlasticDocsURL",			"Plugin's Documentation"),
 		LOCTEXT("PlasticDocsURLTooltip",	"Visit documentation of the plugin on Github."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Documentation"),
+#else
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "Icons.Documentation"),
+#endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitDocsURLClicked),
 			FCanExecuteAction()
@@ -507,7 +535,11 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		LOCTEXT("PlasticSupportURL",		"Plastic SCM Support"),
 		LOCTEXT("PlasticSupportURLTooltip",	"Visit official support for Plastic SCM."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Support"),
+#else
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "Icons.Support"),
+#endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitSupportURLClicked),
 			FCanExecuteAction()
