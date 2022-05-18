@@ -162,12 +162,29 @@ You can show them in the Content Browser using a dedicated filter:
 You can also delete them recursively using the context menu "Fix Up Redirectors in Folder":
 ![Source Control - Show Redirectors](Screenshots/UE4PlasticPlugin-FixUpRedirectorsInFolder.png)
 
+#### Branches support and warning on modifications
+
+If you are making use of multiple branches, either for releases and patches, or for tasks or features,
+you can enable an option to check for changes in all other branches.
+
+Tooltip in the Content Browser when an asset is already checked-out somewhere else:
+![Asset checked-out by someone else](Screenshots/UEPlasticPlugin-CheckedOutOther-Tooltip.png)
+
+Tooltip in the Content Browser when an asset has been modified in another branche:
+![Asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-Tooltip.png)
+
+Warning when trying to checkout an asset that has been modified in another branche:
+![Warning on checkout for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnCheckout.png)
+ 
+Warning when trying to modify an asset that has been modified in another branche:
+![Warning on modification for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnModification.png)
+
 #### Worfklow
 
 Unreal Engine workflow with binary assets works best with mostly only one branch (regardless of the source control used).
 
-- TODO: list limitations working with branches, and possible workflow
-- TODO: describe how to use Gluon to enable working without always getting latest version before a submit
+- TODO: list limitations working with branches, and possible workflow (task branches for code, enabling code reviews)
+- TODO: describe how to use Gluon to enable working without always getting latest version before a submit (and decide if this should be the advertised best way to work in Unreal)
 
 ### Plastic SCM Setup
 
