@@ -18,13 +18,23 @@ It automates tracking of assets, brings common SCM tasks inside the Editor, and 
 It also helps importing an existing Unreal Project into source control, with appropriate *ignore.conf* file.
 Since Unreal does not manage C++ source code, but only assets, the plugin is especially useful for GDs and artists.
 
+## Table of Contents
+ - [User Guide](#user-guide)
+   - [Plugin Setup](#plugin-setup)
+   - [Project Setup](#project-setup)
+   - [Working in Editor](#working-in-editor)
+   - [Plastic SCM Setup](#plastic-scm-setup)
+ - [Status](#status)
+ - [Support](#support)
+ - [Copyright](#copyright)
+
 ## User Guide
 
 ### Plugin Setup
 
 #### Unreal default version of the plugin
 
-An old version of this PlasticSCM plugin has now been integrated in Unreal Engine and is shipping with it since UE4.24.
+An old version of this PlasticSCM plugin has now been integrated in Unreal Engine and is shipping with it since UE4.24 and UE5.0.
 
 Why: This is the easiest way to get started with Plastic SCM in Unreal Engine, but it will always be lagging behind the latest release here.
 
@@ -32,16 +42,16 @@ Why: This is the easiest way to get started with Plastic SCM in Unreal Engine, b
 
 Why: if you want the latest features, performance improvements and bug fixes that are missing from Unreal integrated plugin.
 
-1. Download the [latest binary release UE4PlasticPlugin-x.x.x.zip](https://github.com/PlasticSCM/UE4PlasticPlugin/releases) targeting your UE4 version.
-2. Either:
-    1. Unzip the content of the ZIP directly at the root of your project folder.
-       This creates a "Plugins/UE4PlasticPlugin/" subdirectory into your project.
-       This is the way to go to use Plastic SCM only on a specific project.
-    2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
-       (for instance "C:\Program Files\Epic Games\4.25\Engine\")
-       This creates a "UE4PlasticPlugin" folder into the "Plugins/" subdirectory.
-       This is the way to enable Plastic SCM for all Unreal Engine projects.
-3. Then, launch you Unreal project, click on the Source Control icon "Connect to Source", select "Plastic SCM".
+ 1. Download the [latest binary release UE4PlasticPlugin-x.x.x.zip](https://github.com/PlasticSCM/UE4PlasticPlugin/releases) targeting your UE4 version.
+ 2. Either:
+     1. Unzip the content of the ZIP directly at the root of your project folder.
+        This creates a "Plugins/UE4PlasticPlugin/" subdirectory into your project.
+        This is the way to go to use Plastic SCM only on a specific project.
+     2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
+        (for instance "C:\Program Files\Epic Games\4.25\Engine\")
+        This creates a "UE4PlasticPlugin" folder into the "Plugins/" subdirectory.
+        This is the way to enable Plastic SCM for all Unreal Engine projects.
+ 3. Then, launch you Unreal project, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
 #### How to build from sources
 
@@ -49,16 +59,18 @@ Why: If your project is already a C++ project, you only have to re-generate Visu
 
 Else, if you want to rebuild the plugin for a Blueprint project:
 
-0. You need Visual Studio 2015 or 2017 with C++ language support (free Community Edition is fine).
-1. Launch the Unreal Engine Editor, create a new C++ **Basic Code** Project (No Starter Content), for instance UnrealPlasticSCM. This should launch Visual Studio, build the game project, and open it into the Editor.
-2. Close the Editor, then using the file explorer, create a new **Plugins** directory at the root of your project.
-3. Clone the source code of the plugin into this _Plugins_ directory (for instance _Plugins\UE4PlasticPlugin_).
-4. Right-click on your project's **.uproject** file, **Generate Visual Studio project files**.
-5. In Visual Studio, **Reload All** and **Build Solution** in **Development Editor** mode. That's it, the plugin is built (resulting dlls are located in _Plugins\UE4PlasticPlugin\Binaries\Win64_).
+ 0. You need Visual Studio 2015 or 2017 with C++ language support (free Community Edition is fine).
+ 1. Launch the Unreal Engine Editor, create a new C++ **Basic Code** Project (No Starter Content), for instance UnrealPlasticSCM. This should launch Visual Studio, build the game project, and open it into the Editor.
+ 2. Close the Editor, then using the file explorer, create a new **Plugins** directory at the root of your project.
+ 3. Clone the source code of the plugin into this _Plugins_ directory (for instance _Plugins\UE4PlasticPlugin_).
+ 4. Right-click on your project's **.uproject** file, **Generate Visual Studio project files**.
+ 5. In Visual Studio, **Reload All** and **Build Solution** in **Development Editor** mode. That's it, the plugin is built (resulting dlls are located in _Plugins\UE4PlasticPlugin\Binaries\Win64_).
 
 To release the plugin, zip the _Plugins_ folder. But before that, remove the _Intermediate_, _Screenshots_ and _.git_ folders, and also the big *.pdb files in _Plugins\UE4PlasticPlugin\Binaries\Win64_.
 
 ### Project Setup
+
+Start by [saving your connection credentials with the Plastic SCM GUI](#save-connection-credentials)
 
 #### Enable Source Control
 
@@ -99,7 +111,7 @@ but it can be useful to set a few settings if different than the defaults:
 
 ```ini
 [SourceControl.SourceControlSettings]
-Provider=Plastic SCM 2
+Provider=Plastic SCM
 
 [PlasticSourceControl.PlasticSourceControlSettings]
 BinaryPath=cm
@@ -108,27 +120,34 @@ UpdateStatusOtherBranches=True
 EnableVerboseLogs=False
 ```
 
-### Status Icons
+### Working in Editor
+
+#### Status Icons
 
 ![New/Unsaved asset](Screenshots/Icons/UE4PlasticPlugin-New.png)
 ![Added to Source Control](Screenshots/Icons/UE4PlasticPlugin-Added.png)
 ![Controlled/Unchanged](Screenshots/Icons/UE4PlasticPlugin-Controlled.png)
 ![Changed but not Checked-Out](Screenshots/Icons/UE4PlasticPlugin-Changed.png)
 
-1. **New**, unsaved asset (not yet present on disk).
-2. **Added** to source control (saved on disk).
-3. Source **Controlled** but not changed, or **Ignored**
-4. Locally **Changed** without checkout, or **Private** ie not source controlled 
+ 1. **New**, unsaved asset (not yet present on disk).
+ 2. **Added** to source control (saved on disk).
+ 3. Source **Controlled** but not changed, or **Ignored**
+ 4. Locally **Changed** without checkout, or **Private** ie not source controlled 
 
 ![Checked-Out](Screenshots/Icons/UE4PlasticPlugin-CheckedOut.png)
 ![Moved/Renamed](Screenshots/Icons/UE4PlasticPlugin-Renamed.png)
 ![Checkd-Out/Locked by someone else](Screenshots/Icons/UE4PlasticPlugin-CheckedOutOther.png)
 ![Not up-to-date/new revision in repository](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
 
-5. **Checked-out** for modification, and Locked to prevent other from making modifications (if Locks are enabled on the server)
-6. **Renamed** or **Moved**
-7. **Locked somewhere else**, by someone else or in another workspace (if Locks are enabled on the server)
-8. **Not at head revision**, the asset has been submitted with a newer revision on the same branch
+ 5. **Checked-out** for modification, and Locked to prevent other from making modifications (if Locks are enabled on the server)
+ 6. **Renamed** or **Moved**
+ 7. **Locked somewhere else**, by someone else or in another workspace (if Locks are enabled on the server)
+ 8. **Not at head revision**, the asset has been submitted with a newer revision on the same branch
+
+TODO:
+
+ 7. Redo the "Locked somehwere else"
+ 9. Add the "Changed in an other branch"
 
 #### Source Control Menu
 
@@ -162,7 +181,7 @@ You can show them in the Content Browser using a dedicated filter:
 You can also delete them recursively using the context menu "Fix Up Redirectors in Folder":
 ![Source Control - Show Redirectors](Screenshots/UE4PlasticPlugin-FixUpRedirectorsInFolder.png)
 
-#### Branches support and warning on modifications
+#### Branches support
 
 If you are making use of multiple branches, either for releases and patches, or for tasks or features,
 you can enable an option to check for changes in all other branches.
@@ -179,14 +198,27 @@ Warning when trying to checkout an asset that has been modified in another branc
 Warning when trying to modify an asset that has been modified in another branche:
 ![Warning on modification for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnModification.png)
 
+#### Unreal Documentation
+
+ - [Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
+ - [Source Control Inside Unreal Editor](https://docs.unrealengine.com/latest/INT/Engine/Basics/SourceControl/InEditor/)
+
+ - [Diffing Unreal Assets](https://www.unrealengine.com/blog/diffing-unreal-assets)
+ - [Diffing Blueprints (Video)](https://www.unrealengine.com/blog/diffing-blueprints)
+
 #### Worfklow
 
 Unreal Engine workflow with binary assets works best with mostly only one branch (regardless of the source control used).
 
-- TODO: list limitations working with branches, and possible workflow (task branches for code, enabling code reviews)
-- TODO: describe how to use Gluon to enable working without always getting latest version before a submit (and decide if this should be the advertised best way to work in Unreal)
+ - TODO: list limitations working with branches, and possible workflow (task branches for code, enabling code reviews)
+ - TODO: describe how to use Gluon to enable working without always getting latest version before a submit (and decide if this should be the advertised best way to work in the Unreal Editor)
 
 ### Plastic SCM Setup
+
+#### Save connection credentials
+
+The plugin works with the command line interface "cm" that currently requires your credentials to be stored.
+Use the Plastic SCM or Gluon GUI to enter and save your credentials before enabling Plastic SCM in Unreal.
 
 #### Locking UE4 assets
 
@@ -225,104 +257,96 @@ The command line needs the quoted path to the UE4Editor.exe, the quoted patch to
 
 ![uasset diff](Screenshots/UE4PlasticPlugin-GUIDiffUasset.png)
 
-### Unreal Documentation
-
-- [Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
-- [Source Control Inside Unreal Editor](https://docs.unrealengine.com/latest/INT/Engine/Basics/SourceControl/InEditor/)
-
-- [Diffing Unreal Assets](https://www.unrealengine.com/blog/diffing-unreal-assets)
-- [Diffing Blueprints (Video)](https://www.unrealengine.com/blog/diffing-blueprints)
-
-### Status
+## Status
 
 This version here is the development version, so it can contain additional fixes, performance improvements or new features.
 
-#### Version 1.5.1 2022/05/17 for UE 4.27.2 and UE 5.0.1:
-- manage connection to the server
-- show current branch name and CL in status text
-- display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
-- display locked files, and by who
-- add, duplicate a file
-- move/rename a file or a folder
-- revert modifications of a file (works best with the "Content Hot-Reload" option since UE4.15)
-- check-in a set of files with a multi-line UTF-8 comment
-- migrate (copy) an asset between two projects if both are using Plastic SCM
-- delete file (but no way to check-in them, see known issues bellow)
-- update workspace to latest head (Sync command)
-- show history of a file
-- visual diff of a blueprint against depot or between previous versions of a file
-- initialize a new workspace to manage your UE4 Game Project.
-- make the initial commit with a custom message
-- create an appropriate ignore.conf file as part of initialization
-- also permit late creation of the ignore.conf file
-- show conflicted files and 3-way visual diff
-- solve a merge conflict on a blueprint
-- top-menu global "Sync" instead of on folder's context menu
-- top-menu global "undo unchanged" and "undo all checkout"
-- [Partial Checkin (like Gluon, for artists)](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
-- Plastic Cloud is fully supported
-- xlinks sub-repositories (for Plugins for instance)
-- Toggle verbose logs from the Source Control settings UI
-- Run 'cm' CLI commands directly from the Unreal Editor Console, Blueprints of C++ code.
-- Windows only
+### Version 1.5.1 2022/05/17 for UE 4.27.2 and UE 5.0.1:
+ - manage connection to the server
+ - show current branch name and CL in status text
+ - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
+ - display locked files, and by who
+ - branches support, to check outdated files vs. remote across multiple branches
+ - add, duplicate a file
+ - move/rename a file or a folder
+ - revert modifications of a file (works best with the "Content Hot-Reload" option since UE4.15)
+ - check-in a set of files with a multi-line UTF-8 comment
+ - migrate (copy) an asset between two projects if both are using Plastic SCM
+ - delete file (but no way to check-in them, see known issues bellow)
+ - update workspace to latest head (Sync command)
+ - show history of a file
+ - visual diff of a blueprint against depot or between previous versions of a file
+ - initialize a new workspace to manage your UE4 Game Project.
+ - make the initial commit with a custom message
+ - create an appropriate ignore.conf file as part of initialization
+ - also permit late creation of the ignore.conf file
+ - show conflicted files and 3-way visual diff
+ - solve a merge conflict on a blueprint
+ - top-menu global "Sync" instead of on folder's context menu
+ - top-menu global "undo unchanged" and "undo all checkout"
+ - [Partial Checkin (like Gluon, for artists)](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
+ - Plastic Cloud is fully supported
+ - xlinks sub-repositories (for Plugins for instance)
+ - Toggle verbose logs from the Source Control settings UI
+ - Run 'cm' CLI commands directly from the Unreal Editor Console, Blueprints of C++ code.
+ - Windows only
 
-#### Feature Requests
-- Unreal Engine 5.0 full support
-  - Changelists
-  - One File Per Actor
-- Branches support, to check outdated files vs. remote across multiple branches
-- Mac OS X Support
-- add a setting to pass the --update option to "checkin"
-- add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
-- add a "clean directory" or "check-in deleted files"
-- add dedicated icon for Changed files
-- add dedicated icon for Conflicted files
-- add dedicated icon for Replaced/Merged files
+### Feature Requests
+ - Unreal Engine 5.0 full support
+   - Changelists
+ - Mac OS X Support
+ - add a setting to pass the --update option to "checkin"
+ - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
+ - add a "clean directory" or "check-in deleted files"
+ - add dedicated icon for Changed files
+ - add dedicated icon for Ignored files
+ - add dedicated icon for Conflicted files
+ - add dedicated icon for Replaced/Merged files
 
-#### Known issues
-- Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
-- Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
-- #18 Error messages with accents are not correctly handled/displayed (for instance connection error in French)
-- the Editor does not handle visual diff for renamed/moved assets
-- History does not show which revision is the current/checkout one
-- Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
-- the Editor does not show folder status and is not able to manage them
-- Branch and Merge are not in the current Editor workflow
+### Known issues
+ - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
+ - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
+ - #18 Error messages with accents are not correctly handled/displayed (for instance connection error in French)
+ - the Editor does not handle visual diff for renamed/moved assets
+ - History does not show which revision is the current/checkout one
+ - Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
+ - the Editor does not show folder status and is not able to manage them
+ - Branch and Merge are not in the current Editor workflow
 
-#### Features reserved for internal use by Epic Games with Perforce only
-- tags: get labels (used for crash when the full Engine is under Plastic SCM)
-- annotate: blame (used for crash when the full Engine is under Plastic SCM)
+### Features reserved for internal use by Epic Games with Perforce only
+ - tags: get labels (used for crash when the full Engine is under Plastic SCM)
+ - annotate: blame (used for crash when the full Engine is under Plastic SCM)
 
-### Support
+## Support
 
 You can always ask for support in:
-- [Plastic SCM support](https://www.plasticscm.com/support)
-- [Plastic SCM forums](https://forum.plasticscm.com/)
-- [Unreal Engine forums](https://forums.unrealengine.com/)
-- [Unreal Slackers Discord community](https://discord.gg/unreal-slackers)
+ - [Plastic SCM support](https://www.plasticscm.com/support)
+ - [Plastic SCM forums](https://forum.plasticscm.com/)
+ - [Unreal Engine forums](https://forums.unrealengine.com/)
+ - [Unreal Slackers Discord community](https://discord.gg/unreal-slackers)
 
-#### Enable logging for Plastic SCM ==
+### Enable logging for Plastic SCM
 
 To help diagnose any issue related to the underlying Plastic SCM "cm" Command Line Interface,
 [enable logging for Plastic SCM](https://www.plasticscm.com/documentation/technical-articles/kb-enabling-logging-for-plastic-scm-part-i).
 
-#### Report an issue
+### Report an issue
 
 To report an issue, please use the [Github issue-tracker](https://github.com/SRombauts/UE4PlasticPlugin/issues?q=is%3Aissue).
 
-1. Have a look at existing issues (Open and Closed ones)
-2. Specify your Engine & Plugin versions, and if either are built from sources
-3. Describe precisely your issue
-4. Add reproduction steps, if possible on a basic template project
-5. Post a Log file when applicable (or the corresponding redacted section)
-   1. [enable **UTC Timestamp** in Logs: menu _Preferences -> General -> Appearance -> Log Timestamp Mode_](https://answers.unrealengine.com/questions/358370/time-stamps-in-output-log.html)
-   2. Grab the file **ProjectName/Saved/Logs/ProjectName.log**
+ 1. Have a look at existing issues (Open and Closed ones)
+ 2. Specify your Engine & Plugin versions, and if either are built from sources
+ 3. Describe precisely your issue
+ 4. Add reproduction steps, if possible on a basic template project
+ 5. Post a Log file when applicable (or the corresponding redacted section)
+     1. [enable **UTC Timestamp** in Logs: menu _Preferences -> General -> Appearance -> Log Timestamp Mode_](https://answers.unrealengine.com/questions/358370/time-stamps-in-output-log.html)
+     2. Grab the file **ProjectName/Saved/Logs/ProjectName.log**
 
-#### Use merge requests
+### Use merge requests
 
 If you want to help, [Github Pull Requests](https://github.com/PlasticSCM/UE4PlasticPlugin/pulls) are welcome!
 
-### Copyright
+## Copyright
 
 Copyright (c) 2016-2022 Codice Software
 Developped by Sébastien Rombauts (sebastien.rombauts@gmail.com)
