@@ -181,10 +181,10 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FCheckIn, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCheckIn>(InCommand.Operation);
 
-	UE_LOG(LogSourceControl, Verbose, TEXT("CheckIn: %d file(s) Description: '%s'"), InCommand.Files.Num(), *Operation->GetDescription().ToString());
-
 	if (InCommand.Files.Num() > 0)
 	{
+		UE_LOG(LogSourceControl, Verbose, TEXT("CheckIn: %d file(s) Description: '%s'"), InCommand.Files.Num(), *Operation->GetDescription().ToString());
+
 		// make a temp file to place our commit message in
 		FScopedTempFile CommitMsgFile(Operation->GetDescription());
 		if (!CommitMsgFile.GetFilename().IsEmpty())
@@ -233,7 +233,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	}
 	else
 	{
-
+		UE_LOG(LogSourceControl, Warning, TEXT("Checkin: No files provided"));
 	}
 
 	return InCommand.bCommandSuccessful;
@@ -252,9 +252,9 @@ FName FPlasticMarkForAddWorker::GetName() const
 bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
+
 	if (InCommand.Files.Num() > 0)
 	{
-
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("--parents")); // NOTE: deprecated in 8.0.16.3100 when it became the default https://www.plasticscm.com/download/releasenotes/8.0.16.3100
 		// Note: using "?" is a workaround to trigger the Plastic's "SkipIgnored" internal flag meaning "don't add file that are ignored":
@@ -286,7 +286,7 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("Checkin operation without files"));
+		UE_LOG(LogSourceControl, Warning, TEXT("MarkforAdd: No files provided"));
 	}
 
 	return InCommand.bCommandSuccessful;
