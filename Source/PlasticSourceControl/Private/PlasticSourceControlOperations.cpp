@@ -183,17 +183,17 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	UE_LOG(LogSourceControl, Verbose, TEXT("CheckIn: %d file(s) Description: '%s'"), InCommand.Files.Num(), *Operation->GetDescription().ToString());
 
-	// make a temp file to place our commit message in
-	FScopedTempFile CommitMsgFile(Operation->GetDescription());
-	if (!CommitMsgFile.GetFilename().IsEmpty())
+	if (InCommand.Files.Num() > 0)
 	{
-		TArray<FString> Parameters;
-		FString ParamCommitMsgFilename = TEXT("--commentsfile=\"");
-		ParamCommitMsgFilename += FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename());
-		ParamCommitMsgFilename += TEXT("\"");
-		Parameters.Add(ParamCommitMsgFilename);
-		if (InCommand.Files.Num() > 0)
+		// make a temp file to place our commit message in
+		FScopedTempFile CommitMsgFile(Operation->GetDescription());
+		if (!CommitMsgFile.GetFilename().IsEmpty())
 		{
+			TArray<FString> Parameters;
+			FString ParamCommitMsgFilename = TEXT("--commentsfile=\"");
+			ParamCommitMsgFilename += FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename());
+			ParamCommitMsgFilename += TEXT("\"");
+			Parameters.Add(ParamCommitMsgFilename);
 			// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 			if (-1 != InCommand.ChangesetNumber)
 			{
@@ -233,7 +233,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("Checkin operation without files"));
+
 	}
 
 	return InCommand.bCommandSuccessful;
@@ -252,25 +252,25 @@ FName FPlasticMarkForAddWorker::GetName() const
 bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
-
-	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--parents")); // NOTE: deprecated in 8.0.16.3100 when it became the default https://www.plasticscm.com/download/releasenotes/8.0.16.3100
-	// Note: using "?" is a workaround to trigger the Plastic's "SkipIgnored" internal flag meaning "don't add file that are ignored":
-	//			options.SkipIgnored = cla.GetWildCardArguments().Count > 0;
-	//		 It's behavior is similar as Subversion:
-	//  		if you explicitely add one file that is ignored, "cm" will happily accept it and add it,
-	//			if you try to add a set of files with a pattern, "cm" will skip the files that are ignored and only add the other ones
-	// TODO: provide an updated version of "cm" with a new flag like --applyignorerules
-	if (AreAllFiles(InCommand.Files))
-	{
-		Parameters.Add(TEXT("?"));	// needed only when used with a list of files
-	}
-	else
-	{
-		Parameters.Add(TEXT("-R"));	// needed only at the time of workspace creation, to add directories recursively
-	}
 	if (InCommand.Files.Num() > 0)
 	{
+
+		TArray<FString> Parameters;
+		Parameters.Add(TEXT("--parents")); // NOTE: deprecated in 8.0.16.3100 when it became the default https://www.plasticscm.com/download/releasenotes/8.0.16.3100
+		// Note: using "?" is a workaround to trigger the Plastic's "SkipIgnored" internal flag meaning "don't add file that are ignored":
+		//			options.SkipIgnored = cla.GetWildCardArguments().Count > 0;
+		//		 It's behavior is similar as Subversion:
+		//  		if you explicitely add one file that is ignored, "cm" will happily accept it and add it,
+		//			if you try to add a set of files with a pattern, "cm" will skip the files that are ignored and only add the other ones
+		// TODO: provide an updated version of "cm" with a new flag like --applyignorerules
+		if (AreAllFiles(InCommand.Files))
+		{
+			Parameters.Add(TEXT("?"));	// needed only when used with a list of files
+		}
+		else
+		{
+			Parameters.Add(TEXT("-R"));	// needed only at the time of workspace creation, to add directories recursively
+		}
 		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 		if (-1 != InCommand.ChangesetNumber)
 		{
@@ -286,7 +286,7 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("Mark for Add operation without files"));
+		UE_LOG(LogSourceControl, Warning, TEXT("Checkin operation without files"));
 	}
 
 	return InCommand.bCommandSuccessful;
