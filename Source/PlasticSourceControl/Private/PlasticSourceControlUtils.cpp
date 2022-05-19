@@ -473,18 +473,18 @@ void GetUserName(FString& OutUserName)
 	}
 }
 
-bool GetWorkspaceName(FString& OutWorkspaceName)
+bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> InfoMessages;
-	TArray<FString> ErrorMessages;
+
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("."));
+	Parameters.Add(InWorkspaceRoot);
 	Parameters.Add(TEXT("--format={0}"));
 	// Get the workspace name
-	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, OutErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
-		// NOTE: getworkspacefrompath never returns an error!
+		// NOTE: getworkspacefrompath didn't return an error
 		if (!InfoMessages[0].Equals(TEXT(". is not in a workspace.")))
 		{
 			OutWorkspaceName = MoveTemp(InfoMessages[0]);
@@ -535,10 +535,9 @@ static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int
 	return bResult;
 }
 
-bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName)
+bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> InfoMessages;
-	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
 
 	// Command-line format output changed with version 8.0.16.3000, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
@@ -553,7 +552,7 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	}
 	// NOTE: --wkconfig results in two network calls GetBranchInfoByName & GetLastChangesetOnBranch so it's okay to do it once here but not all the time
 	Parameters.Add(TEXT("--wkconfig")); // Branch name. NOTE: Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/8.0.16.3000
-	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, OutErrorMessages);
 	if (bResult)
 	{
 		bResult = ParseWorkspaceInformation(InfoMessages, OutChangeset, OutRepositoryName, OutServerUrl, OutBranchName);

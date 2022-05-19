@@ -72,8 +72,9 @@ void GetUserName(FString& OutUserName);
 /**
  * Get Plastic workspace name
  * @param	OutWorkspaceName	Name of the current workspace
- */
-bool GetWorkspaceName(FString& OutWorkspaceName);
+  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+*/
+bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName, TArray<FString>& OutErrorMessages);
 
 /**
  * Get Plastic repository name and server URL, branch name and current changeset number
@@ -81,8 +82,9 @@ bool GetWorkspaceName(FString& OutWorkspaceName);
  * @param	OutRepositoryName	Name of the repository of the current workspace
  * @param	OutServerUrl		URL/Port of the server of the repository
  * @param	OutBranchName		Name of the current checked-out branch
+  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  */
-bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName);
+bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages);
 
 /**
  * Run a Plastic command - output is a string TArray.
