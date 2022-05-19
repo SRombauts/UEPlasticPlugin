@@ -204,10 +204,9 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			}
 			if (InCommand.bCommandSuccessful)
 			{
-				// Remove any deleted files from status cache
-				FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-				FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 
+				// Remove any deleted files from status cache
 				TArray<TSharedRef<ISourceControlState, ESPMode::ThreadSafe>> LocalStates;
 				Provider.GetState(InCommand.Files, LocalStates, EStateCacheUsage::Use);
 				for (const auto& State : LocalStates)
@@ -331,8 +330,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 
 	TArray<FString> ChangedFiles;
 	TArray<FString> CheckedOutFiles;
@@ -544,8 +542,8 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		}
 		else
 		{
-			const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-			if (PlasticSourceControl.AccessSettings().GetUpdateStatusOtherBranches() && AreAllFiles(InCommand.Files))
+			FPlasticSourceControlSettings& PlasticSettings = FPlasticSourceControlModule::Get().AccessSettings();
+			if (PlasticSettings.GetUpdateStatusOtherBranches() && AreAllFiles(InCommand.Files))
 			{
 				// Get only the last revision of the files (checking all branches)
 				// in order to warn the user if the file has been changed on another branch
@@ -760,9 +758,7 @@ bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	// Currently resolve operation is always on one file only, but the following would works for many
 	for (const FString& File : InCommand.Files)
 	{
-		FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(File);
+		auto State = FPlasticSourceControlModule::Get().GetProvider().GetStateInternal(File);
 
 		// To resolve the conflict, merge the file by keeping it like it is on file system
 		// TODO: according to documentation, this cannot work for cherry-picking

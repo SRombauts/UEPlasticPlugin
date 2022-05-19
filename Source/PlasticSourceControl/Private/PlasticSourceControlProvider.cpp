@@ -41,8 +41,7 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		CheckPlasticAvailability();
 
 		// Override the source control logs verbosity level if needed based on settings
-		FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-		if (PlasticSourceControl.AccessSettings().GetEnableVerboseLogs())
+		if (FPlasticSourceControlModule::Get().AccessSettings().GetEnableVerboseLogs())
 		{
 			PlasticSourceControlUtils::SwitchVerboseLogs(true);
 		}
@@ -67,8 +66,8 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 
 void FPlasticSourceControlProvider::CheckPlasticAvailability()
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-	FString PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
+	FPlasticSourceControlSettings& PlasticSettings = FPlasticSourceControlModule::Get().AccessSettings();
+	FString PathToPlasticBinary = PlasticSettings.GetBinaryPath();
 	if (PathToPlasticBinary.IsEmpty())
 	{
 		bPlasticAvailable = false;
@@ -77,7 +76,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		PathToPlasticBinary = PlasticSourceControlUtils::FindPlasticBinaryPath();
 		if (!PathToPlasticBinary.IsEmpty())
 		{
-			PlasticSourceControl.AccessSettings().SetBinaryPath(PathToPlasticBinary);
+			PlasticSettings.SetBinaryPath(PathToPlasticBinary);
 		}
 	}
 

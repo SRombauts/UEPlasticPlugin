@@ -198,8 +198,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 			PackagesToReload = UnlinkPackages(ListAllPackages());
 
 			// Launch a "Sync" operation
-			FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-			FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 			TSharedRef<FSync, ESPMode::ThreadSafe> SyncOperation = ISourceControlOperation::Create<FSync>();
 			const ECommandResult::Type Result = Provider.Execute(SyncOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 			if (Result == ECommandResult::Succeeded)
@@ -234,8 +233,7 @@ void FPlasticSourceControlMenu::RevertUnchangedClicked()
 	if (!OperationInProgressNotification.IsValid())
 	{
 		// Launch a "RevertUnchanged" Operation
-		FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 		TSharedRef<FPlasticRevertUnchanged, ESPMode::ThreadSafe> RevertUnchangedOperation = ISourceControlOperation::Create<FPlasticRevertUnchanged>();
 		TArray<FString> WorkspaceRoot;
 		WorkspaceRoot.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
@@ -275,8 +273,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 				PackagesToReload = UnlinkPackages(ListAllPackages());
 
 				// Launch a "RevertAll" Operation
-				FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-				FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 				TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> RevertAllOperation = ISourceControlOperation::Create<FPlasticRevertAll>();
 				TArray<FString> WorkspaceRoot;
 				WorkspaceRoot.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
@@ -314,8 +311,7 @@ void FPlasticSourceControlMenu::RefreshClicked()
 	if (!OperationInProgressNotification.IsValid())
 	{
 		// Launch an "UpdateStatus" Operation
-		FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 		TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> RefreshOperation = ISourceControlOperation::Create<FUpdateStatus>();
 		// This is the flag used by the Content Browser's "Checkout" filter to trigger a full status update
 		RefreshOperation->SetGetOpenedOnly(true);
