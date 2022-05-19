@@ -416,13 +416,13 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 
 FText SPlasticSourceControlSettings::GetBinaryPathText() const
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	return FText::FromString(PlasticSourceControl.AccessSettings().GetBinaryPath());
 }
 
 void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText, ETextCommit::Type InCommitType) const
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	const bool bChanged = PlasticSourceControl.AccessSettings().SetBinaryPath(InText.ToString());
 	if (bChanged)
 	{
@@ -443,20 +443,20 @@ FText SPlasticSourceControlSettings::GetVersions() const
 
 FText SPlasticSourceControlSettings::GetPathToWorkspaceRoot() const
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	return FText::FromString(PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot());
 }
 
 FText SPlasticSourceControlSettings::GetUserName() const
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	return FText::FromString(PlasticSourceControl.GetProvider().GetUserName());
 }
 
 
 EVisibility SPlasticSourceControlSettings::CanInitializePlasticWorkspace() const
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	const bool bPlasticAvailable = PlasticSourceControl.GetProvider().IsPlasticAvailable();
 	const bool bPlasticWorkspaceFound = PlasticSourceControl.GetProvider().IsWorkspaceFound();
 	return (bPlasticAvailable && !bPlasticWorkspaceFound) ? EVisibility::Visible : EVisibility::Collapsed;
@@ -542,7 +542,7 @@ void SPlasticSourceControlSettings::LaunchMakeWorkspaceOperation()
 	MakeWorkspaceOperation->RepositoryName = RepositoryName.ToString();
 	MakeWorkspaceOperation->ServerUrl = ServerUrl.ToString();
 
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(MakeWorkspaceOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
 	if (Result == ECommandResult::Succeeded)
 	{
@@ -558,7 +558,7 @@ void SPlasticSourceControlSettings::LaunchMakeWorkspaceOperation()
 void SPlasticSourceControlSettings::LaunchMarkForAddOperation()
 {
 	TSharedRef<FMarkForAdd, ESPMode::ThreadSafe> MarkForAddOperation = ISourceControlOperation::Create<FMarkForAdd>();
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 
 	// 1.b. Check the new workspace status to enable connection
 	PlasticSourceControl.GetProvider().CheckPlasticAvailability();
@@ -593,7 +593,7 @@ void SPlasticSourceControlSettings::LaunchCheckInOperation()
 {
 	TSharedRef<FCheckIn, ESPMode::ThreadSafe> CheckInOperation = ISourceControlOperation::Create<FCheckIn>();
 	CheckInOperation->SetDescription(InitialCommitMessage);
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	const TArray<FString> ProjectFiles = GetProjectFiles(); // Note: listing files and folders is only needed for the update status operation following the checkin to know on what to operate
 	ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(CheckInOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
 	if (Result == ECommandResult::Succeeded)
@@ -689,7 +689,7 @@ void SPlasticSourceControlSettings::DisplayFailureNotification(const FName& InOp
 /** Delegate to check for presence of a Plastic ignore.conf file to an existing Plastic SCM workspace */
 EVisibility SPlasticSourceControlSettings::CanAddIgnoreFile() const
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	const bool bPlasticWorkspaceFound = PlasticSourceControl.GetProvider().IsWorkspaceFound();
 	const bool bIgnoreFileFound = FPaths::FileExists(GetIgnoreFileName());
 	return (bPlasticWorkspaceFound && !bIgnoreFileFound) ? EVisibility::Visible : EVisibility::Collapsed;
@@ -714,33 +714,33 @@ FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 
 void SPlasticSourceControlSettings::OnCheckedUpdateStatusAtStartup(ECheckBoxState NewCheckedState)
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	PlasticSourceControl.AccessSettings().SetUpdateStatusAtStartup(NewCheckedState == ECheckBoxState::Checked);
 	PlasticSourceControl.AccessSettings().SaveSettings();
 }
 
 ECheckBoxState SPlasticSourceControlSettings::IsUpdateStatusAtStartupChecked() const
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	return PlasticSourceControl.AccessSettings().GetUpdateStatusAtStartup() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
 void SPlasticSourceControlSettings::OnCheckedUpdateStatusOtherBranches(ECheckBoxState NewCheckedState)
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	PlasticSourceControl.AccessSettings().SetUpdateStatusOtherBranches(NewCheckedState == ECheckBoxState::Checked);
 	PlasticSourceControl.AccessSettings().SaveSettings();
 }
 
 ECheckBoxState SPlasticSourceControlSettings::IsUpdateStatusOtherBranchesChecked() const
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	return PlasticSourceControl.AccessSettings().GetUpdateStatusOtherBranches() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
 void SPlasticSourceControlSettings::OnCheckedEnableVerboseLogs(ECheckBoxState NewCheckedState)
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	PlasticSourceControl.AccessSettings().SetEnableVerboseLogs(NewCheckedState == ECheckBoxState::Checked);
 	PlasticSourceControl.AccessSettings().SaveSettings();
 
@@ -749,7 +749,7 @@ void SPlasticSourceControlSettings::OnCheckedEnableVerboseLogs(ECheckBoxState Ne
 
 ECheckBoxState SPlasticSourceControlSettings::IsEnableVerboseLogsChecked() const
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	return PlasticSourceControl.AccessSettings().GetEnableVerboseLogs() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 

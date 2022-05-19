@@ -198,7 +198,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 			PackagesToReload = UnlinkPackages(ListAllPackages());
 
 			// Launch a "Sync" operation
-			FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+			FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 			FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 			TSharedRef<FSync, ESPMode::ThreadSafe> SyncOperation = ISourceControlOperation::Create<FSync>();
 			const ECommandResult::Type Result = Provider.Execute(SyncOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
@@ -234,7 +234,7 @@ void FPlasticSourceControlMenu::RevertUnchangedClicked()
 	if (!OperationInProgressNotification.IsValid())
 	{
 		// Launch a "RevertUnchanged" Operation
-		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+		FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 		TSharedRef<FPlasticRevertUnchanged, ESPMode::ThreadSafe> RevertUnchangedOperation = ISourceControlOperation::Create<FPlasticRevertUnchanged>();
 		TArray<FString> WorkspaceRoot;
@@ -275,7 +275,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 				PackagesToReload = UnlinkPackages(ListAllPackages());
 
 				// Launch a "RevertAll" Operation
-				FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+				FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 				FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 				TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> RevertAllOperation = ISourceControlOperation::Create<FPlasticRevertAll>();
 				TArray<FString> WorkspaceRoot;
@@ -314,7 +314,7 @@ void FPlasticSourceControlMenu::RefreshClicked()
 	if (!OperationInProgressNotification.IsValid())
 	{
 		// Launch an "UpdateStatus" Operation
-		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+		FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 		TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> RefreshOperation = ISourceControlOperation::Create<FUpdateStatus>();
 		// This is the flag used by the Content Browser's "Checkout" filter to trigger a full status update

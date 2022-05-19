@@ -67,7 +67,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FConnect, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FConnect>(InCommand.Operation);
 
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	if (PlasticSourceControl.GetProvider().IsPlasticAvailable())
 	{
 		// Get workspace name
@@ -205,7 +205,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			if (InCommand.bCommandSuccessful)
 			{
 				// Remove any deleted files from status cache
-				FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+				FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 				FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 
 				TArray<TSharedRef<ISourceControlState, ESPMode::ThreadSafe>> LocalStates;
@@ -331,7 +331,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 
 	TArray<FString> ChangedFiles;
@@ -544,7 +544,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		}
 		else
 		{
-			const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+			const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 			if (PlasticSourceControl.AccessSettings().GetUpdateStatusOtherBranches() && AreAllFiles(InCommand.Files))
 			{
 				// Get only the last revision of the files (checking all branches)
@@ -760,7 +760,7 @@ bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	// Currently resolve operation is always on one file only, but the following would works for many
 	for (const FString& File : InCommand.Files)
 	{
-		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+		FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(File);
 

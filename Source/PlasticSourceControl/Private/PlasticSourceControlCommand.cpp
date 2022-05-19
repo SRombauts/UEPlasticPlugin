@@ -20,7 +20,7 @@ FPlasticSourceControlCommand::FPlasticSourceControlCommand(const FSourceControlO
 {
 	// grab the providers settings here, so we don't access them once the worker thread is launched
 	check(IsInGameThread());
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>( "PlasticSourceControl" );
+	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	PathToWorkspaceRoot = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
 	ChangesetNumber = PlasticSourceControl.GetProvider().GetChangesetNumber();
 }
