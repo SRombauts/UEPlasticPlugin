@@ -42,6 +42,17 @@ public:
 		return PlasticSourceControlProvider;
 	}
 
+	/**
+	 * Singleton-like access to this module's interface.  This is just for convenience!
+	 * Beware of calling this during the shutdown phase, though.  Your module might have been unloaded already.
+	 *
+	 * @return Returns singleton instance, loading the module on demand if needed
+	 */
+	static inline FPlasticSourceControlModule& Get()
+	{
+		return FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	}
+
 private:
 	/** The Plastic source control provider */
 	FPlasticSourceControlProvider PlasticSourceControlProvider;
