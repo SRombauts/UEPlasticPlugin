@@ -192,42 +192,49 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		ParamCommitMsgFilename += FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename());
 		ParamCommitMsgFilename += TEXT("\"");
 		Parameters.Add(ParamCommitMsgFilename);
-		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-		if (-1 != InCommand.ChangesetNumber)
+		if (InCommand.Files.Num() > 0)
 		{
-			Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
-		//  NOTE: --update added as #23 but removed as #32 because most assets are locked by the Unreal Editor
-		//	Parameters.Add(TEXT("--update")); // Processes the update-merge automatically if it eventually happens.
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
-		}
-		else
-		{
-			Parameters.Add(TEXT("--applychanged")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
-		}
-		if (InCommand.bCommandSuccessful)
-		{
-			// Remove any deleted files from status cache
-			FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-			FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-
-			TArray<TSharedRef<ISourceControlState, ESPMode::ThreadSafe>> LocalStates;
-			Provider.GetState(InCommand.Files, LocalStates, EStateCacheUsage::Use);
-			for (const auto& State : LocalStates)
+			// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+			if (-1 != InCommand.ChangesetNumber)
 			{
-				if (State->IsDeleted())
-				{
-					Provider.RemoveFileFromCache(State->GetFilename());
-				}
+				Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
+			//  NOTE: --update added as #23 but removed as #32 because most assets are locked by the Unreal Editor
+			//	Parameters.Add(TEXT("--update")); // Processes the update-merge automatically if it eventually happens.
+				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 			}
+			else
+			{
+				Parameters.Add(TEXT("--applychanged")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
+				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+			}
+			if (InCommand.bCommandSuccessful)
+			{
+				// Remove any deleted files from status cache
+				FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+				FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
 
-			Operation->SetSuccessMessage(ParseCheckInResults(InCommand.InfoMessages));
-			UE_LOG(LogSourceControl, Log, TEXT("CheckIn successful"));
+				TArray<TSharedRef<ISourceControlState, ESPMode::ThreadSafe>> LocalStates;
+				Provider.GetState(InCommand.Files, LocalStates, EStateCacheUsage::Use);
+				for (const auto& State : LocalStates)
+				{
+					if (State->IsDeleted())
+					{
+						Provider.RemoveFileFromCache(State->GetFilename());
+					}
+				}
+
+				Operation->SetSuccessMessage(ParseCheckInResults(InCommand.InfoMessages));
+				UE_LOG(LogSourceControl, Log, TEXT("CheckIn successful"));
+			}
 		}
-	}
 
-	// now update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		// now update the status of our files
+		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Warning, TEXT("Checkin operation without files"));
+	}
 
 	return InCommand.bCommandSuccessful;
 }
@@ -262,18 +269,25 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	{
 		Parameters.Add(TEXT("-R"));	// needed only at the time of workspace creation, to add directories recursively
 	}
-	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-	if (-1 != InCommand.ChangesetNumber)
+	if (InCommand.Files.Num() > 0)
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+		if (-1 != InCommand.ChangesetNumber)
+		{
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+		else
+		{
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial add"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+
+		// now update the status of our files
+		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 	else
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial add"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		UE_LOG(LogSourceControl, Warning, TEXT("Mark for Add operation without files"));
 	}
-
-	// now update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
 }
