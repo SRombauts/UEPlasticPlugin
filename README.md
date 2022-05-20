@@ -10,8 +10,8 @@ But if you have a project of a certain size, chances are you need to upgrade man
 in order to benefit of all the performance improvements we have made since then.
 See the Status section bellow for more details.
 
-It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide.shtml)
-or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide.shtml).
+It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide)
+or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide).
 It is a complementary tool improving efficiency in your daily workflow with assets in Editor.
 
 It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints.
@@ -23,7 +23,15 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
    - [Plugin Setup](#plugin-setup)
    - [Project Setup](#project-setup)
    - [Working in Editor](#working-in-editor)
+     - [Unreal Documentation](#unreal-documentation)
+     - [Status Icons](#status-icons)
+     - [Source Control Menu](#source-control-menu)
+     - [Source Control Windows](#source-control-windows)
+     - [Redirectors](#redirectors)
+     - [Branches Support](#branches-support)
    - [Plastic SCM Setup](#plastic-scm-setup)
+     - [Configure Locks for Unreal Assets (exclusive checkout)](#configure-locks-for-unreal-assets-exclusive-checkout)
+     - [Configure Visual Diff of Blueprints from Plastic SCM GUI](#configure-visual-diff-of-blueprints-from-plastic-scm-gui)
  - [Status](#status)
  - [Support](#support)
  - [Copyright](#copyright)
@@ -122,6 +130,15 @@ EnableVerboseLogs=False
 
 ### Working in Editor
 
+#### Unreal Documentation
+
+Official documentation from Epic Games:
+ - [Source Control Inside Unreal Editor](https://docs.unrealengine.com/5.0/en-US/using-source-control-in-the-unreal-editor/)
+ - [Diffing Unreal Assets (blog post)](https://www.unrealengine.com/blog/diffing-unreal-assets)
+
+Plastic SCM forums:
+ - [Unreal Engine section in Plastic SCM forums](https://forum.plasticscm.com/forum/42-unreal-engine/)
+
 #### Status Icons
 
 ![New/Unsaved asset](Screenshots/Icons/UE4PlasticPlugin-New.png)
@@ -198,14 +215,6 @@ Warning when trying to checkout an asset that has been modified in another branc
 Warning when trying to modify an asset that has been modified in another branche:
 ![Warning on modification for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnModification.png)
 
-#### Unreal Documentation
-
- - [Source Control user interface](https://docs.unrealengine.com/latest/INT/Engine/UI/SourceControl/)
- - [Source Control Inside Unreal Editor](https://docs.unrealengine.com/latest/INT/Engine/Basics/SourceControl/InEditor/)
-
- - [Diffing Unreal Assets](https://www.unrealengine.com/blog/diffing-unreal-assets)
- - [Diffing Blueprints (Video)](https://www.unrealengine.com/blog/diffing-blueprints)
-
 #### Worfklow
 
 Unreal Engine workflow with binary assets works best with mostly only one branch (regardless of the source control used).
@@ -220,7 +229,7 @@ Unreal Engine workflow with binary assets works best with mostly only one branch
 The plugin works with the command line interface "cm" that currently requires your credentials to be stored.
 Use the Plastic SCM or Gluon GUI to enter and save your credentials before enabling Plastic SCM in Unreal.
 
-#### Locking UE4 assets
+#### Configure Locks for Unreal Assets (exclusive checkout)
 
 [Administrator guide - Chapter 7: Configuring exclusive checkout (Lock)](https://www.plasticscm.com/documentation/administration/plastic-scm-version-control-administrator-guide#Chapter7:Configuringexclusivecheckout(Lock))
 
@@ -246,20 +255,24 @@ On Plastic Cloud, you can just setup lock rules like that:
 
     /Content
 
-#### Visual Diff of Blueprint from Plastic SCM GUI
+#### Configure Visual Diff of Blueprints from Plastic SCM GUI
 
 In "Preferences -> Diff tools" add a new config for uasset and move it up **before** the existing `$binary` one:
 ![Diff tools](Screenshots/UE4PlasticPlugin-GUIDiffTools.png)
 
 The command line needs the quoted path to the UE4Editor.exe, the quoted patch to your ".uproject" file, -diff, thant the source & destination files variables also quoted
 
-    "C:\Program Files\Epic Games\UE_4.25\Engine\Binaries\Win64\UE4Editor.exe" "C:\wkspaces\MyProject\MyProject.uproject" -diff "@sourcefile" "@destinationfile"
+    "C:\Program Files\Epic Games\UE_5.27\Engine\Binaries\Win64\UE4Editor.exe" "C:\wkspaces\MyProject\MyProject.uproject" -diff "@sourcefile" "@destinationfile"
+
+or for Unreal Engine 5:
+
+    "C:\Program Files\Epic Games\UE_5.0\Engine\Binaries\Win64\UnrealEditor.exe" "C:\wkspaces\MyProject\MyProject.uproject" -diff "@sourcefile" "@destinationfile"
 
 ![uasset diff](Screenshots/UE4PlasticPlugin-GUIDiffUasset.png)
 
 ## Status
 
-This version here is the development version, so it can contain additional fixes, performance improvements or new features.
+This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
 ### Version 1.5.1 2022/05/17 for UE 4.27.2 and UE 5.0.1:
  - manage connection to the server
@@ -284,7 +297,7 @@ This version here is the development version, so it can contain additional fixes
  - solve a merge conflict on a blueprint
  - top-menu global "Sync" instead of on folder's context menu
  - top-menu global "undo unchanged" and "undo all checkout"
- - [Partial Checkin (like Gluon, for artists)](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
+ - [Partial Workspace (Gluon, for artists)](https://www.plasticscm.com/gluon) [see also](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
  - Plastic Cloud is fully supported
  - xlinks sub-repositories (for Plugins for instance)
  - Toggle verbose logs from the Source Control settings UI
@@ -295,8 +308,9 @@ This version here is the development version, so it can contain additional fixes
  - Unreal Engine 5.0 full support
    - Changelists
  - Mac OS X Support
+ - add a setting to bypass checkout and let the user directly modify the assets like Git
+ - add a setting to configure Plastic SCM to use "read-only flags" like Perforce
  - add a setting to pass the --update option to "checkin"
- - add a setting to tell UE if Plastic SCM is configured to use "read-only flags" like Perforce
  - add a "clean directory" or "check-in deleted files"
  - add dedicated icon for Changed files
  - add dedicated icon for Ignored files
@@ -321,7 +335,7 @@ This version here is the development version, so it can contain additional fixes
 
 You can always ask for support in:
  - [Plastic SCM support](https://www.plasticscm.com/support)
- - [Plastic SCM forums](https://forum.plasticscm.com/)
+ - [Plastic SCM Unreal Engine forum](https://forum.plasticscm.com/forum/42-unreal-engine/)
  - [Unreal Engine forums](https://forums.unrealengine.com/)
  - [Unreal Slackers Discord community](https://discord.gg/unreal-slackers)
 
@@ -338,9 +352,10 @@ To report an issue, please use the [Github issue-tracker](https://github.com/SRo
  2. Specify your Engine & Plugin versions, and if either are built from sources
  3. Describe precisely your issue
  4. Add reproduction steps, if possible on a basic template project
- 5. Post a Log file when applicable (or the corresponding redacted section)
-     1. [enable **UTC Timestamp** in Logs: menu _Preferences -> General -> Appearance -> Log Timestamp Mode_](https://answers.unrealengine.com/questions/358370/time-stamps-in-output-log.html)
-     2. Grab the file **ProjectName/Saved/Logs/ProjectName.log**
+ 5. Post log files when applicable (or the corresponding redacted section)
+   1. Unreal Log file **ProjectName/Saved/Logs/ProjectName.log** 
+   2. cm debug log file typically from **<LOCALAPPDATA>\plastic4\logs\cm.log.txt**
+      see [enabling-logging-for-plastic-scm](https://www.plasticscm.com/documentation/technical-articles/kb-enabling-logging-for-plastic-scm-part-i)
 
 ### Use merge requests
 
