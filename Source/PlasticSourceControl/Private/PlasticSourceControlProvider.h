@@ -162,8 +162,8 @@ private:
 	/** Update workspace status on Connect and UpdateStatus operations */
 	void UpdateWorkspaceStatus(const class FPlasticSourceControlCommand& InCommand);
 
-    /** Version of the Plastic SCM executable used */
-    FString PlasticScmVersion;
+	/** Version of the Plastic SCM executable used */
+	FString PlasticScmVersion;
 
 	/** Version of the Plastic SCM plugin */
 	FString PluginVersion;

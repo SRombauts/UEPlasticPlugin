@@ -143,8 +143,8 @@ TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceContro
 FText FPlasticSourceControlProvider::GetStatusText() const
 {
 	FFormatNamedArguments Args;
-    Args.Add( TEXT("PlasticScmVersion"), FText::FromString(PlasticScmVersion) );
-    Args.Add( TEXT("PluginVersion"), FText::FromString(PluginVersion) );
+	Args.Add( TEXT("PlasticScmVersion"), FText::FromString(PlasticScmVersion) );
+	Args.Add( TEXT("PluginVersion"), FText::FromString(PluginVersion) );
 	Args.Add( TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot) );
 	Args.Add( TEXT("WorkspaceName"), FText::FromString(WorkspaceName) );
 	Args.Add( TEXT("BranchName"), FText::FromString(BranchName) );
