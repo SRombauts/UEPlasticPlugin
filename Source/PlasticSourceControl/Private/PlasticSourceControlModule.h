@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleInterface.h"
-#include "Modules/ModuleManager.h"
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlProvider.h"
 
