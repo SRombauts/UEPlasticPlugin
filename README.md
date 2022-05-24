@@ -90,16 +90,16 @@ Then select "Plastic SCM" plugin
 
 #### Create a new workspace & repository directly from Unreal
 
-Source Control Login window, to create a new workspace/a new repository, click on "Initialize workspace" (exemple of a cloud repository):
+Source Control Login window, to create a new workspace/a new repository, click on "Initialize workspace" (example of a cloud repository):
 ![Source Control Login window - create a new workspace on cloud](Screenshots/UE4PlasticPlugin-CreateWorkspaceCloud.png)
 
-Or on a server runing on localhost:
+Or on a server running on localhost:
 ![Source Control Login window - create a new workspace on localhost](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
 
 This creates an appropriate ignore.conf file, add all relevant files to source control (.uproject, Config & Content subdirectories)
 and can also do the initial commit automatically at the end.
 
-Wait for this to succeed before acception source control settings to not lock the UI & mess with the initialization!
+Wait for this to succeed before accepting source control settings to not lock the UI & mess with the initialization!
 ![Source Control Login window - checking files in source control](Screenshots/UE4PlasticPlugin-CheckinInProgress.png)
 
 #### Source Control settings
@@ -153,7 +153,7 @@ Plastic SCM forums:
 
 ![Checked-Out](Screenshots/Icons/UE4PlasticPlugin-CheckedOut.png)
 ![Moved/Renamed](Screenshots/Icons/UE4PlasticPlugin-Renamed.png)
-![Checkd-Out/Locked by someone else](Screenshots/Icons/UE4PlasticPlugin-CheckedOutOther.png)
+![Checked-Out/Locked by someone else](Screenshots/Icons/UE4PlasticPlugin-CheckedOutOther.png)
 ![Not up-to-date/new revision in repository](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
 
  5. **Checked-out** for modification, and Locked to prevent other from making modifications (if Locks are enabled on the server)
@@ -163,7 +163,7 @@ Plastic SCM forums:
 
 TODO:
 
- 7. Redo the "Locked somehwere else"
+ 7. Redo the "Locked somewhere else"
  9. Add the "Changed in an other branch"
 
 #### Source Control Menu
@@ -179,7 +179,7 @@ Source Control top Menu, extended with commands specific to Plastic SCM:
 Submit Files to Source Control window, to check-in assets:
 ![Submit Files to Source Control](Screenshots/UE4PlasticPlugin-SubmitFiles.png)
 
-File History window, to see the changelog of an asset:
+File History window, to see the change-log of an asset:
 ![History of a file](Screenshots/UE4PlasticPlugin-History.png)
 
 Visual Diffing of different revision of a Blueprint:
@@ -206,13 +206,13 @@ you can enable an option to check for changes in all other branches.
 Tooltip in the Content Browser when an asset is already checked-out somewhere else:
 ![Asset checked-out by someone else](Screenshots/UEPlasticPlugin-CheckedOutOther-Tooltip.png)
 
-Tooltip in the Content Browser when an asset has been modified in another branche:
+Tooltip in the Content Browser when an asset has been modified in another branch:
 ![Asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-Tooltip.png)
 
-Warning when trying to checkout an asset that has been modified in another branche:
+Warning when trying to checkout an asset that has been modified in another branch:
 ![Warning on checkout for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnCheckout.png)
  
-Warning when trying to modify an asset that has been modified in another branche:
+Warning when trying to modify an asset that has been modified in another branch:
 ![Warning on modification for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnModification.png)
 
 #### Worfklow
@@ -260,7 +260,7 @@ On Plastic Cloud, you can just setup lock rules like that:
 In "Preferences -> Diff tools" add a new config for uasset and move it up **before** the existing `$binary` one:
 ![Diff tools](Screenshots/UE4PlasticPlugin-GUIDiffTools.png)
 
-The command line needs the quoted path to the UE4Editor.exe, the quoted patch to your ".uproject" file, -diff, thant the source & destination files variables also quoted
+The command line needs the quoted path to the UE4Editor.exe, the quoted patch to your ".uproject" file, -diff, than the source & destination files variables also quoted
 
     "C:\Program Files\Epic Games\UE_5.27\Engine\Binaries\Win64\UE4Editor.exe" "C:\wkspaces\MyProject\MyProject.uproject" -diff "@sourcefile" "@destinationfile"
 
@@ -310,7 +310,7 @@ This version here is the development version, so it always contains additional f
  - Mac OS X Support
  - add a setting to bypass checkout and let the user directly modify the assets like Git
  - add a setting to configure Plastic SCM to use "read-only flags" like Perforce
- - add a setting to pass the --update option to "checkin"
+ - add a setting to pass the --update option to "check-in"
  - add a "clean directory" or "check-in deleted files"
  - add dedicated icon for Changed files
  - add dedicated icon for Ignored files
@@ -364,4 +364,4 @@ If you want to help, [Github Pull Requests](https://github.com/PlasticSCM/UE4Pla
 ## Copyright
 
 Copyright (c) 2016-2022 Codice Software
-Developped by Sébastien Rombauts (sebastien.rombauts@gmail.com)
+Developed by Sébastien Rombauts (sebastien.rombauts@gmail.com)

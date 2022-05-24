@@ -25,7 +25,7 @@ void FPlasticSourceControlConsole::Unregister()
 
 void FPlasticSourceControlConsole::ExecutePlasticConsoleCommand(const TArray<FString>& a_args)
 {
-	// If called with no argument, explicitely call "cm help" instead to mimic the cm CLI behavior.
+	// If called with no argument, explicitly call "cm help" instead to mimic the cm CLI behavior.
 	if (a_args.Num() < 1)
 	{
 		ExecutePlasticConsoleCommand(TArray<FString>({TEXT("help")}));

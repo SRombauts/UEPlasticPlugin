@@ -250,7 +250,7 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute(
 {
 	if (!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "MakeWorkspace"))
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("'%s': only Connect operation allowed whithout a workspace"), *InOperation->GetName().ToString());
+		UE_LOG(LogSourceControl, Warning, TEXT("'%s': only Connect operation allowed without a workspace"), *InOperation->GetName().ToString());
 		return ECommandResult::Failed;
 	}
 
@@ -418,7 +418,7 @@ void FPlasticSourceControlProvider::Tick()
 				delete &Command;
 			}
 
-			// only do one command per tick loop, as we dont want concurrent modification 
+			// only do one command per tick loop, as we don't want concurrent modification 
 			// of the command queue (which can happen in the completion delegate)
 			break;
 		}

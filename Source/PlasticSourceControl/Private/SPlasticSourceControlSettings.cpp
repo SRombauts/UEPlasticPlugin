@@ -531,7 +531,7 @@ void SPlasticSourceControlSettings::LaunchMakeWorkspaceOperation()
 	}
 }
 
-/// 2. Add all project files to to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any)
+/// 2. Add all project files to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any)
 void SPlasticSourceControlSettings::LaunchMarkForAddOperation()
 {
 	TSharedRef<FMarkForAdd, ESPMode::ThreadSafe> MarkForAddOperation = ISourceControlOperation::Create<FMarkForAdd>();
@@ -547,7 +547,7 @@ void SPlasticSourceControlSettings::LaunchMarkForAddOperation()
 			// 1.c Create a standard "ignore.conf" file with common patterns for a typical Blueprint & C++ project
 			CreateIgnoreFile();
 		}
-		// 2. Add all project files to to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any)
+		// 2. Add all project files to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any)
 		const TArray<FString> ProjectFiles = GetProjectFiles();
 		ECommandResult::Type Result = PlasticSourceControl.GetProvider().Execute(MarkForAddOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
 		if (Result == ECommandResult::Succeeded)
@@ -598,7 +598,7 @@ void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSour
 		DisplayFailureNotification(InOperation->GetName());
 	}
 
-	// Launch the following asynchrounous operation
+	// Launch the following asynchronous operation
 	if ((InOperation->GetName() == "MakeWorkspace") && (InResult == ECommandResult::Succeeded) && bAutoInitialCommit)
 	{
 		// 2. Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)

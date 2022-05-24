@@ -74,7 +74,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(InCommand.WorkspaceName);
 		if (InCommand.bCommandSuccessful)
 		{
-			// Get repository, server Url, branch and current changeset number
+			// Get repository, server URL, branch and current changeset number
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceInformation(InCommand.ChangesetNumber, InCommand.RepositoryName, InCommand.ServerUrl, InCommand.BranchName);
 			if (InCommand.bCommandSuccessful)
 			{
@@ -146,7 +146,7 @@ bool FPlasticCheckOutWorker::UpdateStates()
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
-/// Parse check-in result, usually locking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
+/// Parse checkin result, usually locking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
 static FText ParseCheckInResults(const TArray<FString>& InResults)
 {
 	if (InResults.Num() > 0)
@@ -260,7 +260,7 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		// Note: using "?" is a workaround to trigger the Plastic's "SkipIgnored" internal flag meaning "don't add file that are ignored":
 		//			options.SkipIgnored = cla.GetWildCardArguments().Count > 0;
 		//		 It's behavior is similar as Subversion:
-		//  		if you explicitely add one file that is ignored, "cm" will happily accept it and add it,
+		//  		if you explicitly add one file that is ignored, "cm" will happily accept it and add it,
 		//			if you try to add a set of files with a pattern, "cm" will skip the files that are ignored and only add the other ones
 		// TODO: provide an updated version of "cm" with a new flag like --applyignorerules
 		if (AreAllFiles(InCommand.Files))
@@ -386,7 +386,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 	}
 
-	// NOTE: optim, no need to update the status of our files since this is done immediately after by the Editor
+	// NOTE: optimization, no need to update the status of our files since this is done immediately after by the Editor
 
 	return InCommand.bCommandSuccessful;
 }
@@ -580,7 +580,7 @@ bool FPlasticUpdateStatusWorker::UpdateStates()
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
-/// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controled asset)
+/// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controlled asset)
 bool IsMoveOperation(const FString& InOrigin)
 {
 	bool bIsMoveOperation = true;
@@ -637,12 +637,12 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		const FString& Origin = InCommand.Files[0];
 		const FString Destination = FPaths::ConvertRelativePathToFull(Operation->GetDestination());
 
-		// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controled asset)
+		// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controlled asset)
 		const bool bIsMoveOperation = IsMoveOperation(Origin);
 		if (bIsMoveOperation)
 		{
 			UE_LOG(LogSourceControl, Log, TEXT("Moving %s to %s..."), *Origin, *Destination);
-			// In case of rename, we have to undo what the Editor (created a redirector and added the dest asset), and then redo it with Plastic SCM
+			// In case of rename, we have to undo what the Editor (created a redirector and added the destination asset), and then redo it with Plastic SCM
 			// - revert the 'cm add' that was applied to the destination by the Editor
 			{
 				TArray<FString> DestinationFiles;
@@ -742,7 +742,7 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
 			PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 		}
-		// else: optim, no need to update the status of our files since this is done immediately after by the Editor
+		// else: optimization, no need to update the status of our files since this is done immediately after by the Editor
 	}
 
 	return InCommand.bCommandSuccessful;

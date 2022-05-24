@@ -79,7 +79,7 @@ bool GetWorkspaceName(FString& OutWorkspaceName);
  * Get Plastic repository name and server URL, branch name and current changeset number
  * @param	OutChangeset		The current Changeset Number
  * @param	OutRepositoryName	Name of the repository of the current workspace
- * @param	OutServerUrl		Url/Port of the server of the repository
+ * @param	OutServerUrl		URL/Port of the server of the repository
  * @param	OutBranchName		Name of the current checked-out branch
  */
 bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName);
@@ -90,7 +90,7 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
  * @param	InCommand			The Plastic command - e.g. commit
  * @param	InParameters		The parameters to the Plastic command
  * @param	InFiles				The files to be operated on
- * @param	InConcurrency		Is the command running in the background, or bloking the main thread
+ * @param	InConcurrency		Is the command running in the background, or blocking the main thread
  * @param	OutResults			The results (from StdOut) as an array per-line
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  * @returns true if the command succeeded and returned no errors

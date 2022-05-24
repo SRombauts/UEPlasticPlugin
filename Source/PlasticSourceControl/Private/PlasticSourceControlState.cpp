@@ -77,7 +77,7 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 {
 	for (const auto& Revision : History)
 	{
-		// look for the the SHA1 id of the file, not the commit id (revision)
+		// look for the SHA1 id of the file, not the commit id (revision)
 		if (Revision->ChangesetNumber == PendingMergeBaseChangeset)
 		{
 			return Revision;
@@ -407,7 +407,7 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 /** Get whether this file is checked out in a different branch, if no branch is specified defaults to FEngineVerion current branch */
 bool FPlasticSourceControlState::IsCheckedOutInOtherBranch(const FString& CurrentBranch /* = FString() */) const
 {
-	// Note: to my knowledge, it's not possible to detect that with PlasticSCM withouth the Locks,
+	// Note: to my knowledge, it's not possible to detect that with PlasticSCM without the Locks,
 	// which are already detected by fileinfo LockedBy/LockedWhere and reported by IsCheckedOutOther() above
 	return false;
 }
@@ -506,9 +506,9 @@ bool FPlasticSourceControlState::IsUnknown() const
 
 bool FPlasticSourceControlState::IsModified() const
 {
-	// Warning: for a clean "check-in" (commit) checked-out files unmodified should be removed from the changeset (the index)
+	// Warning: for a clean "checkin" (commit) checked-out files unmodified should be removed from the changeset (the index)
 	//
-	// Thus, before check-in UE4 Editor call RevertUnchangedFiles() in PromptForCheckin() and CheckinFiles().
+	// Thus, before checkin UE4 Editor call RevertUnchangedFiles() in PromptForCheckin() and CheckinFiles().
 	//
 	// So here we must take care to enumerate all states that need to be commited, all other will be discarded:
 	//  - Unknown

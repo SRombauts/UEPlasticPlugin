@@ -93,7 +93,7 @@ bool FPlasticSourceControlMenu::SaveDirtyPackages()
 
 	bool bSaved = FEditorFileUtils::SaveDirtyPackages(bPromptUserToSave, bSaveMapPackages, bSaveContentPackages, bFastSave, bNotifyNoPackagesSaved, bCanBeDeclined, &bHadPackagesToSave);
 
-	// bSaved can be true if the user selects to not save an asset by unchecking it and clicking "save"
+	// bSaved can be true if the user selects to not save an asset by un-checking it and clicking "save"
 	if (bSaved)
 	{
 		TArray<UPackage*> DirtyPackages;

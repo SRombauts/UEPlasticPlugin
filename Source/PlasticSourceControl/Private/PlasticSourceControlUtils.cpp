@@ -68,7 +68,7 @@ const FString& FScopedTempFile::GetFilename() const
 #if ENGINE_MAJOR_VERSION == 4
 
 // Needed to SetHandleInformation() on WritePipe for input (opposite of ReadPipe, for output) (idem FInteractiveProcess)
-// Note: this has been implemented in Unreal Engine 5.0 in january 2022
+// Note: this has been implemented in Unreal Engine 5.0 in January 2022
 static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 {
 #if PLATFORM_WINDOWS
@@ -117,7 +117,7 @@ static void _CleanupBackgroundCommandLineShell()
 	ShellInputPipeRead = ShellInputPipeWrite = nullptr;
 }
 
-// Internal function to actualy launch the Plastic SCM background 'cm shell' process if possible (called under the critical section)
+// Internal function to launch the Plastic SCM background 'cm' process in interactive shell mode (called under the critical section)
 static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FString& InWorkingDirectory)
 {
 	const FString FullCommand(TEXT("shell"));
@@ -169,7 +169,7 @@ static void _ExitBackgroundCommandLineShell()
 			{
 				if ((FPlatformTime::Seconds() - StartTimestamp) > Timeout)
 				{
-					UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefuly in %lfs."), Timeout);
+					UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefully in %lfs."), Timeout);
 					break;
 				}
 				FPlatformProcess::Sleep(0.01f);
@@ -205,7 +205,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		_RestartBackgroundCommandLineShell();
 	}
 
-	// Start with the Plastic command itself ("status", "log", "chekin"...)
+	// Start with the Plastic command itself ("status", "log", "checkin"...)
 	FString FullCommand = InCommand;
 	// Append to the command all parameters, and then finally the files
 	for (const FString& Parameter : InParameters)
@@ -226,7 +226,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	// Send command to 'cm shell' process
 	const bool bWriteOk = FPlatformProcess::WritePipe(ShellInputPipeWrite, FullCommand);
 
-	// And wait up to 180.0 seconds for any kind of output from cm shell: in case of lengthier operation, intermediate output (like percentage of progress) is expected, which would refresh the timout
+	// And wait up to 180.0 seconds for any kind of output from cm shell: in case of lengthier operation, intermediate output (like percentage of progress) is expected, which would refresh the timeout
 	const double Timeout = 180.0;
 	const double StartTimestamp = FPlatformTime::Seconds();
 	double LastActivity = StartTimestamp;
@@ -266,7 +266,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		}
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
-			// In case of timeout, ask the blocking 'cm shell' process to exit, detach from it and restart it immediatly
+			// In case of timeout, ask the blocking 'cm shell' process to exit, detach from it and restart it immediately
 			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
 			_RestartBackgroundCommandLineShell();
 			return false;
@@ -872,7 +872,7 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ECo
 	Parameters.Add(TEXT("--ignored"));
 	// "cm status" only operate on one path (file or directory) at a time, so use one common path for multiple files in a directory
 	TArray<FString> OnePath;
-	// Only one file: optim very useful for the .uproject file at the root to avoid parsing the whole repository
+	// Only one file: optimization very useful for the .uproject file at the root to avoid parsing the whole repository
 	// (but doesn't work if the file is deleted)
 	const bool bSingleFile = (InFiles.Num() == 1) && (FPaths::FileExists(InFiles[0]));
 	if (bSingleFile)
@@ -1012,7 +1012,7 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
  *
  * ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere
  *
- * @param[in]		bInWholeDirectory	If executed on a whole directory (typically Content/) for a "Submit Content" operation, optimize fileinfo more agressively
+ * @param[in]		bInWholeDirectory	If executed on a whole directory (typically Content/) for a "Submit Content" operation, optimize fileinfo more aggressively
  * @param			bInUpdateHistory	If getting the history of files, force execute the fileinfo command required to get RepSpec of XLinks (history view or visual diff)
  * @param[in]		InConcurrency		Is the command running in the background, or blocking the main thread
  * @param[out]		OutErrorMessages	Error messages from the "fileinfo" command
@@ -1027,10 +1027,10 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 	TArray<FPlasticSourceControlState> OptimizedStates;
 	for (FPlasticSourceControlState& State : InOutStates)
 	{
-		// 1) Issue a "fileinfo" command for controled files (to know if they are up to date and can be checked-out or checked-in)
+		// 1) Issue a "fileinfo" command for controlled files (to know if they are up to date and can be checked-out or checked-in)
 		// but only if controlled unchanged, or locally changed / locally deleted,
 		// optimizing for files that are CheckedOut/Added/Deleted/Moved/Copied/Replaced/NotControled/Ignored/Private/Unknown
-		// (since there is no point to check if they are up to date in these cases; they are already checkedout or not controlld).
+		// (since there is no point to check if they are up to date in these cases; they are already checked-out or not controlled).
 		// This greatly reduce the time needed to do some operations like "Add" or "Move/Rename/Copy" when there is some latency with the server (eg cloud).
 		//
 		// 2) bInWholeDirectory: In the case of a "whole directory status" triggered by the "Submit Content" operation,
@@ -1167,7 +1167,7 @@ bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErr
 					// Store the Merge Parameters for reuse with later "Resolve" operation
 					const TArray<FString> PendingMergeParameters = Parameters;
 					Parameters.Add(TEXT("--machinereadable"));
-					// call 'cm merge cs:xxx --machinereadable' (only dry-run, whithout the --merge parameter)
+					// call 'cm merge cs:xxx --machinereadable' (only dry-run, without the --merge parameter)
 					bResult = RunCommand(TEXT("merge"), Parameters, TArray<FString>(), EConcurrency::Synchronous, Results, ErrorMessages);
 					OutErrorMessages.Append(MoveTemp(ErrorMessages));
 					// Parse the result, one line for each conflicted files:
@@ -1233,7 +1233,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 	// But "Submit to Source Control" ask for the State of many different directories,
 	// from Project/Content and Project/Config, Engine/Content, Engine/Plugins/<...>/Content...
 
-	// In a similar way, a check-in can involve files from different subdirectories, and UpdateStatus is called for all of them at once.
+	// In a similar way, a checkin can involve files from different subdirectories, and UpdateStatus is called for all of them at once.
 
 	static TArray<FString> RootDirs =
 	{

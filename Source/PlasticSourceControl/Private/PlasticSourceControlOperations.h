@@ -1,6 +1,6 @@
 // Copyright (c) 2016-2022 Codice Software
 
-// Specialization of classes defineds in Engine\Source\Developer\SourceControl\Public\SourceControlOperations.h
+// Specialization of classes defined in Engine\Source\Developer\SourceControl\Public\SourceControlOperations.h
 
 #pragma once
 
