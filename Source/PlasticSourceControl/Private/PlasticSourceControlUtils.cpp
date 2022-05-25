@@ -170,6 +170,7 @@ static void _ExitBackgroundCommandLineShell()
 				if ((FPlatformTime::Seconds() - StartTimestamp) > Timeout)
 				{
 					UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefully in %lfs."), Timeout);
+					FPlatformProcess::TerminateProc(ShellProcessHandle);
 					break;
 				}
 				FPlatformProcess::Sleep(0.01f);
