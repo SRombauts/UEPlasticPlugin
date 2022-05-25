@@ -29,6 +29,10 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
      - [Source Control Windows](#source-control-windows)
      - [Redirectors](#redirectors)
      - [Branches Support](#branches-support)
+	 - [Merge conflicts on Blueprints](#merge-conflicts-on-blueprints)
+	 - [Workflows](#workflows)
+	   - [Mainline](#mainline)
+	   - [Task branches](#task-branches)
    - [Plastic SCM Setup](#plastic-scm-setup)
      - [Configure Locks for Unreal Assets (exclusive checkout)](#configure-locks-for-unreal-assets-exclusive-checkout)
      - [Configure Visual Diff of Blueprints from Plastic SCM GUI](#configure-visual-diff-of-blueprints-from-plastic-scm-gui)
@@ -155,16 +159,19 @@ Plastic SCM forums:
 ![Moved/Renamed](Screenshots/Icons/UE4PlasticPlugin-Renamed.png)
 ![Checked-Out/Locked by someone else](Screenshots/Icons/UE4PlasticPlugin-CheckedOutOther.png)
 ![Not up-to-date/new revision in repository](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
+![Merge Conflict](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
 
  5. **Checked-out** for modification, and Locked to prevent other from making modifications (if Locks are enabled on the server)
  6. **Renamed** or **Moved**
  7. **Locked somewhere else**, by someone else or in another workspace (if Locks are enabled on the server)
  8. **Not at head revision**, the asset has been submitted with a newer revision on the same branch
+ 9. **Merge conflict**, the asset has been changed in two separate branches and is pending merge resolution
 
 TODO:
 
  7. Redo the "Locked somewhere else"
- 9. Add the "Changed in an other branch"
+ 10. Add the "Changed in an other branch"
+ 10. Add the "Conflict"
 
 #### Source Control Menu
 
@@ -215,12 +222,68 @@ Warning when trying to checkout an asset that has been modified in another branc
 Warning when trying to modify an asset that has been modified in another branch:
 ![Warning on modification for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnModification.png)
 
-#### Worfklow
+#### Merge conflicts on Blueprints
 
-Unreal Engine workflow with binary assets works best with mostly only one branch (regardless of the source control used).
+In case you ever use branches with binary assets without relying on exclusive checkouts (file locks) ((see Workflows below)[#workflows])
+you will encounter case of merge conflicts on binary assets.
+You have to trigger the resolve in the Plastic SCM GUI, but then skip it without saving changes in order to let the Editor presents you with a visual diff.
 
- - TODO: list limitations working with branches, and possible workflow (task branches for code, enabling code reviews)
- - TODO: describe how to use Gluon to enable working without always getting latest version before a submit (and decide if this should be the advertised best way to work in the Unreal Editor)
+Branch explorer showing the merge pending with an asset in conflict:
+![Merged branch with a pending conflict resolution](Screenshots/UE4PlasticPlugin-MergeBranch-Pending.png)
+
+Corresponding warning in the Content Browser:
+![Merge Conflict](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
+
+Right click on the asset in conflict to open the Merge Tool:
+![Merge context menu](Screenshots/UE4PlasticPlugin-ContextMenu-Merge.png)
+
+Visual diff of Blueprint properties in conflict:
+![Merge of Blueprint properties](Screenshots/UE4PlasticPlugin-MergeTool-Properties.png)
+
+Visual diff of a Blueprint Event Graph in conflict:
+![Merge of Blueprint Event Graph](Screenshots/UE4PlasticPlugin-MergeTool-EventGraph.png)
+
+#### Workflows
+
+##### Mainline
+
+The most common workflow with Unreal Engine binary assets is the one taught by Perforce:
+It relies mostly on one main branch (stream) for everyone with [exclusive checkouts (locks) for the whole Content/ subdirectory](#configure-locks-for-unreal-assets-exclusive-checkout),
+in order to prevent merge conflicts on a uasset or a umap file.
+
+This typical workflow would work the best with **the workspace in partial mode** configured using Gluon GUI.
+The reason is that a partial workspace enables you to checkin assets without the need to update the workspace before.
+
+1. update the workspace (get latest) using Gluon GUI, with the Unreal Editor closed (since the Editor is locking assets, but also .exe & .dll files that might be in source control)
+2. start the Editor, make modifications and checkout assets
+3. then checkin (submit) the assets, either from withing the Editor, or from the GUI after closing the Editor (the benefit of closing is you ensure that everything is saved)
+4. when needed, close the Editor and update the workspace again
+
+If you try to use a full workspace (with Plastic SCM GUI instead of Gluon) you will often need to update the workspace before being able to checkin.
+
+##### Task branches
+
+Handling of binary assets works best in only one branch (regardless of the source control used)
+since they cannot be merged, and since they increase the cost (time/bandwidth) of switching between branches.
+
+But with Plastic SCM you can use branches that are easy and cheap to create and merge:
+using them for code will enable you to leverage the built-in code review on these branches.
+
+Note that some studios also use task branches for assets, and include them in their code reviews.
+Plastic SCM locks extend to all branches, preventing two people from working at the same time on the same assets regardless of the branch they are one.
+The Plastic plugin also offer [some branch support to warn users if an asset has been changed in another branch](#branches-support).
+
+To use branches, you would need to also close the Editor before switching from a branch to another, and before merging a branch into another:
+
+1. create a child branch from main using Plastic GUI
+2. switch to it, updating the workspace, with the Unreal Editor closed
+3. start the Editor, make modifications and checkout assets
+4. then checkin the assets (remember to save everything, or close the Editor to make sure of it)
+5. close the Editor
+6. create a code review from the branch
+7. create a new task branch from main or go back to main to merge branches
+
+The plugin also leverages the [visual diff merge conflicts resolution tool from the Editor](#merge-conflicts-on-blueprints) but this is a pain and isn't working as expected currently (as of 1.5.0 & UE5.0)
 
 ### Plastic SCM Setup
 
