@@ -271,6 +271,11 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			_RestartBackgroundCommandLineShell();
 			return false;
 		}
+		else if (IsEngineExitRequested())
+		{
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' Engine Exit was requested after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
+			_ExitBackgroundCommandLineShell();
+		}
 
 		FPlatformProcess::Sleep(0.001f);
 	}
