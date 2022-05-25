@@ -201,7 +201,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	// Detect previous crash of cm.exe and restart 'cm shell'
 	if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: 'cm shell' has stopped. Restarting! (count %d)"), ShellCommandCounter);
+		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: 'cm shell' has stopped. Restarting!"));
 		_RestartBackgroundCommandLineShell();
 	}
 
