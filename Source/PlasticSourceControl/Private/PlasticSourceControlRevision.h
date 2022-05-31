@@ -9,7 +9,7 @@
 class FPlasticSourceControlState;
 
 /** Revision of a file, linked to a specific commit */
-class FPlasticSourceControlRevision : public ISourceControlRevision, public TSharedFromThis<FPlasticSourceControlRevision, ESPMode::ThreadSafe>
+class FPlasticSourceControlRevision : public ISourceControlRevision
 {
 public:
 	FPlasticSourceControlRevision()

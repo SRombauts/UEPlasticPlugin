@@ -31,7 +31,7 @@ namespace EWorkspaceState
 	const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState);
 }
 
-class FPlasticSourceControlState : public ISourceControlState, public TSharedFromThis<FPlasticSourceControlState, ESPMode::ThreadSafe>
+class FPlasticSourceControlState : public ISourceControlState
 {
 public:
 
