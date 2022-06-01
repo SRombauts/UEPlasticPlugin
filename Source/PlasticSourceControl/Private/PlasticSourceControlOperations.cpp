@@ -71,31 +71,29 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if (PlasticSourceControl.GetProvider().IsPlasticAvailable())
 	{
 		// Get workspace name
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(InCommand.WorkspaceName);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot(), InCommand.WorkspaceName, InCommand.ErrorMessages);
 		if (InCommand.bCommandSuccessful)
 		{
 			// Get repository, server URL, branch and current changeset number
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceInformation(InCommand.ChangesetNumber, InCommand.RepositoryName, InCommand.ServerUrl, InCommand.BranchName);
+			// Note: this initiates the connection to the server and issue network calls, so we don't need an explicit 'checkconnection'
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceInformation(InCommand.ChangesetNumber, InCommand.RepositoryName, InCommand.ServerUrl, InCommand.BranchName, InCommand.ErrorMessages);
 			if (InCommand.bCommandSuccessful)
 			{
-				// Execute a 'checkconnection' command to check the connectivity of the server.
-				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
-				if (InCommand.bCommandSuccessful)
+				InCommand.InfoMessages.Add(TEXT("Connected successfully"));
+
+				// Now update the status of assets in the Content directory
+				// but only on real (re-)connection (but not each time Login() is called by Rename or Fixup Redirector command to check connection)
+				// and only if enabled in the settings
+				if (!PlasticSourceControl.GetProvider().IsAvailable() && PlasticSourceControl.AccessSettings().GetUpdateStatusAtStartup())
 				{
-					// Now update the status of assets in the Content directory
-					// but only on real (re-)connection (but not each time Login() is called by Rename or Fixup Redirector command to check connection)
-					// and only if enabled in the settings
-					if (!PlasticSourceControl.GetProvider().IsAvailable() && PlasticSourceControl.AccessSettings().GetUpdateStatusAtStartup())
-					{
-						TArray<FString> ContentDir;
-						ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-						PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
-					}
+					TArray<FString> ContentDir;
+					ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+					PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 				}
-				else
-				{
-					Operation->SetErrorText(FText::FromString(InCommand.ErrorMessages[0]));
-				}
+			}
+			else
+			{
+				Operation->SetErrorText(FText::FromString(InCommand.ErrorMessages[0]));
 			}
 		}
 		else

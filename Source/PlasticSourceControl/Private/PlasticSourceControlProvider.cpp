@@ -100,7 +100,9 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 			if (!bWorkspaceFound)
 			{
-				UE_LOG(LogSourceControl, Warning, TEXT("'%s' is not part of a Plastic workspace"), *FPaths::ProjectDir());
+				FFormatNamedArguments Args;
+				Args.Add(TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot));
+				FMessageLog("SourceControl").Info(FText::Format(LOCTEXT("NotInAWorkspace", "{WorkspacePath} is not in a workspace."), Args));
 			}
 		}
 	}
@@ -151,15 +153,26 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (-1 != ChangesetNumber)
 	{
-		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d (standard mode)"), ChangesetNumber)) );
+		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d (standard full workspace)"), ChangesetNumber)) );
 	}
 	else
 	{
-		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("N/A (Gluon/partial mode)"))) );
+		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("N/A (Gluon/partial workspace)"))) );
 	}
 	Args.Add( TEXT("UserName"), FText::FromString(UserName) );
 
-	return FText::Format( NSLOCTEXT("Status", "Provider: Plastic\nEnabledLabel", "Plastic SCM {PlasticScmVersion} (plugin v{PluginVersion})\nWorkspace: {WorkspaceName} ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: {UserName}"), Args );
+	FText FormattedError;
+	TArray<FString> RecentErrors = GetLastErrors();
+	if (RecentErrors.Num() > 0)
+	{
+		FFormatNamedArguments ErrorArgs;
+		ErrorArgs.Add( TEXT("ErrorText"), FText::FromString(RecentErrors[0]) );
+
+		FormattedError = FText::Format( LOCTEXT("PlasticErrorStatusText", "Error: {ErrorText}\n\n"), ErrorArgs );
+	}
+	Args.Add( TEXT("ErrorText"), FormattedError);
+
+	return FText::Format( LOCTEXT("PlasticStatusText", "{ErrorText}Plastic SCM {PlasticScmVersion} (plugin v{PluginVersion})\nWorkspace: {WorkspaceName} ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: {UserName}"), Args );
 }
 
 /** Quick check if source control is enabled. Specifically, it returns true if a source control provider is set (regardless of whether the provider is available) and false if no provider is set. So all providers except the stub DefaultSourceProvider will return true. */
@@ -177,6 +190,19 @@ bool FPlasticSourceControlProvider::IsAvailable() const
 const FName& FPlasticSourceControlProvider::GetName(void) const
 {
 	return ProviderName;
+}
+
+void FPlasticSourceControlProvider::SetLastErrors(const TArray<FString>& InErrors)
+{
+	FScopeLock Lock(&LastErrorsCriticalSection);
+	LastErrors = InErrors;
+}
+
+TArray<FString> FPlasticSourceControlProvider::GetLastErrors() const
+{
+	FScopeLock Lock(&LastErrorsCriticalSection);
+	TArray<FString> Result = LastErrors;
+	return Result;
 }
 
 ECommandResult::Type FPlasticSourceControlProvider::GetState( const TArray<FString>& InFiles, TArray< TSharedRef<ISourceControlState, ESPMode::ThreadSafe> >& OutState, EStateCacheUsage::Type InStateCacheUsage )
@@ -360,11 +386,21 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 			PlasticSourceControlMenu.Unregister(); // cleanup for any previous connection
 			PlasticSourceControlMenu.Register();
 		}
+
+		SetLastErrors(InCommand.ErrorMessages);
 	}
 	else if (InCommand.bConnectionDropped)
 	{
 		// checkconnection failed on UpdateStatus
 		bServerAvailable = false;
+
+		SetLastErrors(InCommand.ErrorMessages);
+	}
+	else if (!bServerAvailable)
+	{
+		bServerAvailable = InCommand.bCommandSuccessful;
+
+		SetLastErrors(TArray<FString>());
 	}
 
 	// And for all operations running UpdateStatus, get Changeset and Branch informations:

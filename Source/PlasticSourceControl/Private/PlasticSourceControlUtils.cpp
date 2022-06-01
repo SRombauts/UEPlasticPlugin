@@ -170,6 +170,7 @@ static void _ExitBackgroundCommandLineShell()
 				if ((FPlatformTime::Seconds() - StartTimestamp) > Timeout)
 				{
 					UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefully in %lfs."), Timeout);
+					FPlatformProcess::TerminateProc(ShellProcessHandle);
 					break;
 				}
 				FPlatformProcess::Sleep(0.01f);
@@ -201,7 +202,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	// Detect previous crash of cm.exe and restart 'cm shell'
 	if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: 'cm shell' has stopped. Restarting! (count %d)"), ShellCommandCounter);
+		UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: 'cm shell' has stopped. Restarting!"));
 		_RestartBackgroundCommandLineShell();
 	}
 
@@ -227,11 +228,11 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	const bool bWriteOk = FPlatformProcess::WritePipe(ShellInputPipeWrite, FullCommand);
 
 	// And wait up to 180.0 seconds for any kind of output from cm shell: in case of lengthier operation, intermediate output (like percentage of progress) is expected, which would refresh the timeout
-	const double Timeout = 180.0;
+	static const double Timeout = 180.0;
 	const double StartTimestamp = FPlatformTime::Seconds();
 	double LastActivity = StartTimestamp;
 	double LastLog = StartTimestamp;
-	const double LogInterval = 5.0;
+	static const double LogInterval = 5.0;
 	int32 PreviousLogLen = 0;
 	while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
@@ -256,10 +257,9 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 				}
 			}
 		}
-		else if ((FPlatformTime::Seconds() - LastLog > LogInterval) && (PreviousLogLen < OutResults.Len()) && (InConcurrency == EConcurrency::Asynchronous))
+		else if ((FPlatformTime::Seconds() - LastLog > LogInterval) && (PreviousLogLen < OutResults.Len()))
 		{
 			// In case of long running operation, start to print intermediate output from cm shell (like percentage of progress)
-			// (but only when running Asynchronous commands, since Synchronous commands block the main thread until they finish)
 			UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' in progress for %.3lfs...\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
 			PreviousLogLen = OutResults.Len();
 			LastLog = FPlatformTime::Seconds(); // freshen the timestamp of last log
@@ -270,6 +270,11 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
 			_RestartBackgroundCommandLineShell();
 			return false;
+		}
+		else if (IsEngineExitRequested())
+		{
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' Engine Exit was requested after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
+			_ExitBackgroundCommandLineShell();
 		}
 
 		FPlatformProcess::Sleep(0.001f);
@@ -473,18 +478,18 @@ void GetUserName(FString& OutUserName)
 	}
 }
 
-bool GetWorkspaceName(FString& OutWorkspaceName)
+bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> InfoMessages;
-	TArray<FString> ErrorMessages;
+
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("."));
+	Parameters.Add(InWorkspaceRoot);
 	Parameters.Add(TEXT("--format={0}"));
 	// Get the workspace name
-	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, OutErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
-		// NOTE: getworkspacefrompath never returns an error!
+		// NOTE: getworkspacefrompath didn't return an error
 		if (!InfoMessages[0].Equals(TEXT(". is not in a workspace.")))
 		{
 			OutWorkspaceName = MoveTemp(InfoMessages[0]);
@@ -535,10 +540,9 @@ static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int
 	return bResult;
 }
 
-bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName)
+bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> InfoMessages;
-	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
 
 	// Command-line format output changed with version 8.0.16.3000, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
@@ -553,7 +557,7 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	}
 	// NOTE: --wkconfig results in two network calls GetBranchInfoByName & GetLastChangesetOnBranch so it's okay to do it once here but not all the time
 	Parameters.Add(TEXT("--wkconfig")); // Branch name. NOTE: Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/8.0.16.3000
-	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, OutErrorMessages);
 	if (bResult)
 	{
 		bResult = ParseWorkspaceInformation(InfoMessages, OutChangeset, OutRepositoryName, OutServerUrl, OutBranchName);

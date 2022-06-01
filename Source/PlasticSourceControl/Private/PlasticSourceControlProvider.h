@@ -125,6 +125,12 @@ public:
 		return ChangesetNumber;
 	}
 
+	/** Set list of error messages that occurred after last Plastic command */
+	void SetLastErrors(const TArray<FString>& InErrors);
+
+	/** Get list of error messages that occurred after last Plastic command */
+	TArray<FString> GetLastErrors() const;
+
 	/** Helper function used to update state cache */
 	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> GetStateInternal(const FString& InFilename) const;
 
@@ -147,6 +153,12 @@ private:
 
 	/** Indicates if source control integration is available or not. */
 	bool bServerAvailable;
+
+	/** Critical section for thread safety of error messages that occurred after last Plastic command */
+	mutable FCriticalSection LastErrorsCriticalSection;
+
+	/** List of error messages that occurred after last Plastic command */
+	TArray<FString> LastErrors;
 
 	/** Helper function for Execute() */
 	TSharedPtr<class IPlasticSourceControlWorker, ESPMode::ThreadSafe> CreateWorker(const FName& InOperationName) const;
