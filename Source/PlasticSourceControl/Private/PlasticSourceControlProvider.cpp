@@ -95,7 +95,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			// Get user name (from the global Plastic SCM client config)
 			PlasticSourceControlUtils::GetUserName(UserName);
 
-			// Register Console Commands (even without a workspace)
+			// Register Console Commands
 			PlasticSourceControlConsole.Register();
 
 			if (!bWorkspaceFound)
@@ -153,13 +153,22 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (-1 != ChangesetNumber)
 	{
-		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d (standard full workspace)"), ChangesetNumber)) );
+		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d  (standard full workspace)"), ChangesetNumber)) );
 	}
 	else
 	{
-		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("N/A (Gluon/partial workspace)"))) );
+		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("N/A  (Gluon/partial workspace)"))) );
 	}
 	Args.Add( TEXT("UserName"), FText::FromString(UserName) );
+	const FString DisplayName = PlasticSourceControlUtils::UserNameToDisplayName(UserName);
+	if (DisplayName != UserName)
+	{
+		Args.Add(TEXT("DisplayName"), FText::FromString(TEXT("(Display: ") + DisplayName + TEXT(")")));
+	}
+	else
+	{
+		Args.Add(TEXT("DisplayName"), FText::GetEmpty());
+	}
 
 	FText FormattedError;
 	TArray<FString> RecentErrors = GetLastErrors();
@@ -168,11 +177,11 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 		FFormatNamedArguments ErrorArgs;
 		ErrorArgs.Add( TEXT("ErrorText"), FText::FromString(RecentErrors[0]) );
 
-		FormattedError = FText::Format( LOCTEXT("PlasticErrorStatusText", "Error: {ErrorText}\n\n"), ErrorArgs );
+		FormattedError = FText::Format( LOCTEXT("PlasticErrorStatusText", "Error: {ErrorText} {UserName}\n\n"), ErrorArgs );
 	}
 	Args.Add( TEXT("ErrorText"), FormattedError);
 
-	return FText::Format( LOCTEXT("PlasticStatusText", "{ErrorText}Plastic SCM {PlasticScmVersion} (plugin v{PluginVersion})\nWorkspace: {WorkspaceName} ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: {UserName}"), Args );
+	return FText::Format(LOCTEXT("PlasticStatusText", "{ErrorText}Plastic SCM {PlasticScmVersion}  (plugin v{PluginVersion})\nWorkspace: {WorkspaceName}  ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: '{UserName}'  {DisplayName}"), Args);
 }
 
 /** Quick check if source control is enabled. Specifically, it returns true if a source control provider is set (regardless of whether the provider is available) and false if no provider is set. So all providers except the stub DefaultSourceProvider will return true. */
@@ -265,11 +274,14 @@ void FPlasticSourceControlProvider::UnregisterSourceControlStateChanged_Handle( 
 	OnSourceControlStateChanged.Remove( Handle );
 }
 
-#if ENGINE_MAJOR_VERSION == 4
-ECommandResult::Type FPlasticSourceControlProvider::Execute(const FSourceControlOperationRef& InOperation, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency, const FSourceControlOperationComplete& InOperationCompleteDelegate )
-#elif ENGINE_MAJOR_VERSION == 5
-ECommandResult::Type FPlasticSourceControlProvider::Execute(const FSourceControlOperationRef& InOperation, FSourceControlChangelistPtr InChangelist, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency, const FSourceControlOperationComplete& InOperationCompleteDelegate )
+ECommandResult::Type FPlasticSourceControlProvider::Execute(
+	const FSourceControlOperationRef& InOperation,
+#if ENGINE_MAJOR_VERSION == 5
+	FSourceControlChangelistPtr InChangelist,
 #endif
+	const TArray<FString>& InFiles,
+	EConcurrency::Type InConcurrency,
+	const FSourceControlOperationComplete& InOperationCompleteDelegate )
 {
 	if (!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "MakeWorkspace"))
 	{
