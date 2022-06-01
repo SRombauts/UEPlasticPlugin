@@ -9,13 +9,16 @@
 
 void FPlasticSourceControlConsole::Register()
 {
-	CmConsoleCommand = MakeUnique<FAutoConsoleCommand>(
-		TEXT("cm"),
-		TEXT("PlasticSCM Command Line Interface.\n")
-		TEXT("Run any 'cm' command directly from the Unreal Editor Console.\n")
-		TEXT("Type 'cm showcommands' to get a command list."),
-		FConsoleCommandWithArgsDelegate::CreateRaw(this, &FPlasticSourceControlConsole::ExecutePlasticConsoleCommand)
-	);
+	if (!CmConsoleCommand.IsValid())
+	{
+		CmConsoleCommand = MakeUnique<FAutoConsoleCommand>(
+			TEXT("cm"),
+			TEXT("PlasticSCM Command Line Interface.\n")
+			TEXT("Run any 'cm' command directly from the Unreal Editor Console.\n")
+			TEXT("Type 'cm showcommands' to get a command list."),
+			FConsoleCommandWithArgsDelegate::CreateRaw(this, &FPlasticSourceControlConsole::ExecutePlasticConsoleCommand)
+		);
+	}
 }
 
 void FPlasticSourceControlConsole::Unregister()
