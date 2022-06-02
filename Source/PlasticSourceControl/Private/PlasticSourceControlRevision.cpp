@@ -16,7 +16,7 @@
 #if ENGINE_MAJOR_VERSION == 4
 bool FPlasticSourceControlRevision::Get(FString& InOutFilename) const
 #elif ENGINE_MAJOR_VERSION == 5
-bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Type InConcurrency = EConcurrency::Synchronous) const
+bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Type InConcurrency /* = EConcurrency::Synchronous */) const
 #endif
 {
 #if ENGINE_MAJOR_VERSION == 5
