@@ -13,12 +13,11 @@
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
-bool FPlasticSourceControlRevision::Get(
-	FString& InOutFilename
-#if ENGINE_MAJOR_VERSION == 5
-	, EConcurrency::Type InConcurrency /* = EConcurrency::Synchronous */
+#if ENGINE_MAJOR_VERSION == 4
+bool FPlasticSourceControlRevision::Get(FString& InOutFilename) const
+#elif ENGINE_MAJOR_VERSION == 5
+bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Type InConcurrency = EConcurrency::Synchronous) const
 #endif
-) const
 {
 #if ENGINE_MAJOR_VERSION == 5
 	if (InConcurrency != EConcurrency::Synchronous)

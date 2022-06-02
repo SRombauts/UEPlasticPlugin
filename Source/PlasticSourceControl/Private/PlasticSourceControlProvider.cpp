@@ -95,7 +95,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			// Get user name (from the global Plastic SCM client config)
 			PlasticSourceControlUtils::GetUserName(UserName);
 
-			// Register Console Commands
+			// Register Console Commands (even without a workspace)
 			PlasticSourceControlConsole.Register();
 
 			if (!bWorkspaceFound)
@@ -265,14 +265,11 @@ void FPlasticSourceControlProvider::UnregisterSourceControlStateChanged_Handle( 
 	OnSourceControlStateChanged.Remove( Handle );
 }
 
-ECommandResult::Type FPlasticSourceControlProvider::Execute(
-	const FSourceControlOperationRef& InOperation,
-#if ENGINE_MAJOR_VERSION == 5
-	FSourceControlChangelistPtr InChangelist,
+#if ENGINE_MAJOR_VERSION == 4
+ECommandResult::Type FPlasticSourceControlProvider::Execute(const FSourceControlOperationRef& InOperation, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency, const FSourceControlOperationComplete& InOperationCompleteDelegate )
+#elif ENGINE_MAJOR_VERSION == 5
+ECommandResult::Type FPlasticSourceControlProvider::Execute(const FSourceControlOperationRef& InOperation, FSourceControlChangelistPtr InChangelist, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency, const FSourceControlOperationComplete& InOperationCompleteDelegate )
 #endif
-	const TArray<FString>& InFiles,
-	EConcurrency::Type InConcurrency,
-	const FSourceControlOperationComplete& InOperationCompleteDelegate )
 {
 	if (!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "MakeWorkspace"))
 	{
