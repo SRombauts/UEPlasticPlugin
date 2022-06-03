@@ -2,7 +2,6 @@
 
 #include "PlasticSourceControlConsole.h"
 
-#include "HAL/IConsoleManager.h"
 #include "ISourceControlModule.h"
 
 #include "PlasticSourceControlUtils.h"
