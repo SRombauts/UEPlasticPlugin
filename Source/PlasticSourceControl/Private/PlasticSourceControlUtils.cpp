@@ -1583,6 +1583,12 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 					InOutState.History.Add(SourceControlRevision);
 				}
 
+				// Also grab the UserName of the author of the current depot/head changeset
+				if ((SourceControlRevision->ChangesetNumber == InOutState.DepotRevisionChangeset) && InOutState.HeadUserName.IsEmpty())
+				{
+					InOutState.HeadUserName = SourceControlRevision->UserName;
+				}
+
 				if (!bInUpdateHistory)
 				{
 					break; // if not updating the history, just getting the head of the latest branch is enough
