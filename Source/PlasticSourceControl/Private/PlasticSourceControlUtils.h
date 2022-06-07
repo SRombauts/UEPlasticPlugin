@@ -82,9 +82,18 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName,
  * @param	OutRepositoryName	Name of the repository of the current workspace
  * @param	OutServerUrl		URL/Port of the server of the repository
  * @param	OutBranchName		Name of the current checked-out branch
-  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+ * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  */
 bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages);
+
+/**
+ * Use the Project Settings to replace Plastic SCM full username/e-mail by a shorter version for display.
+ *
+ * Used when retrieving the username of a revision, to display in history and content browser asset tooltip.
+ *
+ * @param	InUserName			The Plastic SCM username to shorten for display.
+ */
+FString UserNameToDisplayName(const FString& InUserName);
 
 /**
  * Run a Plastic command - output is a string TArray.

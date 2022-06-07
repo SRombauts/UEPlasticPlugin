@@ -1,8 +1,10 @@
 // Copyright (c) 2016-2022 Codice Software
 
 #include "PlasticSourceControlUtils.h"
+
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
+#include "PlasticSourceControlProjectSettings.h"
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlState.h"
 #include "Runtime/Launch/Resources/Version.h"
@@ -566,6 +568,24 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	return bResult;
 }
 
+FString UserNameToDisplayName(const FString& InUserName)
+{
+	if (const FString* Result = GetDefault<UPlasticSourceControlProjectSettings>()->UserNameToDisplayName.Find(InUserName))
+	{
+		return *Result;
+	}
+	else if (GetDefault<UPlasticSourceControlProjectSettings>()->bHideEmailDomainInUsername)
+	{
+		int32 EmailDomainSeparatorIndex;
+		if (InUserName.FindChar(TEXT('@'), EmailDomainSeparatorIndex))
+		{
+			return InUserName.Left(EmailDomainSeparatorIndex);
+		}
+	}
+
+	return InUserName;
+}
+
 /**
  * @brief Extract the renamed from filename from a Plastic SCM status result.
  *
@@ -946,7 +966,7 @@ public:
 				RepSpec = MoveTemp(Fileinfos[2]);
 				if (NbElmts >=4)
 				{
-					LockedBy = MoveTemp(Fileinfos[3]);
+					LockedBy = UserNameToDisplayName(MoveTemp(Fileinfos[3]));
 					if (NbElmts >= 5)
 					{
 						LockedWhere = MoveTemp(Fileinfos[4]);
@@ -1530,7 +1550,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				}
 				if (const FXmlNode* OwnerNode = RevisionNode->FindChildNode(Owner))
 				{
-					SourceControlRevision->UserName = OwnerNode->GetContent();
+					SourceControlRevision->UserName = UserNameToDisplayName(OwnerNode->GetContent());
 				}
 				if (const FXmlNode* DateNode = RevisionNode->FindChildNode(CreationDate))
 				{
