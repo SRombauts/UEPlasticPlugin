@@ -59,6 +59,23 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		[
 #endif
 			SNew(SVerticalBox)
+			// Versions (Plugin & Plastic SCM) useful eg to help diagnose issues from screenshots
+			+SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(2.0f)
+			.VAlign(VAlign_Center)
+			[
+				SNew(SHorizontalBox)
+				.ToolTipText(LOCTEXT("PlasticVersions_Tooltip", "Plastic SCM and Plugin versions"))
+				+SHorizontalBox::Slot()
+				.FillWidth(1.0f)
+				.HAlign(HAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text(this, &SPlasticSourceControlSettings::GetVersions)
+					.Font(Font)
+				]
+			]
 			// Path to the Plastic SCM binary
 			+SVerticalBox::Slot()
 			.AutoHeight()
@@ -416,6 +433,12 @@ void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText
 			PlasticSourceControl.SaveSettings();
 		}
 	}
+}
+
+FText SPlasticSourceControlSettings::GetVersions() const
+{
+	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::LoadModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+	return FText::FromString(TEXT("Plastic SCM ") + PlasticSourceControl.GetProvider().GetPlasticScmVersion() + TEXT(" (plugin v") + PlasticSourceControl.GetProvider().GetPluginVersion() + TEXT(")"));
 }
 
 FText SPlasticSourceControlSettings::GetPathToWorkspaceRoot() const

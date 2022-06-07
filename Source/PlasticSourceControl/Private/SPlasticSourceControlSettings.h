@@ -33,6 +33,7 @@ private:
 	void OnBinaryPathTextCommited(const FText& InText, ETextCommit::Type InCommitType) const;
 
 	/** Delegate to get workspace root and user name from provider */
+	FText GetVersions() const;
 	FText GetPathToWorkspaceRoot() const;
 	FText GetUserName() const;
 

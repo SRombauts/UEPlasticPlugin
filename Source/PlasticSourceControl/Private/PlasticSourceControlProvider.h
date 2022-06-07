@@ -122,6 +122,18 @@ public:
 		return ChangesetNumber;
 	}
 
+	/** Version of the Plastic SCM executable used */
+	inline const FString& GetPlasticScmVersion() const
+	{
+		return PlasticScmVersion;
+	}
+
+	/** Version of the Plastic SCM plugin */
+	const FString& GetPluginVersion() const
+	{
+		return PluginVersion;
+	}
+
 	/** Set list of error messages that occurred after last Plastic command */
 	void SetLastErrors(const TArray<FString>& InErrors);
 
