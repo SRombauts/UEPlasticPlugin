@@ -966,7 +966,7 @@ public:
 				RepSpec = MoveTemp(Fileinfos[2]);
 				if (NbElmts >=4)
 				{
-					LockedBy = MoveTemp(Fileinfos[3]);
+					LockedBy = UserNameToDisplayName(MoveTemp(Fileinfos[3]));
 					if (NbElmts >= 5)
 					{
 						LockedWhere = MoveTemp(Fileinfos[4]);
