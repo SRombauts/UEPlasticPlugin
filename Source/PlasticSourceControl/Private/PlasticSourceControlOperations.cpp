@@ -178,7 +178,25 @@ bool FPlasticCheckOutWorker::UpdateStates()
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
-/// Parse checkin result, usually locking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
+#if ENGINE_MAJOR_VERSION == 5
+
+// NOTE: we need to explicitly delete the empty changelist when we remove the last file from it else cm will prevent us to create a new changelist until we run a status --changelists (!)
+void DeleteChangelist(FPlasticSourceControlProvider& PlasticSourceControlProvider, const FPlasticSourceControlChangelist& Changelist)
+{
+	TArray<FString> Parameters;
+	Parameters.Add("rm");
+	TArray<FString> Files;
+	Files.Add(Changelist.GetName());
+	TArray<FString> InfoMessages;
+	TArray<FString> ErrorMessages;
+	PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, Files, EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+
+	PlasticSourceControlProvider.RemoveChangelistFromCache(Changelist);
+}
+
+#endif
+
+/// Parse checkin result, usually looking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
 static FText ParseCheckInResults(const TArray<FString>& InResults)
 {
 	if (InResults.Num() > 0)
@@ -901,6 +919,37 @@ bool FPlasticGetPendingChangelistsWorker::UpdateStates()
 	return bUpdated;
 }
 
+FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlProvider& PlasticSourceControlProvider, const FString& InDescription, EConcurrency::Type InConcurrency, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
+{
+	FPlasticSourceControlChangelist NewChangelist;
+
+	// Generate a unique number for the name: start from current changeset and increment until a number is available as a new changelist number
+	int32 ChangelistNumber = PlasticSourceControlProvider.GetChangesetNumber();
+	bool bNewNumberOk = false;
+	do
+	{
+		ChangelistNumber++;
+		NewChangelist = FPlasticSourceControlChangelist(FString::FromInt(ChangelistNumber));
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = PlasticSourceControlProvider.GetStateInternal(NewChangelist);
+		bNewNumberOk = !ChangelistState->Changelist.IsInitialized();
+	} while (!bNewNumberOk);
+	NewChangelist.SetInitialized();
+
+	// Create a persistent changelist (to stay closer to Perforce)
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("add"));
+	Parameters.Add(TEXT("--persistent"));
+	Parameters.Add(TEXT("\"") + NewChangelist.GetName() + TEXT("\""));
+	Parameters.Add(TEXT("\"") + InDescription + TEXT("\""));
+	const bool bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, TArray<FString>(), InConcurrency, InInfoMessages, InErrorMessages);
+	if (!bCommandSuccessful)
+	{
+		NewChangelist.Reset();
+	}
+
+	return NewChangelist;
+}
+
 FPlasticNewChangelistWorker::FPlasticNewChangelistWorker(FPlasticSourceControlProvider& InSourceControlProvider)
 	: IPlasticSourceControlWorker(InSourceControlProvider)
 	, NewChangelistState(NewChangelist)
@@ -914,56 +963,79 @@ FName FPlasticNewChangelistWorker::GetName() const
 
 bool FPlasticNewChangelistWorker::Execute(class FPlasticSourceControlCommand& InCommand)
 {
-	/* TODO Changelists
-	FScopedPlasticConnection ScopedConnection(InCommand);
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FNewChangelist, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FNewChangelist>(InCommand.Operation);
 
-	if (!InCommand.IsCanceled() && ScopedConnection.IsValid())
+	// TODO: for now "cm" doesn't support newlines, quotes, and question marks on changelist's name or description
+	FString Description = Operation->GetDescription().ToString().Replace(TEXT("\r\n"), TEXT(" "), ESearchCase::CaseSensitive);
+	Description.ReplaceCharInline(TEXT('\n'), TEXT(' '));
+	Description.ReplaceCharInline(TEXT('\"'), TEXT('\''));
+	Description.ReplaceCharInline(TEXT('?'), TEXT('.'));
+	Description.ReplaceCharInline(TEXT('*'), TEXT('.'));
+
+	// Create a new numbered persistent changelist ala Perforce
+	NewChangelist = CreatePendingChangelist(GetProvider(), Description, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+
+	// Successfully created new changelist
+	if (NewChangelist.IsInitialized())
 	{
-		FPlasticConnection& Connection = ScopedConnection.GetConnection();
+		InCommand.bCommandSuccessful = true;
 
-		check(InCommand.Operation->GetName() == GetName());
-		TSharedRef<FNewChangelist, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FNewChangelist>(InCommand.Operation);
+		NewChangelistState.Changelist = NewChangelist;
+		NewChangelistState.Description = MoveTemp(Description);
 
-		int32 ChangeList = Connection.CreatePendingChangelist(Operation->GetDescription(), TArray<FString>(), FOnIsCancelled::CreateRaw(&InCommand, &FPlasticSourceControlCommand::IsCanceled), InCommand.ResultInfo.ErrorMessages);
+		Operation->SetNewChangelist(MakeShared<FPlasticSourceControlChangelist>(NewChangelist));
 
-		InCommand.bCommandSuccessful = (ChangeList > 0);
-		
-		// Successfully created new changelist
-		if (ChangeList > 0)
+		if (InCommand.Files.Num() > 0)
 		{
-			NewChangelist = FPlasticSourceControlChangelist(ChangeList);
-			NewChangelistState.Changelist = NewChangelist;
-			NewChangelistState.Description = Operation->GetDescription().ToString();
-			NewChangelistState.bHasShelvedFiles = false;
-
-			Operation->SetNewChangelist(MakeShared<FPlasticSourceControlChangelist>(NewChangelist));
-
-			if (InCommand.Files.Num() > 0)
+			// Move files to changelist
+			TArray<FString> Parameters;
+			Parameters.Add(TEXT("\"") + NewChangelist.GetName() + TEXT("\""));
+			Parameters.Add(TEXT("add"));
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+			if (InCommand.bCommandSuccessful)
 			{
-				// Move files to changelist
-				if (!RunReopenCommand(InCommand, InCommand.Files, NewChangelist, &MovedFiles))
-				{
-					// Move failed; delete newly created changelist
-					FP4RecordSet Records;
-					TArray<FString> ChangeParams;
-					ChangeParams.Add(TEXT("-d"));
-					ChangeParams.Add(NewChangelist.ToString());
-					Connection.RunCommand(TEXT("change"), ChangeParams, Records, InCommand.ResultInfo.ErrorMessages, FOnIsCancelled::CreateRaw(&InCommand, &FPlasticSourceControlCommand::IsCanceled), InCommand.bConnectionDropped);
-
-					InCommand.bCommandSuccessful = false;
-				}
+				MovedFiles = InCommand.Files;
 			}
 		}
 	}
-	*/
 
 	return InCommand.bCommandSuccessful;
 }
 
 bool FPlasticNewChangelistWorker::UpdateStates()
 {
-	// TODO Changelists
-	return false;
+	if (NewChangelist.IsInitialized())
+	{
+		const FDateTime Now = FDateTime::Now();
+
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(NewChangelist);
+		*ChangelistState = NewChangelistState;
+		ChangelistState->TimeStamp = Now;
+
+		// 3 things to do here:
+		for (const FString& MovedFile : MovedFiles)
+		{
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = GetProvider().GetStateInternal(MovedFile);
+
+			// 1- Remove these files from their previous changelist
+			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(FileState->Changelist);
+			PreviousChangelist->Files.Remove(FileState);
+
+			// 2- Add to the new changelist
+			ChangelistState->Files.Add(FileState);
+
+			// 3- Update changelist in file state
+			FileState->Changelist = NewChangelist;
+			FileState->TimeStamp = Now;
+		}
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 
@@ -974,43 +1046,41 @@ FName FPlasticDeleteChangelistWorker::GetName() const
 
 bool FPlasticDeleteChangelistWorker::Execute(class FPlasticSourceControlCommand& InCommand)
 {
-	/* TODO Changelists
-	FScopedPlasticConnection ScopedConnection(InCommand);
-
 	// Can't delete the default changelist
 	if (InCommand.Changelist.IsDefault())
 	{
 		InCommand.bCommandSuccessful = false;
 	}
-	else if (!InCommand.IsCanceled() && ScopedConnection.IsValid())
+	else
 	{
-		FPlasticConnection& Connection = ScopedConnection.GetConnection();
 		check(InCommand.Operation->GetName() == GetName());
 		TSharedRef<FDeleteChangelist, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FDeleteChangelist>(InCommand.Operation);
 
-		FP4RecordSet Records;
-		TArray<FString> Params;
-		Params.Add(TEXT("-d"));
-		Params.Add(InCommand.Changelist.ToString());
-		// Command will fail if changelist is not empty
-		Connection.RunCommand(TEXT("change"), Params, Records, InCommand.ResultInfo.ErrorMessages, FOnIsCancelled::CreateRaw(&InCommand, &FPlasticSourceControlCommand::IsCanceled), InCommand.bConnectionDropped);
-		// The normal parsing of the records here will show that it failed, but there's no record on a deleted changelist
-		InCommand.bCommandSuccessful = (InCommand.ResultInfo.ErrorMessages.Num() == 0);
-		
+		TArray<FString> Parameters;
+		Parameters.Add("rm");
+		TArray<FString> Files;
+		Files.Add(InCommand.Changelist.GetName());
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+
+		// NOTE: for now it's not possible to delete a changelist with files through the Editor
+
 		// Keep track of changelist to update the cache
 		if (InCommand.bCommandSuccessful)
 		{
 			DeletedChangelist = InCommand.Changelist;
 		}
 	}
-	*/
 
 	return InCommand.bCommandSuccessful;
 }
 
 bool FPlasticDeleteChangelistWorker::UpdateStates()
 {
-	// TODO Changelists
+	if (DeletedChangelist.IsInitialized())
+	{
+		return GetProvider().RemoveChangelistFromCache(DeletedChangelist);
+	}
+
 	return false;
 }
 
