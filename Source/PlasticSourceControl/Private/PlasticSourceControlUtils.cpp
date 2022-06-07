@@ -1229,9 +1229,13 @@ FString FindCommonDirectory(const FString& InPath1, const FString& InPath2)
 	for (int32 Index = 0; Index < MinLen; Index++)
 	{
 		if (InPath1[Index] != InPath2[Index])
+		{
 			break;
+		}
 		if (InPath1[Index] == TEXT('/'))
+		{
 			IndexAfterLastCommonSeparator = Index + 1;
+		}
 	}
 	return InPath1.Left(IndexAfterLastCommonSeparator);
 }
