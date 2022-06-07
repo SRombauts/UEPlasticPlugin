@@ -6,7 +6,8 @@
 #include "Engine/DeveloperSettings.h"
 #include "PlasticSourceControlProjectSettings.generated.h"
 
-UCLASS(config = Engine, NotPlaceable, meta = (DisplayName = "Plastic SCM"))
+/** Project Settings for Plastic SCM Source Control. Saved in Config/DefaultEditor.ini */
+UCLASS(config = Editor, defaultconfig, meta = (DisplayName = "Source Control - Plastic SCM"))
 class UPlasticSourceControlProjectSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
