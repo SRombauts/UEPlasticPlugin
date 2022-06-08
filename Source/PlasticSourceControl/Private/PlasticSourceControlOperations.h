@@ -362,7 +362,7 @@ public:
 
 public:
 	FPlasticSourceControlChangelist EditedChangelist;
-	FText EditedDescription;
+	FString EditedDescription;
 };
 
 class FPlasticReopenWorker : public IPlasticSourceControlWorker

@@ -1092,42 +1092,52 @@ FName FPlasticEditChangelistWorker::GetName() const
 
 bool FPlasticEditChangelistWorker::Execute(class FPlasticSourceControlCommand& InCommand)
 {
-	/* TODO Changelists
-	FScopedPlasticConnection ScopedConnection(InCommand);
-	if (!InCommand.IsCanceled() && ScopedConnection.IsValid())
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FEditChangelist, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FEditChangelist>(InCommand.Operation);
+
+	// TODO: for now "cm" doesn't support newlines, quotes, and question marks on changelist's name or description
+	EditedDescription = Operation->GetDescription().ToString().Replace(TEXT("\r\n"), TEXT(" "), ESearchCase::CaseSensitive);
+	EditedDescription.ReplaceCharInline(TEXT('\n'), TEXT(' '));
+	EditedDescription.ReplaceCharInline(TEXT('\"'), TEXT('\''));
+	EditedDescription.ReplaceCharInline(TEXT('?'), TEXT('.'));
+	EditedDescription.ReplaceCharInline(TEXT('*'), TEXT('.'));
+
+	if (InCommand.Changelist.IsDefault())
 	{
-		FPlasticConnection& Connection = ScopedConnection.GetConnection();
-		check(InCommand.Operation->GetName() == GetName());
-		TSharedRef<FEditChangelist, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FEditChangelist>(InCommand.Operation);
-
-		int32 ChangelistNumber = -1;
-
-		if (InCommand.Changelist.IsDefault())
-		{
-			ChangelistNumber = Connection.CreatePendingChangelist(Operation->GetDescription(), InCommand.Files, FOnIsCancelled::CreateRaw(&InCommand, &FPlasticSourceControlCommand::IsCanceled), InCommand.ResultInfo.ErrorMessages);
-		}
-		else
-		{
-			ChangelistNumber = Connection.EditPendingChangelist(Operation->GetDescription(), InCommand.Changelist.ToInt(), FOnIsCancelled::CreateRaw(&InCommand, &FPlasticSourceControlCommand::IsCanceled), InCommand.ResultInfo.ErrorMessages);
-		}
-
-		InCommand.bCommandSuccessful = (ChangelistNumber == InCommand.Changelist.ToInt() || (ChangelistNumber >= 0 && InCommand.Changelist.IsDefault()));
-
+		// Create a new numbered persistent changelist since we cannot edit the default changelist
+		EditedChangelist = CreatePendingChangelist(GetProvider(), EditedDescription, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+	else
+	{
+		TArray<FString> Parameters;
+		Parameters.Add(TEXT("edit"));
+		Parameters.Add(TEXT("\"") + InCommand.Changelist.GetName() + TEXT("\""));
+		Parameters.Add(TEXT("description"));
+		Parameters.Add(TEXT("\"") + EditedDescription + TEXT("\""));
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, TArray<FString>(), InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 		if (InCommand.bCommandSuccessful)
 		{
-			EditedChangelist = FPlasticSourceControlChangelist(ChangelistNumber);
-			EditedDescription = Operation->GetDescription();
+			EditedChangelist = InCommand.Changelist;
 		}
 	}
-	*/
+
+	InCommand.bCommandSuccessful = EditedChangelist.IsInitialized();
 
 	return InCommand.bCommandSuccessful;
 }
 
 bool FPlasticEditChangelistWorker::UpdateStates()
 {
-	// TODO Changelists
-	return false;
+	if (EditedChangelist.IsInitialized())
+	{
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> EditedChangelistState = GetProvider().GetStateInternal(EditedChangelist);
+		// TODO: update similar to NewChangelist when/if we support files in edit/new changelists.
+		EditedChangelistState->Description = EditedDescription;
+		EditedChangelistState->Changelist = EditedChangelist;
+		EditedChangelistState->TimeStamp = FDateTime::Now();
+	}
+
+	return true;
 }
 
 
