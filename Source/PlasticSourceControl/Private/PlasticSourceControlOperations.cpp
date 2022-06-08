@@ -188,10 +188,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		if (!CommitMsgFile.GetFilename().IsEmpty())
 		{
 			TArray<FString> Parameters;
-			FString ParamCommitMsgFilename = TEXT("--commentsfile=\"");
-			ParamCommitMsgFilename += FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename());
-			ParamCommitMsgFilename += TEXT("\"");
-			Parameters.Add(ParamCommitMsgFilename);
+			Parameters.Add(FString::Printf(TEXT("--commentsfile=\"%s\""), *FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename())));
 			// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 			if (-1 != InCommand.ChangesetNumber)
 			{
