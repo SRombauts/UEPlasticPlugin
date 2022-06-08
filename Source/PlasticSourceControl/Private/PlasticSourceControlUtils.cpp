@@ -485,14 +485,14 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName,
 	TArray<FString> InfoMessages;
 
 	TArray<FString> Parameters;
-	Parameters.Add(InWorkspaceRoot);
+	Parameters.Add(FString::Printf(TEXT("\"%s\""), *InWorkspaceRoot));
 	Parameters.Add(TEXT("--format={0}"));
 	// Get the workspace name
 	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, OutErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
-		// NOTE: getworkspacefrompath didn't return an error
-		if (!InfoMessages[0].Equals(TEXT(". is not in a workspace.")))
+		// NOTE: an old version of cm getworkspacefrompath didn't return an error code so we had to rely on the error message
+		if (!InfoMessages[0].EndsWith(TEXT(" is not in a workspace.")))
 		{
 			OutWorkspaceName = MoveTemp(InfoMessages[0]);
 		}
