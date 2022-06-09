@@ -4,8 +4,14 @@
 
 #include "CoreMinimal.h"
 
+class FPlasticSourceControlProvider;
+
 class IPlasticSourceControlWorker
 {
+public:
+	// Implemented in PlasticSourceControlOperations.cpp with all the code for the workers
+	static void RegisterWorkers(FPlasticSourceControlProvider& PlasticSourceControlProvider);
+
 public:
 	/**
 	 * Name describing the work that this worker does. Used for factory method hookup.
