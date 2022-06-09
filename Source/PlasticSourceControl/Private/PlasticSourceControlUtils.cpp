@@ -432,7 +432,7 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 */
 static bool PlasticScmVersionLess(const FString& VersionA, const FString& VersionB) {
 	struct Version {
-		Version(const FString& V) {
+		explicit Version(const FString& V) {
 			TArray<FString> Parts;
 			const int32 N = V.ParseIntoArray(Parts, TEXT("."));
 			check(N == 4);
@@ -649,7 +649,7 @@ static FString FilenameFromPlasticStatus(const FString& InResult)
 class FPlasticStatusFileMatcher
 {
 public:
-	FPlasticStatusFileMatcher(const FString& InAbsoluteFilename)
+	explicit FPlasticStatusFileMatcher(const FString& InAbsoluteFilename)
 		: AbsoluteFilename(InAbsoluteFilename)
 	{
 	}
@@ -1102,7 +1102,7 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 class FPlasticMergeConflictParser
 {
 public:
-	FPlasticMergeConflictParser(const FString& InResult)
+	explicit FPlasticMergeConflictParser(const FString& InResult)
 	{
 		static const FString FILE_CONFLICT(TEXT("FILE_CONFLICT "));
 		if (InResult.StartsWith(FILE_CONFLICT, ESearchCase::CaseSensitive))
@@ -1672,7 +1672,7 @@ bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates)
  */
 struct FRemoveRedundantErrors
 {
-	FRemoveRedundantErrors(const FString& InFilter)
+	explicit FRemoveRedundantErrors(const FString& InFilter)
 		: Filter(InFilter)
 	{
 	}
@@ -1724,4 +1724,4 @@ void SwitchVerboseLogs(const bool bInEnable)
 	}
 }
 
-}
+} // namespace PlasticSourceControlUtils
