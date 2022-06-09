@@ -108,7 +108,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			.VAlign(VAlign_Center)
 			[
 				SNew(SHorizontalBox)
-				.ToolTipText(LOCTEXT("WorkspaceRootLabel_Tooltip", "Path to the root of the Plastic SCM workspace"))
+				.ToolTipText(this, &SPlasticSourceControlSettings::GetPathToWorkspaceRoot)
 				+SHorizontalBox::Slot()
 				.FillWidth(1.0f)
 				[
