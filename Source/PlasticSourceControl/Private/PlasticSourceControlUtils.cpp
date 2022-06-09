@@ -485,10 +485,11 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName,
 	TArray<FString> InfoMessages;
 
 	TArray<FString> Parameters;
-	Parameters.Add(FString::Printf(TEXT("\"%s\""), *InWorkspaceRoot));
 	Parameters.Add(TEXT("--format={0}"));
+	TArray<FString> Files;
+	Files.Add(InWorkspaceRoot);
 	// Get the workspace name
-	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, OutErrorMessages);
+	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, Files, EConcurrency::Synchronous, InfoMessages, OutErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		// NOTE: an old version of cm getworkspacefrompath didn't return an error code so we had to rely on the error message
@@ -948,31 +949,23 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ECo
 	return bResult;
 }
 
-// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"
+// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{Changelist}"
 // for example "40;41;repo@server:port;srombauts;UEPlasticPluginDev"
 class FPlasticFileinfoParser
 {
 public:
-	FPlasticFileinfoParser(const FString& InResult)
+	explicit FPlasticFileinfoParser(const FString& InResult)
 	{
 		TArray<FString> Fileinfos;
-		const int32 NbElmts = InResult.ParseIntoArray(Fileinfos, TEXT(";"));
-		if (NbElmts >= 2)
+		const int32 NbElmts = InResult.ParseIntoArray(Fileinfos, TEXT(";"), false); // Don't cull empty values in csv
+		if (NbElmts == 6)
 		{
 			RevisionChangeset = FCString::Atoi(*Fileinfos[0]);
 			RevisionHeadChangeset = FCString::Atoi(*Fileinfos[1]);
-			if (NbElmts >= 3)
-			{
-				RepSpec = MoveTemp(Fileinfos[2]);
-				if (NbElmts >=4)
-				{
-					LockedBy = UserNameToDisplayName(MoveTemp(Fileinfos[3]));
-					if (NbElmts >= 5)
-					{
-						LockedWhere = MoveTemp(Fileinfos[4]);
-					}
-				}
-			}
+			RepSpec = MoveTemp(Fileinfos[2]);
+			LockedBy = UserNameToDisplayName(MoveTemp(Fileinfos[3]));
+			LockedWhere = MoveTemp(Fileinfos[4]);
+			Changelist = MoveTemp(Fileinfos[5]);
 		}
 	}
 
@@ -981,9 +974,10 @@ public:
 	FString RepSpec;
 	FString LockedBy;
 	FString LockedWhere;
+	FString Changelist;
 };
 
-/** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"' command
+/** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{Changelist}"' command
  *
  * Example cm fileinfo results:
 16;16;;
@@ -1084,7 +1078,7 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 		TArray<FString> Results;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;
-		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
+		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{Changelist}\""));
 		bResult = RunCommand(TEXT("fileinfo"), Parameters, SelectedFiles, InConcurrency, Results, ErrorMessages);
 		OutErrorMessages.Append(MoveTemp(ErrorMessages));
 		if (bResult)
@@ -1092,6 +1086,11 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 			ParseFileinfoResults(Results, SelectedStates);
 			InOutStates.Append(MoveTemp(SelectedStates));
 		}
+	}
+	else
+	{
+		// TODO we might now want to actually call fileinfo also for files Added and CheckedOut, Moved etc for the purpose of Changelists
+		// but in this case it would be another fileinfo without the expensive 
 	}
 
 	return bResult;
