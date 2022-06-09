@@ -15,17 +15,14 @@
 class SPlasticSourceControlSettings : public SCompoundWidget
 {
 public:
-	
 	SLATE_BEGIN_ARGS(SPlasticSourceControlSettings) {}
-	
+
 	SLATE_END_ARGS()
 
 public:
-
 	void Construct(const FArguments& InArgs);
 
 private:
-
 	/** Delegate to get cm binary path from settings */
 	FText GetBinaryPathText() const;
 
