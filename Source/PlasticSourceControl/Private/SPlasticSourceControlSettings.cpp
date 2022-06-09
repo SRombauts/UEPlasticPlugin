@@ -54,7 +54,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 	[
 #if ENGINE_MAJOR_VERSION == 4
 		SNew(SBorder)
-		.BorderImage( FEditorStyle::GetBrush("DetailsView.CategoryBottom"))
+		.BorderImage(FEditorStyle::GetBrush("DetailsView.CategoryBottom"))
 		.Padding(FMargin(0.0f, 3.0f, 0.0f, 0.0f))
 		[
 #endif
