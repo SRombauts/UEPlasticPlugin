@@ -350,20 +350,20 @@ bool FPlasticSourceControlProvider::UsesCheckout() const
 	return GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
 }
 
-TSharedPtr<IPlasticSourceControlWorker, ESPMode::ThreadSafe> FPlasticSourceControlProvider::CreateWorker(const FName& InOperationName) const
+TSharedPtr<IPlasticSourceControlWorker, ESPMode::ThreadSafe> FPlasticSourceControlProvider::CreateWorker(const FName& InOperationName)
 {
 	const FGetPlasticSourceControlWorker* Operation = WorkersMap.Find(InOperationName);
 	if (Operation != nullptr)
 	{
-		return Operation->Execute();
+		return Operation->Execute(*this);
 	}
-		
+
 	return nullptr;
 }
 
-void FPlasticSourceControlProvider::RegisterWorker( const FName& InName, const FGetPlasticSourceControlWorker& InDelegate )
+void FPlasticSourceControlProvider::RegisterWorker(const FName& InName, const FGetPlasticSourceControlWorker& InDelegate)
 {
-	WorkersMap.Add( InName, InDelegate );
+	WorkersMap.Add(InName, InDelegate);
 }
 
 void FPlasticSourceControlProvider::OutputCommandMessages(const FPlasticSourceControlCommand& InCommand) const
@@ -428,7 +428,7 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 }
 
 void FPlasticSourceControlProvider::Tick()
-{	
+{
 	bool bStatesUpdated = false;
 	for (int32 CommandIndex = 0; CommandIndex < CommandQueue.Num(); ++CommandIndex)
 	{
@@ -467,7 +467,7 @@ void FPlasticSourceControlProvider::Tick()
 				delete &Command;
 			}
 
-			// only do one command per tick loop, as we don't want concurrent modification 
+			// only do one command per tick loop, as we don't want concurrent modification
 			// of the command queue (which can happen in the completion delegate)
 			break;
 		}
@@ -537,7 +537,7 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		else
 		{
 			// TODO If the command failed, inform the user that they need to try again (see Perforce)
-			//FMessageDialog::Open( EAppMsgType::Ok, LOCTEXT("Plastic_ServerUnresponsive", "Plastic server is unresponsive. Please check your connection and try again.") );
+			// FMessageDialog::Open( EAppMsgType::Ok, LOCTEXT("Plastic_ServerUnresponsive", "Plastic server is unresponsive. Please check your connection and try again.") );
 
 			UE_LOG(LogSourceControl, Error, TEXT("Command '%s' Failed!"), *InCommand.Operation->GetName().ToString());
 		}
@@ -547,7 +547,7 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 	check(!InCommand.bAutoDelete);
 
 	// ensure commands that are not auto deleted do not end up in the command queue
-	if ( CommandQueue.Contains( &InCommand ) ) 
+	if ( CommandQueue.Contains( &InCommand ) )
 	{
 		CommandQueue.Remove( &InCommand );
 	}

@@ -12,7 +12,7 @@
 
 class FPlasticSourceControlState;
 
-DECLARE_DELEGATE_RetVal(FPlasticSourceControlWorkerRef, FGetPlasticSourceControlWorker)
+DECLARE_DELEGATE_RetVal_OneParam(FPlasticSourceControlWorkerRef, FGetPlasticSourceControlWorker, FPlasticSourceControlProvider&)
 
 class FPlasticSourceControlProvider : public ISourceControlProvider
 {
@@ -142,7 +142,7 @@ public:
 	 * Register a worker with the provider.
 	 * This is used internally so the provider can maintain a map of all available operations.
 	 */
-	void RegisterWorker( const FName& InName, const FGetPlasticSourceControlWorker& InDelegate );
+	void RegisterWorker(const FName& InName, const FGetPlasticSourceControlWorker& InDelegate);
 
 	/** Remove a named file from the state cache */
 	bool RemoveFileFromCache(const FString& Filename);
@@ -164,7 +164,6 @@ public:
 	}
 
 private:
-
 	/** Is Plastic binary found and working. */
 	bool bPlasticAvailable = false;
 
@@ -181,7 +180,7 @@ private:
 	TArray<FString> LastErrors;
 
 	/** Helper function for Execute() */
-	TSharedPtr<class IPlasticSourceControlWorker, ESPMode::ThreadSafe> CreateWorker(const FName& InOperationName) const;
+	TSharedPtr<class IPlasticSourceControlWorker, ESPMode::ThreadSafe> CreateWorker(const FName& InOperationName);
 
 	/** Helper function for running command synchronously. */
 	ECommandResult::Type ExecuteSynchronousCommand(class FPlasticSourceControlCommand& InCommand, const FText& Task);

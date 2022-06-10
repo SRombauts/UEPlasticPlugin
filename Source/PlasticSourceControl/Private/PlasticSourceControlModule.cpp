@@ -3,9 +3,8 @@
 #include "PlasticSourceControlModule.h"
 
 #include "IPlasticSourceControlWorker.h"
-#include "PlasticSourceControlOperations.h"
-#include "Misc/App.h"
 #include "Features/IModularFeatures.h"
+#include "Misc/App.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
