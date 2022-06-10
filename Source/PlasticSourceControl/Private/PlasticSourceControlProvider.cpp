@@ -3,7 +3,6 @@
 #include "PlasticSourceControlProvider.h"
 
 #include "PlasticSourceControlCommand.h"
-#include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProjectSettings.h"
 #include "PlasticSourceControlSettings.h"
@@ -26,6 +25,12 @@
 
 static FName ProviderName("Plastic SCM");
 
+FPlasticSourceControlProvider::FPlasticSourceControlProvider()
+{
+	// load our settings
+	PlasticSourceControlSettings.LoadSettings();
+}
+
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {
 	// Init() is called multiple times at startup: do not check Plastic SCM each time
@@ -41,7 +46,7 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		CheckPlasticAvailability();
 
 		// Override the source control logs verbosity level if needed based on settings
-		if (FPlasticSourceControlModule::Get().AccessSettings().GetEnableVerboseLogs())
+		if (AccessSettings().GetEnableVerboseLogs())
 		{
 			PlasticSourceControlUtils::SwitchVerboseLogs(true);
 		}
@@ -66,8 +71,7 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 
 void FPlasticSourceControlProvider::CheckPlasticAvailability()
 {
-	FPlasticSourceControlSettings& PlasticSettings = FPlasticSourceControlModule::Get().AccessSettings();
-	FString PathToPlasticBinary = PlasticSettings.GetBinaryPath();
+	FString PathToPlasticBinary = AccessSettings().GetBinaryPath();
 	if (PathToPlasticBinary.IsEmpty())
 	{
 		bPlasticAvailable = false;
@@ -76,7 +80,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		PathToPlasticBinary = PlasticSourceControlUtils::FindPlasticBinaryPath();
 		if (!PathToPlasticBinary.IsEmpty())
 		{
-			PlasticSettings.SetBinaryPath(PathToPlasticBinary);
+			AccessSettings().SetBinaryPath(PathToPlasticBinary);
 		}
 	}
 

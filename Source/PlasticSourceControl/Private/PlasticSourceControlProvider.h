@@ -7,6 +7,7 @@
 #include "IPlasticSourceControlWorker.h"
 #include "PlasticSourceControlConsole.h"
 #include "PlasticSourceControlMenu.h"
+#include "PlasticSourceControlSettings.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 class FPlasticSourceControlState;
@@ -17,13 +18,7 @@ class FPlasticSourceControlProvider : public ISourceControlProvider
 {
 public:
 	/** Constructor */
-	FPlasticSourceControlProvider()
-		: bPlasticAvailable(false)
-		, bWorkspaceFound(false)
-		, bServerAvailable(false)
-		, ChangesetNumber(0)
-	{
-	}
+	FPlasticSourceControlProvider();
 
 	/* ISourceControlProvider implementation */
 	virtual void Init(bool bForceConnection = true) override;
@@ -152,16 +147,32 @@ public:
 	/** Remove a named file from the state cache */
 	bool RemoveFileFromCache(const FString& Filename);
 
+	/** Access the Plastic source control settings */
+	FPlasticSourceControlSettings& AccessSettings()
+	{
+		return PlasticSourceControlSettings;
+	}
+	const FPlasticSourceControlSettings& AccessSettings() const
+	{
+		return PlasticSourceControlSettings;
+	}
+
+	/** Save the Plastic source control settings */
+	void SaveSettings()
+	{
+		PlasticSourceControlSettings.SaveSettings();
+	}
+
 private:
 
 	/** Is Plastic binary found and working. */
-	bool bPlasticAvailable;
+	bool bPlasticAvailable = false;
 
 	/** Is Plastic workspace found. */
-	bool bWorkspaceFound;
+	bool bWorkspaceFound = false;
 
 	/** Indicates if source control integration is available or not. */
-	bool bServerAvailable;
+	bool bServerAvailable = false;
 
 	/** Critical section for thread safety of error messages that occurred after last Plastic command */
 	mutable FCriticalSection LastErrorsCriticalSection;
@@ -208,7 +219,7 @@ private:
 	FString BranchName;
 
 	/** Current Changeset Number */
-	int32 ChangesetNumber;
+	int32 ChangesetNumber = 0;
 
 	/** State cache */
 	mutable TMap<FString, TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> > StateCache;
@@ -222,9 +233,12 @@ private:
 	/** For notifying when the source control states in the cache have changed */
 	FSourceControlStateChanged OnSourceControlStateChanged;
 
+	/** Source Control Console commands */
+	FPlasticSourceControlConsole PlasticSourceControlConsole;
+
 	/** Source Control Menu Extension */
 	FPlasticSourceControlMenu PlasticSourceControlMenu;
 
-	/** Source Control Console commands */
-	FPlasticSourceControlConsole PlasticSourceControlConsole;
+	/** The settings for Plastic source control */
+	FPlasticSourceControlSettings PlasticSourceControlSettings;
 };

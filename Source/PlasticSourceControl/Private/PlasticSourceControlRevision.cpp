@@ -44,7 +44,7 @@ bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Ty
 	}
 	else if (State)
 	{
-		const FString& PathToPlasticBinary = FPlasticSourceControlModule::Get().AccessSettings().GetBinaryPath();
+		const FString& PathToPlasticBinary = FPlasticSourceControlModule::Get().GetProvider().AccessSettings().GetBinaryPath();
 
 		// Format the revision specification of the file, like rev:Content/BP.uasset#cs:12@repo@server:8087
 		const FString RevisionSpecification = FString::Printf(TEXT("rev:%s#cs:%d@%s"), *Filename, ChangesetNumber, *State->RepSpec);

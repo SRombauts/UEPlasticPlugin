@@ -67,11 +67,11 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FConnect, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FConnect>(InCommand.Operation);
 
-	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-	if (PlasticSourceControl.GetProvider().IsPlasticAvailable())
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	if (Provider.IsPlasticAvailable())
 	{
 		// Get workspace name
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot(), InCommand.WorkspaceName, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(Provider.GetPathToWorkspaceRoot(), InCommand.WorkspaceName, InCommand.ErrorMessages);
 		if (InCommand.bCommandSuccessful)
 		{
 			// Get repository, server URL, branch and current changeset number
@@ -84,7 +84,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				// Now update the status of assets in the Content directory
 				// but only on real (re-)connection (but not each time Login() is called by Rename or Fixup Redirector command to check connection)
 				// and only if enabled in the settings
-				if (!PlasticSourceControl.GetProvider().IsAvailable() && PlasticSourceControl.AccessSettings().GetUpdateStatusAtStartup())
+				if (!Provider.IsAvailable() && Provider.AccessSettings().GetUpdateStatusAtStartup())
 				{
 					TArray<FString> ContentDir;
 					ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
@@ -542,7 +542,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		}
 		else
 		{
-			FPlasticSourceControlSettings& PlasticSettings = FPlasticSourceControlModule::Get().AccessSettings();
+			FPlasticSourceControlSettings& PlasticSettings = FPlasticSourceControlModule::Get().GetProvider().AccessSettings();
 			if (PlasticSettings.GetUpdateStatusOtherBranches() && AreAllFiles(InCommand.Files))
 			{
 				// Get only the last revision of the files (checking all branches)

@@ -186,9 +186,9 @@ static void _ExitBackgroundCommandLineShell()
 // Internal function (called under the critical section)
 static void _RestartBackgroundCommandLineShell()
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString& PathToPlasticBinary = Provider.AccessSettings().GetBinaryPath();
+	const FString& WorkingDirectory = Provider.GetPathToWorkspaceRoot();
 
 	_ExitBackgroundCommandLineShell();
 	_StartBackgroundPlasticShell(PathToPlasticBinary, WorkingDirectory);

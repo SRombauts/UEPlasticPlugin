@@ -30,11 +30,8 @@ void FPlasticSourceControlModule::StartupModule()
 	PlasticSourceControlProvider.RegisterWorker("Copy", FGetPlasticSourceControlWorker::CreateStatic(&CreateWorker<FPlasticCopyWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Resolve", FGetPlasticSourceControlWorker::CreateStatic(&CreateWorker<FPlasticResolveWorker>));
 
-	// load our settings
-	PlasticSourceControlSettings.LoadSettings();
-
 	// Bind our source control provider to the editor
-	IModularFeatures::Get().RegisterModularFeature( "SourceControl", &PlasticSourceControlProvider );
+	IModularFeatures::Get().RegisterModularFeature("SourceControl", &PlasticSourceControlProvider);
 }
 
 void FPlasticSourceControlModule::ShutdownModule()
@@ -44,16 +41,6 @@ void FPlasticSourceControlModule::ShutdownModule()
 
 	// unbind provider from editor
 	IModularFeatures::Get().UnregisterModularFeature("SourceControl", &PlasticSourceControlProvider);
-}
-
-void FPlasticSourceControlModule::SaveSettings()
-{
-	if (FApp::IsUnattended() || IsRunningCommandlet())
-	{
-		return;
-	}
-
-	PlasticSourceControlSettings.SaveSettings();
 }
 
 IMPLEMENT_MODULE(FPlasticSourceControlModule, PlasticSourceControl);
