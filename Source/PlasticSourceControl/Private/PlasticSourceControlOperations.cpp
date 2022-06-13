@@ -15,6 +15,7 @@
 #include "Misc/Paths.h"
 #include "SourceControlOperations.h"
 #include "ISourceControlModule.h"
+#include "Algo/NoneOf.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -847,7 +848,29 @@ FName FPlasticGetPendingChangelistsWorker::GetName() const
 
 bool FPlasticGetPendingChangelistsWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
-	// TODO
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FUpdatePendingChangelistsStatus, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FUpdatePendingChangelistsStatus>(InCommand.Operation);
+
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetChangelists(InCommand.Concurrency, OutChangelistsStates, OutCLFilesStates, InCommand.ErrorMessages);
+	if (InCommand.bCommandSuccessful)
+	{
+		// Remove the changelist that were not requested by the user.
+		if (!Operation->ShouldUpdateAllChangelists())
+		{
+			const TArray<FSourceControlChangelistRef>& RequestedChangelists = Operation->GetChangelistsToUpdate();
+			OutChangelistsStates.RemoveAll([&RequestedChangelists](const FPlasticSourceControlChangelistState& ChangelistState)
+				{
+					FPlasticSourceControlChangelistRef RemoveChangelistCandidate = StaticCastSharedRef<FPlasticSourceControlChangelist>(ChangelistState.GetChangelist());
+					return !RequestedChangelists.ContainsByPredicate([&RemoveChangelistCandidate](const FSourceControlChangelistRef& Requested)
+						{
+							return StaticCastSharedRef<FPlasticSourceControlChangelist>(Requested)->GetName() == RemoveChangelistCandidate->GetName();
+						});
+				});
+		}
+	}
+
+	bCleanupCache = InCommand.bCommandSuccessful;
+
 	return InCommand.bCommandSuccessful;
 }
 
@@ -855,14 +878,13 @@ bool FPlasticGetPendingChangelistsWorker::UpdateStates()
 {
 	bool bUpdated = false;
 
-	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
 	const FDateTime Now = FDateTime::Now();
 
 	// first update cached state from 'changes' call
 	for (int StatusIndex = 0; StatusIndex < OutChangelistsStates.Num(); StatusIndex++)
 	{
 		const FPlasticSourceControlChangelistState& CLStatus = OutChangelistsStates[StatusIndex];
-		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = PlasticSourceControl.GetProvider().GetStateInternal(CLStatus.Changelist);
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(CLStatus.Changelist);
 		// Timestamp is used to throttle status requests, so update it to current time:
 		*ChangelistState = CLStatus;
 		ChangelistState->TimeStamp = Now;
@@ -875,46 +897,39 @@ bool FPlasticGetPendingChangelistsWorker::UpdateStates()
 			ChangelistState->Files.Reset(OutCLFilesStates[StatusIndex].Num());
 			for (const auto& FileState : OutCLFilesStates[StatusIndex])
 			{
-				TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> CachedFileState = PlasticSourceControl.GetProvider().GetStateInternal(FileState.LocalFilename);
-				// TODO REVIEW NOPUSH
-			//	CachedFileState->Update(FileState, &Now);
+				TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> CachedFileState = GetProvider().GetStateInternal(FileState.LocalFilename);
+				// Don't override "fileinfo" information and the potential LockedByOther state
+				if (CachedFileState->WorkspaceState != EWorkspaceState::LockedByOther)
+				{
+					CachedFileState->WorkspaceState = FileState.WorkspaceState;
+				}
+				CachedFileState->Changelist = CLStatus.Changelist;
 				ChangelistState->Files.AddUnique(CachedFileState);
 			}
 		}
-
-		// Update shelved files in the the changelist
-		bool bUpdateShelvedFiles = (OutCLShelvedFilesStates.Num() == OutChangelistsStates.Num());
-		if(bUpdateShelvedFiles)
-		{
-			ChangelistState->ShelvedFiles.Reset(OutCLShelvedFilesStates[StatusIndex].Num());
-			// TODO REVIEW NOPUSH
-		// 	AddShelvedFilesToChangelist(OutCLShelvedFilesStates[StatusIndex], OutCLShelvedFilesMap[StatusIndex], ChangelistState, &Now);
-		}
 	}
 
-	/* TODO REVIEW NOPUSH
 	if (bCleanupCache)
 	{
 		TArray<FPlasticSourceControlChangelist> ChangelistsToRemove;
-		PlasticSourceControl.GetProvider().GetCachedStateByPredicate([this, &ChangelistsToRemove](const FSourceControlChangelistStateRef& InCLState) {
+		GetProvider().GetCachedStateByPredicate([this, &ChangelistsToRemove](const FSourceControlChangelistStateRef& InCLState) {
 			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> CLState = StaticCastSharedRef<FPlasticSourceControlChangelistState>(InCLState);
 
 			if (Algo::NoneOf(OutChangelistsStates, [&CLState](const FPlasticSourceControlChangelistState& UpdatedCLState) {
-				return CLState->Changelist == UpdatedCLState.Changelist;
+					return CLState->Changelist == UpdatedCLState.Changelist;
 				}))
 			{
 				ChangelistsToRemove.Add(CLState->Changelist);
 			}
-			
+
 			return false;
 			});
 
 		for (const FPlasticSourceControlChangelist& ChangelistToRemove : ChangelistsToRemove)
 		{
-			PlasticSourceControl.GetProvider().RemoveChangelistFromCache(ChangelistToRemove);
+			GetProvider().RemoveChangelistFromCache(ChangelistToRemove);
 		}
 	}
-	*/
 
 	return bUpdated;
 }

@@ -23,6 +23,11 @@
 #include "XmlParser.h"
 #include "ISourceControlModule.h"
 
+#if ENGINE_MAJOR_VERSION == 5
+#include "PlasticSourceControlChangelist.h"
+#include "PlasticSourceControlChangelistState.h"
+#endif
+
 #if PLATFORM_LINUX
 #include <sys/ioctl.h>
 #endif
@@ -687,10 +692,10 @@ private:
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
  */
-static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
+EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
 {
 	EWorkspaceState::Type State;
-	const FString FileStatus = InResult.Mid(1, 2);
+	const FString FileStatus = (InResult[0] == TEXT(' ')) ? InResult.Mid(1, 2) : InResult;
 
 	if (FileStatus == "CH") // Modified but not Checked-Out
 	{
@@ -1131,7 +1136,7 @@ public:
 };
 
 // Check if merging, and from which changelist, then execute a cm merge command to amend status for listed files
-bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
+static bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
 {
 	bool bResult = false;
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -1657,6 +1662,168 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 
 	return bResult;
 }
+
+#if ENGINE_MAJOR_VERSION == 5
+
+/**
+ * Parse results of the 'cm status --changelists --controlledchanged --xml --encoding="utf-8"' command.
+ *
+ * Results of the status changelists command looks like that:
+<StatusOutput>
+  <WorkspaceStatus>
+	<Status>
+	  <RepSpec>
+		<Server>test@cloud</Server>
+		<Name>UEPlasticPluginDev</Name>
+	  </RepSpec>
+	  <Changeset>11</Changeset>
+	</Status>
+  </WorkspaceStatus>
+  <WkConfigType>Branch</WkConfigType>
+  <WkConfigName>/main@rep:UEPlasticPluginDev@repserver:test@cloud</WkConfigName>
+  <Changelists>
+	<Changelist>
+	  <Name>Default</Name>
+	  <Description>Default Plastic SCM changelist</Description>
+	  <Changes>
+		<Change>
+		  <Type>CO</Type>
+		  <TypeVerbose>Checked-out</TypeVerbose>
+		  <Path>UEPlasticPluginDev.uproject</Path>
+		  <OldPath />
+		  <PrintableMovedPath />
+		  <MergesInfo />
+		  <SimilarityPerUnit>0</SimilarityPerUnit>
+		  <Similarity />
+		  <Size>583</Size>
+		  <PrintableSize>583 bytes</PrintableSize>
+		  <PrintableLastModified>6 days ago</PrintableLastModified>
+		  <RevisionType>enTextFile</RevisionType>
+		  <LastModified>2022-06-07T12:28:32+02:00</LastModified>
+		</Change>
+		[...]
+		<Change>
+		</Change>
+	  </Changes>
+	</Changelist>
+  </Changelists>
+</StatusOutput>
+*/
+static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates)
+{
+	static const FString StatusOutput(TEXT("StatusOutput"));
+	static const FString WkConfigType(TEXT("WkConfigType"));
+	static const FString WkConfigName(TEXT("WkConfigName"));
+	static const FString Changelists(TEXT("Changelists"));
+	static const FString Changelist(TEXT("Changelist"));
+	static const FString Name(TEXT("Name"));
+	static const FString Description(TEXT("Description"));
+	static const FString Changes(TEXT("Changes"));
+	static const FString Change(TEXT("Change"));
+	static const FString Type(TEXT("Type"));
+	static const FString Path(TEXT("Path"));
+
+	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
+
+	const FXmlNode* StatusOutputNode = InXmlResult.GetRootNode();
+	if (StatusOutputNode == nullptr || StatusOutputNode->GetTag() != StatusOutput)
+	{
+		return false;
+	}
+
+	const FXmlNode* ChangelistsNode = StatusOutputNode->FindChildNode(Changelists);
+	if (ChangelistsNode)
+	{
+		const TArray<FXmlNode*>& ChangelistNodes = ChangelistsNode->GetChildrenNodes();
+		OutCLFilesStates.SetNum(ChangelistNodes.Num());
+		for (int32 ChangelistIndex = 0; ChangelistIndex < ChangelistNodes.Num(); ChangelistIndex++)
+		{
+			const FXmlNode* ChangelistNode = ChangelistNodes[ChangelistIndex];
+			check(ChangelistNode);
+			const FXmlNode* NameNode = ChangelistNode->FindChildNode(Name);
+			const FXmlNode* DescriptionNode = ChangelistNode->FindChildNode(Description);
+			const FXmlNode* ChangesNode = ChangelistNode->FindChildNode(Changes);
+			if (NameNode == nullptr || DescriptionNode == nullptr || ChangesNode == nullptr)
+			{
+				continue;
+			}
+
+			FString NameTemp = PlasticSourceControlUtils::DecodeXmlEntities(NameNode->GetContent());
+			FPlasticSourceControlChangelist ChangelistTemp(MoveTemp(NameTemp), true);
+			FString DescriptionTemp = PlasticSourceControlUtils::DecodeXmlEntities(DescriptionNode->GetContent());
+			FPlasticSourceControlChangelistState ChangelistState(MoveTemp(ChangelistTemp), MoveTemp(DescriptionTemp));
+
+			const TArray<FXmlNode*>& ChangeNodes = ChangesNode->GetChildrenNodes();
+			for (const FXmlNode* ChangeNode : ChangeNodes)
+			{
+				check(ChangeNode);
+				const FXmlNode* PathNode = ChangeNode->FindChildNode(Path);
+				const FXmlNode* TypeNode = ChangeNode->FindChildNode(Type);
+				if (PathNode == nullptr || TypeNode == nullptr)
+				{
+					continue;
+				}
+
+				// Here we make sure to only collect file states, since we shouldn't display the added directories to the Editor
+				FString FileName = PathNode->GetContent();
+				int32 DotIndex;
+				if (FileName.FindChar(TEXT('.'), DotIndex))
+				{
+					FPlasticSourceControlState FileState(FPaths::ConvertRelativePathToFull(WorkingDirectory, MoveTemp(FileName)));
+					FileState.WorkspaceState = PlasticSourceControlUtils::StateFromPlasticStatus(TypeNode->GetContent());
+					FileState.Changelist = ChangelistState.Changelist;
+					OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
+				}
+			}
+
+			OutChangelistsStates.Add(ChangelistState);
+		}
+	}
+
+	if (!OutChangelistsStates.FindByPredicate(
+		[](const FPlasticSourceControlChangelistState& CLState) { return CLState.Changelist.GetName() == FPlasticSourceControlChangelist::DefaultChangelist.GetName(); }
+	))
+	{
+		// No Default Changelists isn't an error, but the Editor UX expects to always the Default changelist (so you can always move files back to it)
+		FPlasticSourceControlChangelistState DefaultChangelistState(FPlasticSourceControlChangelist::DefaultChangelist, TEXT("Default Plastic SCM changelist"));
+		OutChangelistsStates.Insert(DefaultChangelistState, 0);
+		OutCLFilesStates.Insert(TArray<FPlasticSourceControlState>(), 0);
+	}
+
+	return true;
+}
+
+bool RunGetChangelists(const EConcurrency::Type InConcurrency, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates, TArray<FString>& OutErrorMessages)
+{
+	bool bCommandSuccessful;
+
+	FString Results;
+	FString Errors;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("--changelists"));
+	Parameters.Add(TEXT("--controlledchanged"));
+	Parameters.Add(TEXT("--noheader"));
+	Parameters.Add(TEXT("--xml"));
+	Parameters.Add(TEXT("--encoding=\"utf-8\""));
+	bCommandSuccessful = PlasticSourceControlUtils::RunCommandInternal(TEXT("status"), Parameters, TArray<FString>(), InConcurrency, Results, Errors);
+	if (bCommandSuccessful)
+	{
+		FXmlFile XmlFile;
+		bCommandSuccessful = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+		if (bCommandSuccessful)
+		{
+			bCommandSuccessful = ParseChangelistsResults(XmlFile, OutChangelistsStates, OutCLFilesStates);
+		}
+	}
+	if (!Errors.IsEmpty())
+	{
+		OutErrorMessages.Add(MoveTemp(Errors));
+	}
+
+	return bCommandSuccessful;
+}
+
+#endif
 
 bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates)
 {

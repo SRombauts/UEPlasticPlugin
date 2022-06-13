@@ -58,7 +58,7 @@ bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Ty
 	return bCommandSuccessful;
 }
 
-bool FPlasticSourceControlRevision::GetAnnotated( TArray<FAnnotationLine>& OutLines ) const
+bool FPlasticSourceControlRevision::GetAnnotated(TArray<FAnnotationLine>& OutLines) const
 {
 	// NOTE GetAnnotated: called only by SourceControlHelpers::AnnotateFile(),
 	//      called only by ICrashDebugHelper::AddAnnotatedSourceToReport() using a changelist/check identifier
@@ -69,7 +69,7 @@ bool FPlasticSourceControlRevision::GetAnnotated( TArray<FAnnotationLine>& OutLi
 	return false;
 }
 
-bool FPlasticSourceControlRevision::GetAnnotated( FString& InOutFilename ) const
+bool FPlasticSourceControlRevision::GetAnnotated(FString& InOutFilename) const
 {
 	// NOTE: Unused, only the above method is called by the Editor
 	return false;
