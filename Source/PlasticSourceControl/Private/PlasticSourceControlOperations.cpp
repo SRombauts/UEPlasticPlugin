@@ -1148,46 +1148,52 @@ FName FPlasticReopenWorker::GetName() const
 
 bool FPlasticReopenWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
-	/* TODO Changelists
-	FScopedPlasticConnection ScopedConnection(InCommand);
-	if (!InCommand.IsCanceled() && ScopedConnection.IsValid())
+	check(InCommand.Operation->GetName() == GetName());
+
+	// Move files to changelist
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("\"") + InCommand.Changelist.GetName() + TEXT("\""));
+	Parameters.Add(TEXT("add"));
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	if (InCommand.bCommandSuccessful)
 	{
-		ReopenedFiles.Reset(InCommand.Files.Num());
-		InCommand.bCommandSuccessful = RunReopenCommand(InCommand, InCommand.Files, InCommand.Changelist, &ReopenedFiles);
+		ReopenedFiles = InCommand.Files;
 		DestinationChangelist = InCommand.Changelist;
 	}
-	*/
 
 	return InCommand.bCommandSuccessful;
 }
 
 bool FPlasticReopenWorker::UpdateStates()
 {
-	/* TODO Changelists
-	const FDateTime Now = FDateTime::Now();
-	FPlasticSourceControlModule& PlasticSourceControl = FPlasticSourceControlModule::Get();
-	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> DestinationChangelistState = PlasticSourceControl.GetProvider().GetStateInternal(DestinationChangelist);
-
-	// 3 things to do here:
-	for (const FString& ReopenedFile : ReopenedFiles)
+	if (DestinationChangelist.IsInitialized())
 	{
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = PlasticSourceControl.GetProvider().GetStateInternal(ReopenedFile);
+		const FDateTime Now = FDateTime::Now();
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> DestinationChangelistState = GetProvider().GetStateInternal(DestinationChangelist);
 
-		// 1- Remove these files from their previous changelist
-		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = PlasticSourceControl.GetProvider().GetStateInternal(FileState->Changelist);
-		PreviousChangelist->Files.Remove(FileState);
+		// 3 things to do here:
+		for (const FString& ReopenedFile : ReopenedFiles)
+		{
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = GetProvider().GetStateInternal(ReopenedFile);
 
-		// 2- Add to the new changelist
-		DestinationChangelistState->Files.Add(FileState);
+			// 1- Remove these files from their previous changelist
+			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(FileState->Changelist);
+			PreviousChangelist->Files.Remove(FileState);
 
-		// 3- Update changelist in file state
-		FileState->Changelist = DestinationChangelist;
-		FileState->TimeStamp = Now;
+			// 2- Add to the new changelist
+			DestinationChangelistState->Files.Add(FileState);
+
+			// 3- Update changelist in file state
+			FileState->Changelist = DestinationChangelist;
+			FileState->TimeStamp = Now;
+		}
+
+		return ReopenedFiles.Num() > 0;
 	}
-	
-	return ReopenedFiles.Num() > 0;
-	*/
-	return false;
+	else
+	{
+		return false;
+	}
 }
 
 #endif
