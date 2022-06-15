@@ -149,21 +149,21 @@ TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceContro
 FText FPlasticSourceControlProvider::GetStatusText() const
 {
 	FFormatNamedArguments Args;
-	Args.Add( TEXT("PlasticScmVersion"), FText::FromString(PlasticScmVersion) );
-	Args.Add( TEXT("PluginVersion"), FText::FromString(PluginVersion) );
-	Args.Add( TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot) );
-	Args.Add( TEXT("WorkspaceName"), FText::FromString(WorkspaceName) );
-	Args.Add( TEXT("BranchName"), FText::FromString(BranchName) );
+	Args.Add(TEXT("PlasticScmVersion"), FText::FromString(PlasticScmVersion));
+	Args.Add(TEXT("PluginVersion"), FText::FromString(PluginVersion));
+	Args.Add(TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot));
+	Args.Add(TEXT("WorkspaceName"), FText::FromString(WorkspaceName));
+	Args.Add(TEXT("BranchName"), FText::FromString(BranchName));
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (-1 != ChangesetNumber)
 	{
-		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d  (standard full workspace)"), ChangesetNumber)) );
+		Args.Add(TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d  (standard full workspace)"), ChangesetNumber)));
 	}
 	else
 	{
-		Args.Add( TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("N/A  (Gluon/partial workspace)"))) );
+		Args.Add(TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("N/A  (Gluon/partial workspace)"))));
 	}
-	Args.Add( TEXT("UserName"), FText::FromString(UserName) );
+	Args.Add(TEXT("UserName"), FText::FromString(UserName));
 	const FString DisplayName = PlasticSourceControlUtils::UserNameToDisplayName(UserName);
 	if (DisplayName != UserName)
 	{
@@ -179,11 +179,11 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	if (RecentErrors.Num() > 0)
 	{
 		FFormatNamedArguments ErrorArgs;
-		ErrorArgs.Add( TEXT("ErrorText"), FText::FromString(RecentErrors[0]) );
+		ErrorArgs.Add(TEXT("ErrorText"), FText::FromString(RecentErrors[0]));
 
-		FormattedError = FText::Format( LOCTEXT("PlasticErrorStatusText", "Error: {ErrorText} {UserName}\n\n"), ErrorArgs );
+		FormattedError = FText::Format(LOCTEXT("PlasticErrorStatusText", "Error: {ErrorText} {UserName}\n\n"), ErrorArgs);
 	}
-	Args.Add( TEXT("ErrorText"), FormattedError);
+	Args.Add(TEXT("ErrorText"), FormattedError);
 
 	return FText::Format(LOCTEXT("PlasticStatusText", "{ErrorText}Plastic SCM {PlasticScmVersion}  (plugin v{PluginVersion})\nWorkspace: {WorkspaceName}  ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: '{UserName}'  {DisplayName}"), Args);
 }
@@ -218,7 +218,7 @@ TArray<FString> FPlasticSourceControlProvider::GetLastErrors() const
 	return Result;
 }
 
-ECommandResult::Type FPlasticSourceControlProvider::GetState( const TArray<FString>& InFiles, TArray< TSharedRef<ISourceControlState, ESPMode::ThreadSafe> >& OutState, EStateCacheUsage::Type InStateCacheUsage )
+ECommandResult::Type FPlasticSourceControlProvider::GetState(const TArray<FString>& InFiles, TArray< TSharedRef<ISourceControlState, ESPMode::ThreadSafe> >& OutState, EStateCacheUsage::Type InStateCacheUsage)
 {
 	if (!IsEnabled())
 	{
@@ -268,14 +268,14 @@ bool FPlasticSourceControlProvider::RemoveFileFromCache(const FString& Filename)
 	return StateCache.Remove(Filename) > 0;
 }
 
-FDelegateHandle FPlasticSourceControlProvider::RegisterSourceControlStateChanged_Handle( const FSourceControlStateChanged::FDelegate& SourceControlStateChanged )
+FDelegateHandle FPlasticSourceControlProvider::RegisterSourceControlStateChanged_Handle(const FSourceControlStateChanged::FDelegate& SourceControlStateChanged)
 {
-	return OnSourceControlStateChanged.Add( SourceControlStateChanged );
+	return OnSourceControlStateChanged.Add(SourceControlStateChanged);
 }
 
-void FPlasticSourceControlProvider::UnregisterSourceControlStateChanged_Handle( FDelegateHandle Handle )
+void FPlasticSourceControlProvider::UnregisterSourceControlStateChanged_Handle(FDelegateHandle Handle)
 {
-	OnSourceControlStateChanged.Remove( Handle );
+	OnSourceControlStateChanged.Remove(Handle);
 }
 
 ECommandResult::Type FPlasticSourceControlProvider::Execute(
@@ -299,8 +299,8 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute(
 	{
 		// this operation is unsupported by this source control provider
 		FFormatNamedArguments Arguments;
-		Arguments.Add( TEXT("OperationName"), FText::FromName(InOperation->GetName()) );
-		Arguments.Add( TEXT("ProviderName"), FText::FromName(GetName()) );
+		Arguments.Add(TEXT("OperationName"), FText::FromName(InOperation->GetName()));
+		Arguments.Add(TEXT("ProviderName"), FText::FromName(GetName()));
 		FMessageLog("SourceControl").Error(FText::Format(LOCTEXT("UnsupportedOperation", "Operation '{OperationName}' not supported by source control provider '{ProviderName}'"), Arguments));
 		return ECommandResult::Failed;
 	}
@@ -326,12 +326,12 @@ ECommandResult::Type FPlasticSourceControlProvider::Execute(
 	}
 }
 
-bool FPlasticSourceControlProvider::CanCancelOperation( const FSourceControlOperationRef& InOperation ) const
+bool FPlasticSourceControlProvider::CanCancelOperation(const FSourceControlOperationRef& InOperation) const
 {
 	return false;
 }
 
-void FPlasticSourceControlProvider::CancelOperation( const FSourceControlOperationRef& InOperation )
+void FPlasticSourceControlProvider::CancelOperation(const FSourceControlOperationRef& InOperation)
 {
 }
 
@@ -479,7 +479,7 @@ void FPlasticSourceControlProvider::Tick()
 	}
 }
 
-TArray< TSharedRef<ISourceControlLabel> > FPlasticSourceControlProvider::GetLabels( const FString& InMatchingSpec ) const
+TArray< TSharedRef<ISourceControlLabel> > FPlasticSourceControlProvider::GetLabels(const FString& InMatchingSpec) const
 {
 	TArray< TSharedRef<ISourceControlLabel> > Tags;
 
@@ -491,7 +491,7 @@ TArray< TSharedRef<ISourceControlLabel> > FPlasticSourceControlProvider::GetLabe
 
 #if ENGINE_MAJOR_VERSION == 5
 // TODO UE5 Changelist
-TArray<FSourceControlChangelistRef> FPlasticSourceControlProvider::GetChangelists( EStateCacheUsage::Type InStateCacheUsage )
+TArray<FSourceControlChangelistRef> FPlasticSourceControlProvider::GetChangelists(EStateCacheUsage::Type InStateCacheUsage)
 {
 	return TArray<FSourceControlChangelistRef>();
 }
@@ -513,7 +513,7 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		FScopedSourceControlProgress Progress(Task);
 
 		// Issue the command asynchronously...
-		IssueCommand( InCommand );
+		IssueCommand(InCommand);
 
 		// ... then wait for its completion (thus making it synchronous)
 		while (!InCommand.bExecuteProcessed)
@@ -547,9 +547,9 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 	check(!InCommand.bAutoDelete);
 
 	// ensure commands that are not auto deleted do not end up in the command queue
-	if ( CommandQueue.Contains( &InCommand ) )
+	if (CommandQueue.Contains(&InCommand))
 	{
-		CommandQueue.Remove( &InCommand );
+		CommandQueue.Remove(&InCommand);
 	}
 	delete &InCommand;
 
