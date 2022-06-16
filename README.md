@@ -192,22 +192,48 @@ TODO:
 
 #### Source Control Menu
 
+##### Unreal Engine 4 Source Control Menu
+
 Source Control status tooltip, when hovering the Source Control icon in toolbar:
 ![Source Control Status Tooltip](Screenshots/UE4PlasticPlugin-SourceControlStatus.png)
 
 Source Control top Menu, extended with commands specific to Plastic SCM:
 ![Source Control Top Menu](Screenshots/UE4PlasticPlugin-SourceControlMenu.png)
 
+##### Unreal Engine 5 Source Control Menu
+
+Source Control Menu and status tooltip, extended with commands specific to Plastic SCM:
+![Source Control Menu](Screenshots/UE5PlasticPlugin-SourceControlMenu.png)
+
 #### Source Control Windows
+
+Using the Content Browser context source control sub-menu, you can call in specific actions and windows:
+![Content Browser Context Menu](Screenshots/UEPlasticPlugin-ContentBrowser-ContextMenu-Diff.png)
+
+##### Submit Files
 
 Submit Files to Source Control window, to check-in assets:
 ![Submit Files to Source Control](Screenshots/UE4PlasticPlugin-SubmitFiles.png)
 
+##### File History
+
 File History window, to see the change-log of an asset:
 ![History of a file](Screenshots/UE4PlasticPlugin-History.png)
 
+##### Blueprint Diff
+
 Visual Diffing of different revision of a Blueprint:
-<img src="https://cdn2.unrealengine.com/blog/DiffTool-1009x542-719850393.png" width="720">
+![Blueprint Visual Diff](Screenshots/UEPlasticPlugin-BlueprintVisualDiff.png)
+
+##### Material Diff
+
+Textual Diffing of a Material:
+![Material Diff](Screenshots/UEPlasticPlugin-MaterialDiff.png)
+
+##### View Changelists
+
+List of Changelists and checked-out files they contain:
+![Changelist Window](Screenshots/UEPlasticPlugin-Changelists.png)
 
 #### Redirectors
 
@@ -369,6 +395,7 @@ This version here is the development version, so it always contains additional f
  - update workspace to latest head (Sync command)
  - show history of a file
  - visual diff of a blueprint against depot or between previous versions of a file
+ - manage Changelists in Unreal Engine 5: create, edit, move files, delete (no shelves yet)
  - initialize a new workspace to manage your UE4 Game Project.
  - make the initial commit with a custom message
  - create an appropriate ignore.conf file as part of initialization
@@ -386,7 +413,7 @@ This version here is the development version, so it always contains additional f
 
 ### Feature Requests
  - Unreal Engine 5.0 full support
-   - Changelists
+   - Shelves of Changelists
  - Mac OS X Support
  - add a setting to bypass checkout and let the user directly modify the assets like Git
  - add a setting to configure Plastic SCM to use "read-only flags" like Perforce
