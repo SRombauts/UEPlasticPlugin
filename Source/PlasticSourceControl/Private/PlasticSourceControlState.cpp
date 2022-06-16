@@ -1,6 +1,7 @@
 // Copyright (c) 2016-2022 Codice Software
 
 #include "PlasticSourceControlState.h"
+#include "PlasticSourceControlProjectSettings.h"
 #include "ISourceControlModule.h"
 #if ENGINE_MAJOR_VERSION == 5
 #include "Styling/AppStyle.h"
@@ -358,10 +359,17 @@ bool FPlasticSourceControlState::CanCheckIn() const
 
 bool FPlasticSourceControlState::CanCheckout() const
 {
-	const bool bCanCheckout  = (   WorkspaceState == EWorkspaceState::Controlled	// In source control, Unmodified
-								|| WorkspaceState == EWorkspaceState::Changed		// In source control, but not checked-out
-								|| WorkspaceState == EWorkspaceState::Replaced)		// In source control, merged, waiting for checkin to conclude the merge 
-								&& IsCurrent(); // Is up to date (at the revision of the repo)
+	const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
+	if (!bPromptForCheckoutOnChange) {
+		UE_LOG(LogSourceControl, Verbose, TEXT("%s CanCheckout=%d"), *LocalFilename, false);
+		return false;
+	}
+
+	const bool bCanCheckout  = bPromptForCheckoutOnChange   // Only proceed if checkout is enabled
+		&& (WorkspaceState == EWorkspaceState::Controlled   // In source control, Unmodified
+		    || WorkspaceState == EWorkspaceState::Changed   // In source control, but not checked-out
+		    || WorkspaceState == EWorkspaceState::Replaced)	// In source control, merged, waiting for checkin to conclude the merge 
+		&& IsCurrent(); // Is up to date (at the revision of the repo)
 
 	if (!IsUnknown())
 	{
@@ -373,11 +381,25 @@ bool FPlasticSourceControlState::CanCheckout() const
 
 bool FPlasticSourceControlState::IsCheckedOut() const
 {
-	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
-							|| WorkspaceState == EWorkspaceState::Moved
-							|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merged
-							|| WorkspaceState == EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge 
-							|| WorkspaceState == EWorkspaceState::Changed;		// Note: Workaround to enable checkin (still required by UE5.0)
+	const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
+
+	if (bPromptForCheckoutOnChange) {
+		const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
+								|| WorkspaceState == EWorkspaceState::Moved
+								|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merged
+								|| WorkspaceState == EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge 
+								|| WorkspaceState == EWorkspaceState::Changed;		// Note: Workaround to enable checkin (still required by UE5.0)
+
+		if (bIsCheckedOut)
+		{
+			UE_LOG(LogSourceControl, Verbose, TEXT("%s IsCheckedOut"), *LocalFilename);
+		}
+
+		return bIsCheckedOut;
+	}
+
+	// Any controlled state will be considered as checked out if the prompt is disabled
+	const bool bIsCheckedOut = IsSourceControlled();
 
 	if (bIsCheckedOut)
 	{
