@@ -1384,6 +1384,17 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 	return bResult;
 }
 
+FString DecodeXmlEntities(const FString& InString)
+{
+	FString String = InString;
+	String.ReplaceInline(TEXT("&amp;"), TEXT("&"));
+	String.ReplaceInline(TEXT("&quot;"), TEXT("\""));
+	String.ReplaceInline(TEXT("&apos;"), TEXT("'"));
+	String.ReplaceInline(TEXT("&lt;"), TEXT("<"));
+	String.ReplaceInline(TEXT("&gt;"), TEXT(">"));
+	return String;
+}
+
 /**
  * Parse results of the 'cm history --moveddeleted --xml --encoding="utf-8"' command.
  * 
@@ -1544,7 +1555,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				}
 				if (const FXmlNode* CommentNode = RevisionNode->FindChildNode(Comment))
 				{
-					SourceControlRevision->Description = CommentNode->GetContent();
+					SourceControlRevision->Description = DecodeXmlEntities(CommentNode->GetContent());
 				}
 				if (const FXmlNode* OwnerNode = RevisionNode->FindChildNode(Owner))
 				{
