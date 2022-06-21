@@ -232,9 +232,29 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FCheckIn, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCheckIn>(InCommand.Operation);
 
-	if (InCommand.Files.Num() > 0)
+	TArray<FString> Files;
+#if ENGINE_MAJOR_VERSION == 5
+	if (InCommand.Changelist.IsInitialized())
 	{
-		UE_LOG(LogSourceControl, Verbose, TEXT("CheckIn: %d file(s) Description: '%s'"), InCommand.Files.Num(), *Operation->GetDescription().ToString());
+		ensure(InCommand.Files.IsEmpty());
+
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
+		for (const auto& File : ChangelistState->Files)
+		{
+			Files.Add(File->GetFilename());
+		}
+
+		InChangelist = InCommand.Changelist;
+	}
+	else
+#endif
+	{
+		Files = InCommand.Files;
+	}
+
+	if (Files.Num() > 0)
+	{
+		UE_LOG(LogSourceControl, Verbose, TEXT("CheckIn: %d file(s) Description: '%s'"), Files.Num(), *Operation->GetDescription().ToString());
 
 		// make a temp file to place our commit message in
 		FScopedTempFile CommitMsgFile(Operation->GetDescription());
@@ -248,18 +268,18 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
 			//  NOTE: --update added as #23 but removed as #32 because most assets are locked by the Unreal Editor
 			//  Parameters.Add(TEXT("--update")); // Processes the update-merge automatically if it eventually happens.
-				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 			}
 			else
 			{
 				Parameters.Add(TEXT("--applychanged")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
-				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial checkin"), Parameters, Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 			}
 			if (InCommand.bCommandSuccessful)
 			{
 				// Remove any deleted files from status cache
 				TArray<TSharedRef<ISourceControlState, ESPMode::ThreadSafe>> LocalStates;
-				GetProvider().GetState(InCommand.Files, LocalStates, EStateCacheUsage::Use);
+				GetProvider().GetState(Files, LocalStates, EStateCacheUsage::Use);
 				for (const auto& State : LocalStates)
 				{
 					if (State->IsDeleted())
@@ -274,7 +294,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 
 		// now update the status of our files
-		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		PlasticSourceControlUtils::RunUpdateStatus(Files, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 	else
 	{
@@ -286,6 +306,13 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticCheckInWorker::UpdateStates()
 {
+#if ENGINE_MAJOR_VERSION == 5
+	if (InChangelist.IsInitialized())
+	{
+		DeleteChangelist(GetProvider(), InChangelist);
+	}
+#endif
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
@@ -547,9 +574,25 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	UE_LOG(LogSourceControl, Log, TEXT("status (of %d files, ShouldUpdateHistory=%d, ShouldGetOpenedOnly=%d, ShouldUpdateModifiedState=%d)"),
 		InCommand.Files.Num(), Operation->ShouldUpdateHistory(), Operation->ShouldGetOpenedOnly(), Operation->ShouldUpdateModifiedState());
 
-	if (InCommand.Files.Num() > 0)
+	TArray<FString> Files;
+#if ENGINE_MAJOR_VERSION == 5
+	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, Operation->ShouldUpdateHistory(), InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
+		for (const auto& File : ChangelistState->Files)
+		{
+			Files.Add(File->GetFilename());
+		}
+	}
+	else
+#endif
+	{
+		Files = InCommand.Files;
+	}
+
+	if (Files.Num() > 0)
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Files, Operation->ShouldUpdateHistory(), InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 		// Remove all "is not in a workspace" error and convert the result to "success" if there are no other errors
 		PlasticSourceControlUtils::RemoveRedundantErrors(InCommand, TEXT("is not in a workspace."));
 		if (!InCommand.bCommandSuccessful)
@@ -592,7 +635,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		else
 		{
 			FPlasticSourceControlSettings& PlasticSettings = GetProvider().AccessSettings();
-			if (PlasticSettings.GetUpdateStatusOtherBranches() && AreAllFiles(InCommand.Files))
+			if (PlasticSettings.GetUpdateStatusOtherBranches() && AreAllFiles(Files))
 			{
 				// Get only the last revision of the files (checking all branches)
 				// in order to warn the user if the file has been changed on another branch
@@ -608,6 +651,12 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		TArray<FString> ProjectDirs;
 		ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, Operation->ShouldUpdateHistory(), InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	}
+	else
+	{
+		// TODO: workaround for the case of submitting a changelist, calling UpdateStatus with no files nor the changelist.
+		// No consequences, and no way to fix it, so let's not show an error.
+		InCommand.bCommandSuccessful = true;
 	}
 
 	// TODO: re-evaluate how to optimize this heavy operation using some of these hints flags

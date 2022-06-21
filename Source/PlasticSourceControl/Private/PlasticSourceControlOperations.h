@@ -114,6 +114,11 @@ public:
 public:
 	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
+
+#if ENGINE_MAJOR_VERSION == 5
+	/** Changelist we asked to submit */
+	FPlasticSourceControlChangelist InChangelist;
+#endif
 };
 
 /** Add an untracked file to source control (so only a subset of the Plastic add command). */
