@@ -132,6 +132,23 @@ UpdateStatusOtherBranches=True
 EnableVerboseLogs=False
 ```
 
+#### Project Settings
+
+The plugin allows you to configure project-related settings.
+
+![Project Settings](Screenshots/UE4PlasticPlugin-ProjectSettings.png)
+
+There are 3 settings available at the moment:
+
+ - **User Name to Display Name**
+   - For each entry in this dictionary, the Editor will replace the user name in the key with the display value you specify.
+ - **Hide Email Domain in Username**
+   - This setting toggles the visibility of domain names in user names, if the user name is an email.
+ - **Prompt for Checkout on Change**
+   - Unchecking this setting will make the Editor consider all files as already checked out. In that case, you won't get
+     any notifications when you modify assets, and the "Checkout Assets" dialog won't show when you save those changes.
+     This mimics how Git works, i.e. allowing the user to perform changes without worrying about checking out items.
+
 ### Working in Editor
 
 #### Unreal Documentation
