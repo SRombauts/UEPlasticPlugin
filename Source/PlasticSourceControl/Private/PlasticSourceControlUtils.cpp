@@ -958,14 +958,13 @@ public:
 	{
 		TArray<FString> Fileinfos;
 		const int32 NbElmts = InResult.ParseIntoArray(Fileinfos, TEXT(";"), false); // Don't cull empty values in csv
-		if (NbElmts == 6)
+		if (NbElmts == 5)
 		{
 			RevisionChangeset = FCString::Atoi(*Fileinfos[0]);
 			RevisionHeadChangeset = FCString::Atoi(*Fileinfos[1]);
 			RepSpec = MoveTemp(Fileinfos[2]);
 			LockedBy = UserNameToDisplayName(MoveTemp(Fileinfos[3]));
 			LockedWhere = MoveTemp(Fileinfos[4]);
-			Changelist = MoveTemp(Fileinfos[5]);
 		}
 	}
 
@@ -974,10 +973,9 @@ public:
 	FString RepSpec;
 	FString LockedBy;
 	FString LockedWhere;
-	FString Changelist;
 };
 
-/** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{Changelist}"' command
+/** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"' command
  *
  * Example cm fileinfo results:
 16;16;;
@@ -1078,7 +1076,7 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 		TArray<FString> Results;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;
-		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{Changelist}\""));
+		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
 		bResult = RunCommand(TEXT("fileinfo"), Parameters, SelectedFiles, InConcurrency, Results, ErrorMessages);
 		OutErrorMessages.Append(MoveTemp(ErrorMessages));
 		if (bResult)
@@ -1086,11 +1084,6 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 			ParseFileinfoResults(Results, SelectedStates);
 			InOutStates.Append(MoveTemp(SelectedStates));
 		}
-	}
-	else
-	{
-		// TODO we might now want to actually call fileinfo also for files Added and CheckedOut, Moved etc for the purpose of Changelists
-		// but in this case it would be another fileinfo without the expensive 
 	}
 
 	return bResult;
