@@ -430,16 +430,21 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
  * @param VersionB		PlasticSCM version string in the form "0.0.0.0" (as returned by GetPlasticScmVersion)
  * @returns true if VersionA is lower than VersionB
 */
-static bool PlasticScmVersionLess(const FString& VersionA, const FString& VersionB) {
-	struct Version {
-		explicit Version(const FString& V) {
+static bool PlasticScmVersionLess(const FString& VersionA, const FString& VersionB)
+{
+	struct Version
+	{
+		explicit Version(const FString& Version)
+		{
 			TArray<FString> Parts;
-			const int32 N = V.ParseIntoArray(Parts, TEXT("."));
-			check(N == 4);
-			a = FCString::Atoi(*Parts[0]);
-			b = FCString::Atoi(*Parts[1]);
-			c = FCString::Atoi(*Parts[2]);
-			d = FCString::Atoi(*Parts[3]);
+			const int32 N = Version.ParseIntoArray(Parts, TEXT("."));
+			if (N == 4)
+			{
+				a = FCString::Atoi(*Parts[0]);
+				b = FCString::Atoi(*Parts[1]);
+				c = FCString::Atoi(*Parts[2]);
+				d = FCString::Atoi(*Parts[3]);
+			}
 		}
 		int a, b, c, d;
 	} A(VersionA), B(VersionB);
