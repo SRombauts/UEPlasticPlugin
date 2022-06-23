@@ -122,8 +122,12 @@ FName FPlasticSourceControlState::GetIconName() const
 	case EWorkspaceState::LockedByOther:
 		return FName("Perforce.CheckedOutByOtherUser");
 	case EWorkspaceState::Private: // Not controlled
-	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
 		return FName("Perforce.NotInDepot");
+	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
+	{
+		const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
+		return FName(bPromptForCheckoutOnChange ? "Perforce.NotInDepot" : "Perforce.CheckedOut");
+	}
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:
 	case EWorkspaceState::Controlled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
@@ -164,8 +168,12 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	case EWorkspaceState::LockedByOther:
 		return FName("Perforce.CheckedOutByOtherUser_Small");
 	case EWorkspaceState::Private: // Not controlled
-	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled
 		return FName("Perforce.NotInDepot_Small");
+	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
+	{
+		const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
+		return FName(bPromptForCheckoutOnChange ? "Perforce.NotInDepot_Small" : "Perforce.CheckedOut_Small");
+	}
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:
 	case EWorkspaceState::Controlled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
