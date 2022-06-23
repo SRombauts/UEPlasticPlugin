@@ -360,7 +360,8 @@ bool FPlasticSourceControlState::CanCheckIn() const
 bool FPlasticSourceControlState::CanCheckout() const
 {
 	const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
-	if (!bPromptForCheckoutOnChange) {
+	if (!bPromptForCheckoutOnChange)
+	{
 		UE_LOG(LogSourceControl, Verbose, TEXT("%s CanCheckout=%d"), *LocalFilename, false);
 		return false;
 	}
@@ -381,32 +382,20 @@ bool FPlasticSourceControlState::CanCheckout() const
 
 bool FPlasticSourceControlState::IsCheckedOut() const
 {
-	const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
-
-	if (bPromptForCheckoutOnChange) {
-		const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
-								|| WorkspaceState == EWorkspaceState::Moved
-								|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merged
-								|| WorkspaceState == EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge 
-								|| WorkspaceState == EWorkspaceState::Changed;		// Note: Workaround to enable checkin (still required by UE5.0)
-
-		if (bIsCheckedOut)
-		{
-			UE_LOG(LogSourceControl, Verbose, TEXT("%s IsCheckedOut"), *LocalFilename);
-		}
-
-		return bIsCheckedOut;
-	}
-
-	// Any controlled state will be considered as checked out if the prompt is disabled
-	const bool bIsCheckedOut = IsSourceControlled();
+	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
+							|| WorkspaceState == EWorkspaceState::Moved
+							|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merged
+							|| WorkspaceState == EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge 
+							|| WorkspaceState == EWorkspaceState::Changed;		// Note: Workaround to enable checkin (still required by UE5.0)
 
 	if (bIsCheckedOut)
 	{
 		UE_LOG(LogSourceControl, Verbose, TEXT("%s IsCheckedOut"), *LocalFilename);
 	}
 
-	return bIsCheckedOut;
+	const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
+	// Any controlled state will be considered as checked out if the prompt is disabled
+	return bPromptForCheckoutOnChange ? bIsCheckedOut : IsSourceControlled();
 }
 
 bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const

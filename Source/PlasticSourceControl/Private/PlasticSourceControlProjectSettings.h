@@ -21,7 +21,7 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "Plastic SCM")
 	bool bHideEmailDomainInUsername = true;
 
-	/** If enabled, you'll be prompted to check out changed files */
+	/** If enabled, you'll be prompted to check out changed files (enabled by default). */
 	UPROPERTY(config, EditAnywhere, Category = "Plastic SCM")
 	bool bPromptForCheckoutOnChange = true;
 };
