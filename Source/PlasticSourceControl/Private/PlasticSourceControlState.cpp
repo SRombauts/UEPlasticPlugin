@@ -220,7 +220,8 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled
 	{
 		const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
-		return FName(bPromptForCheckoutOnChange ? "Perforce.NotInDepot" : "Perforce.CheckedOut");
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), bPromptForCheckoutOnChange ? "Perforce.NotInDepot" : "Perforce.CheckedOut");
+
 	}
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:
