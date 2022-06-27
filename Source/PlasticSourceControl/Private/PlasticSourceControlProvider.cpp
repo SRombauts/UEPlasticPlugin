@@ -5,6 +5,7 @@
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlOperations.h"
+#include "PlasticSourceControlProjectSettings.h"
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
@@ -343,7 +344,7 @@ bool FPlasticSourceControlProvider::UsesChangelists() const
 
 bool FPlasticSourceControlProvider::UsesCheckout() const
 {
-	return true;
+	return GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
 }
 
 TSharedPtr<IPlasticSourceControlWorker, ESPMode::ThreadSafe> FPlasticSourceControlProvider::CreateWorker(const FName& InOperationName) const

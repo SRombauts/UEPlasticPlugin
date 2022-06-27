@@ -20,4 +20,8 @@ public:
 	/** Hide the domain part of an username e-mail address (eg @gmail.com) if the UserNameToDisplayName map didn't match (enabled by default). */
 	UPROPERTY(config, EditAnywhere, Category = "Plastic SCM")
 	bool bHideEmailDomainInUsername = true;
+
+	/** If enabled, you'll be prompted to check out changed files (enabled by default). */
+	UPROPERTY(config, EditAnywhere, Category = "Plastic SCM")
+	bool bPromptForCheckoutOnChange = true;
 };
