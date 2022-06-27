@@ -122,7 +122,7 @@ static void _CleanupBackgroundCommandLineShell()
 // Internal function to launch the Plastic SCM background 'cm' process in interactive shell mode (called under the critical section)
 static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FString& InWorkingDirectory)
 {
-	const FString FullCommand(TEXT("shell"));
+	const FString FullCommand(TEXT("shell --encoding=UTF-8"));
 
 	const bool bLaunchDetached = false;				// the new process will NOT have its own window
 	const bool bLaunchHidden = true;				// the new process will be minimized in the task bar
@@ -226,8 +226,11 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	UE_LOG(LogSourceControl, Verbose, TEXT("RunCommand: '%s' (%d chars, %d files)"), *LoggableCommand, FullCommand.Len()+1, InFiles.Num());
 	FullCommand += TEXT('\n'); // Finalize the command line
 
-	// Send command to 'cm shell' process
-	const bool bWriteOk = FPlatformProcess::WritePipe(ShellInputPipeWrite, FullCommand);
+	// Send command to 'cm shell' process in UTF-8
+	// NOTE: this explicit conversion to UTF-8 shouldn't be needed since FPlatformProcess::WritePipe() says it does it, but reading the implementation for Windows Platform show it merily truncates 16bits to 8bits chars!
+	// NOTE: on the other hand, ReadPipe() does the conversion from UTF-8 correctly already!
+	const FTCHARToUTF8 FullCommandUtf8(*FullCommand);
+	const bool bWriteOk = FPlatformProcess::WritePipe(ShellInputPipeWrite, reinterpret_cast<const uint8*>(FullCommandUtf8.Get()), FullCommandUtf8.Length());
 
 	// And wait up to 180.0 seconds for any kind of output from cm shell: in case of lengthier operation, intermediate output (like percentage of progress) is expected, which would refresh the timeout
 	static const double Timeout = 180.0;
