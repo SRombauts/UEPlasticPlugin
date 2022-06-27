@@ -408,10 +408,26 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
+	TArray<FString> Files;
+#if ENGINE_MAJOR_VERSION == 5
+	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
+	{
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
+		for (const auto& File : ChangelistState->Files)
+		{
+			Files.Add(File->GetFilename());
+		}
+	}
+	else
+#endif
+	{
+		Files = InCommand.Files;
+	}
+
 	TArray<FString> ChangedFiles;
 	TArray<FString> CheckedOutFiles;
 
-	for (const FString& File : InCommand.Files)
+	for (const FString& File : Files)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(File);
 
@@ -455,14 +471,35 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 	}
 
-	// NOTE: optim, no need to update the status of our files since this is done immediately after by the Editor
+	// NOTE: optim, no need to update the status of our files since this is done immediately after by the Editor, except when reverting files from a changelist
+#if ENGINE_MAJOR_VERSION == 5
+	if (InCommand.Changelist.IsInitialized())
+	{
+		// update the status of our files
+		PlasticSourceControlUtils::RunUpdateStatus(Files, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	}
+#endif
 
 	return InCommand.bCommandSuccessful;
 }
 
 bool FPlasticRevertWorker::UpdateStates()
 {
-	return false;
+#if ENGINE_MAJOR_VERSION == 5
+	// Update affected changelist if any
+	for (const FPlasticSourceControlState& NewState : States)
+	{
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> OldState = GetProvider().GetStateInternal(NewState.GetFilename());
+		if (OldState->Changelist.IsInitialized())
+		{
+			// 1- Remove these files from their previous changelist
+			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(OldState->Changelist);
+			PreviousChangelist->Files.Remove(OldState);
+		}
+	}
+#endif
+
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 FName FPlasticRevertUnchangedWorker::GetName() const
