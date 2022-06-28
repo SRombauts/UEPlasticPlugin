@@ -514,19 +514,54 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("-R"));
 
-	// revert the checkout of all unchanged files recursively
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("uncounchanged"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	TArray<FString> Files;
+#if ENGINE_MAJOR_VERSION == 5
+	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
+	{
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
+		for (const auto& File : ChangelistState->Files)
+		{
+			Files.Add(File->GetFilename());
+		}
+	}
+	else
+#endif
+	{
+		Files = InCommand.Files;
+	}
 
-	// Now update the status of assets in the Content directory
-	TArray<FString> ContentDir;
-	ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-	PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	// revert the checkout of all unchanged files recursively
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("uncounchanged"), Parameters, Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+
+	// Now update the status of either the files, or all assets in the Content directory
+	if (Files.Num() == 0)
+	{
+		Files.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+	}
+	PlasticSourceControlUtils::RunUpdateStatus(Files, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
 }
 
 bool FPlasticRevertUnchangedWorker::UpdateStates()
 {
+#if ENGINE_MAJOR_VERSION == 5
+	// Update affected changelist if any
+	for (const FPlasticSourceControlState& NewState : States)
+	{
+		if (!NewState.IsModified())
+		{
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> OldState = GetProvider().GetStateInternal(NewState.GetFilename());
+			if (OldState->Changelist.IsInitialized())
+			{
+				// 1- Remove these files from their previous changelist
+				TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(OldState->Changelist);
+				PreviousChangelist->Files.Remove(OldState);
+			}
+		}
+	}
+#endif
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 

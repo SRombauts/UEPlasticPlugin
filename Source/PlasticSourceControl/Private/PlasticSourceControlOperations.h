@@ -22,6 +22,7 @@ class FPlasticSourceControlProvider;
 /**
  * Internal operation used to revert checked-out unchanged files
 */
+// NOTE: added to Engine in Unreal Engine 5 for changelists
 class FPlasticRevertUnchanged : public ISourceControlOperation
 {
 public:
