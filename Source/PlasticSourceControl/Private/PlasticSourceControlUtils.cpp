@@ -1607,7 +1607,9 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 	TArray<FString> Parameters;
 	// Detecting move and deletion is costly as it is implemented as two extra queries to the server; do it only when getting the history of the current branch
 	if (bInUpdateHistory)
+	{
 		Parameters.Add(TEXT("--moveddeleted"));
+	}
 	Parameters.Add(TEXT("--xml"));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 
