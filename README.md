@@ -342,7 +342,7 @@ In "Preferences -> Diff tools" add a new config for uasset and move it up **befo
 
 The command line needs the quoted path to the UE4Editor.exe, the quoted patch to your ".uproject" file, -diff, than the source & destination files variables also quoted
 
-    "C:\Program Files\Epic Games\UE_5.27\Engine\Binaries\Win64\UE4Editor.exe" "C:\wkspaces\MyProject\MyProject.uproject" -diff "@sourcefile" "@destinationfile"
+    "C:\Program Files\Epic Games\UE_4.27\Engine\Binaries\Win64\UE4Editor.exe" "C:\wkspaces\MyProject\MyProject.uproject" -diff "@sourcefile" "@destinationfile"
 
 or for Unreal Engine 5:
 
