@@ -71,8 +71,9 @@ void GetUserName(FString& OutUserName);
 
 /**
  * Get Plastic workspace name
+ * @param	InWorkspaceRoot		The workspace from where to run the command - usually the Game directory
  * @param	OutWorkspaceName	Name of the current workspace
-  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+ * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
 */
 bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName, TArray<FString>& OutErrorMessages);
 
