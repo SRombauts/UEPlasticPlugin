@@ -440,6 +440,8 @@ void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Menu)
 void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 {
+ // TODO disabled since not working correctly and crashing the Editor
+#if 0
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
 		"PlasticSync",
@@ -456,6 +458,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::IsSourceControlConnected)
 		)
 	);
+#endif // 0
 
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
@@ -474,6 +477,8 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		)
 	);
 
+ // TODO disabled since not working correctly and crashing the Editor
+#if 0
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
 		"PlasticRevertAll",
@@ -490,6 +495,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			FCanExecuteAction()
 		)
 	);
+#endif // 0
 
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
