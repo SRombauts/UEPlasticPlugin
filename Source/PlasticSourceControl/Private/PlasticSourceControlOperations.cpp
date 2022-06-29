@@ -1,10 +1,12 @@
 // Copyright (c) 2016-2022 Codice Software
 
 #include "PlasticSourceControlOperations.h"
-#include "PlasticSourceControlSettings.h"
-#include "PlasticSourceControlState.h"
+
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
+#include "PlasticSourceControlProvider.h"
+#include "PlasticSourceControlSettings.h"
+#include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -15,6 +17,31 @@
 #include "ISourceControlModule.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
+
+template<typename Type>
+static FPlasticSourceControlWorkerRef InstantiateWorker(FPlasticSourceControlProvider& PlasticSourceControlProvider)
+{
+	return MakeShareable(new Type(PlasticSourceControlProvider));
+}
+
+void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider& PlasticSourceControlProvider)
+{
+	// Register our operations (implemented in PlasticSourceControlOperations.cpp by sub-classing from Engine\Source\Developer\SourceControl\Public\SourceControlOperations.h)
+	PlasticSourceControlProvider.RegisterWorker("Connect", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticConnectWorker>));
+	PlasticSourceControlProvider.RegisterWorker("CheckOut", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticCheckOutWorker>));
+	PlasticSourceControlProvider.RegisterWorker("UpdateStatus", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticUpdateStatusWorker>));
+	PlasticSourceControlProvider.RegisterWorker("MarkForAdd", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticMarkForAddWorker>));
+	PlasticSourceControlProvider.RegisterWorker("Delete", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteWorker>));
+	PlasticSourceControlProvider.RegisterWorker("Revert", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRevertWorker>));
+	PlasticSourceControlProvider.RegisterWorker("RevertUnchanged", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRevertUnchangedWorker>));
+	PlasticSourceControlProvider.RegisterWorker("RevertAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRevertAllWorker>));
+	PlasticSourceControlProvider.RegisterWorker("MakeWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticMakeWorkspaceWorker>));
+	PlasticSourceControlProvider.RegisterWorker("Sync", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
+	PlasticSourceControlProvider.RegisterWorker("CheckIn", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticCheckInWorker>));
+	PlasticSourceControlProvider.RegisterWorker("Copy", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticCopyWorker>));
+	PlasticSourceControlProvider.RegisterWorker("Resolve", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticResolveWorker>));
+}
+
 
 FName FPlasticRevertUnchanged::GetName() const
 {
@@ -67,11 +94,10 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FConnect, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FConnect>(InCommand.Operation);
 
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	if (PlasticSourceControl.GetProvider().IsPlasticAvailable())
+	if (GetProvider().IsPlasticAvailable())
 	{
 		// Get workspace name
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot(), InCommand.WorkspaceName, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(GetProvider().GetPathToWorkspaceRoot(), InCommand.WorkspaceName, InCommand.ErrorMessages);
 		if (InCommand.bCommandSuccessful)
 		{
 			// Get repository, server URL, branch and current changeset number
@@ -84,7 +110,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				// Now update the status of assets in the Content directory
 				// but only on real (re-)connection (but not each time Login() is called by Rename or Fixup Redirector command to check connection)
 				// and only if enabled in the settings
-				if (!PlasticSourceControl.GetProvider().IsAvailable() && PlasticSourceControl.AccessSettings().GetUpdateStatusAtStartup())
+				if (!GetProvider().IsAvailable() && GetProvider().AccessSettings().GetUpdateStatusAtStartup())
 				{
 					TArray<FString> ContentDir;
 					ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
@@ -194,7 +220,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			{
 				Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
 			//  NOTE: --update added as #23 but removed as #32 because most assets are locked by the Unreal Editor
-			//	Parameters.Add(TEXT("--update")); // Processes the update-merge automatically if it eventually happens.
+			//  Parameters.Add(TEXT("--update")); // Processes the update-merge automatically if it eventually happens.
 				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 			}
 			else
@@ -205,16 +231,13 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			if (InCommand.bCommandSuccessful)
 			{
 				// Remove any deleted files from status cache
-				FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-				FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-
 				TArray<TSharedRef<ISourceControlState, ESPMode::ThreadSafe>> LocalStates;
-				Provider.GetState(InCommand.Files, LocalStates, EStateCacheUsage::Use);
+				GetProvider().GetState(InCommand.Files, LocalStates, EStateCacheUsage::Use);
 				for (const auto& State : LocalStates)
 				{
 					if (State->IsDeleted())
 					{
-						Provider.RemoveFileFromCache(State->GetFilename());
+						GetProvider().RemoveFileFromCache(State->GetFilename());
 					}
 				}
 
@@ -253,10 +276,10 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("--parents")); // NOTE: deprecated in 8.0.16.3100 when it became the default https://www.plasticscm.com/download/releasenotes/8.0.16.3100
 		// Note: using "?" is a workaround to trigger the Plastic's "SkipIgnored" internal flag meaning "don't add file that are ignored":
-		//			options.SkipIgnored = cla.GetWildCardArguments().Count > 0;
-		//		 It's behavior is similar as Subversion:
-		//  		if you explicitly add one file that is ignored, "cm" will happily accept it and add it,
-		//			if you try to add a set of files with a pattern, "cm" will skip the files that are ignored and only add the other ones
+		//          options.SkipIgnored = cla.GetWildCardArguments().Count > 0;
+		//       It's behavior is similar as Subversion:
+		//          if you explicitly add one file that is ignored, "cm" will happily accept it and add it,
+		//          if you try to add a set of files with a pattern, "cm" will skip the files that are ignored and only add the other ones
 		// TODO: provide an updated version of "cm" with a new flag like --applyignorerules
 		if (AreAllFiles(InCommand.Files))
 		{
@@ -331,15 +354,12 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-
 	TArray<FString> ChangedFiles;
 	TArray<FString> CheckedOutFiles;
 
 	for (const FString& File : InCommand.Files)
 	{
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(File);
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(File);
 
 		if (EWorkspaceState::Changed == State->WorkspaceState)
 		{
@@ -544,8 +564,8 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		}
 		else
 		{
-			const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-			if (PlasticSourceControl.AccessSettings().GetUpdateStatusOtherBranches() && AreAllFiles(InCommand.Files))
+			FPlasticSourceControlSettings& PlasticSettings = GetProvider().AccessSettings();
+			if (PlasticSettings.GetUpdateStatusOtherBranches() && AreAllFiles(InCommand.Files))
 			{
 				// Get only the last revision of the files (checking all branches)
 				// in order to warn the user if the file has been changed on another branch
@@ -760,9 +780,7 @@ bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	// Currently resolve operation is always on one file only, but the following would works for many
 	for (const FString& File : InCommand.Files)
 	{
-		FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-		FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(File);
+		auto State = GetProvider().GetStateInternal(File);
 
 		// To resolve the conflict, merge the file by keeping it like it is on file system
 		// TODO: according to documentation, this cannot work for cherry-picking

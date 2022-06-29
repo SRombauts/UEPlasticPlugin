@@ -7,23 +7,18 @@
 #include "IPlasticSourceControlWorker.h"
 #include "PlasticSourceControlConsole.h"
 #include "PlasticSourceControlMenu.h"
+#include "PlasticSourceControlSettings.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 class FPlasticSourceControlState;
 
-DECLARE_DELEGATE_RetVal(FPlasticSourceControlWorkerRef, FGetPlasticSourceControlWorker)
+DECLARE_DELEGATE_RetVal_OneParam(FPlasticSourceControlWorkerRef, FGetPlasticSourceControlWorker, FPlasticSourceControlProvider&)
 
 class FPlasticSourceControlProvider : public ISourceControlProvider
 {
 public:
 	/** Constructor */
-	FPlasticSourceControlProvider()
-		: bPlasticAvailable(false)
-		, bWorkspaceFound(false)
-		, bServerAvailable(false)
-		, ChangesetNumber(0)
-	{
-	}
+	FPlasticSourceControlProvider();
 
 	/* ISourceControlProvider implementation */
 	virtual void Init(bool bForceConnection = true) override;
@@ -35,27 +30,27 @@ public:
 	virtual bool QueryStateBranchConfig(const FString& ConfigSrc, const FString& ConfigDest) override { return false; }
 	virtual void RegisterStateBranches(const TArray<FString>& BranchNames, const FString& ContentRoot) override {}
 	virtual int32 GetStateBranchIndex(const FString& InBranchName) const override { return INDEX_NONE; }
-	virtual ECommandResult::Type GetState( const TArray<FString>& InFiles, TArray<FSourceControlStateRef>& OutState, EStateCacheUsage::Type InStateCacheUsage ) override;
+	virtual ECommandResult::Type GetState(const TArray<FString>& InFiles, TArray<FSourceControlStateRef>& OutState, EStateCacheUsage::Type InStateCacheUsage) override;
 #if ENGINE_MAJOR_VERSION == 5
 	virtual ECommandResult::Type GetState(const TArray<FSourceControlChangelistRef>& InChangelists, TArray<FSourceControlChangelistStateRef>& OutState, EStateCacheUsage::Type InStateCacheUsage) override;
 #endif
 	virtual TArray<FSourceControlStateRef> GetCachedStateByPredicate(TFunctionRef<bool(const FSourceControlStateRef&)> Predicate) const override;
-	virtual FDelegateHandle RegisterSourceControlStateChanged_Handle( const FSourceControlStateChanged::FDelegate& SourceControlStateChanged ) override;
-	virtual void UnregisterSourceControlStateChanged_Handle( FDelegateHandle Handle ) override;
+	virtual FDelegateHandle RegisterSourceControlStateChanged_Handle(const FSourceControlStateChanged::FDelegate& SourceControlStateChanged) override;
+	virtual void UnregisterSourceControlStateChanged_Handle(FDelegateHandle Handle) override;
 #if ENGINE_MAJOR_VERSION == 4
-	virtual ECommandResult::Type Execute( const FSourceControlOperationRef& InOperation, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency = EConcurrency::Synchronous, const FSourceControlOperationComplete& InOperationCompleteDelegate = FSourceControlOperationComplete() ) override;
+	virtual ECommandResult::Type Execute(const FSourceControlOperationRef& InOperation, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency = EConcurrency::Synchronous, const FSourceControlOperationComplete& InOperationCompleteDelegate = FSourceControlOperationComplete() ) override;
 #elif ENGINE_MAJOR_VERSION == 5
-	virtual ECommandResult::Type Execute( const FSourceControlOperationRef& InOperation, FSourceControlChangelistPtr InChangelist, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency = EConcurrency::Synchronous, const FSourceControlOperationComplete& InOperationCompleteDelegate = FSourceControlOperationComplete() ) override;
+	virtual ECommandResult::Type Execute(const FSourceControlOperationRef& InOperation, FSourceControlChangelistPtr InChangelist, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency = EConcurrency::Synchronous, const FSourceControlOperationComplete& InOperationCompleteDelegate = FSourceControlOperationComplete() ) override;
 #endif
-	virtual bool CanCancelOperation( const FSourceControlOperationRef& InOperation ) const override;
-	virtual void CancelOperation( const FSourceControlOperationRef& InOperation ) override;
+	virtual bool CanCancelOperation(const FSourceControlOperationRef& InOperation) const override;
+	virtual void CancelOperation(const FSourceControlOperationRef& InOperation) override;
 	virtual bool UsesLocalReadOnlyState() const override;
 	virtual bool UsesChangelists() const override;
 	virtual bool UsesCheckout() const override;
 	virtual void Tick() override;
-	virtual TArray< TSharedRef<class ISourceControlLabel> > GetLabels( const FString& InMatchingSpec ) const override;
+	virtual TArray< TSharedRef<class ISourceControlLabel> > GetLabels(const FString& InMatchingSpec) const override;
 #if ENGINE_MAJOR_VERSION == 5
-	virtual TArray<FSourceControlChangelistRef> GetChangelists( EStateCacheUsage::Type InStateCacheUsage ) override;
+	virtual TArray<FSourceControlChangelistRef> GetChangelists(EStateCacheUsage::Type InStateCacheUsage) override;
 #endif
 #if SOURCE_CONTROL_WITH_SLATE
 	virtual TSharedRef<class SWidget> MakeSettingsWidget() const override;
@@ -147,21 +142,36 @@ public:
 	 * Register a worker with the provider.
 	 * This is used internally so the provider can maintain a map of all available operations.
 	 */
-	void RegisterWorker( const FName& InName, const FGetPlasticSourceControlWorker& InDelegate );
+	void RegisterWorker(const FName& InName, const FGetPlasticSourceControlWorker& InDelegate);
 
 	/** Remove a named file from the state cache */
 	bool RemoveFileFromCache(const FString& Filename);
 
-private:
+	/** Access the Plastic source control settings */
+	FPlasticSourceControlSettings& AccessSettings()
+	{
+		return PlasticSourceControlSettings;
+	}
+	const FPlasticSourceControlSettings& AccessSettings() const
+	{
+		return PlasticSourceControlSettings;
+	}
 
+	/** Save the Plastic source control settings */
+	void SaveSettings()
+	{
+		PlasticSourceControlSettings.SaveSettings();
+	}
+
+private:
 	/** Is Plastic binary found and working. */
-	bool bPlasticAvailable;
+	bool bPlasticAvailable = false;
 
 	/** Is Plastic workspace found. */
-	bool bWorkspaceFound;
+	bool bWorkspaceFound = false;
 
 	/** Indicates if source control integration is available or not. */
-	bool bServerAvailable;
+	bool bServerAvailable = false;
 
 	/** Critical section for thread safety of error messages that occurred after last Plastic command */
 	mutable FCriticalSection LastErrorsCriticalSection;
@@ -170,7 +180,7 @@ private:
 	TArray<FString> LastErrors;
 
 	/** Helper function for Execute() */
-	TSharedPtr<class IPlasticSourceControlWorker, ESPMode::ThreadSafe> CreateWorker(const FName& InOperationName) const;
+	TSharedPtr<class IPlasticSourceControlWorker, ESPMode::ThreadSafe> CreateWorker(const FName& InOperationName);
 
 	/** Helper function for running command synchronously. */
 	ECommandResult::Type ExecuteSynchronousCommand(class FPlasticSourceControlCommand& InCommand, const FText& Task);
@@ -208,7 +218,7 @@ private:
 	FString BranchName;
 
 	/** Current Changeset Number */
-	int32 ChangesetNumber;
+	int32 ChangesetNumber = 0;
 
 	/** State cache */
 	mutable TMap<FString, TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> > StateCache;
@@ -222,9 +232,12 @@ private:
 	/** For notifying when the source control states in the cache have changed */
 	FSourceControlStateChanged OnSourceControlStateChanged;
 
+	/** Source Control Console commands */
+	FPlasticSourceControlConsole PlasticSourceControlConsole;
+
 	/** Source Control Menu Extension */
 	FPlasticSourceControlMenu PlasticSourceControlMenu;
 
-	/** Source Control Console commands */
-	FPlasticSourceControlConsole PlasticSourceControlConsole;
+	/** The settings for Plastic source control */
+	FPlasticSourceControlSettings PlasticSourceControlSettings;
 };

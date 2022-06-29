@@ -132,7 +132,7 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 
 #if ENGINE_MAJOR_VERSION == 4
 	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite));		// For reading outputs from cm shell child process
-	verify(             CreatePipeWrite(ShellInputPipeRead, ShellInputPipeWrite));			// For writing commands to cm shell child process
+	verify(             CreatePipeWrite(ShellInputPipeRead, ShellInputPipeWrite));			// For writing commands to cm shell child process NOLINT
 #elif ENGINE_MAJOR_VERSION == 5
 	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite, false));	// For reading outputs from cm shell child process
 	verify(FPlatformProcess::CreatePipe(ShellInputPipeRead, ShellInputPipeWrite, true));	// For writing commands to cm shell child process
@@ -186,9 +186,9 @@ static void _ExitBackgroundCommandLineShell()
 // Internal function (called under the critical section)
 static void _RestartBackgroundCommandLineShell()
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FString& PathToPlasticBinary = PlasticSourceControl.AccessSettings().GetBinaryPath();
-	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString& PathToPlasticBinary = Provider.AccessSettings().GetBinaryPath();
+	const FString& WorkingDirectory = Provider.GetPathToWorkspaceRoot();
 
 	_ExitBackgroundCommandLineShell();
 	_StartBackgroundPlasticShell(PathToPlasticBinary, WorkingDirectory);
@@ -765,8 +765,7 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
  */
 static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
+	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
 
 	// Parse the first two lines with Changeset number and Branch name (the second being requested only once at init)
 	FString RepositoryName, ServerUrl;
@@ -836,8 +835,7 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 */
 static void ParseDirectoryStatusResultForDeleted(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FString& WorkingDirectory = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
+	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
 
 	// Iterate on each line of result of the status command
 	for (const FString& Result : InResults)
@@ -942,7 +940,7 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ECo
 			// => so we also parse the status results to explicitly look for Removed/Deleted assets
 			if (Results.Num() > 0)
 			{
-				Results.RemoveAt(0, 1);// Before that, remove the first line (Workspace/Changeset info)
+				Results.RemoveAt(0, 1); // Before that, remove the first line (Workspace/Changeset info)
 			}
 			ParseDirectoryStatusResultForDeleted(Results, OutStates);
 		}
@@ -992,8 +990,7 @@ public:
  */
 static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& InOutStates)
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 
 	ensureMsgf(InResults.Num() == InOutStates.Num(), TEXT("The fileinfo command should gives the same number of infos as the status command"));
 
@@ -1012,7 +1009,7 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
 
 		// If a file is locked but not checked-out locally (or moved/renamed) this means it is locked by someone else or elsewhere
-		if ((FileState.WorkspaceState != EWorkspaceState::CheckedOut) && (FileState.WorkspaceState != EWorkspaceState::Moved) && !FileState.LockedBy.IsEmpty()) 
+		if ((FileState.WorkspaceState != EWorkspaceState::CheckedOut) && (FileState.WorkspaceState != EWorkspaceState::Moved) && !FileState.LockedBy.IsEmpty())
 		{
 			UE_LOG(LogSourceControl, Verbose, TEXT("LockedByOther(%s) by '%s!=%s' (or %s!=%s)"), *File, *FileState.LockedBy, *Provider.GetUserName(), *FileState.LockedWhere, *Provider.GetWorkspaceName());
 			FileState.WorkspaceState = EWorkspaceState::LockedByOther;
@@ -1060,7 +1057,7 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 		// 2) bInWholeDirectory: In the case of a "whole directory status" triggered by the "Submit Content" operation,
 		// don't even issue a "fileinfo" command for unchanged Controlled files since they won't be considered them for submit.
 		// This greatly reduce the time needed to open the Submit window.
-		// 
+		//
 		// 3) bInUpdateHistory: When the plugin needs to update the history of files, it needs to know if it's on a XLink,
 		// so the fileinfo command is required here to get the RepSpec
 		if (bInUpdateHistory
@@ -1137,8 +1134,7 @@ public:
 bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
 {
 	bool bResult = false;
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 
 	const FString MergeProgressFilename = FPaths::Combine(*Provider.GetPathToWorkspaceRoot(), TEXT(".plastic/plastic.mergeprogress"));
 	if (FPaths::FileExists(MergeProgressFilename))
@@ -1253,8 +1249,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 {
 	bool bResults = true;
 
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FString& WorkspaceRoot = PlasticSourceControl.GetProvider().GetPathToWorkspaceRoot();
+	const FString& WorkspaceRoot = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
 
 	// The "status" command only operate on one directory-tree at a time (whole tree recursively)
 	// not on different folders with no common root.
@@ -1340,7 +1335,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 	// 2) then we can batch Plastic status operation by subdirectory
 	for (auto& Group : GroupOfFiles)
 	{
-		const bool bWholeDirectory = ((Group.Value.Files.Num() == 1) && (Group.Value.CommonDir == Group.Value.Files[0]));	
+		const bool bWholeDirectory = ((Group.Value.Files.Num() == 1) && (Group.Value.CommonDir == Group.Value.Files[0]));
 
 		// Run a "status" command on the directory to get workspace file states.
 		// (ie. Changed, CheckedOut, Copied, Replaced, Added, Private, Ignored, Deleted, LocallyDeleted, Moved, LocallyMoved)
@@ -1350,7 +1345,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 		{
 			// Run a "fileinfo" command to update complementary status information of given files.
 			// (ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere)
-			// In case of "whole directory status", there is no explicit file in the group (it contains only the directory) 
+			// In case of "whole directory status", there is no explicit file in the group (it contains only the directory)
 			// => work on the list of files discovered by RunStatus()
 			bResults &= RunFileinfo(bWholeDirectory, bInUpdateHistory, InConcurrency, OutErrorMessages, States);
 		}
@@ -1435,8 +1430,7 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 */
 static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InXmlResult, TArray<FPlasticSourceControlState>& InOutStates)
 {
-	const FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	const FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
 
 	static const FString RevisionHistoriesResult(TEXT("RevisionHistoriesResult"));
@@ -1476,7 +1470,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 		const FString Filename = ItemNameNode->GetContent();
 		FPlasticSourceControlState* InOutStatePtr = InOutStates.FindByPredicate(
 			[&Filename](const FPlasticSourceControlState& State) { return State.LocalFilename == Filename; }
-		);
+		); // NOLINT
 		if (InOutStatePtr == nullptr)
 		{
 			continue;
@@ -1653,8 +1647,7 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 
 bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates)
 {
-	FPlasticSourceControlModule& PlasticSourceControl = FModuleManager::GetModuleChecked<FPlasticSourceControlModule>( "PlasticSourceControl" );
-	FPlasticSourceControlProvider& Provider = PlasticSourceControl.GetProvider();
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FDateTime Now = FDateTime::Now();
 
 	for (auto&& InState : InStates)
@@ -1703,7 +1696,7 @@ void RemoveRedundantErrors(FPlasticSourceControlCommand& InCommand, const FStrin
 		}
 	}
 
-	InCommand.ErrorMessages.RemoveAll( FRemoveRedundantErrors(InFilter) );
+	InCommand.ErrorMessages.RemoveAll(FRemoveRedundantErrors(InFilter));
 
 	// if we have no error messages now, assume success!
 	if (bFoundRedundantError && InCommand.ErrorMessages.Num() == 0 && !InCommand.bCommandSuccessful)

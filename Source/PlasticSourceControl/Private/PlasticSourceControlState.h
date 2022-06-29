@@ -29,18 +29,13 @@ namespace EWorkspaceState
 
 	// debug log utility
 	const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState);
-}
+} // namespace EWorkspaceState
 
 class FPlasticSourceControlState : public ISourceControlState
 {
 public:
-
-	FPlasticSourceControlState(FString&& InLocalFilename)
+	explicit FPlasticSourceControlState(FString&& InLocalFilename)
 		: LocalFilename(MoveTemp(InLocalFilename))
-		, WorkspaceState(EWorkspaceState::Unknown)
-		, DepotRevisionChangeset(INVALID_REVISION)
-		, LocalRevisionChangeset(INVALID_REVISION)
-		, TimeStamp(0)
 	{
 	}
 
@@ -49,10 +44,6 @@ public:
 	const FPlasticSourceControlState& operator=(const FPlasticSourceControlState& InState) = delete;
 
 	FPlasticSourceControlState(FPlasticSourceControlState&& InState)
-		: WorkspaceState(EWorkspaceState::Unknown)
-		, DepotRevisionChangeset(INVALID_REVISION)
-		, LocalRevisionChangeset(INVALID_REVISION)
-		, TimeStamp(0)
 	{
 		Move(MoveTemp(InState));
 	}
@@ -162,10 +153,10 @@ public:
 	FString PendingMergeFilename;
 
 	/** Changeset with which our local revision diverged from the source/remote revision */
-	int32 PendingMergeBaseChangeset;
+	int32 PendingMergeBaseChangeset = INVALID_REVISION;
 
 	/** Changeset of the source/remote revision of the merge in progress */
-	int32 PendingMergeSourceChangeset;
+	int32 PendingMergeSourceChangeset = INVALID_REVISION;
 
 	/** Plastic SCM Parameters of the merge in progress */
 	TArray<FString> PendingMergeParameters;
@@ -177,19 +168,19 @@ public:
 	FString LockedWhere;
 
 	/** State of the workspace */
-	EWorkspaceState::Type WorkspaceState;
+	EWorkspaceState::Type WorkspaceState = EWorkspaceState::Unknown;
 
 	/** Latest revision number of the file in the depot */
-	int DepotRevisionChangeset;
+	int DepotRevisionChangeset = INVALID_REVISION;
 
 	/** Latest revision number at which a file was synced to before being edited */
-	int LocalRevisionChangeset;
+	int LocalRevisionChangeset = INVALID_REVISION;
 
 	/** Original name in case of a Moved/Renamed file */
 	FString MovedFrom;
 
 	/** The timestamp of the last update */
-	FDateTime TimeStamp;
+	FDateTime TimeStamp = 0;
 
 	/** The branch with the head change list */
 	FString HeadBranch;

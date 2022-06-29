@@ -12,6 +12,8 @@
 #include "ISourceControlOperation.h"
 
 
+class FPlasticSourceControlProvider;
+
 /**
  * Internal operation used to revert checked-out unchanged files
 */
@@ -60,6 +62,9 @@ public:
 class FPlasticConnectWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticConnectWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticConnectWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -74,6 +79,9 @@ public:
 class FPlasticCheckOutWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticCheckOutWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticCheckOutWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -89,6 +97,9 @@ public:
 class FPlasticCheckInWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticCheckInWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticCheckInWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -104,6 +115,9 @@ public:
 class FPlasticMarkForAddWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticMarkForAddWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticMarkForAddWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -119,6 +133,9 @@ public:
 class FPlasticDeleteWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticDeleteWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticDeleteWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -134,6 +151,9 @@ public:
 class FPlasticRevertWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticRevertWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticRevertWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -145,6 +165,9 @@ public:
 class FPlasticRevertUnchangedWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticRevertUnchangedWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticRevertUnchangedWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -160,6 +183,9 @@ public:
 class FPlasticRevertAllWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticRevertAllWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticRevertAllWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -175,6 +201,9 @@ public:
 class FPlasticMakeWorkspaceWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticMakeWorkspaceWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticMakeWorkspaceWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -186,6 +215,9 @@ public:
 class FPlasticSyncWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticSyncWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticSyncWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -201,6 +233,9 @@ public:
 class FPlasticUpdateStatusWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticUpdateStatusWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticUpdateStatusWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -216,6 +251,9 @@ public:
 class FPlasticCopyWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticCopyWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticCopyWorker() {}
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
@@ -231,6 +269,9 @@ public:
 class FPlasticResolveWorker : public IPlasticSourceControlWorker
 {
 public:
+	explicit FPlasticResolveWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
 	virtual ~FPlasticResolveWorker() {}
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
