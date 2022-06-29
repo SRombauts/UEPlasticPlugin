@@ -401,7 +401,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 	}
 
-	// NOTE: optimization, no need to update the status of our files since this is done immediately after by the Editor
+	// NOTE: optim, no need to update the status of our files since this is done immediately after by the Editor
 
 	return InCommand.bCommandSuccessful;
 }
@@ -657,7 +657,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		if (bIsMoveOperation)
 		{
 			UE_LOG(LogSourceControl, Log, TEXT("Moving %s to %s..."), *Origin, *Destination);
-			// In case of rename, we have to undo what the Editor (created a redirector and added the destination asset), and then redo it with Plastic SCM
+			// In case of rename, we have to undo what the Editor (created a redirector and added the dest asset), and then redo it with Plastic SCM
 			// - revert the 'cm add' that was applied to the destination by the Editor
 			{
 				TArray<FString> DestinationFiles;
@@ -757,7 +757,7 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
 			PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 		}
-		// else: optimization, no need to update the status of our files since this is done immediately after by the Editor
+		// else: optim, no need to update the status of our files since this is done immediately after by the Editor
 	}
 
 	return InCommand.bCommandSuccessful;

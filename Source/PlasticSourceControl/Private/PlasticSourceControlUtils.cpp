@@ -903,7 +903,7 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ECo
 	Parameters.Add(TEXT("--ignored"));
 	// "cm status" only operate on one path (file or directory) at a time, so use one common path for multiple files in a directory
 	TArray<FString> OnePath;
-	// Only one file: optimization very useful for the .uproject file at the root to avoid parsing the whole repository
+	// Only one file: optim very useful for the .uproject file at the root to avoid parsing the whole repository
 	// (but doesn't work if the file is deleted)
 	const bool bSingleFile = (InFiles.Num() == 1) && (FPaths::FileExists(InFiles[0]));
 	if (bSingleFile)
@@ -955,7 +955,7 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ECo
 	return bResult;
 }
 
-// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{Changelist}"
+// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"
 // for example "40;41;repo@server:port;srombauts;UEPlasticPluginDev"
 class FPlasticFileinfoParser
 {
