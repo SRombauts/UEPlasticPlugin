@@ -188,18 +188,13 @@ bool FPlasticCheckOutWorker::UpdateStates()
 
 #if ENGINE_MAJOR_VERSION == 5
 
-// NOTE: we need to explicitly delete the empty changelist when we remove the last file from it else cm will prevent us to create a new changelist until we run a status --changelists (!)
-void DeleteChangelist(FPlasticSourceControlProvider& PlasticSourceControlProvider, const FPlasticSourceControlChangelist& Changelist)
+bool DeleteChangelist(const FPlasticSourceControlChangelist& InChangelist, const EConcurrency::Type InConcurrency, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Parameters;
-	Parameters.Add("rm");
+	Parameters.Add(TEXT("rm"));
 	TArray<FString> Files;
-	Files.Add(Changelist.GetName());
-	TArray<FString> InfoMessages;
-	TArray<FString> ErrorMessages;
-	PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, Files, EConcurrency::Synchronous, InfoMessages, ErrorMessages);
-
-	PlasticSourceControlProvider.RemoveChangelistFromCache(Changelist);
+	Files.Add(InChangelist.GetName());
+	return PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, Files, InConcurrency, OutResults, OutErrorMessages);
 }
 
 TArray<FString> FileNamesFromFileStates(const TArray<FSourceControlStateRef>& InFileStates)
@@ -305,6 +300,14 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				Operation->SetSuccessMessage(ParseCheckInResults(InCommand.InfoMessages));
 				UE_LOG(LogSourceControl, Log, TEXT("CheckIn successful"));
 			}
+
+#if ENGINE_MAJOR_VERSION == 5
+			if (InChangelist.IsInitialized())
+			{
+				// NOTE: we need to explicitly delete persistent changelists when we submit its content
+				DeleteChangelist(InChangelist, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+			}
+#endif
 		}
 
 		// now update the status of our files
@@ -323,7 +326,7 @@ bool FPlasticCheckInWorker::UpdateStates()
 #if ENGINE_MAJOR_VERSION == 5
 	if (InChangelist.IsInitialized())
 	{
-		DeleteChangelist(GetProvider(), InChangelist);
+		GetProvider().RemoveChangelistFromCache(InChangelist);
 	}
 #endif
 
@@ -1060,11 +1063,11 @@ bool FPlasticGetPendingChangelistsWorker::UpdateStates()
 	return bUpdated;
 }
 
-FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlProvider& PlasticSourceControlProvider, const FString& InDescription, EConcurrency::Type InConcurrency, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
+FPlasticSourceControlChangelist GenerateUniqueChangelistName(FPlasticSourceControlProvider& PlasticSourceControlProvider)
 {
 	FPlasticSourceControlChangelist NewChangelist;
 
-	// Generate a unique number for the name: start from current changeset and increment until a number is available as a new changelist number
+	// Generate a unique number for the name of the new changelist: start from current changeset and increment until a number is available as a new changelist number
 	int32 ChangelistNumber = PlasticSourceControlProvider.GetChangesetNumber();
 	bool bNewNumberOk = false;
 	do
@@ -1076,12 +1079,18 @@ FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlPro
 	} while (!bNewNumberOk);
 	NewChangelist.SetInitialized();
 
-	// Create a persistent changelist (to stay closer to Perforce)
+	return NewChangelist;
+}
+
+FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlProvider& PlasticSourceControlProvider, const FString& InDescription, EConcurrency::Type InConcurrency, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
+{
+	FPlasticSourceControlChangelist NewChangelist = GenerateUniqueChangelistName(PlasticSourceControlProvider);
+
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("add"));
-	Parameters.Add(TEXT("--persistent"));
 	Parameters.Add(TEXT("\"") + NewChangelist.GetName() + TEXT("\""));
 	Parameters.Add(TEXT("\"") + InDescription + TEXT("\""));
+	Parameters.Add(TEXT("--persistent")); // Create a persistent changelist to stay close to Perforce behavior
 	const bool bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, TArray<FString>(), InConcurrency, InInfoMessages, InErrorMessages);
 	if (!bCommandSuccessful)
 	{
@@ -1089,6 +1098,24 @@ FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlPro
 	}
 
 	return NewChangelist;
+}
+
+bool EditChangelistDescription(const FPlasticSourceControlChangelist& InChangelist, const FString& InDescription, EConcurrency::Type InConcurrency, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
+{
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("edit"));
+	Parameters.Add(TEXT("\"") + InChangelist.GetName() + TEXT("\""));
+	Parameters.Add(TEXT("description"));
+	Parameters.Add(TEXT("\"") + InDescription + TEXT("\""));
+	return PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, TArray<FString>(), InConcurrency, InInfoMessages, InErrorMessages);
+}
+
+bool MoveFilesToChangelist(const FPlasticSourceControlChangelist& InChangelist, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("\"") + InChangelist.GetName() + TEXT("\""));
+	Parameters.Add(TEXT("add"));
+	return PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, InFiles, InConcurrency, OutResults, OutErrorMessages);
 }
 
 FPlasticNewChangelistWorker::FPlasticNewChangelistWorker(FPlasticSourceControlProvider& InSourceControlProvider)
@@ -1129,11 +1156,7 @@ bool FPlasticNewChangelistWorker::Execute(class FPlasticSourceControlCommand& In
 
 		if (InCommand.Files.Num() > 0)
 		{
-			// Move files to changelist
-			TArray<FString> Parameters;
-			Parameters.Add(TEXT("\"") + NewChangelist.GetName() + TEXT("\""));
-			Parameters.Add(TEXT("add"));
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+			InCommand.bCommandSuccessful = MoveFilesToChangelist(NewChangelist, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 			if (InCommand.bCommandSuccessful)
 			{
 				MovedFiles = InCommand.Files;
@@ -1197,13 +1220,15 @@ bool FPlasticDeleteChangelistWorker::Execute(class FPlasticSourceControlCommand&
 		check(InCommand.Operation->GetName() == GetName());
 		TSharedRef<FDeleteChangelist, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FDeleteChangelist>(InCommand.Operation);
 
-		TArray<FString> Parameters;
-		Parameters.Add("rm");
-		TArray<FString> Files;
-		Files.Add(InCommand.Changelist.GetName());
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = DeleteChangelist(InCommand.Changelist, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 
-		// NOTE: for now it's not possible to delete a changelist with files through the Editor
+		// NOTE: for now it is not possible to delete a changelist with files through the Editor
+		if (InCommand.Files.Num() > 0 && InCommand.bCommandSuccessful)
+		{
+			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
+			const TArray<FString> Files = FileNamesFromFileStates(ChangelistState->Files);
+			InCommand.bCommandSuccessful = MoveFilesToChangelist(FPlasticSourceControlChangelist::DefaultChangelist, Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
 
 		// Keep track of changelist to update the cache
 		if (InCommand.bCommandSuccessful)
@@ -1250,12 +1275,7 @@ bool FPlasticEditChangelistWorker::Execute(class FPlasticSourceControlCommand& I
 	}
 	else
 	{
-		TArray<FString> Parameters;
-		Parameters.Add(TEXT("edit"));
-		Parameters.Add(TEXT("\"") + InCommand.Changelist.GetName() + TEXT("\""));
-		Parameters.Add(TEXT("description"));
-		Parameters.Add(TEXT("\"") + EditedDescription + TEXT("\""));
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, TArray<FString>(), InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = EditChangelistDescription(InCommand.Changelist, EditedDescription, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 		if (InCommand.bCommandSuccessful)
 		{
 			EditedChangelist = InCommand.Changelist;
@@ -1291,11 +1311,7 @@ bool FPlasticReopenWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	check(InCommand.Operation->GetName() == GetName());
 
-	// Move files to changelist
-	TArray<FString> Parameters;
-	Parameters.Add(TEXT("\"") + InCommand.Changelist.GetName() + TEXT("\""));
-	Parameters.Add(TEXT("add"));
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = MoveFilesToChangelist(InCommand.Changelist, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 	if (InCommand.bCommandSuccessful)
 	{
 		ReopenedFiles = InCommand.Files;
