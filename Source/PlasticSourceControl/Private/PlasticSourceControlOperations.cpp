@@ -202,6 +202,18 @@ void DeleteChangelist(FPlasticSourceControlProvider& PlasticSourceControlProvide
 	PlasticSourceControlProvider.RemoveChangelistFromCache(Changelist);
 }
 
+TArray<FString> FileNamesFromFileStates(const TArray<FSourceControlStateRef>& InFileStates)
+{
+	TArray<FString> Files;
+
+	for (const FSourceControlStateRef& FileState : InFileStates)
+	{
+		Files.Add(FileState->GetFilename());
+	}
+
+	return Files;
+}
+
 #endif
 
 /// Parse checkin result, usually looking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
@@ -241,15 +253,10 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TArray<FString> Files;
 #if ENGINE_MAJOR_VERSION == 5
-	if (InCommand.Changelist.IsInitialized())
+	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
 	{
-		ensure(InCommand.Files.IsEmpty());
-
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
-		for (const auto& File : ChangelistState->Files)
-		{
-			Files.Add(File->GetFilename());
-		}
+		Files = FileNamesFromFileStates(ChangelistState->Files);
 
 		InChangelist = InCommand.Changelist;
 	}
@@ -420,10 +427,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
-		for (const auto& File : ChangelistState->Files)
-		{
-			Files.Add(File->GetFilename());
-		}
+		Files = FileNamesFromFileStates(ChangelistState->Files);
 	}
 	else
 #endif
@@ -526,10 +530,7 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
-		for (const auto& File : ChangelistState->Files)
-		{
-			Files.Add(File->GetFilename());
-		}
+		Files = FileNamesFromFileStates(ChangelistState->Files);
 	}
 	else
 #endif
@@ -658,10 +659,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
-		for (const auto& File : ChangelistState->Files)
-		{
-			Files.Add(File->GetFilename());
-		}
+		Files = FileNamesFromFileStates(ChangelistState->Files);
 	}
 	else
 #endif
