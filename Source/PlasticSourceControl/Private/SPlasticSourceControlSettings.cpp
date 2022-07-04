@@ -39,7 +39,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 	FSlateFontInfo Font = FEditorStyle::GetFontStyle(TEXT("SourceControl.LoginWindow.Font"));
 #endif
 
-	bAutoCreateIgnoreFile = true;
+	bAutoCreateIgnoreFile = CanAutoCreateIgnoreFile();
 	bAutoInitialCommit = true;
 
 	InitialCommitMessage = LOCTEXT("InitialCommitMessage", "Initial checkin");
@@ -251,7 +251,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			.FillWidth(0.1f)
 			[
 				SNew(SCheckBox)
-				.IsChecked(ECheckBoxState::Checked)
+				.IsEnabled(this, &SPlasticSourceControlSettings::CanAutoCreateIgnoreFile)
+				.IsChecked(bAutoCreateIgnoreFile)
 				.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedCreateIgnoreFile)
 			]
 			+SHorizontalBox::Slot()
@@ -496,6 +497,12 @@ void SPlasticSourceControlSettings::OnServerUrlCommited(const FText& InText, ETe
 FText SPlasticSourceControlSettings::GetServerUrl() const
 {
 	return ServerUrl;
+}
+
+bool SPlasticSourceControlSettings::CanAutoCreateIgnoreFile() const
+{
+	const bool bIgnoreFileFound = FPaths::FileExists(GetIgnoreFileName());
+	return !bIgnoreFileFound;
 }
 
 void SPlasticSourceControlSettings::OnCheckedCreateIgnoreFile(ECheckBoxState NewCheckedState)
