@@ -19,6 +19,7 @@ class FScopedTempFile
 {
 public:
 	/** Constructor - open & write string to temp file */
+	explicit FScopedTempFile(const FString& InText);
 	explicit FScopedTempFile(const FText& InText);
 
 	/** Destructor - delete temp file */
