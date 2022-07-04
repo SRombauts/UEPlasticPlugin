@@ -15,7 +15,7 @@ class FPlasticSourceControlMenu
 public:
 	void Register();
 	void Unregister();
-	
+
 	/** This functions will be bound to appropriate Command. */
 	void SyncProjectClicked();
 	void RevertUnchangedClicked();
@@ -25,6 +25,7 @@ public:
 	void VisitSupportURLClicked();
 
 private:
+	bool False() const;
 	bool IsSourceControlConnected() const;
 
 	bool				SaveDirtyPackages();

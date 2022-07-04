@@ -74,6 +74,12 @@ void FPlasticSourceControlMenu::Unregister()
 #endif
 }
 
+// Note: always return false, as a way to disable some menu entries until we can fix them
+bool FPlasticSourceControlMenu::False() const
+{
+	return false;
+}
+
 bool FPlasticSourceControlMenu::IsSourceControlConnected() const
 {
 	const ISourceControlProvider& Provider = ISourceControlModule::Get().GetProvider();
@@ -440,14 +446,13 @@ void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Menu)
 void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 {
- // TODO disabled since not working correctly and crashing the Editor
-#if 0
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
 		"PlasticSync",
 #endif
 		LOCTEXT("PlasticSync",			"Sync/Update Workspace"),
-		LOCTEXT("PlasticSyncTooltip",	"Update all files in the workspace to the latest version."),
+		// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
+		LOCTEXT("PlasticSyncTooltip",	"[Disabled/crashing] Update all files in the workspace to the latest version."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Sync"),
 #else
@@ -455,10 +460,10 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::SyncProjectClicked),
-			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::IsSourceControlConnected)
+			// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
+			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::False)
 		)
 	);
-#endif // 0
 
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
@@ -477,14 +482,13 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		)
 	);
 
- // TODO disabled since not working correctly and crashing the Editor
-#if 0
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
 		"PlasticRevertAll",
 #endif
 		LOCTEXT("PlasticRevertAll",			"Revert All"),
-		LOCTEXT("PlasticRevertAllTooltip",	"Revert all files in the workspace to their controlled/unchanged state."),
+		// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
+		LOCTEXT("PlasticRevertAllTooltip",	"Disabled/crashing] Revert all files in the workspace to their controlled/unchanged state."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Revert"),
 #else
@@ -492,10 +496,10 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RevertAllClicked),
-			FCanExecuteAction()
+			// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
+			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::False)
 		)
 	);
-#endif // 0
 
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
