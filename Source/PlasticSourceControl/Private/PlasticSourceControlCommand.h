@@ -7,13 +7,18 @@
 #include "ISourceControlProvider.h"
 #include "IPlasticSourceControlWorker.h"
 
+#include "Runtime/Launch/Resources/Version.h"
+
+#if ENGINE_MAJOR_VERSION == 5
+#include "PlasticSourceControlChangelist.h"
+#endif
+
 /**
  * Used to execute Plastic commands multi-threaded.
  */
 class FPlasticSourceControlCommand : public IQueuedWork
 {
 public:
-
 	FPlasticSourceControlCommand(const FSourceControlOperationRef& InOperation, const FPlasticSourceControlWorkerRef& InWorker, const FSourceControlOperationComplete& InOperationCompleteDelegate = FSourceControlOperationComplete() );
 
 	/**
@@ -83,11 +88,16 @@ public:
 	const double StartTimestamp;
 
 	/** Files to perform this operation on */
-	TArray< FString > Files;
+	TArray<FString> Files;
+
+#if ENGINE_MAJOR_VERSION == 5
+	/** Changelist to perform this operation on */
+	FPlasticSourceControlChangelist Changelist;
+#endif
 
 	/**Info and/or warning message storage*/
-	TArray< FString > InfoMessages;
+	TArray<FString> InfoMessages;
 
 	/**Potential error message storage*/
-	TArray< FString > ErrorMessages;
+	TArray<FString> ErrorMessages;
 };

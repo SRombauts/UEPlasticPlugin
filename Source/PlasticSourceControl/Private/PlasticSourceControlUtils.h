@@ -6,6 +6,9 @@
 #include "ISourceControlProvider.h"
 #include "PlasticSourceControlRevision.h"
 
+#include "Runtime/Launch/Resources/Version.h"
+
+class FPlasticSourceControlChangelistState;
 class FPlasticSourceControlCommand;
 class FPlasticSourceControlState;
 
@@ -15,9 +18,8 @@ class FPlasticSourceControlState;
 class FScopedTempFile
 {
 public:
-
 	/** Constructor - open & write string to temp file */
-	FScopedTempFile(const FText& InText);
+	explicit FScopedTempFile(const FText& InText);
 
 	/** Destructor - delete temp file */
 	~FScopedTempFile();
@@ -136,13 +138,26 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpec, const FString& InDumpFileName);
 
 /**
- * Run a Plastic "history" and "log" commands and parse it.
+ * Run Plastic "history" and "log" commands and parse their results.
  *
  * @param	bInUpdateHistory	If getting the history of files, versus only checking the heads of branches to detect newer commits
  * @param	InOutStates			The file states to update with the history
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  */
 bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages);
+
+#if ENGINE_MAJOR_VERSION == 5
+
+/**
+ * Run a Plastic "status --changelist --xml" and parse its result.
+ * @param	InConcurrency
+ * @param	OutChangelistsStates	The list of changelists (without their files)
+ * @param	OutCLFilesStates		The list of files per changelist
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunGetChangelists(const EConcurrency::Type InConcurrency, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates, TArray<FString>& OutErrorMessages);
+
+#endif
 
 /**
  * Helper function for various commands to update cached states.
@@ -169,4 +184,4 @@ void SwitchVerboseLogs(const bool bInEnable);
  */
 FString FindCommonDirectory(const FString& InPath1, const FString& InPath2);
 
-}
+} // namespace PlasticSourceControlUtils

@@ -10,7 +10,10 @@
 #include "PlasticSourceControlSettings.h"
 #include "Runtime/Launch/Resources/Version.h"
 
-class FPlasticSourceControlState;
+#if ENGINE_MAJOR_VERSION == 5
+#include "ISourceControlChangelistState.h"
+#include "PlasticSourceControlChangelist.h"
+#endif
 
 DECLARE_DELEGATE_RetVal_OneParam(FPlasticSourceControlWorkerRef, FGetPlasticSourceControlWorker, FPlasticSourceControlProvider&)
 
@@ -136,7 +139,12 @@ public:
 	TArray<FString> GetLastErrors() const;
 
 	/** Helper function used to update state cache */
-	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> GetStateInternal(const FString& InFilename) const;
+	TSharedRef<class FPlasticSourceControlState, ESPMode::ThreadSafe> GetStateInternal(const FString& InFilename);
+
+#if ENGINE_MAJOR_VERSION == 5
+	/** Helper function used to update changelists state cache */
+	TSharedRef<class FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> GetStateInternal(const FPlasticSourceControlChangelist& InChangelist);
+#endif
 
 	/**
 	 * Register a worker with the provider.
@@ -146,6 +154,14 @@ public:
 
 	/** Remove a named file from the state cache */
 	bool RemoveFileFromCache(const FString& Filename);
+
+#if ENGINE_MAJOR_VERSION == 5
+	/** Remove a changelist from the state cache */
+	bool RemoveChangelistFromCache(const FPlasticSourceControlChangelist& Changelist);
+
+	/** Returns a list of changelists from the cache based on a given predicate */
+	TArray<FSourceControlChangelistStateRef> GetCachedStateByPredicate(TFunctionRef<bool(const FSourceControlChangelistStateRef&)> Predicate) const;
+#endif
 
 	/** Access the Plastic source control settings */
 	FPlasticSourceControlSettings& AccessSettings()
@@ -220,8 +236,11 @@ private:
 	/** Current Changeset Number */
 	int32 ChangesetNumber = 0;
 
-	/** State cache */
-	mutable TMap<FString, TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> > StateCache;
+	/** State caches */
+	TMap<FString, TSharedRef<class FPlasticSourceControlState, ESPMode::ThreadSafe> > StateCache;
+#if ENGINE_MAJOR_VERSION == 5
+	TMap<FPlasticSourceControlChangelist, TSharedRef<class FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> > ChangelistsStateCache;
+#endif
 
 	/** The currently registered source control operations */
 	TMap<FName, FGetPlasticSourceControlWorker> WorkersMap;

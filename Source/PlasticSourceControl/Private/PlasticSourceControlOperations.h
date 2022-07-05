@@ -6,17 +6,23 @@
 
 #include "CoreMinimal.h"
 #include "IPlasticSourceControlWorker.h"
-#include "PlasticSourceControlState.h"
 #include "PlasticSourceControlRevision.h"
-
+#include "PlasticSourceControlState.h"
 #include "ISourceControlOperation.h"
 
+#include "Runtime/Launch/Resources/Version.h"
+
+#if ENGINE_MAJOR_VERSION == 5
+#include "PlasticSourceControlChangelist.h"
+#include "PlasticSourceControlChangelistState.h"
+#endif
 
 class FPlasticSourceControlProvider;
 
 /**
  * Internal operation used to revert checked-out unchanged files
 */
+// NOTE: added to Engine in Unreal Engine 5 for changelists
 class FPlasticRevertUnchanged : public ISourceControlOperation
 {
 public:
@@ -109,6 +115,11 @@ public:
 public:
 	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
+
+#if ENGINE_MAJOR_VERSION == 5
+	/** Changelist we asked to submit */
+	FPlasticSourceControlChangelist InChangelist;
+#endif
 };
 
 /** Add an untracked file to source control (so only a subset of the Plastic add command). */
@@ -159,6 +170,10 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() override;
+
+public:
+	/** Temporary states for results */
+	TArray<FPlasticSourceControlState> States;
 };
 
 /** Revert only unchanged file(s) (uncheckout). */
@@ -281,3 +296,103 @@ private:
 	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
 };
+
+#if ENGINE_MAJOR_VERSION == 5
+
+class FPlasticGetPendingChangelistsWorker : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticGetPendingChangelistsWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticGetPendingChangelistsWorker() {}
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+public:
+	/** Temporary states for results */
+	TArray<FPlasticSourceControlChangelistState> OutChangelistsStates;
+	TArray<TArray<FPlasticSourceControlState>> OutCLFilesStates;
+	TArray<TMap<FString, EWorkspaceState::Type>> OutCLShelvedFilesStates;
+	TArray<TMap<FString, FString>> OutCLShelvedFilesMap;
+
+private:
+	/** Controls whether or not we will remove changelists from the cache after a full update */
+	bool bCleanupCache = false;
+};
+
+class FPlasticNewChangelistWorker : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticNewChangelistWorker(FPlasticSourceControlProvider& InSourceControlProvider);
+	virtual ~FPlasticNewChangelistWorker() {}
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+public:
+	/** New changelist information */
+	FPlasticSourceControlChangelist NewChangelist;
+	FPlasticSourceControlChangelistState NewChangelistState;
+
+	/** Files that were moved */
+	TArray<FString> MovedFiles;
+};
+
+class FPlasticDeleteChangelistWorker : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticDeleteChangelistWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticDeleteChangelistWorker() {}
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+public:
+	FPlasticSourceControlChangelist DeletedChangelist;
+};
+
+class FPlasticEditChangelistWorker : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticEditChangelistWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticEditChangelistWorker() {}
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+public:
+	FPlasticSourceControlChangelist EditedChangelist;
+	FString EditedDescription;
+};
+
+class FPlasticReopenWorker : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticReopenWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticReopenWorker() {}
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+protected:
+	/** Reopened files */
+	TArray<FString> ReopenedFiles;
+
+	/** Destination changelist */
+	FPlasticSourceControlChangelist DestinationChangelist;
+};
+
+#endif
