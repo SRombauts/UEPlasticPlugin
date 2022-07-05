@@ -34,7 +34,7 @@ const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState)
 	}
 	return WorkspaceStateStr;
 }
-}
+} // namespace EWorkspaceState
 
 
 int32 FPlasticSourceControlState::GetHistorySize() const
@@ -42,13 +42,13 @@ int32 FPlasticSourceControlState::GetHistorySize() const
 	return History.Num();
 }
 
-TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlState::GetHistoryItem( int32 HistoryIndex ) const
+TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlState::GetHistoryItem(int32 HistoryIndex) const
 {
 	check(History.IsValidIndex(HistoryIndex));
 	return History[HistoryIndex];
 }
 
-TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlState::FindHistoryRevision( int32 RevisionNumber ) const
+TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlState::FindHistoryRevision(int32 RevisionNumber) const
 {
 	for (const auto& Revision : History)
 	{
@@ -124,10 +124,14 @@ FName FPlasticSourceControlState::GetIconName() const
 	case EWorkspaceState::Private: // Not controlled
 		return FName("Perforce.NotInDepot");
 	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
-	{
-		const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
-		return FName(bPromptForCheckoutOnChange ? "Perforce.NotInDepot" : "Perforce.CheckedOut");
-	}
+		if (GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange)
+		{
+			return FName("Perforce.NotInDepot");
+		}
+		else
+		{
+			return FName("Perforce.CheckedOut");
+		}
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:
 	case EWorkspaceState::Controlled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
@@ -170,10 +174,14 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	case EWorkspaceState::Private: // Not controlled
 		return FName("Perforce.NotInDepot_Small");
 	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
-	{
-		const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
-		return FName(bPromptForCheckoutOnChange ? "Perforce.NotInDepot_Small" : "Perforce.CheckedOut_Small");
-	}
+		if (GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange)
+		{
+			return FName("Perforce.NotInDepot_Small");
+		}
+		else
+		{
+			return FName("Perforce.CheckedOut_Small");
+		}
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:
 	case EWorkspaceState::Controlled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
@@ -188,7 +196,7 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 {
 	if (!IsCurrent())
 	{
-		return FSlateIcon(FAppStyle::GetAppStyleSetName(),"Perforce.NotAtHeadRevision");
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotAtHeadRevision");
 	}
 	else if (WorkspaceState != EWorkspaceState::CheckedOut && WorkspaceState != EWorkspaceState::LockedByOther)
 	{
@@ -218,11 +226,14 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	case EWorkspaceState::Private: // Not controlled
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotInDepot");
 	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled
-	{
-		const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
-		return FSlateIcon(FAppStyle::GetAppStyleSetName(), bPromptForCheckoutOnChange ? "Perforce.NotInDepot" : "Perforce.CheckedOut");
-
-	}
+		if (GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange)
+		{
+			return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotInDepot");
+		}
+		else
+		{
+			return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.CheckedOut");
+		}
 	case EWorkspaceState::Unknown:
 	case EWorkspaceState::Ignored:
 	case EWorkspaceState::Controlled: // (Unchanged) same as "Pristine" for Perforce (not checked out) ie no icon
@@ -352,15 +363,15 @@ const FDateTime& FPlasticSourceControlState::GetTimeStamp() const
 bool FPlasticSourceControlState::CanCheckIn() const
 {
 	const bool bCanCheckIn =
-		(  WorkspaceState == EWorkspaceState::Added
+		  (WorkspaceState == EWorkspaceState::Added
 		|| WorkspaceState == EWorkspaceState::Deleted
 		|| WorkspaceState == EWorkspaceState::LocallyDeleted
 		|| WorkspaceState == EWorkspaceState::Changed
 		|| WorkspaceState == EWorkspaceState::Moved
 		|| WorkspaceState == EWorkspaceState::Copied
 		|| WorkspaceState == EWorkspaceState::Replaced
-		|| WorkspaceState == EWorkspaceState::CheckedOut
-		) && !IsConflicted() && IsCurrent();
+		|| WorkspaceState == EWorkspaceState::CheckedOut)
+		&& !IsConflicted() && IsCurrent();
 
 	if (!IsUnknown())
 	{
@@ -372,18 +383,15 @@ bool FPlasticSourceControlState::CanCheckIn() const
 
 bool FPlasticSourceControlState::CanCheckout() const
 {
-	const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
-	if (!bPromptForCheckoutOnChange)
+	if (!GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange)
 	{
-		UE_LOG(LogSourceControl, Verbose, TEXT("%s CanCheckout=%d"), *LocalFilename, false);
 		return false;
 	}
 
-	const bool bCanCheckout  = bPromptForCheckoutOnChange   // Only proceed if checkout is enabled
-		&& (WorkspaceState == EWorkspaceState::Controlled   // In source control, Unmodified
-		    || WorkspaceState == EWorkspaceState::Changed   // In source control, but not checked-out
-		    || WorkspaceState == EWorkspaceState::Replaced)	// In source control, merged, waiting for checkin to conclude the merge 
-		&& IsCurrent(); // Is up to date (at the revision of the repo)
+	const bool bCanCheckout  =    (WorkspaceState == EWorkspaceState::Controlled	// In source control, Unmodified
+								|| WorkspaceState == EWorkspaceState::Changed		// In source control, but not checked-out
+								|| WorkspaceState == EWorkspaceState::Replaced)		// In source control, merged, waiting for checkin to conclude the merge
+								&& IsCurrent(); // Is up to date (at the revision of the repo)
 
 	if (!IsUnknown())
 	{
@@ -398,7 +406,7 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
 							|| WorkspaceState == EWorkspaceState::Moved
 							|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merged
-							|| WorkspaceState == EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge 
+							|| WorkspaceState == EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge
 							|| WorkspaceState == EWorkspaceState::Changed;		// Note: Workaround to enable checkin (still required by UE5.0)
 
 	if (bIsCheckedOut)
@@ -406,9 +414,15 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 		UE_LOG(LogSourceControl, Verbose, TEXT("%s IsCheckedOut"), *LocalFilename);
 	}
 
-	const bool bPromptForCheckoutOnChange = GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
-	// Any controlled state will be considered as checked out if the prompt is disabled
-	return bPromptForCheckoutOnChange ? bIsCheckedOut : IsSourceControlled();
+	if (GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange)
+	{
+		return bIsCheckedOut;
+	}
+	else
+	{
+		// Any controlled state will be considered as checked out if the prompt is disabled
+		return IsSourceControlled();
+	}
 }
 
 bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
@@ -463,7 +477,7 @@ bool FPlasticSourceControlState::IsCurrent() const
 	{
 		UE_LOG(LogSourceControl, VeryVerbose, TEXT("%s IsCurrent"), *LocalFilename);
 	}
-	
+
 	return bIsCurrent;
 }
 
