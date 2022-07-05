@@ -128,7 +128,14 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			}
 			else
 			{
-				Operation->SetErrorText(FText::FromString(InCommand.ErrorMessages[0]));
+				if (InCommand.ErrorMessages.Num() > 0)
+				{
+					Operation->SetErrorText(FText::FromString(InCommand.ErrorMessages[0]));
+				}
+				else
+				{
+					Operation->SetErrorText(LOCTEXT("FailedToConnect", "Failed to connect to the Plastic SCM server."));
+				}
 			}
 		}
 		else
