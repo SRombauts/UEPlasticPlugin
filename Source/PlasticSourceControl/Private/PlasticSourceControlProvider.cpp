@@ -477,8 +477,10 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 	else if (!bServerAvailable)
 	{
 		bServerAvailable = InCommand.bCommandSuccessful;
-
-		SetLastErrors(TArray<FString>());
+		if (bServerAvailable)
+		{
+			SetLastErrors(TArray<FString>());
+		}
 	}
 
 	// And for all operations running UpdateStatus, get Changeset and Branch informations:
