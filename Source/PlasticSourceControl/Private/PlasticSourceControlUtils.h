@@ -11,6 +11,7 @@
 class FPlasticSourceControlChangelistState;
 class FPlasticSourceControlCommand;
 class FPlasticSourceControlState;
+struct FSoftwareVersion;
 
 /**
  * Helper struct for maintaining temporary files for passing to commands
@@ -64,7 +65,7 @@ bool FindRootDirectory(const FString& InPathToGameDir, FString& OutWorkspaceRoot
  * Get Plastic SCM cli version
  * @param	OutCliVersion		Version of the Plastic SCM Command Line Interface tool
 */
-void GetPlasticScmVersion(FString& OutPlasticScmVersion);
+void GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion);
 
 /**
  * Get Plastic SCM current user

@@ -17,6 +17,29 @@
 
 DECLARE_DELEGATE_RetVal_OneParam(FPlasticSourceControlWorkerRef, FGetPlasticSourceControlWorker, FPlasticSourceControlProvider&)
 
+
+/**
+ * PlasticSCM version string in the form "X.Y.Z.Changeset" (as returned by GetPlasticScmVersion)
+*/
+struct FSoftwareVersion
+{
+	FSoftwareVersion() {}
+
+	explicit FSoftwareVersion(const FString& InVersionString);
+	explicit FSoftwareVersion(const int& InMajor, const int& InMinor, const int& InPatch, const int& InChangeset);
+
+	FString String;
+
+	int Major = 0;
+	int Minor = 0;
+	int Patch = 0;
+	int Changeset = 0;
+};
+
+bool operator==(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs);
+bool operator<(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs);
+
+
 class FPlasticSourceControlProvider : public ISourceControlProvider
 {
 public:
@@ -123,7 +146,7 @@ public:
 	/** Version of the Plastic SCM executable used */
 	inline const FString& GetPlasticScmVersion() const
 	{
-		return PlasticScmVersion;
+		return PlasticScmVersion.String;
 	}
 
 	/** Version of the Plastic SCM plugin */
@@ -210,7 +233,7 @@ private:
 	void UpdateWorkspaceStatus(const class FPlasticSourceControlCommand& InCommand);
 
 	/** Version of the Plastic SCM executable used */
-	FString PlasticScmVersion;
+	FSoftwareVersion PlasticScmVersion;
 
 	/** Version of the Plastic SCM plugin */
 	FString PluginVersion;

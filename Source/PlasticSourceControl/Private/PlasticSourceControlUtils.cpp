@@ -5,6 +5,7 @@
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProjectSettings.h"
+#include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlState.h"
 #include "Runtime/Launch/Resources/Version.h"
@@ -441,53 +442,18 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 	return bFound;
 }
 
-/**
- * @brief Compare Plastic SCM cli version strings.
- * @param VersionA		PlasticSCM version string in the form "0.0.0.0" (as returned by GetPlasticScmVersion)
- * @param VersionB		PlasticSCM version string in the form "0.0.0.0" (as returned by GetPlasticScmVersion)
- * @returns true if VersionA is lower than VersionB
-*/
-static bool PlasticScmVersionLess(const FString& VersionA, const FString& VersionB)
-{
-	struct Version
-	{
-		explicit Version(const FString& Version)
-		{
-			TArray<FString> Parts;
-			const int32 N = Version.ParseIntoArray(Parts, TEXT("."));
-			if (N == 4)
-			{
-				a = FCString::Atoi(*Parts[0]);
-				b = FCString::Atoi(*Parts[1]);
-				c = FCString::Atoi(*Parts[2]);
-				d = FCString::Atoi(*Parts[3]);
-			}
-		}
-		int a, b, c, d;
-	} A(VersionA), B(VersionB);
-	if (A.a < B.a) return true;
-	if (B.a < A.a) return false;
-	if (A.b < B.b) return true;
-	if (B.b < A.b) return false;
-	if (A.c < B.c) return true;
-	if (B.c < A.c) return false;
-	if (A.d < B.d) return true;
-	if (B.d < A.d) return false;
-	return false; // Equal
-}
-
 // This is called once by FPlasticSourceControlProvider::CheckPlasticAvailability()
-void GetPlasticScmVersion(FString& OutPlasticScmVersion)
+void GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion)
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
 	const bool bResult = RunCommand(TEXT("version"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
-		OutPlasticScmVersion = InfoMessages[0];
+		OutPlasticScmVersion = FSoftwareVersion(InfoMessages[0]);
 
 		// Command-line format output changed with version 8.0.16.3000
-		bIsNewVersion80163000 = !PlasticScmVersionLess(OutPlasticScmVersion, "8.0.16.3000");
+		bIsNewVersion80163000 = !(OutPlasticScmVersion < FSoftwareVersion(TEXT("8.0.16.3000")));
 	}
 }
 
