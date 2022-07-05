@@ -21,6 +21,7 @@
 #include "Misc/Paths.h"
 #include "HAL/PlatformProcess.h"
 #include "Misc/QueuedThreadPool.h"
+#include "Editor.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -65,6 +66,23 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 			for (const FString& ErrorMessage : ErrorMessages)
 			{
 				SourceControlLog.Error(FText::FromString(ErrorMessage));
+			}
+		}
+	}
+
+	// only pop-up error once, and only when the Editor has fully started
+	if (GEditor)
+	{
+		if (bPlasticAvailable)
+		{
+			if (PlasticScmVersion < PlasticSourceControlUtils::GetOldestSupportedPlasticScmVersion())
+			{
+				FFormatNamedArguments Args;
+				Args.Add(TEXT("PlasticScmVersion"), FText::FromString(PlasticScmVersion.String));
+				Args.Add(TEXT("OldestSupportedPlasticScmVersion"), FText::FromString(PlasticSourceControlUtils::GetOldestSupportedPlasticScmVersion().String));
+				const FText UnsuportedVersionWarning = FText::Format(LOCTEXT("Plastic_UnsuportedVersion", "Plastic SCM {PlasticScmVersion} is not supported anymore by this plugin.\nPlastic SCM {OldestSupportedPlasticScmVersion} or a more recent version is required.\nPlease upgrade to the latest version."), Args);
+				FMessageLog("SourceControl").Warning(UnsuportedVersionWarning);
+				FMessageDialog::Open(EAppMsgType::Ok, UnsuportedVersionWarning);
 			}
 		}
 	}
