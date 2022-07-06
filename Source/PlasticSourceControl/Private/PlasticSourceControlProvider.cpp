@@ -85,6 +85,12 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 				FMessageDialog::Open(EAppMsgType::Ok, UnsuportedVersionWarning);
 			}
 		}
+		else
+		{
+			const FText CmNotFound(LOCTEXT("Plastic_CmNotAvailable", "Plastic SCM Command Line tool 'cm' not found.\nPlease make sure to install Plastic SCM."));
+			FMessageLog("SourceControl").Error(CmNotFound);
+			FMessageDialog::Open(EAppMsgType::Ok, CmNotFound);
+		}
 	}
 }
 
