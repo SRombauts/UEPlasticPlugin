@@ -5,14 +5,13 @@
 #include "CoreMinimal.h"
 #include "ISourceControlState.h"
 #include "ISourceControlRevision.h"
+#include "PlasticSourceControlRevision.h"
 
 #include "Runtime/Launch/Resources/Version.h"
 
 #if ENGINE_MAJOR_VERSION == 5
 #include "PlasticSourceControlChangelist.h"
 #endif
-
-class FPlasticSourceControlRevision;
 
 namespace EWorkspaceState
 {
