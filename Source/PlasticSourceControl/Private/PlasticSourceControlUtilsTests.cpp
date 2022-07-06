@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2022 Codice Software
 
 #include "PlasticSourceControlUtils.h"
-#include "PlasticSourceControlProvider.h"
+#include "SoftwareVersion.h"
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 #include "Misc/AutomationTest.h"

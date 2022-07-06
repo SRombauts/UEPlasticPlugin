@@ -9,6 +9,7 @@
 #include "PlasticSourceControlMenu.h"
 #include "PlasticSourceControlSettings.h"
 #include "Runtime/Launch/Resources/Version.h"
+#include "SoftwareVersion.h"
 
 #if ENGINE_MAJOR_VERSION == 5
 #include "ISourceControlChangelistState.h"
@@ -16,29 +17,6 @@
 #endif
 
 DECLARE_DELEGATE_RetVal_OneParam(FPlasticSourceControlWorkerRef, FGetPlasticSourceControlWorker, FPlasticSourceControlProvider&)
-
-
-/**
- * PlasticSCM version string in the form "X.Y.Z.Changeset" (as returned by GetPlasticScmVersion)
-*/
-struct FSoftwareVersion
-{
-	FSoftwareVersion() {}
-
-	explicit FSoftwareVersion(const FString& InVersionString);
-	explicit FSoftwareVersion(const int& InMajor, const int& InMinor, const int& InPatch, const int& InChangeset);
-
-	FString String;
-
-	int Major = 0;
-	int Minor = 0;
-	int Patch = 0;
-	int Changeset = 0;
-};
-
-bool operator==(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs);
-bool operator<(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs);
-
 
 class FPlasticSourceControlProvider : public ISourceControlProvider
 {
