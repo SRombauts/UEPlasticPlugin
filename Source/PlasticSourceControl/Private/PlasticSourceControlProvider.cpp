@@ -25,7 +25,7 @@
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
 static FName ProviderName("Plastic SCM");
-	
+
 FPlasticSourceControlProvider::FPlasticSourceControlProvider()
 {
 	// load our settings
