@@ -26,8 +26,8 @@ public:
 #elif ENGINE_MAJOR_VERSION == 5
 	virtual bool Get(FString& InOutFilename, EConcurrency::Type InConcurrency = EConcurrency::Synchronous) const override;
 #endif
-	virtual bool GetAnnotated( TArray<FAnnotationLine>& OutLines ) const override;
-	virtual bool GetAnnotated( FString& InOutFilename ) const override;
+	virtual bool GetAnnotated(TArray<FAnnotationLine>& OutLines) const override;
+	virtual bool GetAnnotated(FString& InOutFilename) const override;
 	virtual const FString& GetFilename() const override;
 	virtual int32 GetRevisionNumber() const override;
 	virtual const FString& GetRevision() const override;
@@ -41,7 +41,6 @@ public:
 	virtual int32 GetFileSize() const override;
 
 public:
-
 	/** Point back to State this Revision is from */
 	FPlasticSourceControlState* State = nullptr;
 

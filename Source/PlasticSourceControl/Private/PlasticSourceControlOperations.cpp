@@ -134,18 +134,24 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				}
 				else
 				{
-					Operation->SetErrorText(LOCTEXT("FailedToConnect", "Failed to connect to the Plastic SCM server."));
+					const FText ErrorText(LOCTEXT("FailedToConnect", "Failed to connect to the Plastic SCM server."));
+					Operation->SetErrorText(ErrorText);
+					InCommand.ErrorMessages.Add(ErrorText.ToString());
 				}
 			}
 		}
 		else
 		{
-			Operation->SetErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic SCM source control. You need to initialize the project as a Plastic SCM repository first."));
+			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic SCM source control. You need to initialize the project as a Plastic SCM repository first."));
+			Operation->SetErrorText(ErrorText);
+			InCommand.ErrorMessages.Add(ErrorText.ToString());
 		}
 	}
 	else
 	{
-		Operation->SetErrorText(LOCTEXT("PlasticScmCliUnavaillable", "Failed to launch Plastic SCM command line tool. You need to install it or set the correct path to it first."));
+		const FText ErrorText(LOCTEXT("PlasticScmCliUnavaillable", "Failed to launch Plastic SCM 'cm' command line tool. You need to install it, or configure the correct path to 'cm'."));
+		Operation->SetErrorText(ErrorText);
+		InCommand.ErrorMessages.Add(ErrorText.ToString());
 	}
 
 	return InCommand.bCommandSuccessful;

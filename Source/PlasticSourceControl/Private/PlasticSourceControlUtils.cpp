@@ -112,10 +112,6 @@ static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 
 namespace PlasticSourceControlUtils
 {
-// Command-line interface parameters and output format changed with version 8.0.16.3000
-// For more details, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
-static bool				bIsNewVersion80163000 = false;
-
 // In/Out Pipes for the 'cm shell' persistent child process
 static void*			ShellOutputPipeRead = nullptr;
 static void*			ShellOutputPipeWrite = nullptr;
@@ -389,6 +385,13 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 	return bResult;
 }
 
+const FSoftwareVersion& GetOldestSupportedPlasticScmVersion()
+{
+	// https://www.plasticscm.com/download/releasenotes/9.0.16.4839 cm changelist 'persistent' flag now contain a '--' prefix.
+	static FSoftwareVersion OldestSupportedPlasticScmVersion(TEXT("9.0.16.4839"));
+	return OldestSupportedPlasticScmVersion;
+}
+
 FString FindPlasticBinaryPath()
 {
 #if PLATFORM_WINDOWS
@@ -452,9 +455,6 @@ void GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion)
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		OutPlasticScmVersion = FSoftwareVersion(InfoMessages[0]);
-
-		// Command-line format output changed with version 8.0.16.3000
-		bIsNewVersion80163000 = !(OutPlasticScmVersion < FSoftwareVersion(TEXT("8.0.16.3000")));
 	}
 }
 
@@ -536,17 +536,8 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
-
-	// Command-line format output changed with version 8.0.16.3000, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
-	if (bIsNewVersion80163000)
-	{
-		Parameters.Add(TEXT("--compact"));
-		Parameters.Add(TEXT("--header")); // Only prints the workspace status. No file status.
-	}
-	else
-	{
-		Parameters.Add(TEXT("--nochanges")); // Only prints the workspace status. No file status.
-	}
+	Parameters.Add(TEXT("--compact"));
+	Parameters.Add(TEXT("--header")); // Only prints the workspace status. No file status.
 	// NOTE: --wkconfig results in two network calls GetBranchInfoByName & GetLastChangesetOnBranch so it's okay to do it once here but not all the time
 	Parameters.Add(TEXT("--wkconfig")); // Branch name. NOTE: Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/8.0.16.3000
 	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, OutErrorMessages);
@@ -873,12 +864,7 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ECo
 	check(InFiles.Num() > 0);
 
 	TArray<FString> Parameters;
-
-	// Command-line format output changed with version 8.0.16.3000, see https://www.plasticscm.com/download/releasenotes/8.0.16.3000
-	if (bIsNewVersion80163000)
-	{
-		Parameters.Add(TEXT("--compact"));
-	}
+	Parameters.Add(TEXT("--compact"));
 	Parameters.Add(TEXT("--noheaders"));
 	Parameters.Add(TEXT("--all"));
 	Parameters.Add(TEXT("--ignored"));
@@ -1462,7 +1448,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 		const FString Filename = ItemNameNode->GetContent();
 		FPlasticSourceControlState* InOutStatePtr = InOutStates.FindByPredicate(
 			[&Filename](const FPlasticSourceControlState& State) { return State.LocalFilename == Filename; }
-		); // NOLINT
+		); // NOLINT(whitespace/parens) "Closing ) should be moved to the previous line" doesn't work well for lambda functions
 		if (InOutStatePtr == nullptr)
 		{
 			continue;

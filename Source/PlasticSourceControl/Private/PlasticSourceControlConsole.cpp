@@ -15,8 +15,7 @@ void FPlasticSourceControlConsole::Register()
 			TEXT("PlasticSCM Command Line Interface.\n")
 			TEXT("Run any 'cm' command directly from the Unreal Editor Console.\n")
 			TEXT("Type 'cm showcommands' to get a command list."),
-			FConsoleCommandWithArgsDelegate::CreateRaw(this, &FPlasticSourceControlConsole::ExecutePlasticConsoleCommand)
-		);
+			FConsoleCommandWithArgsDelegate::CreateRaw(this, &FPlasticSourceControlConsole::ExecutePlasticConsoleCommand));
 	}
 }
 
