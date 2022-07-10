@@ -117,22 +117,29 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 		// Launch the Plastic SCM cli shell on the background to issue all commands during this session
 		bPlasticAvailable = PlasticSourceControlUtils::LaunchBackgroundPlasticShell(PathToPlasticBinary, PathToWorkspaceRoot);
-		if (bPlasticAvailable)
+		if (!bPlasticAvailable)
 		{
-			PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
+			return;
+		}
 
-			// Get user name (from the global Plastic SCM client config)
-			PlasticSourceControlUtils::GetUserName(UserName);
+		PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
+		bPlasticAvailable = PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
+		if (!bPlasticAvailable)
+		{
+			return;
+		}
 
-			// Register Console Commands
-			PlasticSourceControlConsole.Register();
+		// Get user name (from the global Plastic SCM client config)
+		PlasticSourceControlUtils::GetUserName(UserName);
 
-			if (!bWorkspaceFound)
-			{
-				FFormatNamedArguments Args;
-				Args.Add(TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot));
-				FMessageLog("SourceControl").Info(FText::Format(LOCTEXT("NotInAWorkspace", "{WorkspacePath} is not in a workspace."), Args));
-			}
+		// Register Console Commands
+		PlasticSourceControlConsole.Register();
+
+		if (!bWorkspaceFound)
+		{
+			FFormatNamedArguments Args;
+			Args.Add(TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot));
+			FMessageLog("SourceControl").Info(FText::Format(LOCTEXT("NotInAWorkspace", "{WorkspacePath} is not in a workspace."), Args));
 		}
 	}
 }
