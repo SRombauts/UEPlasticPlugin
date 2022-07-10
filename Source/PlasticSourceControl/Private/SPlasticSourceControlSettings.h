@@ -23,6 +23,8 @@ public:
 	void Construct(const FArguments& InArgs);
 
 private:
+	EVisibility PlasticNotAvailable() const;
+
 	/** Delegate to get cm binary path from settings */
 	FText GetBinaryPathText() const;
 
