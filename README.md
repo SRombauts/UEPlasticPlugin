@@ -22,6 +22,10 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
  - [User Guide](#user-guide)
    - [Plugin Setup](#plugin-setup)
    - [Project Setup](#project-setup)
+     - [Enable Source Control](#enable-source-control)
+     - [Create a new workspace](#create-a-new-workspace--repository-directly-from-unreal)
+	 - [Source Control settings](#source-control-settings)
+	 - [Project Settings](#project-settings)
    - [Working in Editor](#working-in-editor)
      - [Unreal Documentation](#unreal-documentation)
      - [Status Icons](#status-icons)
@@ -86,29 +90,32 @@ Start by [saving your connection credentials with the Plastic SCM GUI](#save-con
 
 #### Enable Source Control
 
+Launch you Unreal project, look at the Source Control menu at the bottom-right
+![Source Control Connect](Screenshots/UEPlasticPlugin-SourceControlDisabled.png)
+
 Launch you Unreal project, click on the Source Control icon "Connect to Source"
-![Source Control Connect](Screenshots/UE4PlasticPlugin-ConnectToSourceControl.png)
+![Source Control Connect](Screenshots/UEPlasticPlugin-ConnectToSourceControl.png)
 
 Then select "Plastic SCM" plugin
-![Source Control Connect - Select Provider](Screenshots/UE4PlasticPlugin-SelectProvider.png)
+![Source Control Connect - Select Provider](Screenshots/UEPlasticPlugin-SelectProvider.png)
 
 #### Create a new workspace & repository directly from Unreal
 
 Source Control Login window, to create a new workspace/a new repository, click on "Initialize workspace" (example of a cloud repository):
-![Source Control Login window - create a new workspace on cloud](Screenshots/UE4PlasticPlugin-CreateWorkspaceCloud.png)
+![Source Control Login window - create a new workspace on cloud](Screenshots/UEPlasticPlugin-CreateWorkspaceCloud.png)
 
-Or on a server running on localhost:
-![Source Control Login window - create a new workspace on localhost](Screenshots/UE4PlasticPlugin-CreateWorkspace.png)
+Or on a server running on premise, using ip:port:
+![Source Control Login window - create a new workspace on localhost](Screenshots/UEPlasticPlugin-CreateWorkspaceOnPremise.png)
 
 This creates an appropriate ignore.conf file, add all relevant files to source control (.uproject, Config & Content subdirectories)
 and can also do the initial commit automatically at the end.
 
 Wait for this to succeed before accepting source control settings to not lock the UI & mess with the initialization!
-![Source Control Login window - checking files in source control](Screenshots/UE4PlasticPlugin-CheckinInProgress.png)
+![Source Control Login window - checking files in source control](Screenshots/UEPlasticPlugin-CheckinInProgress.png)
 
 #### Source Control settings
 
-![Source Control Settings](Screenshots/UE4PlasticPlugin-SourceControlSettings.png)
+![Source Control Settings](Screenshots/UEPlasticPlugin-SourceControlSettings.png)
 
 Source control settings can be changed using the Source Control menu,
 and are saved locally in `Saved\Config\WindowsEditor\SourceControlSettings.ini`.
@@ -134,9 +141,18 @@ EnableVerboseLogs=False
 
 #### Project Settings
 
+##### Source Control
+
+Unreal Engine allows you to configure project-related settings.
+TODO: Some are not yet supported by the plugin (eg Delete on Revert)
+
+![Project Settings - Source Control](Screenshots/UEPlasticPlugin-ProjectSettingsSourceControl.png)
+
+##### Source Control - Plastic SCM
+
 The plugin allows you to configure project-related settings.
 
-![Project Settings](Screenshots/UE4PlasticPlugin-ProjectSettings.png)
+![Project Settings - Source Control - Plastic SCM](Screenshots/UEPlasticPlugin-ProjectSettingsPlasticSCM.png)
 
 There are 3 settings available at the moment:
 
@@ -148,6 +164,7 @@ There are 3 settings available at the moment:
    - Unchecking this setting will make the Editor consider all files as already checked out. In that case, you won't get
      any notifications when you modify assets, and the "Checkout Assets" dialog won't show when you save those changes.
      This mimics how Git works, i.e. allowing the user to perform changes without worrying about checking out items.
+	 Note: Changelists don't currently support locally changed assets (ie not checked-out)
 
 ### Working in Editor
 
@@ -162,33 +179,35 @@ Plastic SCM forums:
 
 #### Status Icons
 
-![New/Unsaved asset](Screenshots/Icons/UE4PlasticPlugin-New.png)
-![Added to Source Control](Screenshots/Icons/UE4PlasticPlugin-Added.png)
-![Controlled/Unchanged](Screenshots/Icons/UE4PlasticPlugin-Controlled.png)
-![Changed but not Checked-Out](Screenshots/Icons/UE4PlasticPlugin-Changed.png)
+![New Unsaved](Screenshots/Icons/UEPlasticPlugin-NewUnsaved.png)
+![Private/Not in source controlled](Screenshots/Icons/UEPlasticPlugin-Private.png)
+![Added to Source Control](Screenshots/Icons/UEPlasticPlugin-Added.png)
+![Controlled/Unchanged](Screenshots/Icons/UEPlasticPlugin-Controlled.png)
 
  1. **New**, unsaved asset (not yet present on disk).
- 2. **Added** to source control (saved on disk).
- 3. Source **Controlled** but not changed, or **Ignored**
- 4. Locally **Changed** without checkout, or **Private** ie not source controlled 
+ 2. **Private**, the asset is not in source control.
+ 3. **Added** to source control.
+ 4. Source **Controlled** but not checked-out nor locally changed
 
-![Checked-Out](Screenshots/Icons/UE4PlasticPlugin-CheckedOut.png)
-![Moved/Renamed](Screenshots/Icons/UE4PlasticPlugin-Renamed.png)
-![Checked-Out/Locked by someone else](Screenshots/Icons/UE4PlasticPlugin-CheckedOutOther.png)
-![Not up-to-date/new revision in repository](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
-![Merge Conflict](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
+![Changed Locally but not Checked-Out](Screenshots/Icons/UEPlasticPlugin-Changed.png)
+![Checked-Out](Screenshots/Icons/UEPlasticPlugin-CheckedOut.png)
+![Redirector added by a Move](Screenshots/Icons/UEPlasticPlugin-Redirector.png)
+![Moved/Renamed](Screenshots/Icons/UEPlasticPlugin-Renamed.png)
 
- 5. **Checked-out** for modification, and Locked to prevent other from making modifications (if Locks are enabled on the server)
- 6. **Renamed** or **Moved**
- 7. **Locked somewhere else**, by someone else or in another workspace (if Locks are enabled on the server)
- 8. **Not at head revision**, the asset has been submitted with a newer revision on the same branch
- 9. **Merge conflict**, the asset has been changed in two separate branches and is pending merge resolution
+ 5. Locally **Changed** without checkout, or **Private** ie not source controlled 
+ 6. **Checked-out** exclusively to prevent others from making modifications (if Locks are enabled on the server)
+ 7. **Redirector** added by a Move
+ 8. **Moved** or Renamed
 
-TODO:
+![Checked-Out/Locked by someone else](Screenshots/Icons/UEPlasticPlugin-CheckedOutOther.png)
+![Not up-to-date/new revision in repository](Screenshots/Icons/UEPlasticPlugin-NotAtHead.png)
+![Newer change in another branch](Screenshots/Icons/UEPlasticPlugin-ChangedInOtherBranch.png)
+![Merge Conflict](Screenshots/Icons/UEPlasticPlugin-Conflicted.png)
 
- 7. Redo the "Locked somewhere else"
- 10. Add the "Changed in an other branch"
- 10. Add the "Conflict"
+ 9. **Locked somewhere else**, by someone else or in another workspace (if Locks are enabled on the server)
+ 10. **Not at head revision**, the asset has been submitted with a newer revision on the same branch
+ 11. **Changed in an other branch**, the asset has been changed in a newer changeset in another branch
+ 12. **Merge conflict**, the asset has been changed in two separate branches and is pending merge resolution
 
 #### Source Control Menu
 
