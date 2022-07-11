@@ -399,7 +399,7 @@ or for Unreal Engine 5:
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.5.1 2022/05/17 for UE 4.27.2 and UE 5.0.1:
+### Version 1.6.0 2022/07/11 for UE 4.27.2 and UE 5.0.2:
  - manage connection to the server
  - show current branch name and CL in status text
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
