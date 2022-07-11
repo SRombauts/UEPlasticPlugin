@@ -21,7 +21,6 @@
 #include "Misc/Paths.h"
 #include "HAL/PlatformProcess.h"
 #include "Misc/QueuedThreadPool.h"
-#include "Editor.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -69,29 +68,6 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 			}
 		}
 	}
-
-	// only pop-up error once, and only when the Editor has fully started
-	if (GEditor)
-	{
-		if (bPlasticAvailable)
-		{
-			if (PlasticScmVersion < PlasticSourceControlUtils::GetOldestSupportedPlasticScmVersion())
-			{
-				FFormatNamedArguments Args;
-				Args.Add(TEXT("PlasticScmVersion"), FText::FromString(PlasticScmVersion.String));
-				Args.Add(TEXT("OldestSupportedPlasticScmVersion"), FText::FromString(PlasticSourceControlUtils::GetOldestSupportedPlasticScmVersion().String));
-				const FText UnsuportedVersionWarning = FText::Format(LOCTEXT("Plastic_UnsuportedVersion", "Plastic SCM {PlasticScmVersion} is not supported anymore by this plugin.\nPlastic SCM {OldestSupportedPlasticScmVersion} or a more recent version is required.\nPlease upgrade to the latest version."), Args);
-				FMessageLog("SourceControl").Warning(UnsuportedVersionWarning);
-				FMessageDialog::Open(EAppMsgType::Ok, UnsuportedVersionWarning);
-			}
-		}
-		else
-		{
-			const FText CmNotFound(LOCTEXT("Plastic_CmNotAvailable", "Plastic SCM Command Line tool 'cm' not found.\nPlease make sure to install Plastic SCM."));
-			FMessageLog("SourceControl").Error(CmNotFound);
-			FMessageDialog::Open(EAppMsgType::Ok, CmNotFound);
-		}
-	}
 }
 
 void FPlasticSourceControlProvider::CheckPlasticAvailability()
@@ -117,22 +93,29 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 		// Launch the Plastic SCM cli shell on the background to issue all commands during this session
 		bPlasticAvailable = PlasticSourceControlUtils::LaunchBackgroundPlasticShell(PathToPlasticBinary, PathToWorkspaceRoot);
-		if (bPlasticAvailable)
+		if (!bPlasticAvailable)
 		{
-			PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
+			return;
+		}
 
-			// Get user name (from the global Plastic SCM client config)
-			PlasticSourceControlUtils::GetUserName(UserName);
+		PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
+		bPlasticAvailable = PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
+		if (!bPlasticAvailable)
+		{
+			return;
+		}
 
-			// Register Console Commands
-			PlasticSourceControlConsole.Register();
+		// Get user name (from the global Plastic SCM client config)
+		PlasticSourceControlUtils::GetUserName(UserName);
 
-			if (!bWorkspaceFound)
-			{
-				FFormatNamedArguments Args;
-				Args.Add(TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot));
-				FMessageLog("SourceControl").Info(FText::Format(LOCTEXT("NotInAWorkspace", "{WorkspacePath} is not in a workspace."), Args));
-			}
+		// Register Console Commands
+		PlasticSourceControlConsole.Register();
+
+		if (!bWorkspaceFound)
+		{
+			FFormatNamedArguments Args;
+			Args.Add(TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot));
+			FMessageLog("SourceControl").Info(FText::Format(LOCTEXT("NotInAWorkspace", "{WorkspacePath} is not in a workspace."), Args));
 		}
 	}
 }
@@ -481,6 +464,27 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 		WorkspaceName = InCommand.WorkspaceName;
 		RepositoryName = InCommand.RepositoryName;
 		ServerUrl = InCommand.ServerUrl;
+
+		// only pop-up errors when running in full Editor, not in command line scripts
+		if (!IsRunningCommandlet())
+		{
+			if (bPlasticAvailable)
+			{
+				if (PlasticScmVersion < PlasticSourceControlUtils::GetOldestSupportedPlasticScmVersion())
+				{
+					FFormatNamedArguments Args;
+					Args.Add(TEXT("PlasticScmVersion"), FText::FromString(PlasticScmVersion.String));
+					Args.Add(TEXT("OldestSupportedPlasticScmVersion"), FText::FromString(PlasticSourceControlUtils::GetOldestSupportedPlasticScmVersion().String));
+					const FText UnsuportedVersionWarning = FText::Format(LOCTEXT("Plastic_UnsuportedVersion", "Plastic SCM {PlasticScmVersion} is not supported anymore by this plugin.\nPlastic SCM {OldestSupportedPlasticScmVersion} or a more recent version is required.\nPlease upgrade to the latest version."), Args);
+					FMessageLog("SourceControl").Warning(UnsuportedVersionWarning);
+					FMessageDialog::Open(EAppMsgType::Ok, UnsuportedVersionWarning);
+				}
+			}
+			else if (InCommand.ErrorMessages.Num() > 0)
+			{
+				FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(InCommand.ErrorMessages[0]));
+			}
+		}
 
 		if (bWorkspaceFound)
 		{

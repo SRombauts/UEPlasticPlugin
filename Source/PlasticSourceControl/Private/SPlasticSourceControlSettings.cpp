@@ -76,6 +76,17 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.Font(Font)
 			]
 		]
+		// Plastic SCM command line tool not available warning
+		+SVerticalBox::Slot()
+		.FillHeight(1.0f)
+		.Padding(2.0f)
+		[
+			SNew(STextBlock)
+			.Visibility(this, &SPlasticSourceControlSettings::PlasticNotAvailable)
+			.ToolTipText(LOCTEXT("PlasticNotAvailable_Tooltip", "Failed to launch Plastic SCM 'cm' command line tool. You need to install it and make sure that 'cm' is on the Path and correctly configured."))
+			.Text(LOCTEXT("PlasticNotAvailable", "Plastic SCM Command Line tool 'cm' failed to start:"))
+			.Font(Font)
+		]
 		// Path to the Plastic SCM binary
 		+SVerticalBox::Slot()
 		.AutoHeight()
@@ -83,12 +94,12 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SHorizontalBox)
-			.ToolTipText(LOCTEXT("BinaryPathLabel_Tooltip", "Path to the Plastic SCM cli binary"))
+			.ToolTipText(LOCTEXT("BinaryPathLabel_Tooltip", "Path to the Plastic SCM Command Line tool 'cm' binary"))
 			+SHorizontalBox::Slot()
 			.FillWidth(1.0f)
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("PathLabel", "Plastic SCM Path"))
+				.Text(LOCTEXT("PathLabel", "Plastic SCM Path to cm"))
 				.Font(Font)
 			]
 			+SHorizontalBox::Slot()
@@ -413,6 +424,12 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 	]
 #endif
 	];
+}
+
+EVisibility SPlasticSourceControlSettings::PlasticNotAvailable() const
+{
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	return Provider.IsPlasticAvailable() ? EVisibility::Collapsed : EVisibility::Visible;
 }
 
 FText SPlasticSourceControlSettings::GetBinaryPathText() const

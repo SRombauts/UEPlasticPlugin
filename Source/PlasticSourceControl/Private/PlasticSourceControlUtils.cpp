@@ -447,7 +447,7 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 }
 
 // This is called once by FPlasticSourceControlProvider::CheckPlasticAvailability()
-void GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion)
+bool GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion)
 {
 	TArray<FString> InfoMessages;
 	TArray<FString> ErrorMessages;
@@ -455,7 +455,9 @@ void GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion)
 	if (bResult && InfoMessages.Num() > 0)
 	{
 		OutPlasticScmVersion = FSoftwareVersion(InfoMessages[0]);
+		return true;
 	}
+	return false;
 }
 
 void GetUserName(FString& OutUserName)
