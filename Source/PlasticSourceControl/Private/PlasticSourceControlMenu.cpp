@@ -24,6 +24,7 @@
 
 #include "PackageTools.h"
 #include "FileHelpers.h"
+#include "ISettingsModule.h"
 
 #include "Logging/MessageLog.h"
 
@@ -341,7 +342,23 @@ void FPlasticSourceControlMenu::RefreshClicked()
 	}
 }
 
-void FPlasticSourceControlMenu::VisitDocsURLClicked()
+void FPlasticSourceControlMenu::ShowSourceControlProjectSettings() const
+{
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	{
+		SettingsModule->ShowViewer("Project", "Editor", "SourceControlPreferences");
+	}
+}
+
+void FPlasticSourceControlMenu::ShowSourceControlPlasticScmProjectSettings() const
+{
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	{
+		SettingsModule->ShowViewer("Project", "Editor", "PlasticSourceControlProjectSettings");
+	}
+}
+
+void FPlasticSourceControlMenu::VisitDocsURLClicked() const
 {
 	// Grab the URL from the uplugin file
 	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
@@ -351,7 +368,7 @@ void FPlasticSourceControlMenu::VisitDocsURLClicked()
 	}
 }
 
-void FPlasticSourceControlMenu::VisitSupportURLClicked()
+void FPlasticSourceControlMenu::VisitSupportURLClicked() const
 {
 	// Grab the URL from the uplugin file
 	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
@@ -514,6 +531,40 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RefreshClicked),
+			FCanExecuteAction()
+		)
+	);
+
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"SourceControlProjectSettings",
+#endif
+		LOCTEXT("SourceControlProjectSettings",			"Source Control Project Settings"),
+		LOCTEXT("SourceControlProjectSettingsTooltip",	"Show Source Control section in the Project Settings."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ProjectSettings.TabIcon"),
+#else
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "ProjectSettings.TabIcon"),
+#endif
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ShowSourceControlProjectSettings),
+			FCanExecuteAction()
+		)
+	);
+
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"PlasticProjectSettings",
+#endif
+		LOCTEXT("PlasticProjectSettings",			"Plastic SCM Project Settings"),
+		LOCTEXT("PlasticProjectSettingsTooltip",	"Show Plastic SCM section in the Project Settings."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ProjectSettings.TabIcon"),
+#else
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "ProjectSettings.TabIcon"),
+#endif
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ShowSourceControlPlasticScmProjectSettings),
 			FCanExecuteAction()
 		)
 	);

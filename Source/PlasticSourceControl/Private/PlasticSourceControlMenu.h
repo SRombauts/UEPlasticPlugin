@@ -21,8 +21,10 @@ public:
 	void RevertUnchangedClicked();
 	void RevertAllClicked();
 	void RefreshClicked();
-	void VisitDocsURLClicked();
-	void VisitSupportURLClicked();
+	void ShowSourceControlProjectSettings() const;
+	void ShowSourceControlPlasticScmProjectSettings() const;
+	void VisitDocsURLClicked() const;
+	void VisitSupportURLClicked() const;
 
 private:
 	bool False() const;
