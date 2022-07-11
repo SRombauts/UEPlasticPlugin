@@ -14,7 +14,7 @@ struct FSoftwareVersion
 	explicit FSoftwareVersion(const FString& InVersionString);
 	explicit FSoftwareVersion(const int& InMajor, const int& InMinor, const int& InPatch, const int& InChangeset);
 
-	FString String = TEXT("<unknow-version>");
+	FString String = TEXT("<unknown-version>");
 
 	int Major = 0;
 	int Minor = 0;
