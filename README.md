@@ -237,7 +237,7 @@ Submit Files to Source Control window, to check-in assets:
 ##### File History
 
 File History window, to see the change-log of an asset:
-![History of a file](Screenshots/UE4PlasticPlugin-History.png)
+![History of a file](Screenshots/UEPlasticPlugin-History.png)
 
 ##### Blueprint Diff
 
