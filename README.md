@@ -232,7 +232,7 @@ Using the Content Browser context source control sub-menu, you can call in speci
 ##### Submit Files
 
 Submit Files to Source Control window, to check-in assets:
-![Submit Files to Source Control](Screenshots/UE4PlasticPlugin-SubmitFiles.png)
+![Submit Files to Source Control](Screenshots/UEPlasticPlugin-SubmitFiles.png)
 
 ##### File History
 
