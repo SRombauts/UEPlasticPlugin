@@ -43,7 +43,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 	bAutoInitialCommit = true;
 
 	InitialCommitMessage = LOCTEXT("InitialCommitMessage", "Initial checkin");
-	ServerUrl = FText::FromString(TEXT("localhost:8087"));
+	ServerUrl = FText::FromString(TEXT("YourOrganization@cloud"));
 	if (FApp::HasProjectName())
 	{
 		WorkspaceName = FText::FromString(FApp::GetProjectName());
@@ -170,19 +170,12 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		+SVerticalBox::Slot()
 		.FillHeight(1.0f)
 		.Padding(2.0f)
-		.VAlign(VAlign_Center)
 		[
-			SNew(SHorizontalBox)
+			SNew(STextBlock)
 			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
 			.ToolTipText(LOCTEXT("WorkspaceNotFound_Tooltip", "No Workspace found at the level or above the current Project. Use the form to create a new one."))
-			+SHorizontalBox::Slot()
-			.FillWidth(1.0f)
-			.HAlign(HAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("WorkspaceNotFound", "Current Project is not in a Plastic SCM Workspace. Create a new one:"))
-				.Font(Font)
-			]
+			.Text(LOCTEXT("WorkspaceNotFound", "Current Project is not in a Plastic SCM Workspace. Create a new one:"))
+			.Font(Font)
 		]
 		// Workspace and Repository Name
 		+SVerticalBox::Slot()
@@ -231,7 +224,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		[
 			SNew(SHorizontalBox)
 			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
-			.ToolTipText(LOCTEXT("ServerUrl_Tooltip", "Enter the Server URL in the form address:port (eg. localhost:8087 or Organization@cloud)"))
+			.ToolTipText(LOCTEXT("ServerUrl_Tooltip", "Enter the Server URL in the form address:port (eg. YourOrganization@cloud, local, or something like ip:port, eg localhost:8087)"))
 			+SHorizontalBox::Slot()
 			.FillWidth(1.0f)
 			[
@@ -255,20 +248,12 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.Padding(2.0f)
 		.VAlign(VAlign_Center)
 		[
-			SNew(SHorizontalBox)
-			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
+			SNew(SCheckBox)
 			.ToolTipText(LOCTEXT("CreateIgnoreFile_Tooltip", "Create and add a standard 'ignore.conf' file"))
-			+SHorizontalBox::Slot()
-			.FillWidth(0.1f)
-			[
-				SNew(SCheckBox)
-				.IsEnabled(this, &SPlasticSourceControlSettings::CanAutoCreateIgnoreFile)
-				.IsChecked(bAutoCreateIgnoreFile)
-				.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedCreateIgnoreFile)
-			]
-			+SHorizontalBox::Slot()
-			.FillWidth(2.0f)
-			.VAlign(VAlign_Center)
+			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
+			.IsEnabled(this, &SPlasticSourceControlSettings::CanAutoCreateIgnoreFile)
+			.IsChecked(bAutoCreateIgnoreFile)
+			.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedCreateIgnoreFile)
 			[
 				SNew(STextBlock)
 				.Text(LOCTEXT("CreateIgnoreFile", "Add a ignore.conf file"))
@@ -282,22 +267,19 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SHorizontalBox)
-			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
 			.ToolTipText(LOCTEXT("InitialCommit_Tooltip", "Make the initial Plastic SCM checkin"))
+			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
 			+SHorizontalBox::Slot()
-			.FillWidth(0.1f)
+			.FillWidth(0.7f)
 			[
 				SNew(SCheckBox)
 				.IsChecked(ECheckBoxState::Checked)
 				.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedInitialCommit)
-			]
-			+SHorizontalBox::Slot()
-			.FillWidth(0.6f)
-			.VAlign(VAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("InitialCommit", "Initial Checkin"))
-				.Font(Font)
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("InitialCommit", "Initial Checkin"))
+					.Font(Font)
+				]
 			]
 			+SHorizontalBox::Slot()
 			.FillWidth(1.4f)
@@ -316,18 +298,10 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.Padding(2.0f)
 		.VAlign(VAlign_Center)
 		[
-			SNew(SHorizontalBox)
+			SNew(SCheckBox)
+			.IsChecked(SPlasticSourceControlSettings::IsUpdateStatusAtStartupChecked())
+			.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedUpdateStatusAtStartup)
 			.ToolTipText(LOCTEXT("UpdateStatusAtStartup_Tooltip", "Run an asynchronous Update Status at Editor startup (can be slow)."))
-			+SHorizontalBox::Slot()
-			.FillWidth(0.1f)
-			[
-				SNew(SCheckBox)
-				.IsChecked(SPlasticSourceControlSettings::IsUpdateStatusAtStartupChecked())
-				.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedUpdateStatusAtStartup)
-			]
-			+SHorizontalBox::Slot()
-			.FillWidth(2.0f)
-			.VAlign(VAlign_Center)
 			[
 				SNew(STextBlock)
 				.Text(LOCTEXT("UpdateStatusAtStartup", "Update workspace Status at Editor startup"))
@@ -340,18 +314,10 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.Padding(2.0f)
 		.VAlign(VAlign_Center)
 		[
-			SNew(SHorizontalBox)
+			SNew(SCheckBox)
 			.ToolTipText(LOCTEXT("UpdateStatusOtherBranches_Tooltip", "Enable Update status to detect changesets on other branches (can be slow)."))
-			+SHorizontalBox::Slot()
-			.FillWidth(0.1f)
-			[
-				SNew(SCheckBox)
-				.IsChecked(SPlasticSourceControlSettings::IsUpdateStatusOtherBranchesChecked())
-				.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedUpdateStatusOtherBranches)
-			]
-			+SHorizontalBox::Slot()
-			.FillWidth(2.0f)
-			.VAlign(VAlign_Center)
+			.IsChecked(SPlasticSourceControlSettings::IsUpdateStatusOtherBranchesChecked())
+			.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedUpdateStatusOtherBranches)
 			[
 				SNew(STextBlock)
 				.Text(LOCTEXT("UpdateStatusOtherBranches", "Update status also check branch history."))
@@ -364,18 +330,10 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.Padding(2.0f)
 		.VAlign(VAlign_Center)
 		[
-			SNew(SHorizontalBox)
+			SNew(SCheckBox)
 			.ToolTipText(LOCTEXT("EnableVerboseLogs_Tooltip", "Override LogSourceControl default verbosity level to Verbose (except if already set to VeryVerbose)."))
-			+SHorizontalBox::Slot()
-			.FillWidth(0.1f)
-			[
-				SNew(SCheckBox)
-				.IsChecked(SPlasticSourceControlSettings::IsEnableVerboseLogsChecked())
-				.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedEnableVerboseLogs)
-			]
-			+SHorizontalBox::Slot()
-			.FillWidth(2.0f)
-			.VAlign(VAlign_Center)
+			.IsChecked(SPlasticSourceControlSettings::IsEnableVerboseLogsChecked())
+			.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedEnableVerboseLogs)
 			[
 				SNew(STextBlock)
 				.Text(LOCTEXT("EnableVerboseLogs", "Enable Source Control Verbose logs"))
