@@ -535,10 +535,9 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		)
 	);
 
-	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
+	Menu.AddMenuEntry(
 		"SourceControlProjectSettings",
-#endif
 		LOCTEXT("SourceControlProjectSettings",			"Source Control Project Settings"),
 		LOCTEXT("SourceControlProjectSettingsTooltip",	"Show Source Control section in the Project Settings."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
@@ -551,6 +550,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			FCanExecuteAction()
 		)
 	);
+#endif
 
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
@@ -577,8 +577,10 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		LOCTEXT("PlasticDocsURLTooltip",	"Visit documentation of the plugin on Github."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Documentation"),
-#else
+#elif ENGINE_MAJOR_VERSION == 5
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "Icons.Documentation"),
+#elif ENGINE_MAJOR_VERSION == 4
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.BrowseDocumentation"),
 #endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitDocsURLClicked),
@@ -594,8 +596,10 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		LOCTEXT("PlasticSupportURLTooltip",	"Visit official support for Plastic SCM."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Support"),
-#else
+#elif ENGINE_MAJOR_VERSION == 5
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "Icons.Support"),
+#elif ENGINE_MAJOR_VERSION == 4
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.BrowseDocumentation"),
 #endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitSupportURLClicked),
