@@ -107,11 +107,11 @@ This creates an appropriate ignore.conf file, add all relevant files to source c
 and can also do the initial commit automatically at the end.
 
 Wait for this to succeed before accepting source control settings to not lock the UI & mess with the initialization!
-![Source Control Login window - checking files in source control](Screenshots/UE4PlasticPlugin-CheckinInProgress.png)
+![Source Control Login window - checking files in source control](Screenshots/UEPlasticPlugin-CheckinInProgress.png)
 
 #### Source Control settings
 
-![Source Control Settings](Screenshots/UE4PlasticPlugin-SourceControlSettings.png)
+![Source Control Settings](Screenshots/UEPlasticPlugin-SourceControlSettings.png)
 
 Source control settings can be changed using the Source Control menu,
 and are saved locally in `Saved\Config\WindowsEditor\SourceControlSettings.ini`.
@@ -137,9 +137,18 @@ EnableVerboseLogs=False
 
 #### Project Settings
 
+##### Source Control
+
+Unreal Engine allows you to configure project-related settings.
+TODO: Some are not yet supported by the plugin (eg Delete on Revert)
+
+![Project Settings - Source Control](Screenshots/UEPlasticPlugin-ProjectSettingsSourceControl.png)
+
+##### Source Control - Plastic SCM
+
 The plugin allows you to configure project-related settings.
 
-![Project Settings](Screenshots/UEPlasticPlugin-ProjectSettings.png)
+![Project Settings - Source Control - Plastic SCM](Screenshots/UEPlasticPlugin-ProjectSettingsPlasticSCM.png)
 
 There are 3 settings available at the moment:
 
