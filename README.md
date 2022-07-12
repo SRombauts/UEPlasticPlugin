@@ -231,8 +231,14 @@ Using the Content Browser context source control sub-menu, you can call in speci
 
 ##### Submit Files
 
-Submit Files to Source Control window, to check-in assets:
+Submit Files to Source Control window, to check-in selected assets directly (see also Changelists below):
 ![Submit Files to Source Control](Screenshots/UEPlasticPlugin-SubmitFiles.png)
+
+##### View Changelists
+
+Changelists are the new way to group checked-out files by topic in Unreal Engine 5.0, to submit them in coherent batches.
+UE5.0 includes Validation checks to ensure there are no missing dependancies outside a changelist, and that all assets are saved on disk before submitting.
+![Changelist Window](Screenshots/UEPlasticPlugin-Changelists.png)
 
 ##### File History
 
@@ -248,11 +254,6 @@ Visual Diffing of different revision of a Blueprint:
 
 Textual Diffing of a Material:
 ![Material Diff](Screenshots/UEPlasticPlugin-MaterialDiff.png)
-
-##### View Changelists
-
-List of Changelists and checked-out files they contain:
-![Changelist Window](Screenshots/UEPlasticPlugin-Changelists.png)
 
 #### Redirectors
 
