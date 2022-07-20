@@ -295,10 +295,10 @@ Branch explorer showing the merge pending with an asset in conflict:
 ![Merged branch with a pending conflict resolution](Screenshots/UE4PlasticPlugin-MergeBranch-Pending.png)
 
 Corresponding warning in the Content Browser:
-![Merge Conflict](Screenshots/Icons/UE4PlasticPlugin-NotAtHead.png)
+![Merge Conflict](Screenshots/Icons/UEPlasticPlugin-NotAtHead.png)
 
 Right click on the asset in conflict to open the Merge Tool:
-![Merge context menu](Screenshots/UE4PlasticPlugin-ContextMenu-Merge.png)
+![Merge context menu](Screenshots/UEPlasticPlugin-ContextMenu-Merge.png)
 
 Visual diff of Blueprint properties in conflict:
 ![Merge of Blueprint properties](Screenshots/UE4PlasticPlugin-MergeTool-Properties.png)
