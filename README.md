@@ -294,10 +294,10 @@ You have to trigger the resolve in the Plastic SCM GUI, but then skip it without
 Branch explorer showing the merge pending with an asset in conflict:
 ![Merged branch with a pending conflict resolution](Screenshots/UE4PlasticPlugin-MergeBranch-Pending.png)
 
-Corresponding warning in the Content Browser:
+Corresponding icon in the Content Browser (only showing after the resolved has been triggered in Plastic SCM):
 ![Merge Conflict](Screenshots/Icons/UEPlasticPlugin-NotAtHead.png)
 
-Right click on the asset in conflict to open the Merge Tool:
+Right click on the asset in conflict to open the _Merge_ Tool (just a conflict solver with 3-way Visual Diff, no merge):
 ![Merge context menu](Screenshots/UEPlasticPlugin-ContextMenu-Merge.png)
 
 Visual diff of Blueprint properties in conflict:
