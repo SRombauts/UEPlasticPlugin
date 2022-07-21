@@ -287,7 +287,7 @@ Warning when trying to modify an asset that has been modified in another branch:
 
 #### Merge conflicts on Blueprints
 
-In case you ever use branches with binary assets without relying on exclusive checkouts (file locks) ((see Workflows below)[#workflows])
+In case you ever use branches with binary assets without relying on exclusive checkouts (file locks) ([see Workflows below](#workflows))
 you will encounter case of merge conflicts on binary assets.
 You have to trigger the resolve in the Plastic SCM GUI, but then skip it without saving changes in order to let the Editor presents you with a visual diff.
 
