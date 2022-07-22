@@ -122,9 +122,9 @@ public:
 	}
 
 	/** Version of the Plastic SCM executable used */
-	inline const FString& GetPlasticScmVersion() const
+	inline const FSoftwareVersion& GetPlasticScmVersion() const
 	{
-		return PlasticScmVersion.String;
+		return PlasticScmVersion;
 	}
 
 	/** Version of the Plastic SCM plugin */

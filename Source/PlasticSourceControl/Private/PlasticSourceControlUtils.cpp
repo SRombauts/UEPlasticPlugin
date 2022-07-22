@@ -388,8 +388,8 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 const FSoftwareVersion& GetOldestSupportedPlasticScmVersion()
 {
 	// https://www.plasticscm.com/download/releasenotes/9.0.16.4839 cm changelist 'persistent' flag now contain a '--' prefix.
-	static FSoftwareVersion OldestSupportedPlasticScmVersion(TEXT("9.0.16.4839"));
-	return OldestSupportedPlasticScmVersion;
+	static FSoftwareVersion s_OldestSupportedPlasticScmVersion(TEXT("9.0.16.4839"));
+	return s_OldestSupportedPlasticScmVersion;
 }
 
 FString FindPlasticBinaryPath()
