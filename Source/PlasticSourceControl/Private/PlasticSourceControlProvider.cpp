@@ -98,7 +98,6 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			return;
 		}
 
-		PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
 		bPlasticAvailable = PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
 		if (!bPlasticAvailable)
 		{
