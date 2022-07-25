@@ -237,7 +237,7 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	default:
 		return FSlateIcon();
 	}
-	
+
 #else // UE5.0
 
 	switch (WorkspaceState)
@@ -276,7 +276,6 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	}
 
 #endif
-
 }
 
 #endif
