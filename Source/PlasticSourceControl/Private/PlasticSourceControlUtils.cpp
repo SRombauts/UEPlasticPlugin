@@ -661,7 +661,7 @@ private:
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
  */
-EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
+static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
 {
 	EWorkspaceState::Type State;
 	const FString FileStatus = (InResult[0] == TEXT(' ')) ? InResult.Mid(1, 2) : InResult;
@@ -1353,6 +1353,7 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
 	return bResult;
 }
 
+// TODO PR to move this in Engine
 FString DecodeXmlEntities(const FString& InString)
 {
 	FString String = InString;

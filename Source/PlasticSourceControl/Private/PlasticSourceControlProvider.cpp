@@ -28,7 +28,6 @@ static FName ProviderName("Plastic SCM");
 
 FPlasticSourceControlProvider::FPlasticSourceControlProvider()
 {
-	// load our settings
 	PlasticSourceControlSettings.LoadSettings();
 }
 
@@ -310,7 +309,6 @@ TArray<FSourceControlChangelistStateRef> FPlasticSourceControlProvider::GetCache
 	}
 	return Result;
 }
-
 #endif
 
 TArray<FSourceControlStateRef> FPlasticSourceControlProvider::GetCachedStateByPredicate(TFunctionRef<bool(const FSourceControlStateRef&)> Predicate) const
@@ -342,14 +340,11 @@ void FPlasticSourceControlProvider::UnregisterSourceControlStateChanged_Handle(F
 	OnSourceControlStateChanged.Remove(Handle);
 }
 
-ECommandResult::Type FPlasticSourceControlProvider::Execute(
-	const FSourceControlOperationRef& InOperation,
 #if ENGINE_MAJOR_VERSION == 5
-	FSourceControlChangelistPtr InChangelist,
+	ECommandResult::Type FPlasticSourceControlProvider::Execute(const FSourceControlOperationRef& InOperation, FSourceControlChangelistPtr InChangelist, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency, const FSourceControlOperationComplete& InOperationCompleteDelegate)
+#else
+	ECommandResult::Type FPlasticSourceControlProvider::Execute(const FSourceControlOperationRef& InOperation, const TArray<FString>& InFiles,	EConcurrency::Type InConcurrency, const FSourceControlOperationComplete& InOperationCompleteDelegate)
 #endif
-	const TArray<FString>& InFiles,
-	EConcurrency::Type InConcurrency,
-	const FSourceControlOperationComplete& InOperationCompleteDelegate )
 {
 	if (!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "MakeWorkspace"))
 	{
@@ -573,7 +568,7 @@ void FPlasticSourceControlProvider::Tick()
 	}
 }
 
-TArray< TSharedRef<ISourceControlLabel> > FPlasticSourceControlProvider::GetLabels(const FString& InMatchingSpec) const
+TArray<TSharedRef<ISourceControlLabel>> FPlasticSourceControlProvider::GetLabels(const FString& InMatchingSpec) const
 {
 	TArray< TSharedRef<ISourceControlLabel> > Tags;
 
