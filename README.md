@@ -429,6 +429,7 @@ This version here is the development version, so it always contains additional f
  - xlinks sub-repositories (for Plugins for instance)
  - Toggle verbose logs from the Source Control settings UI
  - Run 'cm' CLI commands directly from the Unreal Editor Console, Blueprints of C++ code.
+ - Use custom icons on UE5.1 for files locally Changed (not checked-out), locally Deleted, Conflicted and Ignored
  - Windows only
 
 ### Feature Requests
@@ -439,24 +440,21 @@ This version here is the development version, so it always contains additional f
  - add a setting to configure Plastic SCM to use "read-only flags" like Perforce
  - add a setting to pass the --update option to "check-in"
  - add a "clean directory" or "check-in deleted files"
- - add dedicated icon for Changed files
- - add dedicated icon for Ignored files
- - add dedicated icon for Conflicted files
- - add dedicated icon for Replaced/Merged files
 
 ### Known issues
- - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
+ - Checkout a huge number of assets is crashing Out Of Memory (https://github.com/SRombauts/UE4PlasticPlugin/issues/97)
+ - Sync & RevertAll crash the Editor in Unreal Engine 5.0 and are temporarilly disabled (https://github.com/SRombauts/UE4PlasticPlugin/issues/89)
  - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
- - #18 Error messages with accents are not correctly handled/displayed (for instance connection error in French)
- - the Editor does not handle visual diff for renamed/moved assets
- - History does not show which revision is the current/checkout one
+ - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
  - Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
+ - the Editor does not handle visual diff for renamed/moved assets
  - the Editor does not show folder status and is not able to manage them
  - Branch and Merge are not in the current Editor workflow
+ - 
 
-### Features reserved for internal use by Epic Games with Perforce only
- - tags: get labels (used for crash when the full Engine is under Plastic SCM)
- - annotate: blame (used for crash when the full Engine is under Plastic SCM)
+### Features not supported, reserved for internal use by Epic Games with Perforce only
+ - tags: get labels (used for crash when the full Engine is under Perforce)
+ - annotate: blame (used for crash when the full Engine is under Perforce)
 
 ## Support
 
