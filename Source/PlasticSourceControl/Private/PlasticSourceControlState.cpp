@@ -206,6 +206,40 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 		}
 	}
 
+#if ENGINE_MINOR_VERSION >= 1 // UE5.1+
+
+	switch (WorkspaceState)
+	{
+	case EWorkspaceState::CheckedOut:
+	case EWorkspaceState::Replaced: // Merged (waiting for check-in)
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.CheckedOut");
+	case EWorkspaceState::Changed: // Changed but unchecked-out file custom color icon
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.Changed"); // custom
+	case EWorkspaceState::Added:
+	case EWorkspaceState::Copied:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.OpenForAdd");
+	case EWorkspaceState::Moved:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.Branched");
+	case EWorkspaceState::Deleted:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.MarkedForDelete");
+	case EWorkspaceState::LocallyDeleted:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.LocallyDeleted"); // custom
+	case EWorkspaceState::Conflicted:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.Conflicted"); // custom
+	case EWorkspaceState::LockedByOther:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.CheckedOutByOtherUser", NAME_None, "SourceControl.LockOverlay");
+	case EWorkspaceState::Private: // Not controlled
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.NotInDepot");
+	case EWorkspaceState::Ignored:
+		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.Ignored"); // custom
+	case EWorkspaceState::Unknown:
+	case EWorkspaceState::Controlled: // Unchanged (not checked out) ie no icon
+	default:
+		return FSlateIcon();
+	}
+	
+#else // UE5.0
+
 	switch (WorkspaceState)
 	{
 	case EWorkspaceState::CheckedOut:
@@ -240,6 +274,9 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	default:
 		return FSlateIcon();
 	}
+
+#endif
+
 }
 
 #endif
