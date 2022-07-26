@@ -564,6 +564,7 @@ void FPlasticSourceControlProvider::Tick()
 
 	if (bStatesUpdated)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlProvider::Tick::BroadcastStateUpdate);
 		OnSourceControlStateChanged.Broadcast();
 	}
 }
@@ -609,6 +610,8 @@ TSharedRef<class SWidget> FPlasticSourceControlProvider::MakeSettingsWidget() co
 
 ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FPlasticSourceControlCommand& InCommand, const FText& Task)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlProvider::ExecuteSynchronousCommand);
+
 	ECommandResult::Type Result = ECommandResult::Failed;
 
 	// Display the progress dialog if a string was provided
