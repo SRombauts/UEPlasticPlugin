@@ -757,6 +757,7 @@ bool FPlasticUpdateStatusWorker::UpdateStates()
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
+#if ENGINE_MAJOR_VERSION == 4 || ENGINE_MINOR_VERSION < 1
 /// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controlled asset)
 bool IsMoveOperation(const FString& InOrigin)
 {
@@ -798,6 +799,7 @@ bool IsMoveOperation(const FString& InOrigin)
 
 	return bIsMoveOperation;
 }
+#endif
 
 FName FPlasticCopyWorker::GetName() const
 {
