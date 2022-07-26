@@ -814,8 +814,13 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		const FString& Origin = InCommand.Files[0];
 		const FString Destination = FPaths::ConvertRelativePathToFull(Operation->GetDestination());
 
-		// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controlled asset)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		// Branch: The new file is branched from the original file (vs Add: The new file has no relation to the original file)
+		const bool bIsMoveOperation = (Operation->CopyMethod == FCopy::ECopyMethod::Branch);
+#else
+		// Detect if the operation is a duplicate/copy or a rename/move, by checking if it leaved a redirector (ie it was a move of a source controlled asset)
 		const bool bIsMoveOperation = IsMoveOperation(Origin);
+#endif
 		if (bIsMoveOperation)
 		{
 			UE_LOG(LogSourceControl, Log, TEXT("Moving %s to %s..."), *Origin, *Destination);
