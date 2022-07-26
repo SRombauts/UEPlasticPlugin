@@ -134,6 +134,8 @@ static void _CleanupBackgroundCommandLineShell()
 // Internal function to launch the Plastic SCM background 'cm' process in interactive shell mode (called under the critical section)
 static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FString& InWorkingDirectory)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::_StartBackgroundPlasticShell);
+
 	const FString FullCommand(TEXT("shell --encoding=UTF-8"));
 
 	const bool bLaunchDetached = false;				// the new process will NOT have its own window
@@ -170,6 +172,8 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 // Internal function (called under the critical section)
 static void _ExitBackgroundCommandLineShell()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::_ExitBackgroundCommandLineShell);
+
 	if (ShellProcessHandle.IsValid())
 	{
 		if (FPlatformProcess::IsProcRunning(ShellProcessHandle))
@@ -209,6 +213,8 @@ static void _RestartBackgroundCommandLineShell()
 // Internal function (called under the critical section)
 static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, FString& OutResults, FString& OutErrors)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::_RunCommandInternal);
+
 	bool bResult = false;
 
 	ShellCommandCounter++;
