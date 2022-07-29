@@ -622,12 +622,30 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		IssueCommand(InCommand);
 
 		// ... then wait for its completion (thus making it synchronous)
+		double LastProgressTimestamp = FPlatformTime::Seconds();
+		double ProgressUpdateThreshold = .0;
 		while (!InCommand.bExecuteProcessed)
 		{
 			// Tick the command queue and update progress.
 			Tick();
 
-			Progress.Tick();
+			const double CurrentTimestamp = FPlatformTime::Seconds();
+			const double ElapsedTime = CurrentTimestamp - LastProgressTimestamp;
+			
+			// Note: calling too many times Progress.Tick() crashes the GPU Out of Memory
+			// We need to reduce the number of calls we make, but we don't want to have the progress bar stuttering horribly
+			// So we tart to update it frequently/smoothly, and then we increase the intervals more and more (arithmetic series, with a cap)
+			// in order to reduce the video memory usage for very long operation without visual penalty on quicker daily operations.
+			if (ElapsedTime > ProgressUpdateThreshold)
+			{
+				Progress.Tick();
+
+				LastProgressTimestamp = CurrentTimestamp;
+				if (ProgressUpdateThreshold < 0.25)
+				{
+					ProgressUpdateThreshold += 0.001;
+				}
+			}
 
 			// Sleep for a bit so we don't busy-wait so much.
 			FPlatformProcess::Sleep(0.01f);
@@ -642,7 +660,7 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		}
 		else
 		{
-			// TODO If the command failed, inform the user that they need to try again (see Perforce)
+			// TODO If the command failed, inform the user that they need to try again (see Perforce, but they suppressed it!) Add a project settings for that!
 			// FMessageDialog::Open( EAppMsgType::Ok, LOCTEXT("Plastic_ServerUnresponsive", "Plastic server is unresponsive. Please check your connection and try again.") );
 
 			UE_LOG(LogSourceControl, Error, TEXT("Command '%s' Failed!"), *InCommand.Operation->GetName().ToString());
