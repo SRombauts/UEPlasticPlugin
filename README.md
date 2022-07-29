@@ -451,7 +451,6 @@ This version here is the development version, so it always contains additional f
  - add a "clean directory" or "check-in deleted files"
 
 ### Known issues
- - Checkout a huge number of assets is crashing Out Of Memory (https://github.com/SRombauts/UE4PlasticPlugin/issues/97)
  - Sync & RevertAll crash the Editor in Unreal Engine 5.0 and are temporarily disabled (https://github.com/SRombauts/UE4PlasticPlugin/issues/89)
  - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
  - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
