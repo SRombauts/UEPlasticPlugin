@@ -373,6 +373,9 @@ public:
 public:
 	FPlasticSourceControlChangelist EditedChangelist;
 	FString EditedDescription;
+
+	/** Reopened files (moved to a new changelist, if any, when editing the Default changelist) */
+	TArray<FString> ReopenedFiles;
 };
 
 class FPlasticReopenWorker : public IPlasticSourceControlWorker
@@ -388,7 +391,7 @@ public:
 	virtual bool UpdateStates() override;
 
 protected:
-	/** Reopened files */
+	/** Reopened files (moved to a new changelist) */
 	TArray<FString> ReopenedFiles;
 
 	/** Destination changelist */

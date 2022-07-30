@@ -1165,20 +1165,24 @@ bool EditChangelistDescription(const FPlasticSourceControlProvider& PlasticSourc
 
 bool MoveFilesToChangelist(const FPlasticSourceControlProvider& PlasticSourceControlProvider, const FPlasticSourceControlChangelist& InChangelist, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
 {
-	TArray<FString> Parameters;
-	if (PlasticSourceControlProvider.GetPlasticScmVersion() < s_NewChangelistFileArgsPlasticScmVersion)
+	if (InFiles.Num() > 0)
 	{
-		Parameters.Add(TEXT("\"") + InChangelist.GetName() + TEXT("\""));
-		Parameters.Add(TEXT("add"));
-		return PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, InFiles, InConcurrency, OutResults, OutErrorMessages);
+		TArray<FString> Parameters;
+		if (PlasticSourceControlProvider.GetPlasticScmVersion() < s_NewChangelistFileArgsPlasticScmVersion)
+		{
+			Parameters.Add(TEXT("\"") + InChangelist.GetName() + TEXT("\""));
+			Parameters.Add(TEXT("add"));
+			return PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, InFiles, InConcurrency, OutResults, OutErrorMessages);
+		}
+		else
+		{
+			const FScopedTempFile ChangelistNameFile(InChangelist.GetName());
+			Parameters.Add(FString::Printf(TEXT("--namefile=\"%s\""), *FPaths::ConvertRelativePathToFull(ChangelistNameFile.GetFilename())));
+			Parameters.Add(TEXT("add"));
+			return PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, InFiles, InConcurrency, OutResults, OutErrorMessages);
+		}
 	}
-	else
-	{
-		const FScopedTempFile ChangelistNameFile(InChangelist.GetName());
-		Parameters.Add(FString::Printf(TEXT("--namefile=\"%s\""), *FPaths::ConvertRelativePathToFull(ChangelistNameFile.GetFilename())));
-		Parameters.Add(TEXT("add"));
-		return PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, InFiles, InConcurrency, OutResults, OutErrorMessages);
-	}
+	return true;
 }
 
 FPlasticNewChangelistWorker::FPlasticNewChangelistWorker(FPlasticSourceControlProvider& InSourceControlProvider)
@@ -1343,6 +1347,13 @@ bool FPlasticEditChangelistWorker::Execute(class FPlasticSourceControlCommand& I
 	{
 		// Create a new numbered persistent changelist since we cannot edit the default changelist
 		EditedChangelist = CreatePendingChangelist(GetProvider(), EditedDescription, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		if (EditedChangelist.IsInitialized())
+		{
+			// And then move all its files to the new changelist
+			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
+			ReopenedFiles = FileNamesFromFileStates(ChangelistState->Files);
+			InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), EditedChangelist, ReopenedFiles, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
 	}
 	else
 	{
@@ -1353,8 +1364,6 @@ bool FPlasticEditChangelistWorker::Execute(class FPlasticSourceControlCommand& I
 		}
 	}
 
-	InCommand.bCommandSuccessful = EditedChangelist.IsInitialized();
-
 	return InCommand.bCommandSuccessful;
 }
 
@@ -1362,14 +1371,35 @@ bool FPlasticEditChangelistWorker::UpdateStates()
 {
 	if (EditedChangelist.IsInitialized())
 	{
+		const FDateTime Now = FDateTime::Now();
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> EditedChangelistState = GetProvider().GetStateInternal(EditedChangelist);
-		// TODO: update similar to NewChangelist when/if we support files in edit/new changelists.
 		EditedChangelistState->Description = EditedDescription;
 		EditedChangelistState->Changelist = EditedChangelist;
-		EditedChangelistState->TimeStamp = FDateTime::Now();
-	}
+		EditedChangelistState->TimeStamp = Now;
 
-	return true;
+		// 3 things to do here:
+		for (const FString& ReopenedFile : ReopenedFiles)
+		{
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = GetProvider().GetStateInternal(ReopenedFile);
+
+			// 1- Remove these files from their previous changelist
+			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(FileState->Changelist);
+			PreviousChangelist->Files.Remove(FileState);
+
+			// 2- Add to the new changelist
+			EditedChangelistState->Files.Add(FileState);
+
+			// 3- Update changelist in file state
+			FileState->Changelist = EditedChangelist;
+			FileState->TimeStamp = Now;
+		}
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 
