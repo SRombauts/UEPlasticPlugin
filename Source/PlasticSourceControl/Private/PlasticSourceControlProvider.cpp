@@ -631,7 +631,7 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 
 			const double CurrentTimestamp = FPlatformTime::Seconds();
 			const double ElapsedTime = CurrentTimestamp - LastProgressTimestamp;
-			
+
 			// Note: calling too many times Progress.Tick() crashes the GPU Out of Memory
 			// We need to reduce the number of calls we make, but we don't want to have the progress bar stuttering horribly
 			// So we tart to update it frequently/smoothly, and then we increase the intervals more and more (arithmetic series, with a cap)
