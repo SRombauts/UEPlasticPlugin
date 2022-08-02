@@ -43,7 +43,7 @@ private:
 	bool bUpdateStatusAtStartup = false;
 
 	/** Enable Update status to call "history" to detect recent changesets on other branches (can be slow). */
-	bool bUpdateStatusOtherBranches = true;
+	bool bUpdateStatusOtherBranches = false;
 
 	/** Override LogSourceControl verbosity level to Verbose, and back, if not already VeryVerbose */
 	bool bEnableVerboseLogs = false;
