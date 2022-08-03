@@ -100,6 +100,8 @@ FName FPlasticConnectWorker::GetName() const
 
 bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticConnectWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FConnect, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FConnect>(InCommand.Operation);
 
@@ -159,6 +161,8 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticConnectWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticConnectWorker::UpdateStates);
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
@@ -169,6 +173,8 @@ FName FPlasticCheckOutWorker::GetName() const
 
 bool FPlasticCheckOutWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticCheckOutWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
@@ -189,6 +195,8 @@ bool FPlasticCheckOutWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticCheckOutWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticCheckOutWorker::UpdateStates);
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
@@ -263,6 +271,8 @@ FName FPlasticCheckInWorker::GetName() const
 
 bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticCheckInWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FCheckIn, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCheckIn>(InCommand.Operation);
 
@@ -343,6 +353,8 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticCheckInWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticCheckInWorker::UpdateStates);
+
 #if ENGINE_MAJOR_VERSION == 5
 	if (InChangelist.IsInitialized())
 	{
@@ -360,6 +372,8 @@ FName FPlasticMarkForAddWorker::GetName() const
 
 bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticMarkForAddWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 
 	if (InCommand.Files.Num() > 0)
@@ -403,6 +417,8 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticMarkForAddWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticMarkForAddWorker::UpdateStates);
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
@@ -413,6 +429,8 @@ FName FPlasticDeleteWorker::GetName() const
 
 bool FPlasticDeleteWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticDeleteWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
@@ -433,6 +451,8 @@ bool FPlasticDeleteWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticDeleteWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticDeleteWorkers::UpdateStates);
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
@@ -443,6 +463,8 @@ FName FPlasticRevertWorker::GetName() const
 
 bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 
 	TArray<FString> Files;
@@ -519,6 +541,8 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticRevertWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertWorker::UpdateStates);
+
 #if ENGINE_MAJOR_VERSION == 5
 	// Update affected changelist if any
 	for (const FPlasticSourceControlState& NewState : States)
@@ -543,6 +567,8 @@ FName FPlasticRevertUnchangedWorker::GetName() const
 
 bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertUnchangedWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 
 	TArray<FString> Parameters;
@@ -576,6 +602,8 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 
 bool FPlasticRevertUnchangedWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertUnchangedWorker::UpdateStates);
+
 #if ENGINE_MAJOR_VERSION == 5
 	// Update affected changelist if any
 	for (const FPlasticSourceControlState& NewState : States)
@@ -603,6 +631,8 @@ FName FPlasticRevertAllWorker::GetName() const
 
 bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertAllWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 
 	TArray<FString> Parameters;
@@ -628,6 +658,8 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticRevertAllWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertAllWorker::UpdateStates);
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
@@ -638,6 +670,8 @@ FName FPlasticMakeWorkspaceWorker::GetName() const
 
 bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticMakeWorkspaceWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FPlasticMakeWorkspace, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticMakeWorkspace>(InCommand.Operation);
 
@@ -670,6 +704,8 @@ FName FPlasticUpdateStatusWorker::GetName() const
 
 bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticUpdateStatusWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FUpdateStatus>(InCommand.Operation);
 
@@ -768,6 +804,8 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 
 bool FPlasticUpdateStatusWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticUpdateStatusWorker::UpdateStates);
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
@@ -775,6 +813,8 @@ bool FPlasticUpdateStatusWorker::UpdateStates()
 /// Detect if the operation is a duplicate/copy or a rename/move, and if it leaved a redirector (ie it was a move of a source controlled asset)
 bool IsMoveOperation(const FString& InOrigin)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticCopyWorker::IsMoveOperation);
+
 	bool bIsMoveOperation = true;
 
 	FString PackageName;
@@ -822,6 +862,8 @@ FName FPlasticCopyWorker::GetName() const
 
 bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticCopyWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FCopy, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCopy>(InCommand.Operation);
 
@@ -903,6 +945,8 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticCopyWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticCopyWorkers::UpdateStates);
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
@@ -913,6 +957,8 @@ FName FPlasticSyncWorker::GetName() const
 
 bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSyncWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 
 	TArray<FString> Parameters;
@@ -948,6 +994,8 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticSyncWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSyncWorker::UpdateStates);
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
@@ -958,6 +1006,8 @@ FName FPlasticResolveWorker::GetName() const
 
 bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticResolveWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 
 	// Currently resolve operation is always on one file only, but the following would works for many
@@ -991,6 +1041,8 @@ bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticResolveWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticResolveWorker::UpdateStates);
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
@@ -1004,6 +1056,8 @@ FName FPlasticGetPendingChangelistsWorker::GetName() const
 
 bool FPlasticGetPendingChangelistsWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetPendingChangelistsWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FUpdatePendingChangelistsStatus, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FUpdatePendingChangelistsStatus>(InCommand.Operation);
 
@@ -1032,6 +1086,8 @@ bool FPlasticGetPendingChangelistsWorker::Execute(FPlasticSourceControlCommand& 
 
 bool FPlasticGetPendingChangelistsWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetPendingChangelistsWorker::UpdateStates);
+
 	bool bUpdated = false;
 
 	const FDateTime Now = FDateTime::Now();
@@ -1198,6 +1254,8 @@ FName FPlasticNewChangelistWorker::GetName() const
 
 bool FPlasticNewChangelistWorker::Execute(class FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticNewChangelistWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FNewChangelist, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FNewChangelist>(InCommand.Operation);
 
@@ -1281,6 +1339,8 @@ FName FPlasticDeleteChangelistWorker::GetName() const
 
 bool FPlasticDeleteChangelistWorker::Execute(class FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticDeleteChangelistWorker::Execute);
+
 	// Can't delete the default changelist
 	if (InCommand.Changelist.IsDefault())
 	{
@@ -1313,6 +1373,8 @@ bool FPlasticDeleteChangelistWorker::Execute(class FPlasticSourceControlCommand&
 
 bool FPlasticDeleteChangelistWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticDeleteChangelistWorker::UpdateStates);
+
 	if (DeletedChangelist.IsInitialized())
 	{
 		return GetProvider().RemoveChangelistFromCache(DeletedChangelist);
@@ -1329,6 +1391,8 @@ FName FPlasticEditChangelistWorker::GetName() const
 
 bool FPlasticEditChangelistWorker::Execute(class FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticEditChangelistWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FEditChangelist, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FEditChangelist>(InCommand.Operation);
 
@@ -1369,6 +1433,8 @@ bool FPlasticEditChangelistWorker::Execute(class FPlasticSourceControlCommand& I
 
 bool FPlasticEditChangelistWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticEditChangelistWorker::UpdateStates);
+
 	if (EditedChangelist.IsInitialized())
 	{
 		const FDateTime Now = FDateTime::Now();
@@ -1410,6 +1476,8 @@ FName FPlasticReopenWorker::GetName() const
 
 bool FPlasticReopenWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticReopenWorker::Execute);
+
 	check(InCommand.Operation->GetName() == GetName());
 
 	InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), InCommand.Changelist, InCommand.Files, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
@@ -1424,6 +1492,8 @@ bool FPlasticReopenWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticReopenWorker::UpdateStates()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticReopenWorker::UpdateStates);
+
 	if (DestinationChangelist.IsInitialized())
 	{
 		const FDateTime Now = FDateTime::Now();
