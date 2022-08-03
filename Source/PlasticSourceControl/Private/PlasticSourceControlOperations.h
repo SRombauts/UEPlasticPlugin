@@ -315,8 +315,6 @@ public:
 	/** Temporary states for results */
 	TArray<FPlasticSourceControlChangelistState> OutChangelistsStates;
 	TArray<TArray<FPlasticSourceControlState>> OutCLFilesStates;
-	TArray<TMap<FString, EWorkspaceState::Type>> OutCLShelvedFilesStates;
-	TArray<TMap<FString, FString>> OutCLShelvedFilesMap;
 
 private:
 	/** Controls whether or not we will remove changelists from the cache after a full update */
