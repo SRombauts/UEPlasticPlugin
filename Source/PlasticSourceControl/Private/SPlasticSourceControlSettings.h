@@ -89,7 +89,7 @@ private:
 	EVisibility CanAddIgnoreFile() const;
 	FReply OnClickedAddIgnoreFile() const;
 
-	const FString& GetIgnoreFileName() const;
+	const FString GetIgnoreFileName() const;
 	bool CreateIgnoreFile() const;
 
 	TArray<FString> GetProjectFiles() const;
