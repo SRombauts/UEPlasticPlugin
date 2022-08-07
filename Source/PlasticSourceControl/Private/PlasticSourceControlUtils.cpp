@@ -1721,7 +1721,7 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 
 			FString NameTemp = PlasticSourceControlUtils::DecodeXmlEntities(NameNode->GetContent());
 			FPlasticSourceControlChangelist ChangelistTemp(MoveTemp(NameTemp), true);
-			FString DescriptionTemp = PlasticSourceControlUtils::DecodeXmlEntities(DescriptionNode->GetContent());
+			FString DescriptionTemp = ChangelistTemp.IsDefault() ? FString() : PlasticSourceControlUtils::DecodeXmlEntities(DescriptionNode->GetContent());
 			FPlasticSourceControlChangelistState ChangelistState(MoveTemp(ChangelistTemp), MoveTemp(DescriptionTemp));
 
 			const TArray<FXmlNode*>& ChangeNodes = ChangesNode->GetChildrenNodes();
@@ -1752,11 +1752,11 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 	}
 
 	if (!OutChangelistsStates.FindByPredicate(
-		[](const FPlasticSourceControlChangelistState& CLState) { return CLState.Changelist.GetName() == FPlasticSourceControlChangelist::DefaultChangelist.GetName(); }
+		[](const FPlasticSourceControlChangelistState& CLState) { return CLState.Changelist.IsDefault(); }
 	))
 	{
 		// No Default Changelists isn't an error, but the Editor UX expects to always the Default changelist (so you can always move files back to it)
-		FPlasticSourceControlChangelistState DefaultChangelistState(FPlasticSourceControlChangelist::DefaultChangelist, TEXT("Default Plastic SCM changelist"));
+		FPlasticSourceControlChangelistState DefaultChangelistState(FPlasticSourceControlChangelist::DefaultChangelist);
 		OutChangelistsStates.Insert(DefaultChangelistState, 0);
 		OutCLFilesStates.Insert(TArray<FPlasticSourceControlState>(), 0);
 	}
