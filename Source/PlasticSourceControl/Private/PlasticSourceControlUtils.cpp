@@ -422,7 +422,7 @@ bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
 		int32 Len = Str.Len();
 		while (Len && Str[Len - 1] == Char)
 		{
-			Str = Str.LeftChop(1);
+			Str.LeftChopInline(1);
 			Len = Str.Len();
 		}
 	};
@@ -1098,13 +1098,13 @@ public:
 			{
 				Filename = Temp.Left(WhitespaceIndex);
 			}
-			Temp = Temp.RightChop(WhitespaceIndex + 1);
+			Temp.RightChopInline(WhitespaceIndex + 1);
 			if (Temp.FindChar(TEXT(' '), WhitespaceIndex))
 			{
 				const FString Base = Temp.Left(WhitespaceIndex);
 				BaseChangeset = FCString::Atoi(*Base);
 			}
-			Temp = Temp.RightChop(WhitespaceIndex + 1);
+			Temp.RightChopInline(WhitespaceIndex + 1);
 			if (Temp.FindChar(TEXT(' '), WhitespaceIndex))
 			{
 				const FString Source = Temp.Left(WhitespaceIndex);
