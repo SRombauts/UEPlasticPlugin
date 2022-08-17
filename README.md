@@ -26,6 +26,7 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
      - [Create a new workspace](#create-a-new-workspace--repository-directly-from-unreal)
      - [Source Control settings](#source-control-settings)
      - [Project Settings](#project-settings)
+     - [Editor Preferences](#editor-preferences)
    - [Working in Editor](#working-in-editor)
      - [Unreal Documentation](#unreal-documentation)
      - [Status Icons](#status-icons)
@@ -151,7 +152,8 @@ EnableVerboseLogs=False
 ##### Source Control
 
 Unreal Engine allows you to configure project-related settings.
-TODO: Some are not yet supported by the plugin (eg Delete on Revert)
+
+- TODO: Some are not yet supported by the plugin (eg Delete on Revert)
 
 ![Project Settings - Source Control](Screenshots/UEPlasticPlugin-ProjectSettingsSourceControl.png)
 
@@ -172,6 +174,25 @@ There are 3 settings available at the moment:
      any notifications when you modify assets, and the "Checkout Assets" dialog won't show when you save those changes.
      This mimics how Git works, i.e. allowing the user to perform changes without worrying about checking out items.
      Note: Changelists don't currently support locally changed assets (ie not checked-out)
+
+#### Editor Preferences
+
+##### Source Control
+
+Unreal Engine allows you to configure Editor behaviors. In particular:
+
+ - **Tools for diffing text**
+   - Configure the external diff tool needed to compare revisions of assets that are not Blueprints (eg Materials)
+ - **Prompt for Checkout on Asset Modification**
+   - Trigger a notification "N files need Checkout" with a link to checkout the asset(s) as soon as a change is made to an asset (without even saving it).
+ - **Automatically Checkout on Asset Modification**
+   - Checkout an asset as soon as a change is made to it (without even saving it). Will not show the "checkout" notification.
+ - **Add New Files when Modified**
+   - Automatically add "private" assets to source control when saving them.
+ - **Use Global Settings**
+   - Share the Source Control Settings ini files between all projects.
+
+![Editor Preferences - Source Control](Screenshots/UEPlasticPlugin-EditorPreferencesSourceControl.png)
 
 ### Working in Editor
 
