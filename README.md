@@ -409,7 +409,7 @@ or for Unreal Engine 5:
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.6.0 2022/07/11 for UE 4.27.2 and UE 5.0.2:
+### Version 1.6.1 2022/08/02 for UE 5.0.2 and UE 4.27.2:
  - manage connection to the server
  - show current branch name and CL in status text
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
@@ -445,8 +445,10 @@ This version here is the development version, so it always contains additional f
  - Unreal Engine 5.0 full support
    - Shelves of Changelists
  - Mac OS X Support
- - add a setting to bypass checkout and let the user directly modify the assets like Git
+ - add a menu entry to switch the workspace to Partial
  - add a setting to configure Plastic SCM to use "read-only flags" like Perforce
+   - add a context menu entry to make it locally writable
+ - add a menu entry to unlock a file
  - add a setting to pass the --update option to "check-in"
  - add a "clean directory" or "check-in deleted files"
 
@@ -455,12 +457,11 @@ This version here is the development version, so it always contains additional f
  - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
  - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
  - Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
- - the Editor does not handle visual diff for renamed/moved assets
- - the Editor does not show folder status and is not able to manage them
- - Branch and Merge are not in the current Editor workflow
- - 
+ - Bug: the Editor does not handle visual diff for renamed/moved assets
 
 ### Features not supported, reserved for internal use by Epic Games with Perforce only
+ - Branch and Merge workflow: not handled by the Unreal Editor
+ - Directory source control status: not handled by the Unreal Editor
  - tags: get labels (used for crash when the full Engine is under Perforce)
  - annotate: blame (used for crash when the full Engine is under Perforce)
 
