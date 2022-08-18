@@ -332,9 +332,9 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			}
 
 #if ENGINE_MAJOR_VERSION == 5
-			if (InChangelist.IsInitialized())
+			if (InChangelist.IsInitialized() && !InChangelist.IsDefault())
 			{
-				// NOTE: we need to explicitly delete persistent changelists when we submit its content
+				// NOTE: we need to explicitly delete persistent changelists when we submit its content, except for the Default changelist
 				DeleteChangelist(GetProvider(), InChangelist, InCommand.Concurrency, InCommand.InfoMessages, InCommand.ErrorMessages);
 			}
 #endif
@@ -358,7 +358,16 @@ bool FPlasticCheckInWorker::UpdateStates()
 #if ENGINE_MAJOR_VERSION == 5
 	if (InChangelist.IsInitialized())
 	{
-		GetProvider().RemoveChangelistFromCache(InChangelist);
+		if (InChangelist.IsDefault())
+		{
+			// Remove all the files from the default changelist state, since they have been submitted, but we didn't delete the changelist itself
+			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> DefaultChangelist = GetProvider().GetStateInternal(FPlasticSourceControlChangelist::DefaultChangelist);
+			DefaultChangelist->Files.Empty();
+		}
+		else
+		{
+			GetProvider().RemoveChangelistFromCache(InChangelist);
+		}
 	}
 #endif
 
