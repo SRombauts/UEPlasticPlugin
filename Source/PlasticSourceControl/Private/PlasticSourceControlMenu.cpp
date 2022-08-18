@@ -342,6 +342,14 @@ void FPlasticSourceControlMenu::RefreshClicked()
 	}
 }
 
+void FPlasticSourceControlMenu::ShowSourceControlEditorPreferences() const
+{
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	{
+		SettingsModule->ShowViewer("Editor", "General", "LoadingSaving");
+	}
+}
+
 void FPlasticSourceControlMenu::ShowSourceControlProjectSettings() const
 {
 	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
@@ -537,9 +545,26 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 
 #if ENGINE_MAJOR_VERSION == 5
 	Menu.AddMenuEntry(
+		"SourceControlEditorPreferences",
+		LOCTEXT("SourceControlEditorPreferences", "Editor Preferences - Source Control"),
+		LOCTEXT("SourceControlEditorPreferencesTooltip", "Open the Load & Save section with Source Control in the Editor Preferences."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "EditorPreferences.TabIcon"),
+#else
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "EditorPreferences.TabIcon"),
+#endif
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ShowSourceControlEditorPreferences),
+			FCanExecuteAction()
+		)
+	);
+#endif
+
+#if ENGINE_MAJOR_VERSION == 5
+	Menu.AddMenuEntry(
 		"SourceControlProjectSettings",
-		LOCTEXT("SourceControlProjectSettings",			"Source Control Project Settings"),
-		LOCTEXT("SourceControlProjectSettingsTooltip",	"Show Source Control section in the Project Settings."),
+		LOCTEXT("SourceControlProjectSettings",			"Project Settings - Source Control"),
+		LOCTEXT("SourceControlProjectSettingsTooltip",	"Open the Source Control section in the Project Settings."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ProjectSettings.TabIcon"),
 #else
@@ -556,8 +581,8 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #if ENGINE_MAJOR_VERSION == 5
 		"PlasticProjectSettings",
 #endif
-		LOCTEXT("PlasticProjectSettings",			"Plastic SCM Project Settings"),
-		LOCTEXT("PlasticProjectSettingsTooltip",	"Show Plastic SCM section in the Project Settings."),
+		LOCTEXT("PlasticProjectSettings",			"Project Settings - Source Control - Plastic SCM"),
+		LOCTEXT("PlasticProjectSettingsTooltip",	"Open the Plastic SCM section in the Project Settings."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ProjectSettings.TabIcon"),
 #else
