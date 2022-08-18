@@ -1,7 +1,7 @@
 Plastic SCM plugin for Unreal Engine
 ------------------------------------
 
-[![release](https://img.shields.io/github/release/PlasticSCM/UE4PlasticPlugin.svg)](https://github.com/PlasticSCM/UE4PlasticPlugin/releases)
+[![release](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
 [![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
 This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Provider plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0).
@@ -61,14 +61,14 @@ Why: This is the easiest way to get started with Plastic SCM in Unreal Engine, b
 
 Why: if you want the latest features, performance improvements and bug fixes that are missing from Unreal integrated plugin.
 
- 1. Download the [latest binary release UE4PlasticPlugin-x.x.x.zip](https://github.com/PlasticSCM/UE4PlasticPlugin/releases) targeting your UE4 version.
+ 1. Download the [latest binary release UE5PlasticPlugin-x.x.x.zip](https://github.com/PlasticSCM/UEPlasticPlugin/releases) targeting your UE5 version (resp UE4).
  2. Either:
      1. Unzip the content of the ZIP directly at the root of your project folder.
-        This creates a "Plugins/UE4PlasticPlugin/" subdirectory into your project.
+        This creates a "Plugins/UEPlasticPlugin/" subdirectory into your project.
         This is the way to go to use Plastic SCM only on a specific project.
      2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
         (for instance "C:\Program Files\Epic Games\4.25\Engine\")
-        This creates a "UE4PlasticPlugin" folder into the "Plugins/" subdirectory.
+        This creates a "UEPlasticPlugin" folder into the "Plugins/" subdirectory.
         This is the way to enable Plastic SCM for all Unreal Engine projects.
  3. Then, launch your Unreal project, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
@@ -81,11 +81,11 @@ Else, if you want to rebuild the plugin for a Blueprint project:
  0. You need Visual Studio 2015 or 2017 with C++ language support (free Community Edition is fine).
  1. Launch the Unreal Engine Editor, create a new C++ **Basic Code** Project (No Starter Content), for instance UnrealPlasticSCM. This should launch Visual Studio, build the game project, and open it into the Editor.
  2. Close the Editor, then using the file explorer, create a new **Plugins** directory at the root of your project.
- 3. Clone the source code of the plugin into this _Plugins_ directory (for instance _Plugins\UE4PlasticPlugin_).
+ 3. Clone the source code of the plugin into this _Plugins_ directory (for instance _Plugins\UEPlasticPlugin_).
  4. Right-click on your project's **.uproject** file, **Generate Visual Studio project files**.
- 5. In Visual Studio, **Reload All** and **Build Solution** in **Development Editor** mode. That's it, the plugin is built (resulting dlls are located in _Plugins\UE4PlasticPlugin\Binaries\Win64_).
+ 5. In Visual Studio, **Reload All** and **Build Solution** in **Development Editor** mode. That's it, the plugin is built (resulting dlls are located in _Plugins\UEPlasticPlugin\Binaries\Win64_).
 
-To release the plugin, zip the _Plugins_ folder. But before that, remove the _Intermediate_, _Screenshots_ and _.git_ folders, and also the big *.pdb files in _Plugins\UE4PlasticPlugin\Binaries\Win64_.
+To release the plugin, zip the _Plugins_ folder. But before that, remove the _Intermediate_, _Screenshots_ and _.git_ folders, and also the big *.pdb files in _Plugins\UEPlasticPlugin\Binaries\Win64_.
 
 ### Project Setup
 
@@ -403,7 +403,7 @@ For instance the more generic one would be:
 
 or to be more specific to one repository:
 
-    rep:UE4PlasticPluginDev lockserver:localhost:8087
+    rep:UE5PlasticPluginDev lockserver:localhost:8087
     *.uasset
     *.umap
 
@@ -414,17 +414,15 @@ On Plastic Cloud, you can just set-up lock rules like that:
 #### Configure Visual Diff of Blueprints from Plastic SCM GUI
 
 In "Preferences -> Diff tools" add a new config for uasset and move it up **before** the existing `$binary` one:
-![Diff tools](Screenshots/UE4PlasticPlugin-GUIDiffTools.png)
+![Diff tools](Screenshots/UEPlasticPlugin-GUIDiffToolsUasset.png)
 
-The command line needs the quoted path to the UE4Editor.exe, the quoted patch to your ".uproject" file, -diff, than the source & destination files variables also quoted
-
-    "C:\Program Files\Epic Games\UE_4.27\Engine\Binaries\Win64\UE4Editor.exe" "C:\wkspaces\ProjectName\ProjectName.uproject" -diff "@sourcefile" "@destinationfile"
-
-or for Unreal Engine 5:
+The command line needs the quoted path to the UnrealEditor.exe, the quoted patch to your ".uproject" file, -diff, then the source & destination files variables also quoted
 
     "C:\Program Files\Epic Games\UE_5.0\Engine\Binaries\Win64\UnrealEditor.exe" "C:\wkspaces\ProjectName\ProjectName.uproject" -diff "@sourcefile" "@destinationfile"
 
-![uasset diff](Screenshots/UE4PlasticPlugin-GUIDiffUasset.png)
+or for Unreal Engine 4:
+
+    "C:\Program Files\Epic Games\UE_4.27\Engine\Binaries\Win64\UE4Editor.exe" "C:\wkspaces\ProjectName\ProjectName.uproject" -diff "@sourcefile" "@destinationfile"
 
 ## Status
 
@@ -474,7 +472,7 @@ This version here is the development version, so it always contains additional f
  - add a "clean directory" or "check-in deleted files"
 
 ### Known issues
- - Sync & RevertAll crash the Editor in Unreal Engine 5.0 and are temporarily disabled (https://github.com/SRombauts/UE4PlasticPlugin/issues/89)
+ - Sync & RevertAll crash the Editor in Unreal Engine 5.0 and are temporarily disabled (https://github.com/SRombauts/UEPlasticPlugin/issues/89)
  - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
  - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
  - Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
@@ -513,7 +511,7 @@ cm log files are typically in `<LOCALAPPDATA>\plastic4\logs\cm.log.txt`.
 
 To report an issue, please create a support ticket as it helps sort the priorities [Plastic SCM support](https://www.plasticscm.com/support).
 
-You can also use the [Github issue-tracker](https://github.com/SRombauts/UE4PlasticPlugin/issues?q=is%3Aissue).
+You can also use the [Github issue-tracker](https://github.com/SRombauts/UEPlasticPlugin/issues?q=is%3Aissue).
 
  1. Have a look at existing issues (Open and Closed ones)
  2. Specify your Engine & Plugin versions, and if either are built from sources
@@ -525,7 +523,7 @@ You can also use the [Github issue-tracker](https://github.com/SRombauts/UE4Plas
 
 ### Use merge requests
 
-If you want to help, [Github Pull Requests](https://github.com/PlasticSCM/UE4PlasticPlugin/pulls) are welcome!
+If you want to help, [Github Pull Requests](https://github.com/PlasticSCM/UEPlasticPlugin/pulls) are welcome!
 
 ## Copyright
 
