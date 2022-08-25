@@ -52,7 +52,7 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		}
 	}
 
-	if (bForceConnection && !bServerAvailable)
+	if (bForceConnection && bPlasticAvailable && bWorkspaceFound && !bServerAvailable)
 	{
 		// Execute a 'checkconnection' command to set bServerAvailable based on the connectivity of the server
 		TArray<FString> InfoMessages, ErrorMessages;
