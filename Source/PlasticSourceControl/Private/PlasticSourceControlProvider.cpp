@@ -518,6 +518,8 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 
 void FPlasticSourceControlProvider::Tick()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlProvider::Tick);
+
 	bool bStatesUpdated = false;
 	for (int32 CommandIndex = 0; CommandIndex < CommandQueue.Num(); ++CommandIndex)
 	{
