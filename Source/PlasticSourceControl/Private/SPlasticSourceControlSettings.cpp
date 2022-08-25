@@ -734,7 +734,7 @@ ECheckBoxState SPlasticSourceControlSettings::IsEnableVerboseLogsChecked() const
 /** Path to the "ignore.conf" file */
 const FString SPlasticSourceControlSettings::GetIgnoreFileName() const
 {
-	const FString PathToWorkspaceRoot = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot(); // TODO +TEXT("/");
+	const FString PathToWorkspaceRoot = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
 	const FString IgnoreFileName = FPaths::Combine(*PathToWorkspaceRoot, TEXT("ignore.conf"));
 	return IgnoreFileName;
 }
