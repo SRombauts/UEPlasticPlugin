@@ -111,6 +111,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 		if (!bWorkspaceFound)
 		{
+			// This info message is only useful here, if bPlasticAvailable, for the Login window
 			FFormatNamedArguments Args;
 			Args.Add(TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot));
 			FMessageLog("SourceControl").Info(FText::Format(LOCTEXT("NotInAWorkspace", "{WorkspacePath} is not in a workspace."), Args));
