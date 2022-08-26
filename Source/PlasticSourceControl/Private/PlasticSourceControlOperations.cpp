@@ -19,6 +19,14 @@
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
+#if ENGINE_MAJOR_VERSION == 5
+
+// 11.0.16.7248 add support for --descriptionfile for multi-line descriptions and support for special characters
+// https://www.plasticscm.com/download/releasenotes/11.0.16.7248
+static const FSoftwareVersion s_NewChangelistFileArgsPlasticScmVersion(11, 0, 16, 7248);
+
+#endif
+
 template<typename Type>
 static FPlasticSourceControlWorkerRef InstantiateWorker(FPlasticSourceControlProvider& PlasticSourceControlProvider)
 {
@@ -236,10 +244,6 @@ bool FPlasticCheckOutWorker::UpdateStates()
 }
 
 #if ENGINE_MAJOR_VERSION == 5
-
-// 11.0.16.7248 add support for --descriptionfile for multi-line descriptions and support for special characters
-// https://www.plasticscm.com/download/releasenotes/11.0.16.7248
-static const FSoftwareVersion s_NewChangelistFileArgsPlasticScmVersion(11, 0, 16, 7248);
 
 bool DeleteChangelist(const FPlasticSourceControlProvider& PlasticSourceControlProvider, const FPlasticSourceControlChangelist& InChangelist, const EConcurrency::Type InConcurrency, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
 {
@@ -599,12 +603,12 @@ bool FPlasticRevertWorker::UpdateStates()
 	// Update affected changelist if any
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> OldState = GetProvider().GetStateInternal(NewState.GetFilename());
-		if (OldState->Changelist.IsInitialized())
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
+		if (State->Changelist.IsInitialized())
 		{
 			// 1- Remove these files from their previous changelist
-			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(OldState->Changelist);
-			PreviousChangelist->Files.Remove(OldState);
+			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(State->Changelist);
+			PreviousChangelist->Files.Remove(State);
 		}
 	}
 #endif
@@ -662,12 +666,12 @@ bool FPlasticRevertUnchangedWorker::UpdateStates()
 	{
 		if (!NewState.IsModified())
 		{
-			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> OldState = GetProvider().GetStateInternal(NewState.GetFilename());
-			if (OldState->Changelist.IsInitialized())
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
+			if (State->Changelist.IsInitialized())
 			{
 				// 1- Remove these files from their previous changelist
-				TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(OldState->Changelist);
-				PreviousChangelist->Files.Remove(OldState);
+				TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(State->Changelist);
+				PreviousChangelist->Files.Remove(State);
 			}
 		}
 	}
