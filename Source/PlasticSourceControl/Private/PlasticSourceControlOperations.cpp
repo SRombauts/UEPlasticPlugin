@@ -582,13 +582,10 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 	}
 
-	// NOTE: optim, no need to update the status of our files since this is done immediately after by the Editor, except when reverting files from a changelist
+	// NOTE: optim, in UE4 there was no need to update the status of our files since this is done immediately after by the Editor, except now that we are using changelists
 #if ENGINE_MAJOR_VERSION == 5
-	if (InCommand.Changelist.IsInitialized())
-	{
-		// update the status of our files
-		PlasticSourceControlUtils::RunUpdateStatus(Files, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
-	}
+	// update the status of our files
+	PlasticSourceControlUtils::RunUpdateStatus(Files, false, InCommand.Concurrency, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 #endif
 
 	return InCommand.bCommandSuccessful;
