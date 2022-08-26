@@ -87,6 +87,9 @@ class FPlasticCheckOutWorker final : public IPlasticSourceControlWorker
 public:
 	explicit FPlasticCheckOutWorker(FPlasticSourceControlProvider& InSourceControlProvider)
 		: IPlasticSourceControlWorker(InSourceControlProvider)
+#if ENGINE_MAJOR_VERSION == 5
+		, InChangelist(FPlasticSourceControlChangelist::DefaultChangelist) // By default, add checked out files in the default changelist.
+#endif
 	{}
 	virtual ~FPlasticCheckOutWorker() = default;
 	// IPlasticSourceControlWorker interface
@@ -97,6 +100,11 @@ public:
 public:
 	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
+
+#if ENGINE_MAJOR_VERSION == 5
+	/** Changelist we checked-out files to (defaults to the Default changelist) */
+	FPlasticSourceControlChangelist InChangelist;
+#endif
 };
 
 /** Check-in a set of file to the local depot. */
@@ -117,7 +125,7 @@ public:
 	TArray<FPlasticSourceControlState> States;
 
 #if ENGINE_MAJOR_VERSION == 5
-	/** Changelist we asked to submit */
+	/** Changelist we submitted */
 	FPlasticSourceControlChangelist InChangelist;
 #endif
 };
@@ -128,6 +136,9 @@ class FPlasticMarkForAddWorker final : public IPlasticSourceControlWorker
 public:
 	explicit FPlasticMarkForAddWorker(FPlasticSourceControlProvider& InSourceControlProvider)
 		: IPlasticSourceControlWorker(InSourceControlProvider)
+#if ENGINE_MAJOR_VERSION == 5
+		, InChangelist(FPlasticSourceControlChangelist::DefaultChangelist) // By default, add new files in the default changelist.
+#endif
 	{}
 	virtual ~FPlasticMarkForAddWorker() = default;
 	// IPlasticSourceControlWorker interface
@@ -138,6 +149,11 @@ public:
 public:
 	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
+
+#if ENGINE_MAJOR_VERSION == 5
+	/** Changelist we added files to (defaults to the Default changelist) */
+	FPlasticSourceControlChangelist InChangelist;
+#endif
 };
 
 /** Delete a file and remove it from source control. */
@@ -146,6 +162,9 @@ class FPlasticDeleteWorker final : public IPlasticSourceControlWorker
 public:
 	explicit FPlasticDeleteWorker(FPlasticSourceControlProvider& InSourceControlProvider)
 		: IPlasticSourceControlWorker(InSourceControlProvider)
+#if ENGINE_MAJOR_VERSION == 5
+		, InChangelist(FPlasticSourceControlChangelist::DefaultChangelist) // By default, add deleted files in the default changelist.
+#endif
 	{}
 	virtual ~FPlasticDeleteWorker() = default;
 	// IPlasticSourceControlWorker interface
@@ -156,6 +175,11 @@ public:
 public:
 	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
+
+#if ENGINE_MAJOR_VERSION == 5
+	/** Changelist we delete files to (defaults to the Default changelist) */
+	FPlasticSourceControlChangelist InChangelist;
+#endif
 };
 
 /** Revert any change to a file to its state on the local depot. */

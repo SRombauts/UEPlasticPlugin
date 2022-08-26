@@ -166,6 +166,36 @@ bool FPlasticConnectWorker::UpdateStates()
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
+
+#if ENGINE_MAJOR_VERSION == 5
+
+static void UpdateChangelistState(FPlasticSourceControlProvider& SCCProvider, const FPlasticSourceControlChangelist& InChangelist, const TArray<FPlasticSourceControlState>& InStates)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlastic::UpdateChangelistState);
+
+	if (InChangelist.IsInitialized())
+	{
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = SCCProvider.GetStateInternal(InChangelist);
+
+		for (const FPlasticSourceControlState& InState : InStates)
+		{
+			if ((InState.WorkspaceState != EWorkspaceState::CheckedOut) && (InState.WorkspaceState != EWorkspaceState::Added) && InState.WorkspaceState != EWorkspaceState::Deleted)
+			{
+				continue;
+			}
+
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = SCCProvider.GetStateInternal(InState.GetFilename());
+			ChangelistState->Files.Add(State);
+
+			// Keep the changelist stored with cached file state in sync with the actual changelist that owns this file.
+			State->Changelist = InChangelist;
+		}
+	}
+}
+
+#endif
+
+
 FName FPlasticCheckOutWorker::GetName() const
 {
 	return "CheckOut";
@@ -196,6 +226,11 @@ bool FPlasticCheckOutWorker::Execute(FPlasticSourceControlCommand& InCommand)
 bool FPlasticCheckOutWorker::UpdateStates()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticCheckOutWorker::UpdateStates);
+
+#if ENGINE_MAJOR_VERSION == 5
+	// If files have been checked-out directly to a CL, modify the cached state to reflect it (defaults to the Default changelist).
+	UpdateChangelistState(GetProvider(), InChangelist, States);
+#endif
 
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
@@ -429,6 +464,11 @@ bool FPlasticMarkForAddWorker::UpdateStates()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticMarkForAddWorker::UpdateStates);
 
+#if ENGINE_MAJOR_VERSION == 5
+	// If files have been added directly to a CL, modify the cached state to reflect it (defaults to the Default changelist).
+	UpdateChangelistState(GetProvider(), InChangelist, States);
+#endif
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
@@ -462,6 +502,11 @@ bool FPlasticDeleteWorker::Execute(FPlasticSourceControlCommand& InCommand)
 bool FPlasticDeleteWorker::UpdateStates()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticDeleteWorkers::UpdateStates);
+
+#if ENGINE_MAJOR_VERSION == 5
+	// If files have been deleted directly to a CL, modify the cached state to reflect it (defaults to the Default changelist).
+	UpdateChangelistState(GetProvider(), InChangelist, States);
+#endif
 
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
