@@ -147,7 +147,7 @@ TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceContro
 	else
 	{
 		// cache an unknown state for this item
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> NewState = MakeShared<FPlasticSourceControlState>(FString(InFilename));
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> NewState = MakeShareable(new FPlasticSourceControlState(FString(InFilename)));
 		StateCache.Add(InFilename, NewState);
 		return NewState;
 	}
