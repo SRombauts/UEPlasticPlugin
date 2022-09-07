@@ -18,7 +18,9 @@
 #include "SourceControlOperations.h"
 #include "Interfaces/IPluginManager.h"
 
+#include "Algo/Transform.h"
 #include "Misc/Paths.h"
+#include "Misc/MessageDialog.h"
 #include "HAL/PlatformProcess.h"
 #include "Misc/QueuedThreadPool.h"
 
@@ -147,7 +149,11 @@ TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceContro
 	else
 	{
 		// cache an unknown state for this item
+#if ENGINE_MAJOR_VERSION == 4
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> NewState = MakeShareable(new FPlasticSourceControlState(FString(InFilename)));
+#elif ENGINE_MAJOR_VERSION == 5
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> NewState = MakeShared<FPlasticSourceControlState>(FString(InFilename));
+#endif
 		StateCache.Add(InFilename, NewState);
 		return NewState;
 	}
