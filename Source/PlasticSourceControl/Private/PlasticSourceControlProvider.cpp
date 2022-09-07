@@ -631,13 +631,16 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		IssueCommand(InCommand);
 
 		// ... then wait for its completion (thus making it synchronous)
+#if ENGINE_MAJOR_VERSION == 4 || ENGINE_MINOR_VERSION < 1
 		double LastProgressTimestamp = FPlatformTime::Seconds();
 		double ProgressUpdateThreshold = .0;
+#endif
 		while (!InCommand.bExecuteProcessed)
 		{
 			// Tick the command queue and update progress.
 			Tick();
 
+#if ENGINE_MAJOR_VERSION == 4 || ENGINE_MINOR_VERSION < 1
 			const double CurrentTimestamp = FPlatformTime::Seconds();
 			const double ElapsedTime = CurrentTimestamp - LastProgressTimestamp;
 
@@ -647,14 +650,17 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 			// in order to reduce the video memory usage for very long operation without visual penalty on quicker daily operations.
 			if (ElapsedTime > ProgressUpdateThreshold)
 			{
+#endif
 				Progress.Tick();
 
+#if ENGINE_MAJOR_VERSION == 4 || ENGINE_MINOR_VERSION < 1
 				LastProgressTimestamp = CurrentTimestamp;
 				if (ProgressUpdateThreshold < 0.25)
 				{
 					ProgressUpdateThreshold += 0.001;
 				}
 			}
+#endif
 
 			// Sleep for a bit so we don't busy-wait so much.
 			FPlatformProcess::Sleep(0.01f);
