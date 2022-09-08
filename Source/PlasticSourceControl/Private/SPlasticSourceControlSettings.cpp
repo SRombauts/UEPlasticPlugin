@@ -69,7 +69,13 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			.ToolTipText(LOCTEXT("PlasticVersions_Tooltip", "Plastic SCM and Plugin versions"))
 			+SHorizontalBox::Slot()
 			.FillWidth(1.0f)
-			.HAlign(HAlign_Center)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("PlasticVersions", "Plastic SCM version"))
+				.Font(Font)
+			]
+			+SHorizontalBox::Slot()
+			.FillWidth(2.0f)
 			[
 				SNew(STextBlock)
 				.Text(this, &SPlasticSourceControlSettings::GetVersions)
@@ -99,7 +105,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			.FillWidth(1.0f)
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("PathLabel", "Plastic SCM Path to cm"))
+				.Text(LOCTEXT("PathLabel", "Plastic SCM path to cm"))
 				.Font(Font)
 			]
 			+SHorizontalBox::Slot()
@@ -169,7 +175,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		// Explanation text
 		+SVerticalBox::Slot()
 		.FillHeight(1.0f)
-		.Padding(2.0f)
+		.Padding(2.0f, 5.0f)
 		[
 			SNew(STextBlock)
 			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
@@ -413,7 +419,7 @@ void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText
 FText SPlasticSourceControlSettings::GetVersions() const
 {
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-	return FText::FromString(TEXT("Plastic SCM ") + Provider.GetPlasticScmVersion().String + TEXT(" (plugin v") + Provider.GetPluginVersion() + TEXT(")"));
+	return FText::FromString(Provider.GetPlasticScmVersion().String + TEXT(" (plugin v") + Provider.GetPluginVersion() + TEXT(")"));
 }
 
 FText SPlasticSourceControlSettings::GetPathToWorkspaceRoot() const
