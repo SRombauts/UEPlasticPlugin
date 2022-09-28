@@ -122,6 +122,12 @@ public:
 		return ChangesetNumber;
 	}
 
+	/** A partial/Gluon workspace doesn't match with a single changeset, which is identified by -1 */
+	inline bool IsPartialWorkspace() const
+	{
+		return (ChangesetNumber == -1);
+	}
+
 	/** Version of the Plastic SCM executable used */
 	inline const FSoftwareVersion& GetPlasticScmVersion() const
 	{

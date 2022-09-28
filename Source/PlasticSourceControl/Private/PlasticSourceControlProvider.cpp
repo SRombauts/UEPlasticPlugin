@@ -187,13 +187,13 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	Args.Add(TEXT("WorkspaceName"), FText::FromString(WorkspaceName));
 	Args.Add(TEXT("BranchName"), FText::FromString(BranchName));
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-	if (-1 != ChangesetNumber)
+	if (IsPartialWorkspace())
 	{
-		Args.Add(TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d  (regular full workspace)"), ChangesetNumber)));
+		Args.Add(TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("N/A  (Gluon partial workspace)"))));
 	}
 	else
 	{
-		Args.Add(TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("N/A  (Gluon/partial workspace)"))));
+		Args.Add(TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d  (regular full workspace)"), ChangesetNumber)));
 	}
 	Args.Add(TEXT("UserName"), FText::FromString(UserName));
 	const FString DisplayName = PlasticSourceControlUtils::UserNameToDisplayName(UserName);
