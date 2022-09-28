@@ -423,6 +423,12 @@ bool FPlasticSourceControlProvider::UsesCheckout() const
 	return GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
 }
 
+bool FPlasticSourceControlProvider::UsesFileRevisions() const
+{
+	// Only a partial workspace can sync files individually like Perforce, a regular workspace needs to update completely
+	return IsPartialWorkspace();
+}
+
 TSharedPtr<IPlasticSourceControlWorker, ESPMode::ThreadSafe> FPlasticSourceControlProvider::CreateWorker(const FName& InOperationName)
 {
 	const FGetPlasticSourceControlWorker* Operation = WorkersMap.Find(InOperationName);

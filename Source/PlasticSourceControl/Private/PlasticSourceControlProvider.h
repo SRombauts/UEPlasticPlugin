@@ -52,6 +52,7 @@ public:
 	virtual bool UsesLocalReadOnlyState() const override;
 	virtual bool UsesChangelists() const override;
 	virtual bool UsesCheckout() const override;
+	virtual bool UsesFileRevisions() const; /* override				NOTE: added in UE5.1 */
 	virtual void Tick() override;
 	virtual TArray< TSharedRef<class ISourceControlLabel> > GetLabels(const FString& InMatchingSpec) const override;
 #if ENGINE_MAJOR_VERSION == 5
