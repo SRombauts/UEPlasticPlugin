@@ -429,6 +429,16 @@ bool FPlasticSourceControlProvider::UsesFileRevisions() const
 	return IsPartialWorkspace();
 }
 
+TOptional<bool> FPlasticSourceControlProvider::IsAtLatestRevision() const
+{
+	return TOptional<bool>(); // NOTE: used by code in UE5's Status Bar but currently dormant as far as I can tell
+}
+
+TOptional<int> FPlasticSourceControlProvider::GetNumLocalChanges() const
+{
+	return TOptional<int>(); // NOTE: used by code in UE5's Status Bar but currently dormant as far as I can tell
+}
+
 TSharedPtr<IPlasticSourceControlWorker, ESPMode::ThreadSafe> FPlasticSourceControlProvider::CreateWorker(const FName& InOperationName)
 {
 	const FGetPlasticSourceControlWorker* Operation = WorkersMap.Find(InOperationName);
