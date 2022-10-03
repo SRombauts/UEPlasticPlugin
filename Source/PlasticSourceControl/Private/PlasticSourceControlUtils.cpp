@@ -528,7 +528,7 @@ static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int
 			bResult = false;
 		}
 	}
-	// Get the branch name, in the form "Branch /main@UEPlasticPluginDev" (enabled by the "--wkconfig" flag)
+	// Get the branch name, in the form "Branch /main@UE5PlasticPluginDev@test@cloud" (enabled by the "--wkconfig" flag)
 	if (InInfoMessages.Num() > 1)
 	{
 		static const FString BranchPrefix(TEXT("Branch "));
@@ -555,6 +555,50 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	if (bResult)
 	{
 		bResult = ParseWorkspaceInformation(InfoMessages, OutChangeset, OutRepositoryName, OutServerUrl, OutBranchName);
+	}
+
+	return bResult;
+}
+
+static bool ParseWorkspaceInfo(const TArray<FString>& InInfoMessages, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
+{
+	if (InInfoMessages.Num() == 0)
+	{
+		return false;
+	}
+
+	// Get workspace information, in the form "Branch /main@UE5PlasticPluginDev@localhost:8087"
+	//                                     or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected directly to the cloud)
+	static const FString BranchPrefix(TEXT("Branch "));
+	if (!InInfoMessages[0].StartsWith(BranchPrefix, ESearchCase::CaseSensitive))
+	{
+		return false;
+	}
+	FString Temp = InInfoMessages[0].RightChop(BranchPrefix.Len());
+	int32 SeparatorIndex;
+	if (!Temp.FindChar(TEXT('@'), SeparatorIndex))
+	{
+		return false;
+	}
+	OutBranchName = Temp.Left(SeparatorIndex);
+	Temp.RightChopInline(SeparatorIndex + 1);
+	if (!Temp.FindChar(TEXT('@'), SeparatorIndex))
+	{
+		return false;
+	}
+	OutRepositoryName = Temp.Left(SeparatorIndex);
+	OutServerUrl = Temp.RightChop(SeparatorIndex + 1);
+
+	return true;
+}
+
+bool GetWorkspaceInfo(FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> InfoMessages;
+	bool bResult = RunCommand(TEXT("workspaceinfo"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, OutErrorMessages);
+	if (bResult)
+	{
+		bResult = ParseWorkspaceInfo(InfoMessages, OutRepositoryName, OutServerUrl, OutBranchName);
 	}
 
 	return bResult;
