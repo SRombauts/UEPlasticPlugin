@@ -10,7 +10,7 @@
 #include "ISourceControlChangelist.h"
 
 /**
- * An abstraction of a changelist under source control: an identifier (a "name" in Plastic SCM)
+ * Unique Identifier of a changelist under source control: a "name" in Plastic SCM
  */
 class FPlasticSourceControlChangelist : public ISourceControlChangelist
 {

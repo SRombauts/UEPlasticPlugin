@@ -12,7 +12,7 @@
 #include "PlasticSourceControlChangelist.h"
 
 /**
- * An abstraction of the state of a pending changelist under source control: description and list of files
+ * The state of a pending changelist under source control: description and list of files
  */
 class FPlasticSourceControlChangelistState : public ISourceControlChangelistState
 {
