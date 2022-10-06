@@ -46,6 +46,7 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
  - [Support](#support)
    - [Enable debug logs](#enable-debug-logs)
    - [Report an issue](#report-an-issue)
+ - [Source code architecture](#source-code-architecture)
  - [Copyright](#copyright)
 
 ## User Guide
@@ -253,6 +254,12 @@ Source Control top Menu, extended with commands specific to Plastic SCM:
 Source Control Menu and status tooltip, extended with commands specific to Plastic SCM:
 ![Source Control Menu](Screenshots/UE5PlasticPlugin-SourceControlMenu.png)
 
+Each Asset Editor also provide some source control operation, typically to Submit Content:
+![Asset Tools Menu](Screenshots/UEPlasticPlugin-AssetToolsMenu-Diff.png)
+
+The Blueprint Editor also provide a toolbar drop-down to visual diff against a previous revision:
+![Blueprint Toolbar Diff drop-down](Screenshots/UEPlasticPlugin-BlueprintToolbar-Diff.png)
+
 #### Source Control Windows
 
 Using the Content Browser context source control sub-menu, you can call in specific actions and windows:
@@ -425,6 +432,12 @@ or for Unreal Engine 4:
 
     "C:\Program Files\Epic Games\UE_4.27\Engine\Binaries\Win64\UE4Editor.exe" "C:\wkspaces\ProjectName\ProjectName.uproject" -diff "@sourcefile" "@destinationfile"
 
+#### Text Diff of any assets
+
+To configure a text diff for any uasset (not only Blueprints) use this command instead
+
+    "C:\Program Files\Epic Games\UE_5.0\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "C:\wkspaces\ProjectName\ProjectName.uproject" -NoShaderCompile -run="DiffAssets" %1 %2 DiffCmd="C:\Program Files\Perforce\p4merge.exe {1} {2}"
+
 ## Status
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
@@ -445,7 +458,7 @@ This version here is the development version, so it always contains additional f
  - show history of a file
  - visual diff of a blueprint against depot or between previous versions of a file
  - Changelists in Unreal Engine 5: create, edit, move files, delete (no shelves yet)
- - One Files Per Actor (OFPA) status batching to execute only one operation for all files in all subfolders
+ - One Files Per Actor (OFPA) in Unreal Engine 5: status batching to execute only one operation for all files in all subfolders
  - initialize a new workspace to manage your UE4 Game Project.
  - make the initial commit with a custom message
  - create an appropriate ignore.conf file as part of initialization
@@ -526,6 +539,69 @@ You can also use the [Github issue-tracker](https://github.com/SRombauts/UEPlast
 ### Use merge requests
 
 If you want to help, [Github Pull Requests](https://github.com/PlasticSCM/UEPlasticPlugin/pulls) are welcome!
+
+## Source code architecture
+
+See also [Unreal Engine C++ Coding Standard](https://docs.unrealengine.com/4.27/en-US/ProductionPipelines/DevelopmentSetup/CodingStandard/)
+
+All the relevant C++ source code of the plugin reside in one subdirectory `<ProjectName>/Plugins/UEPlasticPlugin/Source/PlasticSourceControl/Private/`
+
+### Implementations of all the Source Control APIs as C++ interfaces
+
+ - **PlasticSourceControlProvider**.cpp/.h
+   - `class FPlasticSourceControlProvider : public ISourceControlProvider`
+   - implements the high level source control interface with the mechanism around managing workspace states
+ - **PlasticSourceControlOperations**.cpp/.h
+   - `classes FPlastic<Operation> : public ISourceControlOperation`
+   - implements each source control operation with a dedicated Worker class: add, delete, move, checkout, checkin, revert etc, see eg:
+   - `bool FPlasticCheckOutWorker::Execute(FPlasticSourceControlCommand& InCommand)` using the following two classes:
+     - **IPlasticSourceControlWorker**.h
+       - `class IPlasticSourceControlWorker`
+       - interface of one Worker to be implemented for each of the operations
+     - **PlasticSourceControlCommand**.cpp/.h
+       - `class FPlasticSourceControlCommand : public IQueuedWork`
+       - describes the parameters of the work to be executed for one operation
+ - **PlasticSourceControlState**.cpp/.h
+   - `class FPlasticSourceControlState : public ISourceControlState`
+   - implements information about the state of a file
+ - **PlasticSourceControlRevision**.cpp/.h
+   - `class FPlasticSourceControlRevision : public ISourceControlRevision`
+   - implements information about a revision in the history of a file
+ - **PlasticSourceControlChangelist**.cpp/.h
+   - `class FPlasticSourceControlChangelist : public ISourceControlChangelist`
+   - Unique Identifier of a changelist under source control: a "name" in Plastic SCM
+ - **PlasticSourceControlChangelistState**.cpp/.h
+   - `class FPlasticSourceControlChangelistState : public ISourceControlChangelistState`
+   - The state of a pending changelist under source control: description and list of files
+
+### Other most relevant structural files
+
+ - **PlasticSourceControlModule**.cpp/.h
+   - `class FPlasticSourceControlModule : public IModuleInterface`
+   - Singleton-like entry point of the plugin
+ - **PlasticSourceControlUtils**.cpp/.h
+   - `namespace PlasticSourceControlUtils` with free functions and static variables
+   - low level wrapper around the "cm shell" (TODO: move to a dedicated file)
+   - functions wrapping "cm" operations, and their the dedicated parsers (eg "status", "history" etc.)
+ - **SPlasticSourceControlSettings**.cpp/.h
+   - `class SPlasticSourceControlSettings : public SCompoundWidget`
+   - the "Source Control Login" window shown above: to enable the plugin, and with a wizard to create the workspace
+ - **PlasticSourceControlSettings**.cpp/.h
+   - serialize the 4 settings displayed in the Source Control Login in `Saved\Config\WindowsEditor\SourceControlSettings.ini`
+
+### All the others providing various features
+
+ - **PlasticSourceControlMenu**.cpp/.h
+   - extends the main source control menu, now in the status bar at the bottom of the Editor
+ - **PlasticSourceControlProjectSettings**.h
+   - add a section "Source Control - Plastic SCM" to the Project Settings (saved in `Config\DefaultEditor.ini`)
+ - **PlasticSourceControlConsole**.cpp/.h
+   - add a console command that can be executed from the Editor status bar or Output Log to execute "cm" commands in order to query Plastic SCM, eg:
+   - `cm location`
+   - `cm find revision "where item='Content/ThirdPerson/Blueprints/BP_ThirdPersonCharacter.uasset'"`
+ - **SoftwareVersion**.cpp/.h
+   - Software version string in the form "X.Y.Z.C", ie Major.Minor.Patch.Changeset (as returned by GetPlasticScmVersion)
+ - **PlasticSourceControlUtilsTests**.cpp
 
 ## Copyright
 
