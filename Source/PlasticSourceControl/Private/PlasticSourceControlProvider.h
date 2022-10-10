@@ -52,6 +52,9 @@ public:
 	virtual bool UsesLocalReadOnlyState() const override;
 	virtual bool UsesChangelists() const override;
 	virtual bool UsesCheckout() const override;
+	virtual bool UsesFileRevisions() const; /* override				NOTE: added in UE5.1 */
+	virtual TOptional<bool> IsAtLatestRevision() const; /* override	NOTE: added in UE5.1 */
+	virtual TOptional<int> GetNumLocalChanges() const; /* override	NOTE: added in UE5.1 */
 	virtual void Tick() override;
 	virtual TArray< TSharedRef<class ISourceControlLabel> > GetLabels(const FString& InMatchingSpec) const override;
 #if ENGINE_MAJOR_VERSION == 5
@@ -120,6 +123,12 @@ public:
 	inline int32 GetChangesetNumber() const
 	{
 		return ChangesetNumber;
+	}
+
+	/** A partial/Gluon workspace doesn't match with a single changeset, which is identified by -1 */
+	inline bool IsPartialWorkspace() const
+	{
+		return (ChangesetNumber == -1);
 	}
 
 	/** Version of the Plastic SCM executable used */

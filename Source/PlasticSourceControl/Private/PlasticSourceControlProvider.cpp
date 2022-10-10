@@ -187,13 +187,13 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	Args.Add(TEXT("WorkspaceName"), FText::FromString(WorkspaceName));
 	Args.Add(TEXT("BranchName"), FText::FromString(BranchName));
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-	if (-1 != ChangesetNumber)
+	if (IsPartialWorkspace())
 	{
-		Args.Add(TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d  (regular full workspace)"), ChangesetNumber)));
+		Args.Add(TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("N/A  (Gluon partial workspace)"))));
 	}
 	else
 	{
-		Args.Add(TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("N/A  (Gluon/partial workspace)"))));
+		Args.Add(TEXT("ChangesetNumber"), FText::FromString(FString::Printf(TEXT("%d  (regular full workspace)"), ChangesetNumber)));
 	}
 	Args.Add(TEXT("UserName"), FText::FromString(UserName));
 	const FString DisplayName = PlasticSourceControlUtils::UserNameToDisplayName(UserName);
@@ -421,6 +421,22 @@ bool FPlasticSourceControlProvider::UsesChangelists() const
 bool FPlasticSourceControlProvider::UsesCheckout() const
 {
 	return GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
+}
+
+bool FPlasticSourceControlProvider::UsesFileRevisions() const
+{
+	// Only a partial workspace can sync files individually like Perforce, a regular workspace needs to update completely
+	return IsPartialWorkspace();
+}
+
+TOptional<bool> FPlasticSourceControlProvider::IsAtLatestRevision() const
+{
+	return TOptional<bool>(); // NOTE: used by code in UE5's Status Bar but currently dormant as far as I can tell
+}
+
+TOptional<int> FPlasticSourceControlProvider::GetNumLocalChanges() const
+{
+	return TOptional<int>(); // NOTE: used by code in UE5's Status Bar but currently dormant as far as I can tell
 }
 
 TSharedPtr<IPlasticSourceControlWorker, ESPMode::ThreadSafe> FPlasticSourceControlProvider::CreateWorker(const FName& InOperationName)
