@@ -7,6 +7,7 @@
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProjectSettings.h"
 #include "PlasticSourceControlSettings.h"
+#include "PlasticSourceControlShell.h"
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlSettings.h"
@@ -93,7 +94,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		bWorkspaceFound = PlasticSourceControlUtils::FindRootDirectory(PathToProjectDir, PathToWorkspaceRoot);
 
 		// Launch the Plastic SCM cli shell on the background to issue all commands during this session
-		bPlasticAvailable = PlasticSourceControlUtils::LaunchBackgroundPlasticShell(PathToPlasticBinary, PathToWorkspaceRoot);
+		bPlasticAvailable = PlasticSourceControlShell::Launch(PathToPlasticBinary, PathToWorkspaceRoot);
 		if (!bPlasticAvailable)
 		{
 			return;
@@ -126,7 +127,7 @@ void FPlasticSourceControlProvider::Close()
 	// clear the cache
 	StateCache.Empty();
 	// terminate the background 'cm shell' process and associated pipes
-	PlasticSourceControlUtils::Terminate();
+	PlasticSourceControlShell::Terminate();
 	// Remove all extensions to the "Source Control" menu in the Editor Toolbar
 	PlasticSourceControlMenu.Unregister();
 	// Unregister Console Commands

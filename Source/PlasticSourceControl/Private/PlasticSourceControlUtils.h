@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ISourceControlProvider.h"
+#include "ISourceControlProvider.h" // for EConcurrency
 #include "PlasticSourceControlRevision.h"
 
 #include "Runtime/Launch/Resources/Version.h"
@@ -43,17 +43,6 @@ const struct FSoftwareVersion& GetOldestSupportedPlasticScmVersion();
  * Find the path to the Plastic binary: for now relying on the Path to access the "cm" command.
  */
 FString FindPlasticBinaryPath();
-
-/**
- * Launch the Plastic SCM "shell" command to run it in background.
- * @param	InPathToPlasticBinary	The path to the Plastic binary
- * @param	InWorkspaceRoot			The workspace from where to run the command - usually the Game directory
- * @returns true if the command succeeded and returned no errors
- */
-bool LaunchBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FString& InWorkspaceRoot);
-
-/** Terminate the background 'cm shell' process and associated pipes */
-void Terminate();
 
 /**
  * Find the root of the Plastic workspace, looking from the GameDir and upward in its parent directories
@@ -103,7 +92,20 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 FString UserNameToDisplayName(const FString& InUserName);
 
 /**
- * Run a Plastic command - output is a string TArray.
+ * Run a Plastic command - the result is the output of cm, as a multi-line string.
+ *
+ * @param	InCommand			The Plastic command - e.g. commit
+ * @param	InParameters		The parameters to the Plastic command
+ * @param	InFiles				The files to be operated on
+ * @param	InConcurrency		Is the command running in the background, or blocking the main thread
+ * @param	OutResults			The results (from StdOut) as a multi-line string.
+ * @param	OutErrors			Any errors (from StdErr) as a multi-line string.
+ * @returns true if the command succeeded and returned no errors
+ */
+bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, FString& OutResults, FString& OutErrors);
+
+/**
+ * Run a Plastic command - the result is parsed in an array of strings.
  *
  * @param	InCommand			The Plastic command - e.g. commit
  * @param	InParameters		The parameters to the Plastic command
@@ -114,8 +116,6 @@ FString UserNameToDisplayName(const FString& InUserName);
  * @returns true if the command succeeded and returned no errors
  */
 bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages);
-// Run a Plastic command - output is a string.
-bool RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, FString& OutResults, FString& OutErrors);
 
 /**
  * Run a Plastic "status" command and parse it.
