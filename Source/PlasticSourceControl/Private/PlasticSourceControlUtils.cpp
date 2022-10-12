@@ -134,7 +134,7 @@ static void _CleanupBackgroundCommandLineShell()
 // Internal function to launch the Plastic SCM background 'cm' process in interactive shell mode (called under the critical section)
 static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, const FString& InWorkingDirectory)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::_StartBackgroundPlasticShell);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::_StartBackgroundPlasticShell);
 
 	const FString FullCommand(TEXT("shell --encoding=UTF-8"));
 
@@ -172,7 +172,7 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 // Internal function (called under the critical section)
 static void _ExitBackgroundCommandLineShell()
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::_ExitBackgroundCommandLineShell);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::_ExitBackgroundCommandLineShell);
 
 	if (ShellProcessHandle.IsValid())
 	{
@@ -213,7 +213,7 @@ static void _RestartBackgroundCommandLineShell()
 // Internal function (called under the critical section)
 static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, FString& OutResults, FString& OutErrors)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::_RunCommandInternal);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::_RunCommandInternal);
 
 	bool bResult = false;
 
@@ -262,7 +262,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		FString Output = FPlatformProcess::ReadPipe(ShellOutputPipeRead);
 		if (!Output.IsEmpty())
 		{
-			TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::_RunCommandInternal::ParseOutput);
+			TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::_RunCommandInternal::ParseOutput);
 
 			LastActivity = FPlatformTime::Seconds(); // freshen the timestamp while cm is still actively outputting information
 			OutResults.Append(MoveTemp(Output));
@@ -302,7 +302,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			_ExitBackgroundCommandLineShell();
 		}
 
-		TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::_RunCommandInternal::Sleep);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::_RunCommandInternal::Sleep);
 		FPlatformProcess::Sleep(0.001f);
 	}
 	const double ElapsedTime = (FPlatformTime::Seconds() - StartTimestamp);
@@ -748,7 +748,7 @@ static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
  */
 static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::ParseFileStatusResult);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseFileStatusResult);
 
 	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
 
@@ -820,7 +820,7 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 */
 static void ParseDirectoryStatusResultForDeleted(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::ParseDirectoryStatusResultForDeleted);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseDirectoryStatusResultForDeleted);
 
 	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
 
@@ -876,7 +876,7 @@ public:
  */
 static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::RunStatus);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunStatus);
 
 	check(InFiles.Num() > 0);
 
@@ -974,7 +974,7 @@ public:
  */
 static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& InOutStates)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::ParseFileinfoResults);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseFileinfoResults);
 
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 
@@ -1027,7 +1027,7 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
  */
 static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistory, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& InOutStates)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::RunFileinfo);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunFileinfo);
 
 	bool bResult = true;
 	TArray<FString> SelectedFiles;
@@ -1121,7 +1121,7 @@ public:
 // Check if merging, and from which changelist, then execute a cm merge command to amend status for listed files
 static bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::RunCheckMergeStatus);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunCheckMergeStatus);
 
 	bool bResult = false;
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -1352,7 +1352,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 // cm cat revid:1230@rep:myrep@repserver:myserver:8084 --raw --file=Name124.tmp
 bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpec, const FString& InDumpFileName)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::RunDumpToFile);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunDumpToFile);
 
 	int32	ReturnCode = 0;
 	FString Results;
@@ -1434,7 +1434,7 @@ FString DecodeXmlEntities(const FString& InString)
 */
 static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InXmlResult, TArray<FPlasticSourceControlState>& InOutStates)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::ParseHistoryResults);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseHistoryResults);
 
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
@@ -1639,7 +1639,7 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 		{
 			FXmlFile XmlFile;
 			{
-				TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::RunGetHistory::FXmlFile::LoadFile);
+				TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunGetHistory::FXmlFile::LoadFile);
 				bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
 			}
 			if (bResult)
@@ -1704,7 +1704,7 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 */
 static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::ParseChangelistsResults);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseChangelistsResults);
 
 	static const FString StatusOutput(TEXT("StatusOutput"));
 	static const FString WkConfigType(TEXT("WkConfigType"));
@@ -1803,7 +1803,7 @@ bool RunGetChangelists(const EConcurrency::Type InConcurrency, TArray<FPlasticSo
 	{
 		FXmlFile XmlFile;
 		{
-			TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSourceControlUtils::RunGetHistory::FXmlFile::LoadFile);
+			TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunGetHistory::FXmlFile::LoadFile);
 			bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
 		}
 		if (bResult)
