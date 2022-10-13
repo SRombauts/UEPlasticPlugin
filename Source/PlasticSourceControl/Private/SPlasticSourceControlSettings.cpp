@@ -764,7 +764,7 @@ TArray<FString> SPlasticSourceControlSettings::GetProjectFiles() const
 	{
 		ProjectFiles.Add(FPaths::ConvertRelativePathToFull(FPaths::GameSourceDir()));
 	}
-	if (bAutoCreateIgnoreFile)
+	if (FPaths::FileExists(GetIgnoreFileName()))
 	{
 		ProjectFiles.Add(GetIgnoreFileName());
 	}
