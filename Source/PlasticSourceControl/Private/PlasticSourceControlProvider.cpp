@@ -58,9 +58,13 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 	{
 		// Execute a 'checkconnection' command to set bServerAvailable based on the connectivity of the server
 		TArray<FString> InfoMessages, ErrorMessages;
-		const bool bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
-		bServerAvailable = bCommandSuccessful;
-		if (!bCommandSuccessful)
+		TArray<FString> Parameters;
+		if (PlasticSourceControlUtils::GetWorkspaceInfo(BranchName, RepositoryName, ServerUrl, ErrorMessages))
+		{
+			Parameters.Add(FString::Printf(TEXT("--server=%s"), *ServerUrl));
+		}
+		bServerAvailable = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+		if (!bServerAvailable)
 		{
 			FMessageLog SourceControlLog("SourceControl");
 			for (const FString& ErrorMessage : ErrorMessages)
