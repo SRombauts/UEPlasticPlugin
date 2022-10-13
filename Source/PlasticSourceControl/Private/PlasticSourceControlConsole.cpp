@@ -38,8 +38,8 @@ void FPlasticSourceControlConsole::ExecutePlasticConsoleCommand(const TArray<FSt
 	const FString Command = a_args[0];
 	TArray<FString> Parameters = a_args;
 	Parameters.RemoveAt(0);
-	PlasticSourceControlUtils::RunCommandInternal(Command, Parameters, TArray<FString>(), EConcurrency::Synchronous, Results, Errors);
-	if (Results.Len() > 200) // RunCommandInternal() already log all command results up to 200 characters (limit to avoid long wall of text like XML)
+	PlasticSourceControlUtils::RunCommand(Command, Parameters, TArray<FString>(), EConcurrency::Synchronous, Results, Errors);
+	if (Results.Len() > 200) // RunCommand() already log all command results up to 200 characters (limit to avoid long wall of text like XML)
 	{
 		UE_LOG(LogSourceControl, Log, TEXT("Output:\n%s"), *Results);
 	}

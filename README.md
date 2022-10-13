@@ -580,9 +580,11 @@ All the relevant C++ source code of the plugin reside in one subdirectory `<Proj
    - `class FPlasticSourceControlModule : public IModuleInterface`
    - Singleton-like entry point of the plugin
  - **PlasticSourceControlUtils**.cpp/.h
-   - `namespace PlasticSourceControlUtils` with free functions and static variables
-   - low level wrapper around the "cm shell" (TODO: move to a dedicated file)
+   - `namespace PlasticSourceControlUtils` with free functions
    - functions wrapping "cm" operations, and their the dedicated parsers (eg "status", "history" etc.)
+ - **PlasticSourceControlShell**.cpp/.h
+   - `namespace PlasticSourceControlShell` with free functions and internal static variables
+   - low level wrapper around the "cm shell" background process
  - **SPlasticSourceControlSettings**.cpp/.h
    - `class SPlasticSourceControlSettings : public SCompoundWidget`
    - the "Source Control Login" window shown above: to enable the plugin, and with a wizard to create the workspace
