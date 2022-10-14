@@ -987,7 +987,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 				}
 				else
 				{
-					FString Path = FPaths::GetPath(File) + TEXT("/");
+					FString Path = FPaths::GetPath(File) + TEXT('/');
 					GroupOfFiles.Add(RootDir, { MoveTemp(Path), {File}});
 				}
 
@@ -1001,7 +1001,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 		// This should be an edge case (typically the uproject file) .
 		if (!bDirFound)
 		{
-			FString Path = FPaths::GetPath(File) + TEXT("/");
+			FString Path = FPaths::GetPath(File) + TEXT('/');
 			FFilesInCommonDir* ExistingGroup = GroupOfFiles.Find(Path);
 			if (ExistingGroup != nullptr)
 			{
