@@ -133,7 +133,7 @@ void GetUserName(FString& OutUserName)
 	const bool bResult = RunCommand(TEXT("whoami"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
-		OutUserName = InfoMessages[0];
+		OutUserName = MoveTemp(InfoMessages[0]);
 	}
 }
 
