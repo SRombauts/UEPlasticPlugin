@@ -140,11 +140,10 @@ void GetUserName(FString& OutUserName)
 bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> InfoMessages;
-
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--format={0}"));
+	Parameters.Add(TEXT("--format={wkname}"));
 	TArray<FString> Files;
-	Files.Add(InWorkspaceRoot);
+	Files.Add(InWorkspaceRoot); // Uses an absolute path so that the error message is explicit
 	// Get the workspace name
 	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, Files, EConcurrency::Synchronous, InfoMessages, OutErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
