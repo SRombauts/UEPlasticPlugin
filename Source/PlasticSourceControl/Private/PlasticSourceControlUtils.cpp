@@ -120,7 +120,7 @@ bool GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion)
 	const bool bResult = RunCommand(TEXT("version"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
 	if (bResult && InfoMessages.Num() > 0)
 	{
-		OutPlasticScmVersion = FSoftwareVersion(InfoMessages[0]);
+		OutPlasticScmVersion = FSoftwareVersion(MoveTemp(InfoMessages[0]));
 		return true;
 	}
 	return false;

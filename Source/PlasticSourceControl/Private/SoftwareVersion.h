@@ -9,12 +9,12 @@
 */
 struct FSoftwareVersion
 {
-	FSoftwareVersion() {}
+	FSoftwareVersion() : String(TEXT("<unknown-version>")) {}
 
-	explicit FSoftwareVersion(const FString& InVersionString);
-	explicit FSoftwareVersion(const int& InMajor, const int& InMinor, const int& InPatch, const int& InChangeset);
+	explicit FSoftwareVersion(FString&& InVersionString);
+	FSoftwareVersion(const int& InMajor, const int& InMinor, const int& InPatch, const int& InChangeset);
 
-	FString String = TEXT("<unknown-version>");
+	FString String;
 
 	int Major = 0;
 	int Minor = 0;

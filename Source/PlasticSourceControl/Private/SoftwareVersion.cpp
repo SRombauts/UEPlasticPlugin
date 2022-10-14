@@ -2,9 +2,9 @@
 
 #include "SoftwareVersion.h"
 
-FSoftwareVersion::FSoftwareVersion(const FString& InVersionString)
+FSoftwareVersion::FSoftwareVersion(FString&& InVersionString)
 {
-	String = InVersionString;
+	String = MoveTemp(InVersionString);
 	TArray<FString> Parts;
 	const int32 N = String.ParseIntoArray(Parts, TEXT("."));
 	if (N == 4)
