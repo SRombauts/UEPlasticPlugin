@@ -29,7 +29,7 @@ FString FindPlasticBinaryPath();
  * @param OutWorkspaceRoot		The path to the root directory of the Plastic workspace if found, else the path to the GameDir
  * @returns true if the command succeeded and returned no errors
  */
-bool FindRootDirectory(const FString& InPathToGameDir, FString& OutWorkspaceRoot);
+bool GetWorkspacePath(const FString& InPathToGameDir, FString& OutWorkspaceRoot);
 
 /**
  * Get Plastic SCM cli version

@@ -68,44 +68,21 @@ FString FindPlasticBinaryPath()
 }
 
 // Find the root of the Plastic workspace, looking from the provided path and upward in its parent directories.
-bool FindRootDirectory(const FString& InPath, FString& OutWorkspaceRoot)
+bool GetWorkspacePath(const FString& InPath, FString& OutWorkspaceRoot)
 {
-	bool bFound = false;
-	FString PathToPlasticSubdirectory;
-	OutWorkspaceRoot = InPath;
-
-	auto TrimTrailing = [](FString& Str, const TCHAR Char)
+	TArray<FString> InfoMessages;
+	TArray<FString> ErrorMessages;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("--format={wkpath}"));
+	Parameters.Add(TEXT("."));
+	const bool bFound = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+	if (bFound && InfoMessages.Num() > 0)
 	{
-		int32 Len = Str.Len();
-		while (Len && Str[Len - 1] == Char)
-		{
-			Str.LeftChopInline(1);
-			Len = Str.Len();
-		}
-	};
-
-	TrimTrailing(OutWorkspaceRoot, '\\');
-	TrimTrailing(OutWorkspaceRoot, '/');
-
-	while (!bFound && !OutWorkspaceRoot.IsEmpty())
-	{
-		// Look for the ".plastic" subdirectory present at the root of every Plastic workspace
-		PathToPlasticSubdirectory = OutWorkspaceRoot / TEXT(".plastic");
-		bFound = FPaths::DirectoryExists(*PathToPlasticSubdirectory);
-		if (!bFound)
-		{
-			int32 LastSlashIndex;
-			if (OutWorkspaceRoot.FindLastChar(TEXT('/'), LastSlashIndex))
-			{
-				OutWorkspaceRoot = OutWorkspaceRoot.Left(LastSlashIndex);
-			}
-			else
-			{
-				OutWorkspaceRoot.Empty();
-			}
-		}
+		OutWorkspaceRoot = MoveTemp(InfoMessages[0]);
+		FPaths::NormalizeDirectoryName(OutWorkspaceRoot);
+		OutWorkspaceRoot.AppendChar(TEXT('/'));
 	}
-	if (!bFound)
+	else
 	{
 		OutWorkspaceRoot = InPath; // If not found, return the provided dir as best possible root.
 	}
