@@ -601,6 +601,8 @@ All the relevant C++ source code of the plugin reside in one subdirectory `<Proj
    - add a console command that can be executed from the Editor status bar or Output Log to execute "cm" commands in order to query Plastic SCM, eg:
    - `cm location`
    - `cm find revision "where item='Content/ThirdPerson/Blueprints/BP_ThirdPersonCharacter.uasset'"`
+ - **ScopedTempFile**.cpp/.h
+   - Helper for temporary files to pass as arguments to some commands (typically for checkin multi-line text message)
  - **SoftwareVersion**.cpp/.h
    - Software version string in the form "X.Y.Z.C", ie Major.Minor.Patch.Changeset (as returned by GetPlasticScmVersion)
  - **PlasticSourceControlUtilsTests**.cpp

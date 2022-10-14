@@ -8,6 +8,7 @@
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
+#include "ScopedTempFile.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Async/Async.h"
