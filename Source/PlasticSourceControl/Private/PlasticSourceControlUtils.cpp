@@ -103,6 +103,23 @@ bool GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion)
 	return false;
 }
 
+bool GetConfigSetFilesAsReadOnly()
+{
+	TArray<FString> InfoMessages;
+	TArray<FString> ErrorMessages;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("setfileasreadonly"));
+	const bool bResult = RunCommand(TEXT("getconfig"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+	if (bResult && InfoMessages.Num() > 0)
+	{
+		if ((InfoMessages[0].Compare("yes", ESearchCase::IgnoreCase) == 0) || (InfoMessages[0].Compare("true", ESearchCase::IgnoreCase) == 0))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void GetUserName(FString& OutUserName)
 {
 	TArray<FString> InfoMessages;
