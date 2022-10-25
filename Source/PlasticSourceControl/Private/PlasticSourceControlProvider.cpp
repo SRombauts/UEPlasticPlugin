@@ -111,6 +111,8 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			return;
 		}
 
+		bUsesLocalReadOnlyState = PlasticSourceControlUtils::GetConfigSetFilesAsReadOnly();
+
 		// Get user name (from the global Plastic SCM client config)
 		PlasticSourceControlUtils::GetUserName(UserName);
 
@@ -415,7 +417,7 @@ void FPlasticSourceControlProvider::CancelOperation(const FSourceControlOperatio
 
 bool FPlasticSourceControlProvider::UsesLocalReadOnlyState() const
 {
-	return false; // TODO: use configuration
+	return bUsesLocalReadOnlyState;
 }
 
 bool FPlasticSourceControlProvider::UsesChangelists() const
