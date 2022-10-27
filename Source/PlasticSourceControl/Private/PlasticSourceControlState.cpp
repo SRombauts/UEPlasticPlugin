@@ -584,7 +584,7 @@ bool FPlasticSourceControlState::IsModified() const
 	//
 	// Thus, before checkin UE4 Editor call RevertUnchangedFiles() in PromptForCheckin() and CheckinFiles().
 	//
-	// So here we must take care to enumerate all states that need to be commited, all other will be discarded:
+	// So here we must take care to enumerate all states that need to be committed, all other will be discarded:
 	//  - Unknown
 	//  - Controlled (Unchanged)
 	//  - Private (Not Controlled)

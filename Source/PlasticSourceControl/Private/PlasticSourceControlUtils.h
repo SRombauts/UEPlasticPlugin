@@ -38,8 +38,8 @@ bool GetWorkspacePath(const FString& InPathToGameDir, FString& OutWorkspaceRoot)
 bool GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion);
 
 /**
- * Get Plastic SCM config value for SetFilesAsReadOnly
- * @returns true if configure to use read-only flags on file that are not checked-out ("protected").
+ * Checks weather Plastic SCM is configured to set files as read-only on update & checkin
+ * @returns true if SetFilesAsReadOnly is enabled in client.conf
 */
 bool GetConfigSetFilesAsReadOnly();
 

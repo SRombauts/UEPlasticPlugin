@@ -200,7 +200,7 @@ private:
 	/** Indicates if source control integration is available or not. */
 	bool bServerAvailable = false;
 
-	/** Whether Plastic SCM is configure to uses local read-only state to signal whether a file is editable. */
+	/** Whether Plastic SCM is configured to uses local read-only state to signal whether a file is editable ("SetFilesAsReadOnly" in client.conf) */
 	bool bUsesLocalReadOnlyState = false;
 
 	/** Critical section for thread safety of error messages that occurred after last Plastic command */
