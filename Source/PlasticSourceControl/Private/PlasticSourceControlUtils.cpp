@@ -219,6 +219,7 @@ static bool ParseWorkspaceInfo(const TArray<FString>& InInfoMessages, FString& O
 
 	// Get workspace information, in the form "Branch /main@UE5PlasticPluginDev@localhost:8087"
 	//                                     or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected directly to the cloud)
+	//                                     or "Branch /main@rep:UE5OpenWorldPerfTest@repserver:test@cloud"
 	static const FString BranchPrefix(TEXT("Branch "));
 	if (!InInfoMessages[0].StartsWith(BranchPrefix, ESearchCase::CaseSensitive))
 	{
@@ -237,7 +238,17 @@ static bool ParseWorkspaceInfo(const TArray<FString>& InInfoMessages, FString& O
 		return false;
 	}
 	OutRepositoryName = Temp.Left(SeparatorIndex);
+	static const FString RepPrefix(TEXT("rep:"));
+	if (OutRepositoryName.StartsWith(RepPrefix, ESearchCase::CaseSensitive))
+	{
+		OutRepositoryName.RightChopInline(RepPrefix.Len());
+	}
 	OutServerUrl = Temp.RightChop(SeparatorIndex + 1);
+	static const FString RepserverPrefix(TEXT("repserver:"));
+	if (OutServerUrl.StartsWith(RepserverPrefix, ESearchCase::CaseSensitive))
+	{
+		OutServerUrl.RightChopInline(RepserverPrefix.Len());
+	}
 
 	return true;
 }
