@@ -398,6 +398,7 @@ bool FPlasticCheckInWorker::UpdateStates()
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticCheckInWorker::UpdateStates);
 
 #if ENGINE_MAJOR_VERSION == 5
+	// Is the submit of a full changelist (from the View Changelists window) or a set of files (from the Submit Content window)?
 	if (InChangelist.IsInitialized())
 	{
 		if (InChangelist.IsDefault())
@@ -409,6 +410,20 @@ bool FPlasticCheckInWorker::UpdateStates()
 		else
 		{
 			GetProvider().RemoveChangelistFromCache(InChangelist);
+		}
+	}
+	else
+	{
+		// Update affected changelists if any
+		for (const FPlasticSourceControlState& NewState : States)
+		{
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
+			if (State->Changelist.IsInitialized())
+			{
+				// 1- Remove these files from their previous changelist
+				TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(State->Changelist);
+				PreviousChangelist->Files.Remove(State);
+			}
 		}
 	}
 #endif
@@ -602,7 +617,7 @@ bool FPlasticRevertWorker::UpdateStates()
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertWorker::UpdateStates);
 
 #if ENGINE_MAJOR_VERSION == 5
-	// Update affected changelist if any
+	// Update affected changelists if any
 	for (const FPlasticSourceControlState& NewState : States)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
@@ -669,7 +684,7 @@ bool FPlasticRevertUnchangedWorker::UpdateStates()
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertUnchangedWorker::UpdateStates);
 
 #if ENGINE_MAJOR_VERSION == 5
-	// Update affected changelist if any
+	// Update affected changelists if any
 	for (const FPlasticSourceControlState& NewState : States)
 	{
 		if (!NewState.IsModified())
