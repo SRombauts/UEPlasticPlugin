@@ -1351,6 +1351,10 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 			{
 				bResult = ParseHistoryResults(bInUpdateHistory, XmlFile, InOutStates);
 			}
+			else
+			{
+				UE_LOG(LogSourceControl, Error, TEXT("RunGetHistory: XML parse error '%s'"), *XmlFile.GetLastError())
+			}
 		}
 		if (!Errors.IsEmpty())
 		{
@@ -1514,6 +1518,10 @@ bool RunGetChangelists(const EConcurrency::Type InConcurrency, TArray<FPlasticSo
 		if (bResult)
 		{
 			bResult = ParseChangelistsResults(XmlFile, OutChangelistsStates, OutCLFilesStates);
+		}
+		else
+		{
+			UE_LOG(LogSourceControl, Error, TEXT("RunGetChangelists: XML parse error '%s'"), *XmlFile.GetLastError())
 		}
 	}
 	if (!Errors.IsEmpty())
