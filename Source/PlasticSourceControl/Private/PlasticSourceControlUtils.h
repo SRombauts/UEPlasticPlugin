@@ -27,15 +27,23 @@ FString FindPlasticBinaryPath();
  * Find the root of the Plastic workspace, looking from the GameDir and upward in its parent directories
  * @param InPathToGameDir		The path to the Game Directory
  * @param OutWorkspaceRoot		The path to the root directory of the Plastic workspace if found, else the path to the GameDir
- * @returns true if the command succeeded and returned no errors
+ * @returns true if the command succeeded
  */
 bool GetWorkspacePath(const FString& InPathToGameDir, FString& OutWorkspaceRoot);
 
 /**
- * Get Plastic SCM cli version
+ * Get Plastic SCM CLI version
  * @param	OutCliVersion		Version of the Plastic SCM Command Line Interface tool
+ * @returns true if the command succeeded
 */
 bool GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion);
+
+/**
+ * Get Plastic SCM CLI location
+ * @param	OutCmLocation		Path to the "cm" executable
+ * @returns true if the command succeeded
+*/
+bool GetCmLocation(FString& OutCmLocation);
 
 /**
  * Checks weather Plastic SCM is configured to set files as read-only on update & checkin

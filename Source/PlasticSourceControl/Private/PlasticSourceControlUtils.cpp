@@ -103,6 +103,19 @@ bool GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion)
 	return false;
 }
 
+bool GetCmLocation(FString& OutCmLocation)
+{
+	TArray<FString> InfoMessages;
+	TArray<FString> ErrorMessages;
+	const bool bResult = PlasticSourceControlUtils::RunCommand(TEXT("location"), TArray<FString>(), TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+	if (bResult && InfoMessages.Num() > 0)
+	{
+		OutCmLocation = MoveTemp(InfoMessages[0]);
+		return true;
+	}
+	return false;
+}
+
 bool GetConfigSetFilesAsReadOnly()
 {
 	TArray<FString> InfoMessages;

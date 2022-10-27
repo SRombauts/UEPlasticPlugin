@@ -103,13 +103,17 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			return;
 		}
 
-		bWorkspaceFound = PlasticSourceControlUtils::GetWorkspacePath(PathToProjectDir, PathToWorkspaceRoot);
-
 		bPlasticAvailable = PlasticSourceControlUtils::GetPlasticScmVersion(PlasticScmVersion);
 		if (!bPlasticAvailable)
 		{
 			return;
 		}
+
+		FString ActualPathToPlasticBinary;
+		PlasticSourceControlUtils::GetCmLocation(ActualPathToPlasticBinary);
+
+		bWorkspaceFound = PlasticSourceControlUtils::GetWorkspacePath(PathToProjectDir, PathToWorkspaceRoot);
+
 
 		bUsesLocalReadOnlyState = PlasticSourceControlUtils::GetConfigSetFilesAsReadOnly();
 
