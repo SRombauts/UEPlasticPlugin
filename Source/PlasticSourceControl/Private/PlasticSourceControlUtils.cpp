@@ -1312,6 +1312,8 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 // Run a Plastic "history" command and parse it's XML result.
 bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunGetHistory);
+
 	bool bResult = true;
 	FString Results;
 	FString Errors;
@@ -1499,6 +1501,8 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 
 bool RunGetChangelists(const EConcurrency::Type InConcurrency, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates, TArray<FString>& OutErrorMessages)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunGetChangelists);
+
 	FString Results;
 	FString Errors;
 	TArray<FString> Parameters;
@@ -1512,7 +1516,7 @@ bool RunGetChangelists(const EConcurrency::Type InConcurrency, TArray<FPlasticSo
 	{
 		FXmlFile XmlFile;
 		{
-			TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunGetHistory::FXmlFile::LoadFile);
+			TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunGetChangelists::FXmlFile::LoadFile);
 			bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
 		}
 		if (bResult)
