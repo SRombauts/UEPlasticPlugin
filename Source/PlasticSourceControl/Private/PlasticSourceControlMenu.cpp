@@ -141,13 +141,13 @@ TArray<FString> FPlasticSourceControlMenu::ListAllPackages()
 // Note: Extracted from AssetViewUtils::SyncPathsFromSourceControl()
 TArray<UPackage*> FPlasticSourceControlMenu::UnlinkPackages(const TArray<FString>& InPackageNames)
 {
-	// Form a list of loaded packages to reload...
+	// Form a list of loaded packages to unlink...
 	TArray<UPackage*> LoadedPackages;
 	LoadedPackages.Reserve(InPackageNames.Num());
 	for (const FString& PackageName : InPackageNames)
 	{
-		UPackage* Package = FindPackage(nullptr, *PackageName);
-		if (Package)
+		// NOTE: this will only find packages loaded in memory
+		if (UPackage* Package = FindPackage(nullptr, *PackageName))
 		{
 			LoadedPackages.Emplace(Package);
 
@@ -159,6 +159,7 @@ TArray<UPackage*> FPlasticSourceControlMenu::UnlinkPackages(const TArray<FString
 			}
 			ResetLoaders(Package);
 		}
+		// else not loaded in memory, nothing to unlink nor reload!
 	}
 	UE_LOG(LogSourceControl, Log, TEXT("Reseted Loader for %d Packages"), LoadedPackages.Num());
 
@@ -210,7 +211,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 		if (bSaved)
 		{
 			// Find and Unlink all packages in Content directory to allow to update them
-			PackagesToReload = UnlinkPackages(ListAllPackages());
+			UnlinkedPackages = UnlinkPackages(ListAllPackages());
 
 			// Launch a custom "SyncAll" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -284,7 +285,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 			if (bSaved)
 			{
 				// Find and Unlink all packages in Content directory to allow to update them
-				PackagesToReload = UnlinkPackages(ListAllPackages());
+				UnlinkedPackages = UnlinkPackages(ListAllPackages());
 
 				// Launch a "RevertAll" Operation
 				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -299,9 +300,8 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 				}
 				else
 				{
-					// Report failure with a notification and Reload all packages
+					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
 					DisplayFailureNotification(RevertAllOperation->GetName());
-					ReloadPackages(PackagesToReload);
 				}
 			}
 			else
@@ -457,8 +457,34 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 
 	if (InOperation->GetName() == "SyncAll")
 	{
-		// Reload packages that where unlinked at the beginning of the Sync operation
+		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
+
+		TArray<UPackage*> PackagesToReload;
+		PackagesToReload.Reserve(Operation->UpdatedFiles.Num());
+		for (const FString& FilePath : Operation->UpdatedFiles)
+		{
+			FString PackageName;
+			FString FailureReason;
+			if (FPackageName::TryConvertFilenameToLongPackageName(FilePath, PackageName, &FailureReason))
+			{
+				// NOTE: this will only find packages loaded in memory
+				if (UPackage* Package = FindPackage(nullptr, *PackageName))
+				{
+					PackagesToReload.Emplace(Package);
+					UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *PackageName);
+				}
+			}
+			// else, it means the file is not an asset from the Content/ folder (eg config, source code, anything else)
+		}
+
+		// Reload packages that where updated by the Sync operation
 		ReloadPackages(PackagesToReload);
+	}
+	else if (InOperation->GetName() == "RevertAll")
+	{
+		// Reload packages that where unlinked at the beginning of the Sync operation
+		// TODO: PackagesToReload should be filled by the source control operation itself, like for the update above
+		ReloadPackages(UnlinkedPackages);
 	}
 
 	// Report result with a notification
