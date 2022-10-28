@@ -137,51 +137,50 @@ TArray<FString> FPlasticSourceControlMenu::ListAllPackages()
 	return PackageNames;
 }
 
-/// Unkink all loaded packages to allow to update them
+// Unkink all loaded packages to allow to update them
+// Note: Extracted from AssetViewUtils::SyncPathsFromSourceControl()
 TArray<UPackage*> FPlasticSourceControlMenu::UnlinkPackages(const TArray<FString>& InPackageNames)
 {
+	// Form a list of loaded packages to reload...
 	TArray<UPackage*> LoadedPackages;
-
-	// Inspired from ContentBrowserUtils::SyncPathsFromSourceControl()
-	if (InPackageNames.Num() > 0)
+	LoadedPackages.Reserve(InPackageNames.Num());
+	for (const FString& PackageName : InPackageNames)
 	{
-		// Form a list of loaded packages to reload...
-		LoadedPackages.Reserve(InPackageNames.Num());
-		for (const FString& PackageName : InPackageNames)
+		UPackage* Package = FindPackage(nullptr, *PackageName);
+		if (Package)
 		{
-			UPackage* Package = FindPackage(nullptr, *PackageName);
-			if (Package)
-			{
-				LoadedPackages.Emplace(Package);
+			LoadedPackages.Emplace(Package);
 
-				// Detach the linkers of any loaded packages so that SCC can overwrite the files...
-				if (!Package->IsFullyLoaded())
-				{
-					FlushAsyncLoading();
-					Package->FullyLoad();
-				}
-				ResetLoaders(Package);
+			// Detach the linkers of any loaded packages so that SCC can overwrite the files...
+			if (!Package->IsFullyLoaded())
+			{
+				FlushAsyncLoading();
+				Package->FullyLoad();
 			}
+			ResetLoaders(Package);
 		}
-		UE_LOG(LogSourceControl, Log, TEXT("Reseted Loader for %d Packages"), LoadedPackages.Num());
 	}
+	UE_LOG(LogSourceControl, Log, TEXT("Reseted Loader for %d Packages"), LoadedPackages.Num());
 
 	return LoadedPackages;
 }
 
+// Hot-Reload all packages after they have been updated
+// Note: Extracted from AssetViewUtils::SyncPathsFromSourceControl()
 void FPlasticSourceControlMenu::ReloadPackages(TArray<UPackage*>& InPackagesToReload)
 {
 	UE_LOG(LogSourceControl, Log, TEXT("Reloading %d Packages..."), InPackagesToReload.Num());
 
 	// Syncing may have deleted some packages, so we need to unload those rather than re-load them...
-	TArray<UPackage*> PackagesToUnload;
+	// Note: we will store the package using weak pointers here otherwise we might have garbage collection issues after the ReloadPackages call
+	TArray<TWeakObjectPtr<UPackage>> PackagesToUnload;
 	InPackagesToReload.RemoveAll([&](UPackage* InPackage) -> bool
 	{
 		const FString PackageExtension = InPackage->ContainsMap() ? FPackageName::GetMapPackageExtension() : FPackageName::GetAssetPackageExtension();
 		const FString PackageFilename = FPackageName::LongPackageNameToFilename(InPackage->GetName(), PackageExtension);
 		if (!FPaths::FileExists(PackageFilename))
 		{
-			PackagesToUnload.Emplace(InPackage);
+			PackagesToUnload.Emplace(MakeWeakObjectPtr(InPackage));
 			return true; // remove package
 		}
 		return false; // keep package
@@ -191,7 +190,16 @@ void FPlasticSourceControlMenu::ReloadPackages(TArray<UPackage*>& InPackagesToRe
 	UPackageTools::ReloadPackages(InPackagesToReload);
 
 	// Unload any deleted packages...
-	UPackageTools::UnloadPackages(PackagesToUnload);
+	TArray<UPackage*> PackageRawPtrsToUnload;
+	for (TWeakObjectPtr<UPackage>& PackageToUnload : PackagesToUnload)
+	{
+		if (PackageToUnload.IsValid())
+		{
+			PackageRawPtrsToUnload.Emplace(PackageToUnload.Get());
+		}
+	}
+
+	UPackageTools::UnloadPackages(PackageRawPtrsToUnload);
 }
 
 void FPlasticSourceControlMenu::SyncProjectClicked()
