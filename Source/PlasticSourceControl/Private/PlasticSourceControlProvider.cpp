@@ -64,7 +64,7 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		{
 			Parameters.Add(FString::Printf(TEXT("--server=%s"), *ServerUrl));
 		}
-		bServerAvailable = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), Parameters, TArray<FString>(), EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+		bServerAvailable = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
 		if (!bServerAvailable)
 		{
 			FMessageLog SourceControlLog("SourceControl");
