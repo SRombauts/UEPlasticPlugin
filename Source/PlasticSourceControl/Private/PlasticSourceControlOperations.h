@@ -9,6 +9,7 @@
 #include "PlasticSourceControlRevision.h"
 #include "PlasticSourceControlState.h"
 #include "ISourceControlOperation.h"
+#include "SourceControlOperations.h"
 
 #include "Runtime/Launch/Resources/Version.h"
 
@@ -30,6 +31,23 @@ public:
 	virtual FName GetName() const override;
 
 	virtual FText GetInProgressString() const override;
+};
+
+
+/**
+ * Internal operation used to sync all files in the workspace
+*/
+class FPlasticSyncAll final : public FSync
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override
+	{
+		return "SyncAll";
+	}
+
+	/** List of files updated by the operation */
+	TArray<FString> UpdatedFiles;
 };
 
 

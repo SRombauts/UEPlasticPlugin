@@ -212,9 +212,9 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 			// Find and Unlink all packages in Content directory to allow to update them
 			PackagesToReload = UnlinkPackages(ListAllPackages());
 
-			// Launch a "Sync" operation
+			// Launch a custom "SyncAll" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-			TSharedRef<FSync, ESPMode::ThreadSafe> SyncOperation = ISourceControlOperation::Create<FSync>();
+			TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> SyncOperation = ISourceControlOperation::Create<FPlasticSyncAll>();
 			const ECommandResult::Type Result = Provider.Execute(SyncOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 			if (Result == ECommandResult::Succeeded)
 			{
@@ -223,9 +223,8 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 			}
 			else
 			{
-				// Report failure with a notification and Reload all packages
+				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
 				DisplayFailureNotification(SyncOperation->GetName());
-				ReloadPackages(PackagesToReload);
 			}
 		}
 		else
@@ -456,7 +455,7 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 {
 	RemoveInProgressNotification();
 
-	if ((InOperation->GetName() == "Sync") || (InOperation->GetName() == "RevertAll"))
+	if (InOperation->GetName() == "SyncAll")
 	{
 		// Reload packages that where unlinked at the beginning of the Sync operation
 		ReloadPackages(PackagesToReload);
