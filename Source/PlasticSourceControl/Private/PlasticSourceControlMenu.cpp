@@ -509,8 +509,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		"PlasticSync",
 #endif
 		LOCTEXT("PlasticSync",			"Sync/Update Workspace"),
-		// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
-		LOCTEXT("PlasticSyncTooltip",	"[Disabled/crashing] Update all files in the workspace to the latest version."),
+		LOCTEXT("PlasticSyncTooltip",	"Update the workspace to the latest changeset of the branch, and reload all affected assets."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Sync"),
 #else
@@ -518,8 +517,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::SyncProjectClicked),
-			// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
-			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::False)
+			FCanExecuteAction()
 		)
 	);
 
