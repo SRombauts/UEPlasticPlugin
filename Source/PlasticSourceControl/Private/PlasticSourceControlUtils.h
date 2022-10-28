@@ -144,7 +144,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpec, const FString& InDumpFileName);
 
 /**
- * Run Plastic "history" and "log" commands and parse their results.
+ * Run Plastic "history" and "log" commands and parse their XML results.
  *
  * @param	bInUpdateHistory	If getting the history of files, versus only checking the heads of branches to detect newer commits
  * @param	InOutStates			The file states to update with the history
@@ -152,10 +152,20 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
  */
 bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages);
 
+/**
+ * Run a Plastic "update" command to sync the workspace and parse its XML results.
+ *
+ * @param	InFiles					The files or paths to sync
+ * @param	bInIsPartialWorkspace	Whether running on a partial/gluon or regular/full workspace
+ * @param	OutUpdatedFiles			The files that where updated
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
+
 #if ENGINE_MAJOR_VERSION == 5
 
 /**
- * Run a Plastic "status --changelist --xml" and parse its result.
+ * Run a Plastic "status --changelist --xml" and parse its XML result.
  * @param	OutChangelistsStates	The list of changelists (without their files)
  * @param	OutCLFilesStates		The list of files per changelist
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line

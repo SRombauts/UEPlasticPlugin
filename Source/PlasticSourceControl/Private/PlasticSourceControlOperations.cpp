@@ -1030,32 +1030,19 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSyncWorker::Execute);
 
-	TArray<FString> Parameters;
-	// Update specified directory to the head of the repository
-	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-	if (-1 != InCommand.ChangesetNumber)
+	TArray<FString> UpdatedFiles;
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunSync(InCommand.Files, GetProvider().IsPartialWorkspace(), UpdatedFiles, InCommand.ErrorMessages);
+
+	// now update the status of the corresponding files
+	if (UpdatedFiles.Num())
 	{
-		Parameters.Add(TEXT("--last"));
-		Parameters.Add(TEXT("--dontmerge"));
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
-	}
-	else
-	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		PlasticSourceControlUtils::RunUpdateStatus(UpdatedFiles, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 
-	if (InCommand.bCommandSuccessful)
+	if ((InCommand.Operation->GetName() == FName("SyncAll")))
 	{
-		// now update the status of our files
-		// detect the special case of a Sync of the root folder:
-		if ((InCommand.Files.Num() == 1) && (InCommand.Files[0] == InCommand.PathToWorkspaceRoot))
-		{
-			// only update the status of assets in the Content directory
-			TArray<FString> ContentDir;
-			ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-			PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
-		}
-		// else: optim, no need to update the status of our files since this is done immediately after by the Editor
+		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InCommand.Operation);
+		Operation->UpdatedFiles = UpdatedFiles;
 	}
 
 	return InCommand.bCommandSuccessful;
