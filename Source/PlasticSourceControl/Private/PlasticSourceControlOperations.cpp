@@ -571,7 +571,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	if (ChangedFiles.Num() > 0)
 	{
-		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), ChangedFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undo"), TArray<FString>(), ChangedFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
 
 	if (CheckedOutFiles.Num() > 0)
