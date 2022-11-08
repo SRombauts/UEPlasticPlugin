@@ -102,12 +102,11 @@ FString UserNameToDisplayName(const FString& InUserName);
  * @param	InCommand			The Plastic command - e.g. commit
  * @param	InParameters		The parameters to the Plastic command
  * @param	InFiles				The files to be operated on
- * @param	InConcurrency		Is the command running in the background, or blocking the main thread
  * @param	OutResults			The results (from StdOut) as a multi-line string.
  * @param	OutErrors			Any errors (from StdErr) as a multi-line string.
  * @returns true if the command succeeded and returned no errors
  */
-bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, FString& OutResults, FString& OutErrors);
+bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors);
 
 /**
  * Run a Plastic command - the result is parsed in an array of strings.
@@ -115,26 +114,24 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
  * @param	InCommand			The Plastic command - e.g. commit
  * @param	InParameters		The parameters to the Plastic command
  * @param	InFiles				The files to be operated on
- * @param	InConcurrency		Is the command running in the background, or blocking the main thread
  * @param	OutResults			The results (from StdOut) as an array per-line
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  * @returns true if the command succeeded and returned no errors
  */
-bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, const EConcurrency::Type InConcurrency, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages);
+bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages);
 
 /**
  * Run a Plastic "status" command and parse it.
  *
  * @param	InFiles				The files to be operated on
  * @param	bInUpdateHistory	If getting the history of files, force execute the fileinfo command required to do get RepSpec of xlinks (history view or visual diff)
- * @param	InConcurrency		Is the command running in the background, or blocking the main thread
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  * @param	OutStates			States of the files
  * @param	OutChangeset		The current Changeset Number
  * @param	OutBranchName		Name of the current checked-out branch
  * @returns true if the command succeeded and returned no errors
  */
-bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory, const EConcurrency::Type InConcurrency, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName);
+bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName);
 
 /**
  * Run a Plastic "cat" command to dump the binary content of a revision into a file.
@@ -147,7 +144,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpec, const FString& InDumpFileName);
 
 /**
- * Run Plastic "history" and "log" commands and parse their results.
+ * Run Plastic "history" and "log" commands and parse their XML results.
  *
  * @param	bInUpdateHistory	If getting the history of files, versus only checking the heads of branches to detect newer commits
  * @param	InOutStates			The file states to update with the history
@@ -155,16 +152,25 @@ bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpe
  */
 bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages);
 
+/**
+ * Run a Plastic "update" command to sync the workspace and parse its XML results.
+ *
+ * @param	InFiles					The files or paths to sync
+ * @param	bInIsPartialWorkspace	Whether running on a partial/gluon or regular/full workspace
+ * @param	OutUpdatedFiles			The files that where updated
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
+
 #if ENGINE_MAJOR_VERSION == 5
 
 /**
- * Run a Plastic "status --changelist --xml" and parse its result.
- * @param	InConcurrency
+ * Run a Plastic "status --changelist --xml" and parse its XML result.
  * @param	OutChangelistsStates	The list of changelists (without their files)
  * @param	OutCLFilesStates		The list of files per changelist
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
  */
-bool RunGetChangelists(const EConcurrency::Type InConcurrency, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates, TArray<FString>& OutErrorMessages);
+bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates, TArray<FString>& OutErrorMessages);
 
 #endif
 

@@ -692,7 +692,7 @@ FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 		Parameters.Add(TEXT("-R"));
 		TArray<FString> Files;
 		Files.Add(TEXT("ignore.conf"));
-		PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, Files, EConcurrency::Synchronous, InfoMessages, ErrorMessages);
+		PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, Files, InfoMessages, ErrorMessages);
 	}
 	return FReply::Handled();
 }

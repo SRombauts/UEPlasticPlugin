@@ -137,51 +137,51 @@ TArray<FString> FPlasticSourceControlMenu::ListAllPackages()
 	return PackageNames;
 }
 
-/// Unkink all loaded packages to allow to update them
+// Unkink all loaded packages to allow to update them
+// Note: Extracted from AssetViewUtils::SyncPathsFromSourceControl()
 TArray<UPackage*> FPlasticSourceControlMenu::UnlinkPackages(const TArray<FString>& InPackageNames)
 {
+	// Form a list of loaded packages to unlink...
 	TArray<UPackage*> LoadedPackages;
-
-	// Inspired from ContentBrowserUtils::SyncPathsFromSourceControl()
-	if (InPackageNames.Num() > 0)
+	LoadedPackages.Reserve(InPackageNames.Num());
+	for (const FString& PackageName : InPackageNames)
 	{
-		// Form a list of loaded packages to reload...
-		LoadedPackages.Reserve(InPackageNames.Num());
-		for (const FString& PackageName : InPackageNames)
+		// NOTE: this will only find packages loaded in memory
+		if (UPackage* Package = FindPackage(nullptr, *PackageName))
 		{
-			UPackage* Package = FindPackage(nullptr, *PackageName);
-			if (Package)
-			{
-				LoadedPackages.Emplace(Package);
+			LoadedPackages.Emplace(Package);
 
-				// Detach the linkers of any loaded packages so that SCC can overwrite the files...
-				if (!Package->IsFullyLoaded())
-				{
-					FlushAsyncLoading();
-					Package->FullyLoad();
-				}
-				ResetLoaders(Package);
+			// Detach the linkers of any loaded packages so that SCC can overwrite the files...
+			if (!Package->IsFullyLoaded())
+			{
+				FlushAsyncLoading();
+				Package->FullyLoad();
 			}
+			ResetLoaders(Package);
 		}
-		UE_LOG(LogSourceControl, Log, TEXT("Reseted Loader for %d Packages"), LoadedPackages.Num());
+		// else not loaded in memory, nothing to unlink nor reload!
 	}
+	UE_LOG(LogSourceControl, Log, TEXT("Reseted Loader for %d Packages"), LoadedPackages.Num());
 
 	return LoadedPackages;
 }
 
+// Hot-Reload all packages after they have been updated
+// Note: Extracted from AssetViewUtils::SyncPathsFromSourceControl()
 void FPlasticSourceControlMenu::ReloadPackages(TArray<UPackage*>& InPackagesToReload)
 {
 	UE_LOG(LogSourceControl, Log, TEXT("Reloading %d Packages..."), InPackagesToReload.Num());
 
 	// Syncing may have deleted some packages, so we need to unload those rather than re-load them...
-	TArray<UPackage*> PackagesToUnload;
+	// Note: we will store the package using weak pointers here otherwise we might have garbage collection issues after the ReloadPackages call
+	TArray<TWeakObjectPtr<UPackage>> PackagesToUnload;
 	InPackagesToReload.RemoveAll([&](UPackage* InPackage) -> bool
 	{
 		const FString PackageExtension = InPackage->ContainsMap() ? FPackageName::GetMapPackageExtension() : FPackageName::GetAssetPackageExtension();
 		const FString PackageFilename = FPackageName::LongPackageNameToFilename(InPackage->GetName(), PackageExtension);
 		if (!FPaths::FileExists(PackageFilename))
 		{
-			PackagesToUnload.Emplace(InPackage);
+			PackagesToUnload.Emplace(MakeWeakObjectPtr(InPackage));
 			return true; // remove package
 		}
 		return false; // keep package
@@ -191,7 +191,16 @@ void FPlasticSourceControlMenu::ReloadPackages(TArray<UPackage*>& InPackagesToRe
 	UPackageTools::ReloadPackages(InPackagesToReload);
 
 	// Unload any deleted packages...
-	UPackageTools::UnloadPackages(PackagesToUnload);
+	TArray<UPackage*> PackageRawPtrsToUnload;
+	for (TWeakObjectPtr<UPackage>& PackageToUnload : PackagesToUnload)
+	{
+		if (PackageToUnload.IsValid())
+		{
+			PackageRawPtrsToUnload.Emplace(PackageToUnload.Get());
+		}
+	}
+
+	UPackageTools::UnloadPackages(PackageRawPtrsToUnload);
 }
 
 void FPlasticSourceControlMenu::SyncProjectClicked()
@@ -202,11 +211,11 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 		if (bSaved)
 		{
 			// Find and Unlink all packages in Content directory to allow to update them
-			PackagesToReload = UnlinkPackages(ListAllPackages());
+			UnlinkedPackages = UnlinkPackages(ListAllPackages());
 
-			// Launch a "Sync" operation
+			// Launch a custom "SyncAll" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-			TSharedRef<FSync, ESPMode::ThreadSafe> SyncOperation = ISourceControlOperation::Create<FSync>();
+			TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> SyncOperation = ISourceControlOperation::Create<FPlasticSyncAll>();
 			const ECommandResult::Type Result = Provider.Execute(SyncOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 			if (Result == ECommandResult::Succeeded)
 			{
@@ -215,9 +224,8 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 			}
 			else
 			{
-				// Report failure with a notification and Reload all packages
+				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
 				DisplayFailureNotification(SyncOperation->GetName());
-				ReloadPackages(PackagesToReload);
 			}
 		}
 		else
@@ -277,7 +285,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 			if (bSaved)
 			{
 				// Find and Unlink all packages in Content directory to allow to update them
-				PackagesToReload = UnlinkPackages(ListAllPackages());
+				UnlinkedPackages = UnlinkPackages(ListAllPackages());
 
 				// Launch a "RevertAll" Operation
 				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -292,9 +300,8 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 				}
 				else
 				{
-					// Report failure with a notification and Reload all packages
+					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
 					DisplayFailureNotification(RevertAllOperation->GetName());
-					ReloadPackages(PackagesToReload);
 				}
 			}
 			else
@@ -448,10 +455,36 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 {
 	RemoveInProgressNotification();
 
-	if ((InOperation->GetName() == "Sync") || (InOperation->GetName() == "RevertAll"))
+	if (InOperation->GetName() == "SyncAll")
+	{
+		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
+
+		TArray<UPackage*> PackagesToReload;
+		PackagesToReload.Reserve(Operation->UpdatedFiles.Num());
+		for (const FString& FilePath : Operation->UpdatedFiles)
+		{
+			FString PackageName;
+			FString FailureReason;
+			if (FPackageName::TryConvertFilenameToLongPackageName(FilePath, PackageName, &FailureReason))
+			{
+				// NOTE: this will only find packages loaded in memory
+				if (UPackage* Package = FindPackage(nullptr, *PackageName))
+				{
+					PackagesToReload.Emplace(Package);
+					UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *PackageName);
+				}
+			}
+			// else, it means the file is not an asset from the Content/ folder (eg config, source code, anything else)
+		}
+
+		// Reload packages that where updated by the Sync operation
+		ReloadPackages(PackagesToReload);
+	}
+	else if (InOperation->GetName() == "RevertAll")
 	{
 		// Reload packages that where unlinked at the beginning of the Sync operation
-		ReloadPackages(PackagesToReload);
+		// TODO: PackagesToReload should be filled by the source control operation itself, like for the update above
+		ReloadPackages(UnlinkedPackages);
 	}
 
 	// Report result with a notification
@@ -476,8 +509,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		"PlasticSync",
 #endif
 		LOCTEXT("PlasticSync",			"Sync/Update Workspace"),
-		// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
-		LOCTEXT("PlasticSyncTooltip",	"[Disabled/crashing] Update all files in the workspace to the latest version."),
+		LOCTEXT("PlasticSyncTooltip",	"Update the workspace to the latest changeset of the branch, and reload all affected assets."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Sync"),
 #else
@@ -485,8 +517,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::SyncProjectClicked),
-			// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
-			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::False)
+			FCanExecuteAction()
 		)
 	);
 
