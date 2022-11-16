@@ -10,6 +10,7 @@
 #include "PlasticSourceControlShell.h"
 #include "PlasticSourceControlState.h"
 #include "ISourceControlModule.h"
+#include "ScopedTempFile.h"
 
 #include "Runtime/Launch/Resources/Version.h"
 #if ENGINE_MAJOR_VERSION == 4
@@ -1440,9 +1441,8 @@ bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, T
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (!bInIsPartialWorkspace)
 	{
-		// TODO: const FScopedTempFile TempFile;
-		const FString TempFilename = FPaths::CreateTempFilename(*FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()), TEXT("Plastic-Temp"), TEXT(".xml"));
-		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFilename));
+		const FScopedTempFile TempFile;
+		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFile.GetFilename()));
 		Parameters.Add(TEXT("--encoding=\"utf-8\""));
 		Parameters.Add(TEXT("--last"));
 		Parameters.Add(TEXT("--dontmerge"));
@@ -1451,7 +1451,7 @@ bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, T
 		{
 			// Parse the result of the
 			FString Results;
-			if (FFileHelper::LoadFileToString(Results, *TempFilename))
+			if (FFileHelper::LoadFileToString(Results, *TempFile.GetFilename()))
 			{
 				FXmlFile XmlFile;
 				{
