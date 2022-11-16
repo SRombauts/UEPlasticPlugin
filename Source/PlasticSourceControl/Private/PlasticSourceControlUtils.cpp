@@ -1447,7 +1447,7 @@ bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, T
 	{
 		Parameters.Add(TEXT("--last"));
 		Parameters.Add(TEXT("--dontmerge"));
-		bResult = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, InFiles, InfoMessages, OutErrorMessages);
+		bResult = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
 	}
 	else
 	{
