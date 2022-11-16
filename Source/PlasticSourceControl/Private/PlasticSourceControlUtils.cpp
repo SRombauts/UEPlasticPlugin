@@ -1434,46 +1434,44 @@ bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, T
 {
 	bool bResult = false;
 
-	// TODO: const FScopedTempFile TempFile;
-	const FString TempFilename = FPaths::CreateTempFilename(*FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()), TEXT("Plastic-Temp"), TEXT(".xml"));
-
 	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFilename));
-	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	// Update specified directory to the head of the repository
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (!bInIsPartialWorkspace)
 	{
+		// TODO: const FScopedTempFile TempFile;
+		const FString TempFilename = FPaths::CreateTempFilename(*FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()), TEXT("Plastic-Temp"), TEXT(".xml"));
+		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFilename));
+		Parameters.Add(TEXT("--encoding=\"utf-8\""));
 		Parameters.Add(TEXT("--last"));
 		Parameters.Add(TEXT("--dontmerge"));
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
+		if (bResult)
+		{
+			// Parse the result of the
+			FString Results;
+			if (FFileHelper::LoadFileToString(Results, *TempFilename))
+			{
+				FXmlFile XmlFile;
+				{
+					TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunSync::FXmlFile::LoadFile);
+					bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+				}
+				if (bResult)
+				{
+					bResult = ParseSyncResults(XmlFile, OutUpdatedFiles);
+				}
+				else
+				{
+					UE_LOG(LogSourceControl, Error, TEXT("RunSync: XML parse error '%s'"), *XmlFile.GetLastError())
+				}
+			}
+		}
 	}
 	else
 	{
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InFiles, InfoMessages, OutErrorMessages);
-	}
-
-	if (bResult)
-	{
-		// Parse the result of the
-		FString Results;
-		if (FFileHelper::LoadFileToString(Results, *TempFilename))
-		{
-			FXmlFile XmlFile;
-			{
-				TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunSync::FXmlFile::LoadFile);
-				bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
-			}
-			if (bResult)
-			{
-				bResult = ParseSyncResults(XmlFile, OutUpdatedFiles);
-			}
-			else
-			{
-				UE_LOG(LogSourceControl, Error, TEXT("RunSync: XML parse error '%s'"), *XmlFile.GetLastError())
-			}
-		}
 	}
 
 	return bResult;
