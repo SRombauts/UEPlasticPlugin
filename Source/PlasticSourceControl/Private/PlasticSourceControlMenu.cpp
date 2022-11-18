@@ -451,6 +451,20 @@ void FPlasticSourceControlMenu::DisplayFailureNotification(const FName& InOperat
 	UE_LOG(LogSourceControl, Error, TEXT("%s"), *NotificationText.ToString());
 }
 
+// Get the World currently loaded by the Editor (and thus, access to the corresponding map package)
+UWorld* GetCurrentWorld()
+{
+	if (GEditor)
+	{
+		if (UWorld* EditorWorld = GEditor->GetEditorWorldContext().World())
+		{
+			return EditorWorld;
+		}
+	}
+	return nullptr;
+}
+
+
 void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	RemoveInProgressNotification();
