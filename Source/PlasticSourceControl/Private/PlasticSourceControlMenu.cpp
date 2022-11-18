@@ -488,10 +488,49 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 					UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *PackageName);
 				}
 			}
-			// else, it means the file is not an asset from the Content/ folder (eg config, source code, anything else)
+			// else, it means the file is not an asset from the Content/ folGet the World currently loaded by the Editorder (eg config, source code, anything else)
 		}
 
-		// Reload packages that where updated by the Sync operation
+		// Detects if some packages to reload are referencing the current map
+		// (assets that are parts of a map in the new One File Per Actor (OFPA) in UE5 are __ExternalActors__ or __ExternalObjects__)
+		// in which case the current map need to be reloaded, so it needs to be added to the list of packages if not already in
+		// (then UPackageTools::ReloadPackages() will handle unloading the map at the start of the reload, and reloading it at the end)
+		if (UWorld* CurrentWorld = GetCurrentWorld())
+		{
+			bool bNeedReloadCurrentMap = false;
+			UPackage* CurrentMapPackage = CurrentWorld->GetOutermost();
+			const FString CurrentMapPath = *CurrentMapPackage->GetName();					// eg "/Game/Maps/OpenWorld"
+			const FString CurrentMapPathWithoutGamePrefix = CurrentMapPath.RightChop(5);	// eg "/Maps/OpenWorld"
+			const FString GamePath = FString("/Game/");
+			const FString CurrentMapExternalActorPath = GamePath + FPackagePath::GetExternalActorsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalActors__/Maps/OpenWorld
+			const FString CurrentMapExternalObjectPath = GamePath + FPackagePath::GetExternalObjectsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalObjects__/Maps/OpenWorld
+
+			for (const UPackage* Package : PackagesToReload)
+			{
+				const FString AssetPath = Package->GetPathName(); // eg "/Game/__ExternalActors__/Maps/OpenWorld/9/HA/BKGJVDMLMCYJBWPTW6VT3K"
+				if (AssetPath == CurrentMapPath)
+				{
+					// if the current world package is already in the list, no need to add it, we can end the search there
+					bNeedReloadCurrentMap = false;
+					break;
+				}
+
+				if (!bNeedReloadCurrentMap) // do these expensive string checks only once:
+				{
+					if (AssetPath.StartsWith(CurrentMapExternalActorPath) || AssetPath.StartsWith(CurrentMapExternalObjectPath))
+					{
+						bNeedReloadCurrentMap = true;
+					}
+				}
+			}
+			if (bNeedReloadCurrentMap)
+			{
+				PackagesToReload.Add(CurrentMapPackage);
+				UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *CurrentMapPath);
+			}
+		}
+
+		// Reload packages that where updated by the Sync operation (and the current map if needed)
 		ReloadPackages(PackagesToReload);
 	}
 	else if (InOperation->GetName() == "RevertAll")
