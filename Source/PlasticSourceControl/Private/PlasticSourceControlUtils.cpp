@@ -1449,7 +1449,7 @@ bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, T
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
 		if (bResult)
 		{
-			// Parse the result of the
+			// Load and parse the result of the update command
 			FString Results;
 			if (FFileHelper::LoadFileToString(Results, *TempFile.GetFilename()))
 			{
