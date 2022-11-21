@@ -491,6 +491,7 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 			// else, it means the file is not an asset from the Content/ folGet the World currently loaded by the Editorder (eg config, source code, anything else)
 		}
 
+#if ENGINE_MAJOR_VERSION == 5
 		// Detects if some packages to reload are part of the current map
 		// (ie assets within __ExternalActors__ or __ExternalObjects__ from the new One File Per Actor (OFPA) in UE5)
 		// in which case the current map need to be reloaded, so it needs to be added to the list of packages if not already there
@@ -529,6 +530,7 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 				UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *CurrentMapPath);
 			}
 		}
+#endif
 
 		// Reload packages that where updated by the Sync operation (and the current map if needed)
 		ReloadPackages(PackagesToReload);
