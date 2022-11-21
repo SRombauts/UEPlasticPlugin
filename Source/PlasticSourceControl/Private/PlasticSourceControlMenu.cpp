@@ -498,12 +498,12 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 		if (UWorld* CurrentWorld = GetCurrentWorld())
 		{
 			bool bNeedReloadCurrentMap = false;
+			static const FString GamePath = FString("/Game");
 			UPackage* CurrentMapPackage = CurrentWorld->GetOutermost();
-			const FString CurrentMapPath = *CurrentMapPackage->GetName();					// eg "/Game/Maps/OpenWorld"
-			const FString CurrentMapPathWithoutGamePrefix = CurrentMapPath.RightChop(5);	// eg "/Maps/OpenWorld"
-			const FString GamePath = FString("/Game/");
-			const FString CurrentMapExternalActorPath = GamePath + FPackagePath::GetExternalActorsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalActors__/Maps/OpenWorld
-			const FString CurrentMapExternalObjectPath = GamePath + FPackagePath::GetExternalObjectsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalObjects__/Maps/OpenWorld
+			const FString CurrentMapPath = *CurrentMapPackage->GetName();								// eg "/Game/Maps/OpenWorld"
+			const FString CurrentMapPathWithoutGamePrefix = CurrentMapPath.RightChop(GamePath.Len());	// eg "/Maps/OpenWorld"
+			const FString CurrentMapExternalActorPath = GamePath + TEXT('/') + FPackagePath::GetExternalActorsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalActors__/Maps/OpenWorld
+			const FString CurrentMapExternalObjectPath = GamePath + TEXT('/') + FPackagePath::GetExternalObjectsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalObjects__/Maps/OpenWorld
 
 			for (const UPackage* Package : PackagesToReload)
 			{
