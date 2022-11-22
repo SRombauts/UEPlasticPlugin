@@ -492,36 +492,38 @@ TArray<UPackage*> ListPackagesToReload(const TArray<FString>& InUpdatedFiles)
 	// (then UPackageTools::ReloadPackages() will handle unloading the map at the start of the reload, avoiding some crash, and reloading it at the end)
 	if (UWorld* CurrentWorld = GetCurrentWorld())
 	{
-		bool bNeedReloadCurrentMap = false;
-		static const FString GamePath = FString("/Game");
 		UPackage* CurrentMapPackage = CurrentWorld->GetOutermost();
-		const FString CurrentMapPath = *CurrentMapPackage->GetName();								// eg "/Game/Maps/OpenWorld"
-		const FString CurrentMapPathWithoutGamePrefix = CurrentMapPath.RightChop(GamePath.Len());	// eg "/Maps/OpenWorld"
-		const FString CurrentMapExternalActorPath = GamePath + TEXT('/') + FPackagePath::GetExternalActorsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalActors__/Maps/OpenWorld
-		const FString CurrentMapExternalObjectPath = GamePath + TEXT('/') + FPackagePath::GetExternalObjectsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalObjects__/Maps/OpenWorld
 
-		for (const UPackage* Package : PackagesToReload)
+		// If the current map file has been updated, it will be reloaded automatically, so no need for the following
+		const FString CurrentMapFileAbsolute = FPaths::ConvertRelativePathToFull(CurrentMapPackage->GetLoadedPath().GetLocalFullPath());
+		const bool bHasCurrentMapBeenUpdated = InUpdatedFiles.FindByPredicate(
+			[&CurrentMapFileAbsolute](const FString& InFilePath) { return InFilePath.Equals(CurrentMapFileAbsolute, ESearchCase::IgnoreCase); }
+		) != nullptr;
+
+		if (!bHasCurrentMapBeenUpdated)
 		{
-			const FString AssetPath = Package->GetPathName(); // eg "/Game/__ExternalActors__/Maps/OpenWorld/9/HA/BKGJVDMLMCYJBWPTW6VT3K"
-			if (AssetPath == CurrentMapPath)
-			{
-				// if the current world package is already in the list, no need to add it, we can end the search there
-				bNeedReloadCurrentMap = false;
-				break;
-			}
+			static const FString GamePath = FString("/Game");
+			const FString CurrentMapPath = *CurrentMapPackage->GetName();																	// eg "/Game/Maps/OpenWorld"
+			const FString CurrentMapPathWithoutGamePrefix = CurrentMapPath.RightChop(GamePath.Len());										// eg "/Maps/OpenWorld"
+			const FString CurrentMapExternalActorPath = FPackagePath::GetExternalActorsFolderName() + CurrentMapPathWithoutGamePrefix;		// eg "/__ExternalActors__/Maps/OpenWorld"
+			const FString CurrentMapExternalObjectPath = FPackagePath::GetExternalObjectsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/__ExternalObjects__/Maps/OpenWorld"
 
-			if (!bNeedReloadCurrentMap) // do these expensive string checks only once:
+			bool bNeedReloadCurrentMap = false;
+
+			for (const FString& FilePath : InUpdatedFiles)
 			{
-				if (AssetPath.StartsWith(CurrentMapExternalActorPath) || AssetPath.StartsWith(CurrentMapExternalObjectPath))
+				if (FilePath.Contains(CurrentMapExternalActorPath) || FilePath.Contains(CurrentMapExternalObjectPath))
 				{
 					bNeedReloadCurrentMap = true;
+					break;
 				}
 			}
-		}
-		if (bNeedReloadCurrentMap)
-		{
-			PackagesToReload.Add(CurrentMapPackage);
-			UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *CurrentMapPath);
+
+			if (bNeedReloadCurrentMap)
+			{
+				PackagesToReload.Add(CurrentMapPackage);
+				UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *CurrentMapPath);
+			}
 		}
 	}
 #endif
