@@ -10,6 +10,7 @@
 #include "PlasticSourceControlShell.h"
 #include "PlasticSourceControlState.h"
 #include "ISourceControlModule.h"
+#include "ScopedTempFile.h"
 
 #include "Runtime/Launch/Resources/Version.h"
 #if ENGINE_MAJOR_VERSION == 4
@@ -1434,46 +1435,43 @@ bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, T
 {
 	bool bResult = false;
 
-	// TODO: const FScopedTempFile TempFile;
-	const FString TempFilename = FPaths::CreateTempFilename(*FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()), TEXT("Plastic-Temp"), TEXT(".xml"));
-
 	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFilename));
-	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	// Update specified directory to the head of the repository
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (!bInIsPartialWorkspace)
 	{
+		const FScopedTempFile TempFile;
+		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFile.GetFilename()));
+		Parameters.Add(TEXT("--encoding=\"utf-8\""));
 		Parameters.Add(TEXT("--last"));
 		Parameters.Add(TEXT("--dontmerge"));
-		bResult = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, InFiles, InfoMessages, OutErrorMessages);
+		bResult = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
+		if (bResult)
+		{
+			// Load and parse the result of the update command
+			FString Results;
+			if (FFileHelper::LoadFileToString(Results, *TempFile.GetFilename()))
+			{
+				FXmlFile XmlFile;
+				{
+					TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunSync::FXmlFile::LoadFile);
+					bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+				}
+				if (bResult)
+				{
+					bResult = ParseSyncResults(XmlFile, OutUpdatedFiles);
+				}
+				else
+				{
+					UE_LOG(LogSourceControl, Error, TEXT("RunSync: XML parse error '%s'"), *XmlFile.GetLastError())
+				}
+			}
+		}
 	}
 	else
 	{
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InFiles, InfoMessages, OutErrorMessages);
-	}
-
-	if (bResult)
-	{
-		// Parse the result of the
-		FString Results;
-		if (FFileHelper::LoadFileToString(Results, *TempFilename))
-		{
-			FXmlFile XmlFile;
-			{
-				TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunSync::FXmlFile::LoadFile);
-				bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
-			}
-			if (bResult)
-			{
-				bResult = ParseSyncResults(XmlFile, OutUpdatedFiles);
-			}
-			else
-			{
-				UE_LOG(LogSourceControl, Error, TEXT("RunSync: XML parse error '%s'"), *XmlFile.GetLastError())
-			}
-		}
 	}
 
 	return bResult;

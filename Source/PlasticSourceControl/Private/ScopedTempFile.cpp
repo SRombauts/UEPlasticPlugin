@@ -7,6 +7,11 @@
 
 #include "ISourceControlModule.h" // LogSourceControl
 
+FScopedTempFile::FScopedTempFile()
+{
+	Filename = FPaths::CreateTempFilename(*FPaths::ProjectLogDir(), TEXT("Plastic-Temp"), TEXT(".txt"));
+}
+
 FScopedTempFile::FScopedTempFile(const FString& InText)
 {
 	Filename = FPaths::CreateTempFilename(*FPaths::ProjectLogDir(), TEXT("Plastic-Temp"), TEXT(".txt"));
