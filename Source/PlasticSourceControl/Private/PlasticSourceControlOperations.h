@@ -61,6 +61,9 @@ public:
 	virtual FName GetName() const override;
 
 	virtual FText GetInProgressString() const override;
+
+	/** List of files updated by the operation */
+	TArray<FString> UpdatedFiles;
 };
 
 

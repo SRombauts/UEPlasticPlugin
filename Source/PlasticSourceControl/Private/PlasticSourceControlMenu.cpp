@@ -538,9 +538,10 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 	}
 	else if (InOperation->GetName() == "RevertAll")
 	{
-		// Reload packages that where unlinked at the beginning of the Sync operation
-		// TODO: PackagesToReload should be filled by the source control operation itself, like for the update above
-		ReloadPackages(UnlinkedPackages);
+		// Reload packages that where updated by the Revert operation (and the current map if needed)
+		TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRevertAll>(InOperation);
+		TArray<UPackage*> PackagesToReload = ListPackagesToReload(Operation->UpdatedFiles);
+		ReloadPackages(PackagesToReload);
 	}
 
 	// Report result with a notification
