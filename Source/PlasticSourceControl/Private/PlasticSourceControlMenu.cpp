@@ -464,6 +464,70 @@ UWorld* GetCurrentWorld()
 	return nullptr;
 }
 
+TArray<UPackage*> ListPackagesToReload(const TArray<FString>& InUpdatedFiles)
+{
+	TArray<UPackage*> PackagesToReload;
+
+	PackagesToReload.Reserve(InUpdatedFiles.Num() + 1);
+	for (const FString& FilePath : InUpdatedFiles)
+	{
+		FString PackageName;
+		FString FailureReason;
+		if (FPackageName::TryConvertFilenameToLongPackageName(FilePath, PackageName, &FailureReason))
+		{
+			// NOTE: this will only find packages loaded in memory
+			if (UPackage* Package = FindPackage(nullptr, *PackageName))
+			{
+				PackagesToReload.Emplace(Package);
+				UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *PackageName);
+			}
+		}
+		// else, it means the file is not an asset from the Content/ folder (eg config, source code, anything else)
+	}
+
+#if ENGINE_MAJOR_VERSION == 5
+	// Detects if some packages to reload are part of the current map
+	// (ie assets within __ExternalActors__ or __ExternalObjects__ from the new One File Per Actor (OFPA) in UE5)
+	// in which case the current map need to be reloaded, so it needs to be added to the list of packages if not already there
+	// (then UPackageTools::ReloadPackages() will handle unloading the map at the start of the reload, avoiding some crash, and reloading it at the end)
+	if (UWorld* CurrentWorld = GetCurrentWorld())
+	{
+		bool bNeedReloadCurrentMap = false;
+		static const FString GamePath = FString("/Game");
+		UPackage* CurrentMapPackage = CurrentWorld->GetOutermost();
+		const FString CurrentMapPath = *CurrentMapPackage->GetName();								// eg "/Game/Maps/OpenWorld"
+		const FString CurrentMapPathWithoutGamePrefix = CurrentMapPath.RightChop(GamePath.Len());	// eg "/Maps/OpenWorld"
+		const FString CurrentMapExternalActorPath = GamePath + TEXT('/') + FPackagePath::GetExternalActorsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalActors__/Maps/OpenWorld
+		const FString CurrentMapExternalObjectPath = GamePath + TEXT('/') + FPackagePath::GetExternalObjectsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalObjects__/Maps/OpenWorld
+
+		for (const UPackage* Package : PackagesToReload)
+		{
+			const FString AssetPath = Package->GetPathName(); // eg "/Game/__ExternalActors__/Maps/OpenWorld/9/HA/BKGJVDMLMCYJBWPTW6VT3K"
+			if (AssetPath == CurrentMapPath)
+			{
+				// if the current world package is already in the list, no need to add it, we can end the search there
+				bNeedReloadCurrentMap = false;
+				break;
+			}
+
+			if (!bNeedReloadCurrentMap) // do these expensive string checks only once:
+			{
+				if (AssetPath.StartsWith(CurrentMapExternalActorPath) || AssetPath.StartsWith(CurrentMapExternalObjectPath))
+				{
+					bNeedReloadCurrentMap = true;
+				}
+			}
+		}
+		if (bNeedReloadCurrentMap)
+		{
+			PackagesToReload.Add(CurrentMapPackage);
+			UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *CurrentMapPath);
+		}
+	}
+#endif
+
+	return PackagesToReload;
+}
 
 void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
@@ -471,68 +535,9 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 
 	if (InOperation->GetName() == "SyncAll")
 	{
-		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
-
-		TArray<UPackage*> PackagesToReload;
-		PackagesToReload.Reserve(Operation->UpdatedFiles.Num());
-		for (const FString& FilePath : Operation->UpdatedFiles)
-		{
-			FString PackageName;
-			FString FailureReason;
-			if (FPackageName::TryConvertFilenameToLongPackageName(FilePath, PackageName, &FailureReason))
-			{
-				// NOTE: this will only find packages loaded in memory
-				if (UPackage* Package = FindPackage(nullptr, *PackageName))
-				{
-					PackagesToReload.Emplace(Package);
-					UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *PackageName);
-				}
-			}
-			// else, it means the file is not an asset from the Content/ folGet the World currently loaded by the Editorder (eg config, source code, anything else)
-		}
-
-#if ENGINE_MAJOR_VERSION == 5
-		// Detects if some packages to reload are part of the current map
-		// (ie assets within __ExternalActors__ or __ExternalObjects__ from the new One File Per Actor (OFPA) in UE5)
-		// in which case the current map need to be reloaded, so it needs to be added to the list of packages if not already there
-		// (then UPackageTools::ReloadPackages() will handle unloading the map at the start of the reload, avoiding some crash, and reloading it at the end)
-		if (UWorld* CurrentWorld = GetCurrentWorld())
-		{
-			bool bNeedReloadCurrentMap = false;
-			static const FString GamePath = FString("/Game");
-			UPackage* CurrentMapPackage = CurrentWorld->GetOutermost();
-			const FString CurrentMapPath = *CurrentMapPackage->GetName();								// eg "/Game/Maps/OpenWorld"
-			const FString CurrentMapPathWithoutGamePrefix = CurrentMapPath.RightChop(GamePath.Len());	// eg "/Maps/OpenWorld"
-			const FString CurrentMapExternalActorPath = GamePath + TEXT('/') + FPackagePath::GetExternalActorsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalActors__/Maps/OpenWorld
-			const FString CurrentMapExternalObjectPath = GamePath + TEXT('/') + FPackagePath::GetExternalObjectsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/Game/__ExternalObjects__/Maps/OpenWorld
-
-			for (const UPackage* Package : PackagesToReload)
-			{
-				const FString AssetPath = Package->GetPathName(); // eg "/Game/__ExternalActors__/Maps/OpenWorld/9/HA/BKGJVDMLMCYJBWPTW6VT3K"
-				if (AssetPath == CurrentMapPath)
-				{
-					// if the current world package is already in the list, no need to add it, we can end the search there
-					bNeedReloadCurrentMap = false;
-					break;
-				}
-
-				if (!bNeedReloadCurrentMap) // do these expensive string checks only once:
-				{
-					if (AssetPath.StartsWith(CurrentMapExternalActorPath) || AssetPath.StartsWith(CurrentMapExternalObjectPath))
-					{
-						bNeedReloadCurrentMap = true;
-					}
-				}
-			}
-			if (bNeedReloadCurrentMap)
-			{
-				PackagesToReload.Add(CurrentMapPackage);
-				UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *CurrentMapPath);
-			}
-		}
-#endif
-
 		// Reload packages that where updated by the Sync operation (and the current map if needed)
+		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
+		TArray<UPackage*> PackagesToReload = ListPackagesToReload(Operation->UpdatedFiles);
 		ReloadPackages(PackagesToReload);
 	}
 	else if (InOperation->GetName() == "RevertAll")
