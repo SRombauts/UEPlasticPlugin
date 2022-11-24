@@ -556,50 +556,40 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		Files = InCommand.Files;
 	}
 
-	TArray<FString> ChangedFiles;
-	TArray<FString> CheckedOutFiles;
-
-	for (const FString& File : Files)
+	for (int i = 0; i < Files.Num(); i++) // Required for loop on index since we are adding to the Files array as we go
 	{
+		const FString& File = Files[i];
+
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(File);
 
-		if (EWorkspaceState::Changed == State->WorkspaceState)
+		if (State->WorkspaceState == EWorkspaceState::Moved)
 		{
-			// only revert the changes of the given file in workspace
-			ChangedFiles.Add(State->LocalFilename);
-		}
-		else
-		{
-			CheckedOutFiles.Add(State->LocalFilename);
-			// in case of a Moved/Renamed, find the rename origin to revert both at once
-			if (EWorkspaceState::Moved == State->WorkspaceState)
+			// In case of a Moved/Renamed, find the rename Origin / Redirector to revert both at once
+			// (only if it is not already in the list of files to revert)
+			const FString& MovedFrom = State->MovedFrom;
+			if (!Files.FindByPredicate([&MovedFrom](const FString& File) { return File.Equals(MovedFrom, ESearchCase::IgnoreCase); }))
 			{
-				CheckedOutFiles.Add(State->MovedFrom);
-
-				// Delete the redirector
-				IFileManager::Get().Delete(*State->MovedFrom);
+				Files.Add(MovedFrom);
 			}
+
+			// Delete the redirector
+			IFileManager::Get().Delete(*MovedFrom);
 		}
 	}
 
 	InCommand.bCommandSuccessful = true;
 
-	if (ChangedFiles.Num() > 0)
-	{
-		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), ChangedFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
-	}
-
-	if (CheckedOutFiles.Num() > 0)
+	if (Files.Num() > 0)
 	{
 		// revert the checkout and any changes of the given file in workspace
 		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 		if (-1 != InCommand.ChangesetNumber)
 		{
-			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), TArray<FString>(), CheckedOutFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undo"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 		else
 		{
-			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), TArray<FString>(), CheckedOutFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undo"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 	}
 
