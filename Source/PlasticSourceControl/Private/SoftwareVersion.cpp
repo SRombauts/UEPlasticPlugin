@@ -42,3 +42,8 @@ bool operator<(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs)
 	if (Rhs.Changeset > Lhs.Changeset) return false;
 	return false; // Equal
 }
+
+bool operator>=(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs)
+{
+	return !(Rhs < Lhs);
+}

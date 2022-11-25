@@ -24,3 +24,4 @@ struct FSoftwareVersion
 
 bool operator==(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs);
 bool operator<(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs);
+bool operator>=(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs);

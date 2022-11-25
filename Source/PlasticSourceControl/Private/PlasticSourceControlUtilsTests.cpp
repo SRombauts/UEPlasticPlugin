@@ -47,7 +47,17 @@ bool FSoftwareVersionEqualUnitTest::RunTest(const FString& Parameters)
 	FSoftwareVersion VersionParse(TEXT("1.2.3.4"));
 	FSoftwareVersion VersionSplit(1, 2, 3, 4);
 
-	TestTrue(TEXT("Equal"), VersionParse == VersionSplit);
+	FSoftwareVersion VersionZero(TEXT("0.0.0.0"));
+
+	TestTrue(TEXT("Equal"), VersionSplit == VersionParse);
+	TestTrue(TEXT("Equal"), VersionParse == VersionParse);
+	TestTrue(TEXT("Equal"), VersionSplit == VersionSplit);
+
+	TestFalse(TEXT("Different"), VersionParse == VersionZero);
+	TestFalse(TEXT("Different"), VersionParse == FSoftwareVersion(TEXT("0.2.3.4")));
+	TestFalse(TEXT("Different"), VersionParse == FSoftwareVersion(TEXT("1.0.3.4")));
+	TestFalse(TEXT("Different"), VersionParse == FSoftwareVersion(TEXT("1.2.0.4")));
+	TestFalse(TEXT("Different"), VersionParse == FSoftwareVersion(TEXT("1.2.3.0")));
 
 	return true; // actual results are returned by TestXxx() macros
 }
@@ -94,6 +104,40 @@ bool FSoftwareVersionLessUnitTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Changeset difference"), VersionEleven4 < VersionEleven3);
 	TestFalse(TEXT("Changeset difference"), VersionEleven5 < VersionEleven4);
 	TestFalse(TEXT("Changeset difference"), VersionEleven6 < VersionEleven5);
+
+	return true; // actual results are returned by TestXxx() macros
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSoftwareVersionMoreOrEqualUnitTest, "PlasticSCM.SoftwareVersionMoreOrEqual", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FSoftwareVersionMoreOrEqualUnitTest::RunTest(const FString& Parameters)
+{
+	FSoftwareVersion VersionZero(TEXT("0.0.0.0"));
+	FSoftwareVersion VersionTen(TEXT("10.1.19.9999"));
+	FSoftwareVersion VersionEleven0(TEXT("11.0.15.13"));
+	FSoftwareVersion VersionEleven1(TEXT("11.0.16.13"));
+	FSoftwareVersion VersionEleven2(TEXT("11.0.16.123"));
+	FSoftwareVersion VersionEleven3(TEXT("11.0.16.1111"));
+	FSoftwareVersion VersionEleven4(TEXT("11.0.16.7134"));
+	FSoftwareVersion VersionEleven5(TEXT("11.0.16.9999"));
+	FSoftwareVersion VersionEleven6(TEXT("11.1.0.0"));
+	FSoftwareVersion VersionTwelve(TEXT("12.0.10.0"));
+
+	TestTrue(TEXT("No difference"), VersionZero >= VersionZero);
+	TestTrue(TEXT("No difference"), VersionTen >= VersionTen);
+	TestTrue(TEXT("No difference"), VersionEleven4 >= VersionEleven4);
+
+	TestFalse(TEXT("Major difference"), VersionTen >= VersionEleven1);
+	TestTrue(TEXT("Major difference"), VersionEleven1 >= VersionTen);
+
+	TestFalse(TEXT("Minor difference"), VersionEleven5 >= VersionEleven6);
+	TestTrue(TEXT("Minor difference"), VersionEleven6 >= VersionEleven5);
+
+	TestFalse(TEXT("Patch difference"), VersionEleven0 >= VersionEleven1);
+	TestTrue(TEXT("Patch difference"), VersionEleven1 >= VersionEleven0);
+
+	TestFalse(TEXT("Changeset difference"), VersionEleven1 >= VersionEleven2);
+	TestTrue(TEXT("Changeset difference"), VersionEleven2 >= VersionEleven1);
 
 	return true; // actual results are returned by TestXxx() macros
 }
