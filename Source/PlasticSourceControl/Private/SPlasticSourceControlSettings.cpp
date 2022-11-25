@@ -327,7 +327,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedUpdateStatusOtherBranches)
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("UpdateStatusOtherBranches", "Update status also check branch history."))
+				.Text(LOCTEXT("UpdateStatusOtherBranches", "Update Status also checks history to detect changes on other branches."))
 				.Font(Font)
 			]
 		]
