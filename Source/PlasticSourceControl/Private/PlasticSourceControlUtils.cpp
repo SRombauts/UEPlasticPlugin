@@ -32,6 +32,11 @@
 namespace PlasticSourceControlUtils
 {
 
+// 11.0.16.7608 add support for history --limit. It displays the N last revisions of the specified items.
+// https://www.plasticscm.com/download/releasenotes/11.0.16.7608
+static const FSoftwareVersion s_NewHistoryLimitPlasticScmVersion(TEXT("11.0.16.7608"));
+
+
 // Run a command and return the result as raw strings
 bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
 {
@@ -1338,6 +1343,20 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 	}
 	Parameters.Add(TEXT("--xml"));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	if (Provider.GetPlasticScmVersion() >= s_NewHistoryLimitPlasticScmVersion)
+	{
+		if (bInUpdateHistory)
+		{
+			// --limit=0 will not limit the number of revisions, as stated by LimitNumberOfRevisionsInHistory
+			Parameters.Add(FString::Printf(TEXT("--limit=%d"), GetDefault<UPlasticSourceControlProjectSettings>()->LimitNumberOfRevisionsInHistory));
+		}
+		else
+		{
+			// when only searching for more recent changes on other branches, only the last revision is needed (to compare to the head of the current branch)
+			Parameters.Add(TEXT("--limit=1"));
+		}
+	}
 
 	TArray<FString> Files;
 	Files.Reserve(InOutStates.Num());
