@@ -519,9 +519,10 @@ bool FPlasticSourceControlState::IsCurrent() const
 
 bool FPlasticSourceControlState::IsSourceControlled() const
 {
+	// NOTE: the Editor Collections rely on the default 'Unknown' state (until the actual file status is obtained) to be considered "in source control"
 	const bool bIsSourceControlled = WorkspaceState != EWorkspaceState::Private
-								  && WorkspaceState != EWorkspaceState::Ignored
-								  && WorkspaceState != EWorkspaceState::Unknown;
+								  && WorkspaceState != EWorkspaceState::Ignored;
+								  // WorkspaceState != EWorkspaceState::Unknown 
 
 	if (!bIsSourceControlled && !IsUnknown()) UE_LOG(LogSourceControl, Log, TEXT("%s NOT SourceControlled"), *LocalFilename);
 
