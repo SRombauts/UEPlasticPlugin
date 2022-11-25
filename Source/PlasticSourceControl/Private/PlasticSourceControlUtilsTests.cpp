@@ -40,18 +40,31 @@ bool FFindCommonDirectoryUnitTest::RunTest(const FString& Parameters)
 	return true; // actual results are returned by TestXxx() macros
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSoftwareVersionUnitTest, "PlasticSCM.SoftwareVersion", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FSoftwareVersionUnitTest::RunTest(const FString& Parameters)
+{
+	FSoftwareVersion VersionParse(TEXT("1.2.3.4"));
+
+	TestEqual(TEXT("Equal Major"), VersionParse.Major, 1);
+	TestEqual(TEXT("Equal Minor"), VersionParse.Minor, 2);
+	TestEqual(TEXT("Equal Patch"), VersionParse.Patch, 3);
+	TestEqual(TEXT("Equal Changeset"), VersionParse.Changeset, 4);
+
+	TestEqual(TEXT("Equal String"), VersionParse.String, TEXT("1.2.3.4"));
+
+	return true; // actual results are returned by TestXxx() macros
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSoftwareVersionEqualUnitTest, "PlasticSCM.SoftwareVersionEqual", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 
 bool FSoftwareVersionEqualUnitTest::RunTest(const FString& Parameters)
 {
 	FSoftwareVersion VersionParse(TEXT("1.2.3.4"));
-	FSoftwareVersion VersionSplit(1, 2, 3, 4);
-
 	FSoftwareVersion VersionZero(TEXT("0.0.0.0"));
 
-	TestTrue(TEXT("Equal"), VersionSplit == VersionParse);
 	TestTrue(TEXT("Equal"), VersionParse == VersionParse);
-	TestTrue(TEXT("Equal"), VersionSplit == VersionSplit);
+	TestTrue(TEXT("Equal"), VersionParse == FSoftwareVersion(TEXT("1.2.3.4")));
 
 	TestFalse(TEXT("Different"), VersionParse == VersionZero);
 	TestFalse(TEXT("Different"), VersionParse == FSoftwareVersion(TEXT("0.2.3.4")));

@@ -24,7 +24,7 @@
 
 // 11.0.16.7248 add support for --descriptionfile for multi-line descriptions and support for special characters
 // https://www.plasticscm.com/download/releasenotes/11.0.16.7248
-static const FSoftwareVersion s_NewChangelistFileArgsPlasticScmVersion(11, 0, 16, 7248);
+static const FSoftwareVersion s_NewChangelistFileArgsPlasticScmVersion(TEXT("11.0.16.7248"));
 
 #endif
 
