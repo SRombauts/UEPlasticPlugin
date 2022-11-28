@@ -1430,6 +1430,36 @@ static bool ParseUpdateResults(const FXmlFile& InXmlResult, TArray<FString>& Out
 	return true;
 }
 
+
+/* Parse results of the 'cm partial update --report --machinereadable' command.
+ *
+ * Results of the update command looks like that:
+STAGE Plastic is updating your workspace. Wait a moment, please...
+STAGE Updated 63.01 KB of 63.01 KB (12 of 12 files to download / 16 of 21 operations to apply) /Content/Collections/SebSharedCollection.collection
+AD c:\Workspace\UE5PlasticPluginDev\Content\LevelPrototyping\Materials\MI_Solid_Red.uasset
+CH c:\Workspace\UE5PlasticPluginDev\Config\DefaultEditor.ini
+DE c:\Workspace\UE5PlasticPluginDev\Content\Collections\SebSharedCollection.collection
+*/
+static bool ParseUpdateResults(const TArray<FString>& InResults, TArray<FString>& OutFiles)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseUpdateResultsString);
+
+	static const FString Stage = TEXT("STAGE ");
+	static const int32 PrefixLen = 3; // "XX " typically "CH ", "AD " or "DE "
+
+	for (const FString& Result : InResults)
+	{
+		if (Result.StartsWith(Stage))
+			continue;
+
+		FString Filename = Result.RightChop(PrefixLen);
+		FPaths::NormalizeFilename(Filename);
+		OutFiles.Add(Filename);
+	}
+
+	return true;
+}
+
 // Run a Plastic "update" command to sync the workspace and parse its XML results.
 bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
 {
@@ -1471,7 +1501,13 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 	}
 	else
 	{
+		Parameters.Add(TEXT("--report"));
+		Parameters.Add(TEXT("--machinereadable"));
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InFiles, InfoMessages, OutErrorMessages);
+		if (bResult)
+		{
+			bResult = ParseUpdateResults(InfoMessages, OutUpdatedFiles);
+		}
 	}
 
 	return bResult;
