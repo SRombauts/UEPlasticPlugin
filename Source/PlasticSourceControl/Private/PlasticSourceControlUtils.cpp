@@ -1395,9 +1395,9 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
   </List>
 </UpdatedItems>
 */
-static bool ParseSyncResults(const FXmlFile& InXmlResult, TArray<FString>& OutFiles)
+static bool ParseUpdateResults(const FXmlFile& InXmlResult, TArray<FString>& OutFiles)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseHistoryResults);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseUpdateResults);
 
 	static const FString UpdatedItems(TEXT("UpdatedItems"));
 	static const FString List(TEXT("List"));
@@ -1431,7 +1431,7 @@ static bool ParseSyncResults(const FXmlFile& InXmlResult, TArray<FString>& OutFi
 }
 
 // Run a Plastic "update" command to sync the workspace and parse its XML results.
-bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
+bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
 {
 	bool bResult = false;
 
@@ -1455,16 +1455,16 @@ bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, T
 			{
 				FXmlFile XmlFile;
 				{
-					TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunSync::FXmlFile::LoadFile);
+					TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunUpdate::FXmlFile::LoadFile);
 					bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
 				}
 				if (bResult)
 				{
-					bResult = ParseSyncResults(XmlFile, OutUpdatedFiles);
+					bResult = ParseUpdateResults(XmlFile, OutUpdatedFiles);
 				}
 				else
 				{
-					UE_LOG(LogSourceControl, Error, TEXT("RunSync: XML parse error '%s'"), *XmlFile.GetLastError())
+					UE_LOG(LogSourceControl, Error, TEXT("RunUpdate: XML parse error '%s'"), *XmlFile.GetLastError())
 				}
 			}
 		}

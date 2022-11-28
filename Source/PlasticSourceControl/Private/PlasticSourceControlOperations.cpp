@@ -1053,7 +1053,7 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSyncWorker::Execute);
 
 	TArray<FString> UpdatedFiles;
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunSync(InCommand.Files, GetProvider().IsPartialWorkspace(), UpdatedFiles, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdate(InCommand.Files, GetProvider().IsPartialWorkspace(), UpdatedFiles, InCommand.ErrorMessages);
 
 	// now update the status of the corresponding files
 	if (UpdatedFiles.Num())
