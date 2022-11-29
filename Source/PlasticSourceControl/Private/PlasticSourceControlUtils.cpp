@@ -1395,9 +1395,9 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
   </List>
 </UpdatedItems>
 */
-static bool ParseSyncResults(const FXmlFile& InXmlResult, TArray<FString>& OutFiles)
+static bool ParseUpdateResults(const FXmlFile& InXmlResult, TArray<FString>& OutFiles)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseHistoryResults);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseUpdateResults);
 
 	static const FString UpdatedItems(TEXT("UpdatedItems"));
 	static const FString List(TEXT("List"));
@@ -1430,18 +1430,48 @@ static bool ParseSyncResults(const FXmlFile& InXmlResult, TArray<FString>& OutFi
 	return true;
 }
 
+
+/* Parse results of the 'cm partial update --report --machinereadable' command.
+ *
+ * Results of the update command looks like that:
+STAGE Plastic is updating your workspace. Wait a moment, please...
+STAGE Updated 63.01 KB of 63.01 KB (12 of 12 files to download / 16 of 21 operations to apply) /Content/Collections/SebSharedCollection.collection
+AD c:\Workspace\UE5PlasticPluginDev\Content\LevelPrototyping\Materials\MI_Solid_Red.uasset
+CH c:\Workspace\UE5PlasticPluginDev\Config\DefaultEditor.ini
+DE c:\Workspace\UE5PlasticPluginDev\Content\Collections\SebSharedCollection.collection
+*/
+static bool ParseUpdateResults(const TArray<FString>& InResults, TArray<FString>& OutFiles)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseUpdateResultsString);
+
+	static const FString Stage = TEXT("STAGE ");
+	static const int32 PrefixLen = 3; // "XX " typically "CH ", "AD " or "DE "
+
+	for (const FString& Result : InResults)
+	{
+		if (Result.StartsWith(Stage))
+			continue;
+
+		FString Filename = Result.RightChop(PrefixLen);
+		FPaths::NormalizeFilename(Filename);
+		OutFiles.Add(Filename);
+	}
+
+	return true;
+}
+
 // Run a Plastic "update" command to sync the workspace and parse its XML results.
-bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
+bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
 {
 	bool bResult = false;
 
-	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
 	// Update specified directory to the head of the repository
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (!bInIsPartialWorkspace)
 	{
 		const FScopedTempFile TempFile;
+		TArray<FString> InfoMessages;
 		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFile.GetFilename()));
 		Parameters.Add(TEXT("--encoding=\"utf-8\""));
 		Parameters.Add(TEXT("--last"));
@@ -1455,23 +1485,30 @@ bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, T
 			{
 				FXmlFile XmlFile;
 				{
-					TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunSync::FXmlFile::LoadFile);
+					TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunUpdate::FXmlFile::LoadFile);
 					bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
 				}
 				if (bResult)
 				{
-					bResult = ParseSyncResults(XmlFile, OutUpdatedFiles);
+					bResult = ParseUpdateResults(XmlFile, OutUpdatedFiles);
 				}
 				else
 				{
-					UE_LOG(LogSourceControl, Error, TEXT("RunSync: XML parse error '%s'"), *XmlFile.GetLastError())
+					UE_LOG(LogSourceControl, Error, TEXT("RunUpdate: XML parse error '%s'"), *XmlFile.GetLastError())
 				}
 			}
 		}
 	}
 	else
 	{
-		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InFiles, InfoMessages, OutErrorMessages);
+		TArray<FString> Results;
+		Parameters.Add(TEXT("--report"));
+		Parameters.Add(TEXT("--machinereadable"));
+		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InFiles, Results, OutErrorMessages);
+		if (bResult)
+		{
+			bResult = ParseUpdateResults(Results, OutUpdatedFiles);
+		}
 	}
 
 	return bResult;

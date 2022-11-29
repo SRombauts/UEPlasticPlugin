@@ -160,7 +160,7 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
  * @param	OutUpdatedFiles			The files that where updated
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
  */
-bool RunSync(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
+bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
 
 #if ENGINE_MAJOR_VERSION == 5
 
