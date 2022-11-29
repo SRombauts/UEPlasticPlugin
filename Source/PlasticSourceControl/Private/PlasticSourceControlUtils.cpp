@@ -1465,13 +1465,13 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 {
 	bool bResult = false;
 
-	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
 	// Update specified directory to the head of the repository
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (!bInIsPartialWorkspace)
 	{
 		const FScopedTempFile TempFile;
+		TArray<FString> InfoMessages;
 		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFile.GetFilename()));
 		Parameters.Add(TEXT("--encoding=\"utf-8\""));
 		Parameters.Add(TEXT("--last"));
@@ -1501,12 +1501,13 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 	}
 	else
 	{
+		TArray<FString> Results;
 		Parameters.Add(TEXT("--report"));
 		Parameters.Add(TEXT("--machinereadable"));
-		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InFiles, InfoMessages, OutErrorMessages);
+		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InFiles, Results, OutErrorMessages);
 		if (bResult)
 		{
-			bResult = ParseUpdateResults(InfoMessages, OutUpdatedFiles);
+			bResult = ParseUpdateResults(Results, OutUpdatedFiles);
 		}
 	}
 
