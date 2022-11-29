@@ -8,6 +8,7 @@
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
+#include "PlasticSourceControlVersions.h"
 #include "ScopedTempFile.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -19,14 +20,6 @@
 #include "Algo/NoneOf.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
-
-#if ENGINE_MAJOR_VERSION == 5
-
-// 11.0.16.7248 add support for --descriptionfile for multi-line descriptions and support for special characters
-// https://www.plasticscm.com/download/releasenotes/11.0.16.7248
-static const FSoftwareVersion s_NewChangelistFileArgsPlasticScmVersion(TEXT("11.0.16.7248"));
-
-#endif
 
 template<typename Type>
 static FPlasticSourceControlWorkerRef InstantiateWorker(FPlasticSourceControlProvider& PlasticSourceControlProvider)
@@ -251,7 +244,7 @@ bool DeleteChangelist(const FPlasticSourceControlProvider& PlasticSourceControlP
 {
 	TArray<FString> Parameters;
 	TArray<FString> Files;
-	if (PlasticSourceControlProvider.GetPlasticScmVersion() < s_NewChangelistFileArgsPlasticScmVersion)
+	if (PlasticSourceControlProvider.GetPlasticScmVersion() < PlasticSourceControlVersions::NewChangelistFileArgs)
 	{
 		Parameters.Add(TEXT("rm"));
 		Files.Add(InChangelist.GetName());
@@ -1249,7 +1242,7 @@ FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlPro
 
 	bool bCommandSuccessful;
 	TArray<FString> Parameters;
-	if (PlasticSourceControlProvider.GetPlasticScmVersion() < s_NewChangelistFileArgsPlasticScmVersion)
+	if (PlasticSourceControlProvider.GetPlasticScmVersion() < PlasticSourceControlVersions::NewChangelistFileArgs)
 	{
 		Parameters.Add(TEXT("add"));
 		Parameters.Add(TEXT("\"") + NewChangelist.GetName() + TEXT("\""));
@@ -1280,7 +1273,7 @@ bool EditChangelistDescription(const FPlasticSourceControlProvider& PlasticSourc
 {
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("edit"));
-	if (PlasticSourceControlProvider.GetPlasticScmVersion() < s_NewChangelistFileArgsPlasticScmVersion)
+	if (PlasticSourceControlProvider.GetPlasticScmVersion() < PlasticSourceControlVersions::NewChangelistFileArgs)
 	{
 		Parameters.Add(TEXT("\"") + InChangelist.GetName() + TEXT("\""));
 		Parameters.Add(TEXT("description"));
@@ -1304,7 +1297,7 @@ bool MoveFilesToChangelist(const FPlasticSourceControlProvider& PlasticSourceCon
 	if (InFiles.Num() > 0)
 	{
 		TArray<FString> Parameters;
-		if (PlasticSourceControlProvider.GetPlasticScmVersion() < s_NewChangelistFileArgsPlasticScmVersion)
+		if (PlasticSourceControlProvider.GetPlasticScmVersion() < PlasticSourceControlVersions::NewChangelistFileArgs)
 		{
 			Parameters.Add(TEXT("\"") + InChangelist.GetName() + TEXT("\""));
 			Parameters.Add(TEXT("add"));
@@ -1342,7 +1335,7 @@ bool FPlasticNewChangelistWorker::Execute(class FPlasticSourceControlCommand& In
 
 	FString Description = Operation->GetDescription().ToString();
 	// Note: old "cm" doesn't support newlines, quotes, and question marks on changelist's name or description
-	if (GetProvider().GetPlasticScmVersion() < s_NewChangelistFileArgsPlasticScmVersion)
+	if (GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::NewChangelistFileArgs)
 	{
 		Description.ReplaceInline(TEXT("\r\n"), TEXT(" "), ESearchCase::CaseSensitive);
 		Description.ReplaceCharInline(TEXT('\n'), TEXT(' '), ESearchCase::CaseSensitive);
@@ -1479,7 +1472,7 @@ bool FPlasticEditChangelistWorker::Execute(class FPlasticSourceControlCommand& I
 
 	EditedDescription = Operation->GetDescription().ToString();
 	// Note: old "cm" doesn't support newlines, quotes, and question marks on changelist's name or description
-	if (GetProvider().GetPlasticScmVersion() < s_NewChangelistFileArgsPlasticScmVersion)
+	if (GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::NewChangelistFileArgs)
 	{
 		EditedDescription.ReplaceInline(TEXT("\r\n"), TEXT(" "), ESearchCase::CaseSensitive);
 		EditedDescription.ReplaceCharInline(TEXT('\n'), TEXT(' '), ESearchCase::CaseSensitive);
