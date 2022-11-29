@@ -71,15 +71,15 @@ FString FindPlasticBinaryPath()
 // Find the root of the Plastic workspace, looking from the provided path and upward in its parent directories.
 bool GetWorkspacePath(const FString& InPath, FString& OutWorkspaceRoot)
 {
-	TArray<FString> InfoMessages;
+	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--format={wkpath}"));
 	Parameters.Add(TEXT("."));
-	const bool bFound = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
-	if (bFound && InfoMessages.Num() > 0)
+	const bool bFound = RunCommand(TEXT("getworkspacefrompath"), Parameters, TArray<FString>(), Results, ErrorMessages);
+	if (bFound && Results.Num() > 0)
 	{
-		OutWorkspaceRoot = MoveTemp(InfoMessages[0]);
+		OutWorkspaceRoot = MoveTemp(Results[0]);
 		FPaths::NormalizeDirectoryName(OutWorkspaceRoot);
 		OutWorkspaceRoot.AppendChar(TEXT('/'));
 	}
@@ -93,12 +93,12 @@ bool GetWorkspacePath(const FString& InPath, FString& OutWorkspaceRoot)
 // This is called once by FPlasticSourceControlProvider::CheckPlasticAvailability()
 bool GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion)
 {
-	TArray<FString> InfoMessages;
+	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("version"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
-	if (bResult && InfoMessages.Num() > 0)
+	const bool bResult = RunCommand(TEXT("version"), TArray<FString>(), TArray<FString>(), Results, ErrorMessages);
+	if (bResult && Results.Num() > 0)
 	{
-		OutPlasticScmVersion = FSoftwareVersion(MoveTemp(InfoMessages[0]));
+		OutPlasticScmVersion = FSoftwareVersion(MoveTemp(Results[0]));
 		return true;
 	}
 	return false;
@@ -106,12 +106,12 @@ bool GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion)
 
 bool GetCmLocation(FString& OutCmLocation)
 {
-	TArray<FString> InfoMessages;
+	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("location"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
-	if (bResult && InfoMessages.Num() > 0)
+	const bool bResult = RunCommand(TEXT("location"), TArray<FString>(), TArray<FString>(), Results, ErrorMessages);
+	if (bResult && Results.Num() > 0)
 	{
-		OutCmLocation = MoveTemp(InfoMessages[0]);
+		OutCmLocation = MoveTemp(Results[0]);
 		return true;
 	}
 	return false;
@@ -119,14 +119,14 @@ bool GetCmLocation(FString& OutCmLocation)
 
 bool GetConfigSetFilesAsReadOnly()
 {
-	TArray<FString> InfoMessages;
+	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("setfileasreadonly"));
-	const bool bResult = RunCommand(TEXT("getconfig"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
-	if (bResult && InfoMessages.Num() > 0)
+	const bool bResult = RunCommand(TEXT("getconfig"), Parameters, TArray<FString>(), Results, ErrorMessages);
+	if (bResult && Results.Num() > 0)
 	{
-		if ((InfoMessages[0].Compare(TEXT("yes"), ESearchCase::IgnoreCase) == 0) || (InfoMessages[0].Compare(TEXT("true"), ESearchCase::IgnoreCase) == 0))
+		if ((Results[0].Compare(TEXT("yes"), ESearchCase::IgnoreCase) == 0) || (Results[0].Compare(TEXT("true"), ESearchCase::IgnoreCase) == 0))
 		{
 			return true;
 		}
@@ -136,48 +136,48 @@ bool GetConfigSetFilesAsReadOnly()
 
 void GetUserName(FString& OutUserName)
 {
-	TArray<FString> InfoMessages;
+	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("whoami"), TArray<FString>(), TArray<FString>(), InfoMessages, ErrorMessages);
-	if (bResult && InfoMessages.Num() > 0)
+	const bool bResult = RunCommand(TEXT("whoami"), TArray<FString>(), TArray<FString>(), Results, ErrorMessages);
+	if (bResult && Results.Num() > 0)
 	{
-		OutUserName = MoveTemp(InfoMessages[0]);
+		OutUserName = MoveTemp(Results[0]);
 	}
 }
 
 bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName, TArray<FString>& OutErrorMessages)
 {
-	TArray<FString> InfoMessages;
+	TArray<FString> Results;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--format={wkname}"));
 	TArray<FString> Files;
 	Files.Add(InWorkspaceRoot); // Uses an absolute path so that the error message is explicit
 	// Get the workspace name
-	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, Files, InfoMessages, OutErrorMessages);
-	if (bResult && InfoMessages.Num() > 0)
+	const bool bResult = RunCommand(TEXT("getworkspacefrompath"), Parameters, Files, Results, OutErrorMessages);
+	if (bResult && Results.Num() > 0)
 	{
 		// NOTE: an old version of cm getworkspacefrompath didn't return an error code so we had to rely on the error message
-		if (!InfoMessages[0].EndsWith(TEXT(" is not in a workspace.")))
+		if (!Results[0].EndsWith(TEXT(" is not in a workspace.")))
 		{
-			OutWorkspaceName = MoveTemp(InfoMessages[0]);
+			OutWorkspaceName = MoveTemp(Results[0]);
 		}
 	}
 
 	return bResult;
 }
 
-static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName)
+static bool ParseWorkspaceInformation(const TArray<FString>& InResults, int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName)
 {
 	bool bResult = true;
 
 	// Get workspace status, in the form "cs:41@rep:UEPlasticPlugin@repserver:localhost:8087" (disabled by the "--nostatus" flag)
 	//                                or "cs:41@rep:UEPlasticPlugin@repserver:SRombauts@cloud" (when connected directly to the cloud)
-	if (InInfoMessages.Num() > 0)
+	if (InResults.Num() > 0)
 	{
 		static const FString ChangesetPrefix(TEXT("cs:"));
 		static const FString RepPrefix(TEXT("@rep:"));
 		static const FString ServerPrefix(TEXT("@repserver:"));
-		const FString& WorkspaceStatus = InInfoMessages[0];
+		const FString& WorkspaceStatus = InResults[0];
 		const int32 RepIndex = WorkspaceStatus.Find(RepPrefix, ESearchCase::CaseSensitive);
 		const int32 ServerIndex = WorkspaceStatus.Find(ServerPrefix, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
 		if ((RepIndex > INDEX_NONE) && (ServerIndex > INDEX_NONE))
@@ -193,10 +193,10 @@ static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int
 		}
 	}
 	// Get the branch name, in the form "Branch /main@UE5PlasticPluginDev@test@cloud" (enabled by the "--wkconfig" flag)
-	if (InInfoMessages.Num() > 1)
+	if (InResults.Num() > 1)
 	{
 		static const FString BranchPrefix(TEXT("Branch "));
-		const FString& BranchInfo = InInfoMessages[1];
+		const FString& BranchInfo = InResults[1];
 		const int32 BranchIndex = BranchInfo.Find(BranchPrefix, ESearchCase::CaseSensitive);
 		if (BranchIndex > INDEX_NONE)
 		{
@@ -209,24 +209,24 @@ static bool ParseWorkspaceInformation(const TArray<FString>& InInfoMessages, int
 
 bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages)
 {
-	TArray<FString> InfoMessages;
+	TArray<FString> Results;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--compact"));
 	Parameters.Add(TEXT("--header")); // Only prints the workspace status. No file status.
 	// NOTE: --wkconfig results in two network calls GetBranchInfoByName & GetLastChangesetOnBranch so it's okay to do it once here but not all the time
 	Parameters.Add(TEXT("--wkconfig")); // Branch name. NOTE: Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/8.0.16.3000
-	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
+	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), Results, OutErrorMessages);
 	if (bResult)
 	{
-		bResult = ParseWorkspaceInformation(InfoMessages, OutChangeset, OutRepositoryName, OutServerUrl, OutBranchName);
+		bResult = ParseWorkspaceInformation(Results, OutChangeset, OutRepositoryName, OutServerUrl, OutBranchName);
 	}
 
 	return bResult;
 }
 
-static bool ParseWorkspaceInfo(const TArray<FString>& InInfoMessages, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
+static bool ParseWorkspaceInfo(const TArray<FString>& InResults, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
 {
-	if (InInfoMessages.Num() == 0)
+	if (InResults.Num() == 0)
 	{
 		return false;
 	}
@@ -235,11 +235,11 @@ static bool ParseWorkspaceInfo(const TArray<FString>& InInfoMessages, FString& O
 	//                                     or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected directly to the cloud)
 	//                                     or "Branch /main@rep:UE5OpenWorldPerfTest@repserver:test@cloud"
 	static const FString BranchPrefix(TEXT("Branch "));
-	if (!InInfoMessages[0].StartsWith(BranchPrefix, ESearchCase::CaseSensitive))
+	if (!InResults[0].StartsWith(BranchPrefix, ESearchCase::CaseSensitive))
 	{
 		return false;
 	}
-	FString Temp = InInfoMessages[0].RightChop(BranchPrefix.Len());
+	FString Temp = InResults[0].RightChop(BranchPrefix.Len());
 	int32 SeparatorIndex;
 	if (!Temp.FindChar(TEXT('@'), SeparatorIndex))
 	{
@@ -269,11 +269,11 @@ static bool ParseWorkspaceInfo(const TArray<FString>& InInfoMessages, FString& O
 
 bool GetWorkspaceInfo(FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages)
 {
-	TArray<FString> InfoMessages;
-	bool bResult = RunCommand(TEXT("workspaceinfo"), TArray<FString>(), TArray<FString>(), InfoMessages, OutErrorMessages);
+	TArray<FString> Results;
+	bool bResult = RunCommand(TEXT("workspaceinfo"), TArray<FString>(), TArray<FString>(), Results, OutErrorMessages);
 	if (bResult)
 	{
-		bResult = ParseWorkspaceInfo(InfoMessages, OutRepositoryName, OutServerUrl, OutBranchName);
+		bResult = ParseWorkspaceInfo(Results, OutRepositoryName, OutServerUrl, OutBranchName);
 	}
 
 	return bResult;
