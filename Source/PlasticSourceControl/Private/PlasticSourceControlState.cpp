@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Codice Software
+// Copyright Unity Technologies
 
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlProjectSettings.h"
@@ -78,7 +78,7 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 {
 	for (const auto& Revision : History)
 	{
-		// look for the SHA1 id of the file, not the commit id (revision)
+		// look for the changeset number, not the revision
 		if (Revision->ChangesetNumber == PendingMergeBaseChangeset)
 		{
 			return Revision;

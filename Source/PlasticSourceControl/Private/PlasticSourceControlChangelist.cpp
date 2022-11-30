@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Codice Software
+// Copyright Unity Technologies
 
 #if ENGINE_MAJOR_VERSION == 5
 

@@ -609,5 +609,5 @@ All the relevant C++ source code of the plugin reside in one subdirectory `<Proj
 
 ## Copyright
 
-Copyright (c) 2016-2022 Codice Software
+Copyright Unity Technologies
 Developed by Sébastien Rombauts (sebastien.rombauts@gmail.com)

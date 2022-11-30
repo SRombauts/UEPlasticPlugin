@@ -1,4 +1,4 @@
-// Copyright 1998-2022 Epic Games, Inc. All Rights Reserved.
+// Copyright 1998-2022 Epic Games, Inc
 
 #include "XmlNode.h"
 
