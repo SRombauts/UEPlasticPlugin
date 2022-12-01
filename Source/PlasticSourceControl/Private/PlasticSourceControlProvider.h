@@ -53,6 +53,7 @@ public:
 	virtual bool UsesChangelists() const override;
 	virtual bool UsesCheckout() const override;
 	virtual bool UsesFileRevisions() const; /* override				NOTE: added in UE5.1 */
+	virtual bool AllowsDiffAgainstDepot() const; /* override		NOTE: added in UE5.2 */
 	virtual TOptional<bool> IsAtLatestRevision() const; /* override	NOTE: added in UE5.1 */
 	virtual TOptional<int> GetNumLocalChanges() const; /* override	NOTE: added in UE5.1 */
 	virtual void Tick() override;

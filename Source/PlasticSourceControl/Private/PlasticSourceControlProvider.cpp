@@ -441,6 +441,11 @@ bool FPlasticSourceControlProvider::UsesFileRevisions() const
 	return IsPartialWorkspace();
 }
 
+bool FPlasticSourceControlProvider::AllowsDiffAgainstDepot() const
+{
+	return true;
+}
+
 TOptional<bool> FPlasticSourceControlProvider::IsAtLatestRevision() const
 {
 	return TOptional<bool>(); // NOTE: used by code in UE5's Status Bar but currently dormant as far as I can tell

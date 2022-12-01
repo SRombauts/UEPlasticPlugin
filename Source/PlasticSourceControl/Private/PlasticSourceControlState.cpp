@@ -88,6 +88,20 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 	return nullptr;
 }
 
+TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlState::GetCurrentRevision() const
+{
+	for (const auto& Revision : History)
+	{
+		// look for the changeset number, not the revision
+		if (Revision->ChangesetNumber == LocalRevisionChangeset)
+		{
+			return Revision;
+		}
+	}
+
+	return nullptr;
+}
+
 #if ENGINE_MAJOR_VERSION == 4
 
 FName FPlasticSourceControlState::GetIconName() const
