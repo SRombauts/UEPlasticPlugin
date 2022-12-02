@@ -733,10 +733,11 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 	}
 
-	// Now update the status of assets in the Content directory
-	TArray<FString> ContentDir;
-	ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-	PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	// now update the status of the updated files
+	if (Operation->UpdatedFiles.Num())
+	{
+		PlasticSourceControlUtils::RunUpdateStatus(Operation->UpdatedFiles, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	}
 
 	return InCommand.bCommandSuccessful;
 }
@@ -1071,7 +1072,7 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TArray<FString> UpdatedFiles;
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdate(InCommand.Files, GetProvider().IsPartialWorkspace(), UpdatedFiles, InCommand.ErrorMessages);
 
-	// now update the status of the corresponding files
+	// now update the status of the updated files
 	if (UpdatedFiles.Num())
 	{
 		PlasticSourceControlUtils::RunUpdateStatus(UpdatedFiles, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
