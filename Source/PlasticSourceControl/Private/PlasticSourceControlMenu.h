@@ -28,7 +28,6 @@ public:
 	void VisitSupportURLClicked() const;
 
 private:
-	bool False() const;
 	bool IsSourceControlConnected() const;
 
 	bool				SaveDirtyPackages();

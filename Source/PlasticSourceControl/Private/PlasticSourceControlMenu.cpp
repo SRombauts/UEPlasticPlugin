@@ -75,12 +75,6 @@ void FPlasticSourceControlMenu::Unregister()
 #endif
 }
 
-// Note: always return false, as a way to disable some menu entries until we can fix them
-bool FPlasticSourceControlMenu::False() const
-{
-	return false;
-}
-
 bool FPlasticSourceControlMenu::IsSourceControlConnected() const
 {
 	const ISourceControlProvider& Provider = ISourceControlModule::Get().GetProvider();
@@ -605,8 +599,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		"PlasticRevertAll",
 #endif
 		LOCTEXT("PlasticRevertAll",			"Revert All"),
-		// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
-		LOCTEXT("PlasticRevertAllTooltip",	"Disabled/crashing] Revert all files in the workspace to their controlled/unchanged state."),
+		LOCTEXT("PlasticRevertAllTooltip",	"Revert all files in the workspace to their controlled/unchanged state."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Revert"),
 #else
@@ -614,8 +607,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RevertAllClicked),
-			// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
-			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::False)
+			FCanExecuteAction()
 		)
 	);
 
