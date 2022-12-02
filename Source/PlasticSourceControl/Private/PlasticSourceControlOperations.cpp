@@ -746,6 +746,23 @@ bool FPlasticRevertAllWorker::UpdateStates()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertAllWorker::UpdateStates);
 
+#if ENGINE_MAJOR_VERSION == 5
+	// Update affected changelists if any
+	for (const FPlasticSourceControlState& NewState : States)
+	{
+		if (!NewState.IsModified())
+		{
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
+			if (State->Changelist.IsInitialized())
+			{
+				// 1- Remove these files from their previous changelist
+				TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(State->Changelist);
+				PreviousChangelist->Files.Remove(State);
+			}
+		}
+	}
+#endif
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
