@@ -697,18 +697,40 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertAllWorker::Execute);
 
 	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRevertAll>(InCommand.Operation);
 
+	TArray<FString> Results;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--all"));
+	Parameters.Add(TEXT("--machinereadable"));
 	// revert the checkout of all files recursively
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (-1 != InCommand.ChangesetNumber)
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), Parameters, InCommand.Files, Results, InCommand.ErrorMessages);
 	}
 	else
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), Parameters, InCommand.Files, Results, InCommand.ErrorMessages);
+	}
+
+	// Parse Results
+	for (FString& Result : Results)
+	{
+		FPaths::NormalizeFilename(Result);
+
+		// Detect special case of rename and split both origin and redirection as two separate updated files:
+		// eg "c:/Workspace/UE5PlasticPluginDev/Content/LevelPrototyping/Materials/M_Black.uasset c:/Workspace/UE5PlasticPluginDev/Content/LevelPrototyping/Materials/M_NewMaterial.uasset"
+		const int32 IndexRename = Result.Find(InCommand.PathToWorkspaceRoot, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+		if (IndexRename > 0)
+		{
+			Operation->UpdatedFiles.Add(Result.Left(IndexRename - 1));
+			Operation->UpdatedFiles.Add(Result.RightChop(IndexRename));
+		}
+		else
+		{
+			Operation->UpdatedFiles.Add(MoveTemp(Result));
+		}
 	}
 
 	// Now update the status of assets in the Content directory
