@@ -53,9 +53,6 @@ private:
 	FDelegateHandle ViewMenuExtenderHandle;
 #endif
 
-	/** Loaded packages we unlinked, to reload after a Sync or Revert operation */
-	TArray<UPackage*> UnlinkedPackages;
-
 	/** Current source control operation from extended menu if any */
 	TWeakPtr<class SNotificationItem> OperationInProgressNotification;
 
