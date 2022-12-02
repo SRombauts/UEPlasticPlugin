@@ -532,14 +532,20 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 		// Reload packages that where updated by the Sync operation (and the current map if needed)
 		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
 		TArray<UPackage*> PackagesToReload = ListPackagesToReload(Operation->UpdatedFiles);
-		ReloadPackages(PackagesToReload);
+		if (PackagesToReload.Num() > 0)
+		{
+			ReloadPackages(PackagesToReload);
+		}
 	}
 	else if (InOperation->GetName() == "RevertAll")
 	{
 		// Reload packages that where updated by the Revert operation (and the current map if needed)
 		TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRevertAll>(InOperation);
 		TArray<UPackage*> PackagesToReload = ListPackagesToReload(Operation->UpdatedFiles);
-		ReloadPackages(PackagesToReload);
+		if (PackagesToReload.Num() > 0)
+		{
+			ReloadPackages(PackagesToReload);
+		}
 	}
 
 	// Report result with a notification
