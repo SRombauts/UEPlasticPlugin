@@ -155,7 +155,9 @@ EnableVerboseLogs=False
 
 Unreal Engine allows you to configure project-related settings.
 
-- TODO: Some are not yet supported by the plugin (eg Delete on Revert)
+TODO: Some are not yet supported by the plugin:
+- **Should Delete New Files on Revert**
+- **Enable Uncontrolled Changelists**
 
 ![Project Settings - Source Control](Screenshots/UEPlasticPlugin-ProjectSettingsSourceControl.png)
 
@@ -169,13 +171,16 @@ There are 3 settings available at the moment:
 
  - **User Name to Display Name**
    - For each entry in this dictionary, the Editor will replace the user name in the key with the display value you specify.
- - **Hide Email Domain in Username**
+ - **Hide Email Domain in Username** (true by default)
    - This setting toggles the visibility of domain names in user names, if the user name is an email.
- - **Prompt for Checkout on Change**
-   - Unchecking this setting will make the Editor consider all files as already checked out. In that case, you won't get
+ - **Prompt for Checkout on Change** (true by default)
+   - Un-checking this setting will make the Editor consider all files as already checked out. In that case, you won't get
      any notifications when you modify assets, and the "Checkout Assets" dialog won't show when you save those changes.
      This mimics how Git works, i.e. allowing the user to perform changes without worrying about checking out items.
      Note: Changelists don't currently support locally changed assets (ie not checked-out)
+ - **Limit Number Of Revisions in History** (50 by default)
+   - If a non-null value is set, limit the maximum number of revisions requested to Plastic SCM to display in the "History" window.
+   - Requires [Plastic SCM 11.0.16.7608](https://www.plasticscm.com/download/releasenotes/11.0.16.7608) that added support for history --limit
 
 #### Editor Preferences
 
@@ -476,8 +481,9 @@ This version here is the development version, so it always contains additional f
  - Windows only
 
 ### Feature Requests
- - Unreal Engine 5.0 full support
+ - Unreal Engine 5.1 full support
    - Shelves of Changelists
+   - Uncontrolled Changelists
  - Mac OS X Support
  - add a menu entry to switch the workspace to Partial
  - add a setting to configure Plastic SCM to use "read-only flags" like Perforce

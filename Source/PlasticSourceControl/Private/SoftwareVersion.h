@@ -12,7 +12,6 @@ struct FSoftwareVersion
 	FSoftwareVersion() : String(TEXT("<unknown-version>")) {}
 
 	explicit FSoftwareVersion(FString&& InVersionString);
-	FSoftwareVersion(const int& InMajor, const int& InMinor, const int& InPatch, const int& InChangeset);
 
 	FString String;
 
@@ -24,3 +23,4 @@ struct FSoftwareVersion
 
 bool operator==(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs);
 bool operator<(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs);
+bool operator>=(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs);

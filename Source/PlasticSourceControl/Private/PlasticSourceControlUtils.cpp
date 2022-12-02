@@ -9,6 +9,7 @@
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlShell.h"
 #include "PlasticSourceControlState.h"
+#include "PlasticSourceControlVersions.h"
 #include "ISourceControlModule.h"
 #include "ScopedTempFile.h"
 
@@ -54,9 +55,7 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 
 const FSoftwareVersion& GetOldestSupportedPlasticScmVersion()
 {
-	// https://www.plasticscm.com/download/releasenotes/9.0.16.4839 cm changelist 'persistent' flag now contain a '--' prefix.
-	static FSoftwareVersion s_OldestSupportedPlasticScmVersion(TEXT("9.0.16.4839"));
-	return s_OldestSupportedPlasticScmVersion;
+	return PlasticSourceControlVersions::OldestSupported;
 }
 
 FString FindPlasticBinaryPath()
@@ -1338,6 +1337,20 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 	}
 	Parameters.Add(TEXT("--xml"));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	if (Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::NewHistoryLimit)
+	{
+		if (bInUpdateHistory)
+		{
+			// --limit=0 will not limit the number of revisions, as stated by LimitNumberOfRevisionsInHistory
+			Parameters.Add(FString::Printf(TEXT("--limit=%d"), GetDefault<UPlasticSourceControlProjectSettings>()->LimitNumberOfRevisionsInHistory));
+		}
+		else
+		{
+			// when only searching for more recent changes on other branches, only the last revision is needed (to compare to the head of the current branch)
+			Parameters.Add(TEXT("--limit=1"));
+		}
+	}
 
 	TArray<FString> Files;
 	Files.Reserve(InOutStates.Num());

@@ -16,15 +16,6 @@ FSoftwareVersion::FSoftwareVersion(FString&& InVersionString)
 	}
 }
 
-FSoftwareVersion::FSoftwareVersion(const int& InMajor, const int& InMinor, const int& InPatch, const int& InChangeset)
-{
-	String = FString::Printf(TEXT("%d.%d.%d.%d"), InMajor, InMinor, InPatch);
-	Major = InMajor;
-	Minor = InMinor;
-	Patch = InPatch;
-	Changeset = InChangeset;
-}
-
 bool operator==(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs)
 {
 	return (Rhs.Major == Lhs.Major) && (Rhs.Minor == Lhs.Minor) && (Rhs.Patch == Lhs.Patch) && (Rhs.Changeset == Lhs.Changeset);
@@ -41,4 +32,9 @@ bool operator<(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs)
 	if (Rhs.Changeset < Lhs.Changeset) return true;
 	if (Rhs.Changeset > Lhs.Changeset) return false;
 	return false; // Equal
+}
+
+bool operator>=(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs)
+{
+	return !(Rhs < Lhs);
 }

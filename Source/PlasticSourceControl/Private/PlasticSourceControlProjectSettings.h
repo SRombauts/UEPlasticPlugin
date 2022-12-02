@@ -24,4 +24,8 @@ public:
 	/** If enabled, you'll be prompted to check out changed files (enabled by default). Checkout is needed to work with Changelists. */
 	UPROPERTY(config, EditAnywhere, Category = "Plastic SCM")
 	bool bPromptForCheckoutOnChange = true;
+
+	/** If a non-null value is set, limit the maximum number of revisions requested to Plastic SCM to display in the "History" window. */
+	UPROPERTY(config, EditAnywhere, Category = "Plastic SCM", meta=(ClampMin=0))
+	int32 LimitNumberOfRevisionsInHistory = 50;
 };
