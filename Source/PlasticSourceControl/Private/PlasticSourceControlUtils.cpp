@@ -1125,6 +1125,8 @@ FString DecodeXmlEntities(const FString& InString)
 		  <Repository>UE4PlasticPluginDev</Repository>
 		  <Server>localhost:8087</Server>
 		  <RepositorySpec>UE4PlasticPluginDev@localhost:8087</RepositorySpec>
+		  <Size>22356</Size>
+		  <Hash>zzuB6G9fbWz1md12+tvBxg==</Hash>
 		</Revision>
 		...
 		<Revision>
@@ -1138,6 +1140,8 @@ FString DecodeXmlEntities(const FString& InString)
 		  <Repository>UE4PlasticPluginDev</Repository>
 		  <Server>localhost:8087</Server>
 		  <RepositorySpec>UE4PlasticPluginDev@localhost:8087</RepositorySpec>
+		  <Size>22406</Size>
+		  <Hash>uR7NdDRAyKqADdyAqh67Rg==</Hash>
 		</Revision>
 
 	  </Revisions>
@@ -1168,6 +1172,8 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 	static const FString ChangesetNumber(TEXT("ChangesetNumber"));
 	static const FString Owner(TEXT("Owner"));
 	static const FString Comment(TEXT("Comment"));
+	static const FString Size(TEXT("Size"));
+	static const FString Hash(TEXT("Hash"));
 
 	const FXmlNode* RevisionHistoriesResultNode = InXmlResult.GetRootNode();
 	if (RevisionHistoriesResultNode == nullptr || RevisionHistoriesResultNode->GetTag() != RevisionHistoriesResult)
@@ -1288,6 +1294,10 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				if (const FXmlNode* BranchNode = RevisionNode->FindChildNode(Branch))
 				{
 					SourceControlRevision->Branch = BranchNode->GetContent();
+				}
+				if (const FXmlNode* SizeNode = RevisionNode->FindChildNode(Size))
+				{
+					SourceControlRevision->FileSize = FCString::Atoi(*SizeNode->GetContent());
 				}
 
 				// Detect and skip more recent changesets on other branches (ie above the RevisionHeadChangeset)
