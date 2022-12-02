@@ -1057,7 +1057,7 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if ((InCommand.Operation->GetName() == FName("SyncAll")))
 	{
 		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InCommand.Operation);
-		Operation->UpdatedFiles = UpdatedFiles;
+		Operation->UpdatedFiles = MoveTemp(UpdatedFiles);
 	}
 
 	return InCommand.bCommandSuccessful;
