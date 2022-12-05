@@ -699,6 +699,26 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRevertAll>(InCommand.Operation);
 
+	// Start by updating the Status of all Content, find the Moved/Renamed files, and delete the redirectors (else the undocheckout produces some .private.0 files)
+	{
+		TArray<FPlasticSourceControlState> TempStates;
+		TArray<FString> ContentDir;
+		ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+		// TODO: here we would just need a fast "status" to only retrieve the local status of files, not server locks etc.
+		PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.ErrorMessages, TempStates, InCommand.ChangesetNumber, InCommand.BranchName);
+		for (auto& State : TempStates)
+		{
+			if (State.WorkspaceState == EWorkspaceState::Moved)
+			{
+				// In case of a file Moved/Renamed, find the rename Origin and delete the Redirector
+				if (!State.MovedFrom.IsEmpty())
+				{
+					IFileManager::Get().Delete(*State.MovedFrom);
+				}
+			}
+		}
+	}
+
 	TArray<FString> Results;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--all"));
