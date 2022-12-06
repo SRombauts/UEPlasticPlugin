@@ -557,17 +557,17 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 		if (State->WorkspaceState == EWorkspaceState::Moved)
 		{
-			// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector) to revert both at once
 			const FString& MovedFrom = State->MovedFrom;
-
-			// Delete the Redirector (else the reverted file will collide with it and create a *.private.0 file)
-			IFileManager::Get().Delete(*MovedFrom);
-
-			// and add it to the list of files to revert (only if it is not already in)
+			
+			// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector)
+			// and add it to the list of files to revert (only if it is not already in) to revert both at once
 			if (!Files.FindByPredicate([&MovedFrom](const FString& File) { return File.Equals(MovedFrom, ESearchCase::IgnoreCase); }))
 			{
 				Files.Add(MovedFrom);
 			}
+
+			// and delete the Redirector (else the reverted file will collide with it and create a *.private.0 file)
+			IFileManager::Get().Delete(*MovedFrom);
 		}
 	}
 
