@@ -559,7 +559,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			const FString& MovedFrom = State->MovedFrom;
 			
-			// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector)
+			// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector file Added)
 			// and add it to the list of files to revert (only if it is not already in) to revert both at once
 			if (!Files.FindByPredicate([&MovedFrom](const FString& File) { return File.Equals(MovedFrom, ESearchCase::IgnoreCase); }))
 			{
@@ -699,20 +699,28 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRevertAll>(InCommand.Operation);
 
-	// Start by updating the Status of all Content, find the Moved/Renamed files, and delete the redirectors (else the undocheckout produces some .private.0 files)
+	// Start by updating the Status of all Content, to find all the changes that will be reverted
 	{
 		TArray<FPlasticSourceControlState> TempStates;
 		TArray<FString> ContentDir;
 		ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
 		// TODO: here we would just need a fast "status" to only retrieve the local status of files, not server locks etc.
 		PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.ErrorMessages, TempStates, InCommand.ChangesetNumber, InCommand.BranchName);
+
 		for (auto& State : TempStates)
 		{
-			if (State.WorkspaceState == EWorkspaceState::Moved)
+			if (State.IsModified())
 			{
-				// In case of a file Moved/Renamed, find the rename Origin and delete the Redirector
-				if (!State.MovedFrom.IsEmpty())
+				// Add all modified files to the list of files to be updated (reverted and then reloaded)
+				Operation->UpdatedFiles.Add(MoveTemp(State.LocalFilename));
+
+				if (State.WorkspaceState == EWorkspaceState::Moved)
 				{
+					// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector file Added)
+					// and add it to the list of files to revert
+					Operation->UpdatedFiles.Add(MoveTemp(State.MovedFrom));
+
+					// and delete the Redirector (else the reverted file will collide with it and create a *.private.0 file)
 					IFileManager::Get().Delete(*State.MovedFrom);
 				}
 			}
@@ -722,7 +730,6 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TArray<FString> Results;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--all"));
-	Parameters.Add(TEXT("--machinereadable"));
 	// revert the checkout of all files recursively
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (-1 != InCommand.ChangesetNumber)
@@ -734,24 +741,9 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), Parameters, TArray<FString>(), Results, InCommand.ErrorMessages);
 	}
 
-	// Parse Results
-	for (FString& Result : Results)
-	{
-		FPaths::NormalizeFilename(Result);
-
-		// Detect special case of rename and split both origin and redirection as two separate updated files:
-		// eg "c:/Workspace/UE5PlasticPluginDev/Content/LevelPrototyping/Materials/M_Black.uasset c:/Workspace/UE5PlasticPluginDev/Content/LevelPrototyping/Materials/M_NewMaterial.uasset"
-		const int32 IndexRename = Result.Find(InCommand.PathToWorkspaceRoot, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
-		if (IndexRename > 0)
-		{
-			Operation->UpdatedFiles.Add(Result.Left(IndexRename - 1));
-			Operation->UpdatedFiles.Add(Result.RightChop(IndexRename));
-		}
-		else
-		{
-			Operation->UpdatedFiles.Add(MoveTemp(Result));
-		}
-	}
+	// NOTE: don't parse the Results, it has too many quirks, uses the list from the status update;
+	// - Renames are not easy to parse without a clean separator in "Origin Destination"
+	// - Files added in folders are not accounted for by "undo", only the folder is listed in the results
 
 	// now update the status of the updated files
 	if (Operation->UpdatedFiles.Num())
@@ -770,6 +762,7 @@ bool FPlasticRevertAllWorker::UpdateStates()
 	// Update affected changelists if any
 	for (const FPlasticSourceControlState& NewState : States)
 	{
+		// TODO: also detect files that were added and are now private! Should be removed as well from their changelist
 		if (!NewState.IsModified())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
