@@ -111,7 +111,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if (GetProvider().IsPlasticAvailable())
 	{
 		// Get workspace name
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(GetProvider().GetPathToWorkspaceRoot(), InCommand.WorkspaceName, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::GetWorkspaceName(InCommand.PathToWorkspaceRoot, InCommand.WorkspaceName, InCommand.ErrorMessages);
 		if (InCommand.bCommandSuccessful)
 		{
 			// Get repository, server URL, branch and current changeset number
@@ -553,20 +553,21 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	{
 		const FString& File = Files[i];
 
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(File);
+		const TSharedRef<const FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(File);
 
 		if (State->WorkspaceState == EWorkspaceState::Moved)
 		{
-			// In case of a Moved/Renamed, find the rename Origin / Redirector to revert both at once
-			// (only if it is not already in the list of files to revert)
+			// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector) to revert both at once
 			const FString& MovedFrom = State->MovedFrom;
+
+			// Delete the Redirector (else the reverted file will collide with it and create a *.private.0 file)
+			IFileManager::Get().Delete(*MovedFrom);
+
+			// and add it to the list of files to revert (only if it is not already in)
 			if (!Files.FindByPredicate([&MovedFrom](const FString& File) { return File.Equals(MovedFrom, ESearchCase::IgnoreCase); }))
 			{
 				Files.Add(MovedFrom);
 			}
-
-			// Delete the redirector
-			IFileManager::Get().Delete(*MovedFrom);
 		}
 	}
 
