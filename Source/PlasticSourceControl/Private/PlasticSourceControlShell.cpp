@@ -109,7 +109,8 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 }
 
 // Internal function (called under the critical section)
-static void _ExitBackgroundCommandLineShell()
+// bInForceExit: set to true to immediately force close the process without trying to "exit" and wait for it
+static void _ExitBackgroundCommandLineShell(const bool bInForceExit = false)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlShell::_ExitBackgroundCommandLineShell);
 
@@ -117,20 +118,27 @@ static void _ExitBackgroundCommandLineShell()
 	{
 		if (FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
-			// Tell the 'cm shell' to exit
-			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
-			// And wait up to one second for its termination
-			const double Timeout = 1.0;
-			const double StartTimestamp = FPlatformTime::Seconds();
-			while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
+			if (bInForceExit)
 			{
-				if ((FPlatformTime::Seconds() - StartTimestamp) > Timeout)
+				FPlatformProcess::TerminateProc(ShellProcessHandle);
+			}
+			else
+			{
+				// Tell the 'cm shell' to exit
+				FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
+				// And wait up to one second for its termination
+				const double Timeout = 1.0;
+				const double StartTimestamp = FPlatformTime::Seconds();
+				while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
 				{
-					UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefully in %lfs."), Timeout);
-					FPlatformProcess::TerminateProc(ShellProcessHandle);
-					break;
+					if ((FPlatformTime::Seconds() - StartTimestamp) > Timeout)
+					{
+						UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefully in %lfs."), Timeout);
+						FPlatformProcess::TerminateProc(ShellProcessHandle);
+						break;
+					}
+					FPlatformProcess::Sleep(0.01f);
 				}
-				FPlatformProcess::Sleep(0.01f);
 			}
 		}
 		FPlatformProcess::CloseProc(ShellProcessHandle);
@@ -139,13 +147,14 @@ static void _ExitBackgroundCommandLineShell()
 }
 
 // Internal function (called under the critical section)
-static void _RestartBackgroundCommandLineShell()
+// bInForceExit: set to true to immediately force close the process without trying to "exit" and wait for it
+static void _RestartBackgroundCommandLineShell(const bool bInForceExit = false)
 {
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString& PathToPlasticBinary = Provider.AccessSettings().GetBinaryPath();
 	const FString& WorkingDirectory = Provider.GetPathToWorkspaceRoot();
 
-	_ExitBackgroundCommandLineShell();
+	_ExitBackgroundCommandLineShell(bInForceExit);
 	_StartBackgroundPlasticShell(PathToPlasticBinary, WorkingDirectory);
 }
 
@@ -232,7 +241,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		{
 			// In case of timeout, ask the blocking 'cm shell' process to exit, detach from it and restart it immediately
 			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
-			_RestartBackgroundCommandLineShell();
+			_RestartBackgroundCommandLineShell(true);
 			return false;
 		}
 		else if (IsEngineExitRequested())
