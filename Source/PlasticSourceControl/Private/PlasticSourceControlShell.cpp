@@ -7,9 +7,12 @@
 
 #include "ISourceControlModule.h"
 
-#include "HAL/PlatformProcess.h"
 #include "Misc/ScopeLock.h"
+#include "HAL/PlatformProcess.h"
 #include "HAL/PlatformTime.h"
+
+#include "Framework/Notifications/NotificationManager.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 #if PLATFORM_LINUX
 #include <sys/ioctl.h>
@@ -19,6 +22,9 @@
 #include "Windows/WindowsHWrapper.h" // SECURITY_ATTRIBUTES
 #undef GetUserName
 #endif
+
+
+#define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
 
 #if ENGINE_MAJOR_VERSION == 4
@@ -50,6 +56,8 @@ static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 
 namespace PlasticSourceControlShell
 {
+static const TCHAR* ShellCommandResultText = TEXT("CommandResult ");
+static const TCHAR* ShellUserInteractText = TEXT("Select your system [0-1]");
 
 // In/Out Pipes for the 'cm shell' persistent child process
 static void*			ShellOutputPipeRead = nullptr;
@@ -158,6 +166,16 @@ static void _RestartBackgroundCommandLineShell(const bool bInForceExit = false)
 	_StartBackgroundPlasticShell(PathToPlasticBinary, WorkingDirectory);
 }
 
+
+// Display a temporary failure notification in case of an error in the shell
+void DisplayFailureNotification(const FText& InNotificationText)
+{
+	FNotificationInfo* Info = new FNotificationInfo(InNotificationText);
+	Info->ExpireDuration = 10.0f;
+	FSlateNotificationManager::Get().QueueNotification(Info);
+	UE_LOG(LogSourceControl, Error, TEXT("%s"), *InNotificationText.ToString());
+}
+
 // Internal function (called under the critical section)
 static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
 {
@@ -215,7 +233,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			LastActivity = FPlatformTime::Seconds(); // freshen the timestamp while cm is still actively outputting information
 			OutResults.Append(MoveTemp(Output));
 			// Search the output for the line containing the result code, also indicating the end of the command
-			const uint32 IndexCommandResult = OutResults.Find(TEXT("CommandResult "), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
+			const uint32 IndexCommandResult = OutResults.Find(ShellCommandResultText, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
 			if (INDEX_NONE != IndexCommandResult)
 			{
 				const uint32 IndexEndResult = OutResults.Find(pchDelim, ESearchCase::CaseSensitive, ESearchDir::FromStart, IndexCommandResult + 14);
@@ -228,6 +246,18 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 					OutResults.RemoveAt(IndexCommandResult, OutResults.Len() - IndexCommandResult);
 					break;
 				}
+			}
+
+			// Search the output for a potential user interaction request (in case the authentication token isn't saved or valid anymore)
+			const uint32 IndexPrompt = OutResults.Find(ShellUserInteractText, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
+			if (INDEX_NONE != IndexPrompt)
+			{
+				const FText ShellRequiresInteractionError(LOCTEXT("SourceControlShell_AskAuthenticate", "Plastic SCM command line requires user interaction."));
+				DisplayFailureNotification(ShellRequiresInteractionError);
+
+				// Restart the shell without waiting, it is forever blocked waiting for user input
+				_RestartBackgroundCommandLineShell(true);
+				break; // and quit the loop
 			}
 		}
 		else if ((FPlatformTime::Seconds() - LastLog > LogInterval) && (PreviousLogLen < OutResults.Len()))
@@ -329,3 +359,5 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 }
 
 } // namespace PlasticSourceControlShell
+
+#undef LOCTEXT_NAMESPACE
