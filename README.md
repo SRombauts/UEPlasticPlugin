@@ -4,7 +4,7 @@ Plastic SCM plugin for Unreal Engine
 [![release](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
 [![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
-This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Provider plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0).
+This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Provider plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0 to 5.1).
 An old version 1.4.6+ has been integrated in Unreal Engine 4.24 and has been shipping with it since then.
 The most recent version 1.6.2 has been integrated in Github for the upcoming Unreal Engine 5.1 so it is eventually going to ship to everyone.
 But in the meantime, if you have a project of a certain size, chances are you need to upgrade manually to a version we provide from Github
@@ -447,7 +447,7 @@ To configure a text diff for any uasset (not only Blueprints) use this command i
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.6.2 2022/08/26 for UE 5.0.3/Github 5.1.x and UE 4.27.2:
+### Version 1.7.0 2022/12/09 for UE 5.1.1/Github 5.2.x and UE 4.27.2:
  - manage connection to the server
  - show current branch name and CL in status text
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
