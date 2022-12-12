@@ -173,6 +173,8 @@ void DisplayFailureNotification(const FText& InNotificationText)
 	FNotificationInfo* Info = new FNotificationInfo(InNotificationText);
 	Info->ExpireDuration = 10.0f;
 	FSlateNotificationManager::Get().QueueNotification(Info);
+	// NOTE: all source control operations run in a thread, so we cannot use MessageLog nor Notify() them since they can only be used from the Main/UI thread
+	// FMessageLog("SourceControl").Error(InNotificationText);
 	UE_LOG(LogSourceControl, Error, TEXT("%s"), *InNotificationText.ToString());
 }
 
@@ -252,7 +254,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			const uint32 IndexPrompt = OutResults.Find(ShellUserInteractText, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
 			if (INDEX_NONE != IndexPrompt)
 			{
-				const FText ShellRequiresInteractionError(LOCTEXT("SourceControlShell_AskAuthenticate", "Plastic SCM command line requires user interaction."));
+				const FText ShellRequiresInteractionError(LOCTEXT("SourceControlShell_AskAuthenticate", "Plastic SCM command line requires user interaction.\nSign in using the Plastic SCM client."));
 				DisplayFailureNotification(ShellRequiresInteractionError);
 
 				// Restart the shell without waiting, it is forever blocked waiting for user input
