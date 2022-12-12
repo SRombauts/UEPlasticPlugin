@@ -296,18 +296,17 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 
 FText FPlasticSourceControlState::GetDisplayName() const
 {
+	FNumberFormattingOptions NoCommas;
+	NoCommas.UseGrouping = false;
 	if (!IsCurrent())
 	{
-		return LOCTEXT("NotCurrent", "Not current");
+		return FText::Format(LOCTEXT("NotCurrent", "Not at the head revision CS:{0} {1} (currently CS:{2})"),
+			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
 	else if (WorkspaceState != EWorkspaceState::LockedByOther)
 	{
-		if (IsModifiedInOtherBranch())
-		{
-			FNumberFormattingOptions NoCommas;
-			NoCommas.UseGrouping = false;
-			return FText::Format(LOCTEXT("ModifiedOtherBranch", "Modified in {0} CS:{1} by {2}"), FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName));
-		}
+		return FText::Format(LOCTEXT("ModifiedOtherBranch", "Modified in {0} CS:{1} by {2} (currently CS:{3})"),
+			FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
 	switch (WorkspaceState)
 	{
@@ -336,7 +335,7 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	case EWorkspaceState::Conflicted:
 		return LOCTEXT("ContentsConflict", "Conflicted");
 	case EWorkspaceState::LockedByOther:
-		return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by: {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
+		return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
 	case EWorkspaceState::Private:
 		return LOCTEXT("NotControlled", "Not Under Source Control");
 	}
@@ -346,17 +345,19 @@ FText FPlasticSourceControlState::GetDisplayName() const
 
 FText FPlasticSourceControlState::GetDisplayTooltip() const
 {
+	FNumberFormattingOptions NoCommas;
+	NoCommas.UseGrouping = false;
 	if (!IsCurrent())
 	{
-		return FText::Format(LOCTEXT("NotCurrent_Tooltip", "Not at the head revision CS:{0} by {1}"), FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName));
+		return FText::Format(LOCTEXT("NotCurrent_Tooltip", "Not at the head revision CS:{0} {1} (currently CS:{2})"),
+			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
 	else if (WorkspaceState != EWorkspaceState::LockedByOther)
 	{
 		if (IsModifiedInOtherBranch())
 		{
-			FNumberFormattingOptions NoCommas;
-			NoCommas.UseGrouping = false;
-			return FText::Format(LOCTEXT("ModifiedOtherBranch_Tooltip", "Modified in {0} CS:{1} by {2}"), FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName));
+			return FText::Format(LOCTEXT("ModifiedOtherBranch_Tooltip", "Modified in {0} CS:{1} by {2} (currently CS:{3})"),
+				FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 		}
 	}
 
