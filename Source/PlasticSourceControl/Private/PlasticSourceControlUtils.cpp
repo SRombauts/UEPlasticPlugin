@@ -11,7 +11,6 @@
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlVersions.h"
 #include "ISourceControlModule.h"
-#include "ScopedTempFile.h"
 
 #include "Runtime/Launch/Resources/Version.h"
 #if ENGINE_MAJOR_VERSION == 4
@@ -24,6 +23,7 @@
 #include "Misc/Paths.h"
 #include "XmlParser.h"
 #include "SoftwareVersion.h"
+#include "ScopedTempFile.h"
 
 #if ENGINE_MAJOR_VERSION == 5
 #include "PlasticSourceControlChangelist.h"
