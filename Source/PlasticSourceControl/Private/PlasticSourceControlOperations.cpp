@@ -559,7 +559,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			const FString& MovedFrom = State->MovedFrom;
 			
-			// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector)
+			// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector file Added)
 			// and add it to the list of files to revert (only if it is not already in) to revert both at once
 			if (!Files.FindByPredicate([&MovedFrom](const FString& File) { return File.Equals(MovedFrom, ESearchCase::IgnoreCase); }))
 			{
@@ -697,24 +697,59 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertAllWorker::Execute);
 
 	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRevertAll>(InCommand.Operation);
 
+	// Start by updating the Status of all Content, to find all the changes that will be reverted
+	{
+		TArray<FPlasticSourceControlState> TempStates;
+		TArray<FString> ContentDir;
+		ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+		// TODO: here we would just need a fast "status" to only retrieve the local status of files, not server locks etc.
+		PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.ErrorMessages, TempStates, InCommand.ChangesetNumber, InCommand.BranchName);
+
+		for (auto& State : TempStates)
+		{
+			if (State.IsModified())
+			{
+				// Add all modified files to the list of files to be updated (reverted and then reloaded)
+				Operation->UpdatedFiles.Add(MoveTemp(State.LocalFilename));
+
+				if (State.WorkspaceState == EWorkspaceState::Moved)
+				{
+					// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector file Added)
+					// and add it to the list of files to revert
+					Operation->UpdatedFiles.Add(MoveTemp(State.MovedFrom));
+
+					// and delete the Redirector (else the reverted file will collide with it and create a *.private.0 file)
+					IFileManager::Get().Delete(*State.MovedFrom);
+				}
+			}
+		}
+	}
+
+	TArray<FString> Results;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--all"));
 	// revert the checkout of all files recursively
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (-1 != InCommand.ChangesetNumber)
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), Parameters, TArray<FString>(), Results, InCommand.ErrorMessages);
 	}
 	else
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), Parameters, TArray<FString>(), Results, InCommand.ErrorMessages);
 	}
 
-	// Now update the status of assets in the Content directory
-	TArray<FString> ContentDir;
-	ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-	PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	// NOTE: don't parse the Results, it has too many quirks, uses the list from the status update;
+	// - Renames are not easy to parse without a clean separator in "Origin Destination"
+	// - Files added in folders are not accounted for by "undo", only the folder is listed in the results
+
+	// now update the status of the updated files
+	if (Operation->UpdatedFiles.Num())
+	{
+		PlasticSourceControlUtils::RunUpdateStatus(Operation->UpdatedFiles, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	}
 
 	return InCommand.bCommandSuccessful;
 }
@@ -722,6 +757,24 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 bool FPlasticRevertAllWorker::UpdateStates()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertAllWorker::UpdateStates);
+
+#if ENGINE_MAJOR_VERSION == 5
+	// Update affected changelists if any
+	for (const FPlasticSourceControlState& NewState : States)
+	{
+		// TODO: also detect files that were added and are now private! Should be removed as well from their changelist
+		if (!NewState.IsModified())
+		{
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
+			if (State->Changelist.IsInitialized())
+			{
+				// 1- Remove these files from their previous changelist
+				TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(State->Changelist);
+				PreviousChangelist->Files.Remove(State);
+			}
+		}
+	}
+#endif
 
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
@@ -1049,7 +1102,7 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TArray<FString> UpdatedFiles;
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdate(InCommand.Files, GetProvider().IsPartialWorkspace(), UpdatedFiles, InCommand.ErrorMessages);
 
-	// now update the status of the corresponding files
+	// now update the status of the updated files
 	if (UpdatedFiles.Num())
 	{
 		PlasticSourceControlUtils::RunUpdateStatus(UpdatedFiles, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);

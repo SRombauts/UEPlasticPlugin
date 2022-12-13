@@ -28,7 +28,6 @@ public:
 	void VisitSupportURLClicked() const;
 
 private:
-	bool False() const;
 	bool IsSourceControlConnected() const;
 
 	bool				SaveDirtyPackages();
@@ -53,9 +52,6 @@ private:
 #if ENGINE_MAJOR_VERSION == 4
 	FDelegateHandle ViewMenuExtenderHandle;
 #endif
-
-	/** Loaded packages we unlinked, to reload after a Sync or Revert operation */
-	TArray<UPackage*> UnlinkedPackages;
 
 	/** Current source control operation from extended menu if any */
 	TWeakPtr<class SNotificationItem> OperationInProgressNotification;

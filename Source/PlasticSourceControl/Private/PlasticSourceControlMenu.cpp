@@ -74,12 +74,6 @@ void FPlasticSourceControlMenu::Unregister()
 #endif
 }
 
-// Note: always return false, as a way to disable some menu entries until we can fix them
-bool FPlasticSourceControlMenu::False() const
-{
-	return false;
-}
-
 bool FPlasticSourceControlMenu::IsSourceControlConnected() const
 {
 	const ISourceControlProvider& Provider = ISourceControlModule::Get().GetProvider();
@@ -210,7 +204,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 		if (bSaved)
 		{
 			// Find and Unlink all packages in Content directory to allow to update them
-			UnlinkedPackages = UnlinkPackages(ListAllPackages());
+			UnlinkPackages(ListAllPackages());
 
 			// Launch a custom "SyncAll" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -284,14 +278,12 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 			if (bSaved)
 			{
 				// Find and Unlink all packages in Content directory to allow to update them
-				UnlinkedPackages = UnlinkPackages(ListAllPackages());
+				UnlinkPackages(ListAllPackages());
 
 				// Launch a "RevertAll" Operation
 				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 				TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> RevertAllOperation = ISourceControlOperation::Create<FPlasticRevertAll>();
-				TArray<FString> WorkspaceRoot;
-				WorkspaceRoot.Add(Provider.GetPathToWorkspaceRoot()); // Revert the root of the workspace (needs an absolute path)
-				const ECommandResult::Type Result = Provider.Execute(RevertAllOperation, WorkspaceRoot, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+				const ECommandResult::Type Result = Provider.Execute(RevertAllOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 				if (Result == ECommandResult::Succeeded)
 				{
 					// Display an ongoing notification during the whole operation
@@ -539,13 +531,20 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 		// Reload packages that where updated by the Sync operation (and the current map if needed)
 		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
 		TArray<UPackage*> PackagesToReload = ListPackagesToReload(Operation->UpdatedFiles);
-		ReloadPackages(PackagesToReload);
+		if (PackagesToReload.Num() > 0)
+		{
+			ReloadPackages(PackagesToReload);
+		}
 	}
 	else if (InOperation->GetName() == "RevertAll")
 	{
-		// Reload packages that where unlinked at the beginning of the Sync operation
-		// TODO: PackagesToReload should be filled by the source control operation itself, like for the update above
-		ReloadPackages(UnlinkedPackages);
+		// Reload packages that where updated by the Revert operation (and the current map if needed)
+		TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRevertAll>(InOperation);
+		TArray<UPackage*> PackagesToReload = ListPackagesToReload(Operation->UpdatedFiles);
+		if (PackagesToReload.Num() > 0)
+		{
+			ReloadPackages(PackagesToReload);
+		}
 	}
 
 	// Report result with a notification
@@ -604,8 +603,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		"PlasticRevertAll",
 #endif
 		LOCTEXT("PlasticRevertAll",			"Revert All"),
-		// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
-		LOCTEXT("PlasticRevertAllTooltip",	"Disabled/crashing] Revert all files in the workspace to their controlled/unchanged state."),
+		LOCTEXT("PlasticRevertAllTooltip",	"Revert all files in the workspace to their controlled/unchanged state."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Revert"),
 #else
@@ -613,8 +611,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RevertAllClicked),
-			// TODO: temporarily disabled since it tries to reload the whole Content, which crashes the Editor
-			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::False)
+			FCanExecuteAction()
 		)
 	);
 
