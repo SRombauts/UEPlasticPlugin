@@ -305,9 +305,13 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	}
 	else if (WorkspaceState != EWorkspaceState::LockedByOther)
 	{
-		return FText::Format(LOCTEXT("ModifiedOtherBranch", "Modified in {0} CS:{1} by {2} (currently CS:{3})"),
-			FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
+		if (IsModifiedInOtherBranch())
+		{
+			return FText::Format(LOCTEXT("ModifiedOtherBranch", "Modified in {0} CS:{1} by {2} (currently CS:{3})"),
+				FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
+		}
 	}
+
 	switch (WorkspaceState)
 	{
 	case EWorkspaceState::Unknown:
