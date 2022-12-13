@@ -421,19 +421,19 @@ const FDateTime& FPlasticSourceControlState::GetTimeStamp() const
 	return TimeStamp;
 }
 
-// Deleted and Missing assets cannot appear in the Content Browser but does appear in Submit to Source Control Window
 bool FPlasticSourceControlState::CanCheckIn() const
 {
-	const bool bCanCheckIn =
-		  (WorkspaceState == EWorkspaceState::Added
-		|| WorkspaceState == EWorkspaceState::Deleted
-		|| WorkspaceState == EWorkspaceState::LocallyDeleted
-		|| WorkspaceState == EWorkspaceState::Changed
-		|| WorkspaceState == EWorkspaceState::Moved
-		|| WorkspaceState == EWorkspaceState::Copied
-		|| WorkspaceState == EWorkspaceState::Replaced
-		|| WorkspaceState == EWorkspaceState::CheckedOut)
-		&& !IsConflicted() && IsCurrent();
+	// Deleted assets don't appear in the Content Browser but in Submit to Source Control Window
+	const bool bCanCheckIn =  (WorkspaceState == EWorkspaceState::Added
+							|| WorkspaceState == EWorkspaceState::Deleted
+							|| WorkspaceState == EWorkspaceState::LocallyDeleted
+							|| WorkspaceState == EWorkspaceState::Changed
+							|| WorkspaceState == EWorkspaceState::Moved
+							|| WorkspaceState == EWorkspaceState::Copied
+							|| WorkspaceState == EWorkspaceState::Replaced
+							|| WorkspaceState == EWorkspaceState::CheckedOut)
+							&& !IsCheckedOutOther()	// Is not already checked-out elsewhere
+							&& IsCurrent();			// Is up to date (at the revision of the repo)
 
 	if (!IsUnknown())
 	{
@@ -453,7 +453,8 @@ bool FPlasticSourceControlState::CanCheckout() const
 	const bool bCanCheckout  =    (WorkspaceState == EWorkspaceState::Controlled	// In source control, Unmodified
 								|| WorkspaceState == EWorkspaceState::Changed		// In source control, but not checked-out
 								|| WorkspaceState == EWorkspaceState::Replaced)		// In source control, merged, waiting for checkin to conclude the merge
-								&& IsCurrent(); // Is up to date (at the revision of the repo)
+								&& !IsCheckedOutOther()	// Is not already checked-out elsewhere
+								&& IsCurrent();			// Is up to date (at the revision of the repo)
 
 	if (!IsUnknown())
 	{
