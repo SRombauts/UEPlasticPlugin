@@ -274,6 +274,8 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			// In case of timeout, ask the blocking 'cm shell' process to exit, detach from it and restart it immediately
 			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
 			_RestartBackgroundCommandLineShell(true);
+			// Return output results as error so they get propagated to the Message Log window
+			OutErrors = MoveTemp(OutResults);
 			return false;
 		}
 		else if (IsEngineExitRequested())
