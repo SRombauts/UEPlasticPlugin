@@ -28,7 +28,6 @@ const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState)
 	case EWorkspaceState::LocallyDeleted: WorkspaceStateStr = TEXT("LocallyDeleted"); break;
 	case EWorkspaceState::Changed: WorkspaceStateStr = TEXT("Changed"); break;
 	case EWorkspaceState::Conflicted: WorkspaceStateStr = TEXT("Conflicted"); break;
-	case EWorkspaceState::LockedByOther: WorkspaceStateStr = TEXT("LockedByOther"); break;
 	case EWorkspaceState::Private: WorkspaceStateStr = TEXT("Private"); break;
 	default: WorkspaceStateStr = TEXT("???"); break;
 	}
@@ -110,9 +109,13 @@ FName FPlasticSourceControlState::GetIconName() const
 	{
 		return FName("Perforce.NotAtHeadRevision");
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOut && WorkspaceState != EWorkspaceState::LockedByOther)
+	else if (WorkspaceState != EWorkspaceState::CheckedOut)
 	{
-		if (IsModifiedInOtherBranch())
+		if (IsCheckedOutOther())
+		{
+			return FName("Perforce.CheckedOutByOtherUser");
+		}
+		else if (IsModifiedInOtherBranch())
 		{
 			return FName("Perforce.ModifiedOtherBranch");
 		}
@@ -133,8 +136,6 @@ FName FPlasticSourceControlState::GetIconName() const
 		return FName("Perforce.MarkedForDelete");
 	case EWorkspaceState::Conflicted:
 		return FName("Perforce.NotAtHeadRevision");
-	case EWorkspaceState::LockedByOther:
-		return FName("Perforce.CheckedOutByOtherUser");
 	case EWorkspaceState::Private: // Not controlled
 		return FName("Perforce.NotInDepot");
 	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
@@ -160,9 +161,13 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	{
 		return FName("Perforce.NotAtHeadRevision_Small");
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOut && WorkspaceState != EWorkspaceState::LockedByOther)
+	else if (WorkspaceState != EWorkspaceState::CheckedOut)
 	{
-		if (IsModifiedInOtherBranch())
+		if (IsCheckedOutOther())
+		{
+			return FName("Perforce.CheckedOutByOtherUser_Small");
+		}
+		else if (IsModifiedInOtherBranch())
 		{
 			return FName("Perforce.ModifiedOtherBranch_Small");
 		}
@@ -183,8 +188,6 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 		return FName("Perforce.MarkedForDelete_Small");
 	case EWorkspaceState::Conflicted: // TODO: would need a dedicated icon
 		return FName("Perforce.NotAtHeadRevision_Small");
-	case EWorkspaceState::LockedByOther:
-		return FName("Perforce.CheckedOutByOtherUser_Small");
 	case EWorkspaceState::Private: // Not controlled
 		return FName("Perforce.NotInDepot_Small");
 	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
@@ -212,9 +215,13 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	{
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotAtHeadRevision");
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOut && WorkspaceState != EWorkspaceState::LockedByOther)
+	else if (WorkspaceState != EWorkspaceState::CheckedOut)
 	{
-		if (IsModifiedInOtherBranch())
+		if (IsCheckedOutOther())
+		{
+			return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.CheckedOutByOtherUser", NAME_None, "SourceControl.LockOverlay");
+		}
+		else if (IsModifiedInOtherBranch())
 		{
 			return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.ModifiedOtherBranch");
 		}
@@ -240,8 +247,6 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.LocallyDeleted"); // custom
 	case EWorkspaceState::Conflicted:
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.Conflicted"); // custom
-	case EWorkspaceState::LockedByOther:
-		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.CheckedOutByOtherUser", NAME_None, "SourceControl.LockOverlay");
 	case EWorkspaceState::Private: // Not controlled
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.NotInDepot");
 	case EWorkspaceState::Ignored:
@@ -269,8 +274,6 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.MarkedForDelete");
 	case EWorkspaceState::Conflicted:
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotAtHeadRevision");
-	case EWorkspaceState::LockedByOther:
-		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.CheckedOutByOtherUser", NAME_None, "SourceControl.LockOverlay");
 	case EWorkspaceState::Private: // Not controlled
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotInDepot");
 	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled
@@ -303,9 +306,13 @@ FText FPlasticSourceControlState::GetDisplayName() const
 		return FText::Format(LOCTEXT("NotCurrent", "Not at the head revision CS:{0} {1} (local revision is CS:{2})"),
 			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
-	else if (WorkspaceState != EWorkspaceState::LockedByOther)
+	else if (WorkspaceState != EWorkspaceState::CheckedOut)
 	{
-		if (IsModifiedInOtherBranch())
+		if (IsCheckedOutOther())
+		{
+			return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
+		}
+		else if (IsModifiedInOtherBranch())
 		{
 			return FText::Format(LOCTEXT("ModifiedOtherBranch", "Modified in {0} as CS:{1} by {2} (local revision is CS:{3})"),
 				FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
@@ -338,8 +345,6 @@ FText FPlasticSourceControlState::GetDisplayName() const
 		return LOCTEXT("Changed", "Changed");
 	case EWorkspaceState::Conflicted:
 		return LOCTEXT("ContentsConflict", "Conflicted");
-	case EWorkspaceState::LockedByOther:
-		return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
 	case EWorkspaceState::Private:
 		return LOCTEXT("NotControlled", "Not Under Source Control");
 	}
@@ -356,9 +361,13 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 		return FText::Format(LOCTEXT("NotCurrent_Tooltip", "Not at the head revision CS:{0} {1} (local revision is CS:{2})"),
 			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
-	else if (WorkspaceState != EWorkspaceState::LockedByOther)
+	else if (WorkspaceState != EWorkspaceState::CheckedOut)
 	{
-		if (IsModifiedInOtherBranch())
+		if (IsCheckedOutOther())
+		{
+			return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
+		}
+		else if (IsModifiedInOtherBranch())
 		{
 			return FText::Format(LOCTEXT("ModifiedOtherBranch_Tooltip", "Modified in {0} as CS:{1} by {2} (local revision is CS:{3})"),
 				FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
@@ -391,8 +400,6 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 		return LOCTEXT("Modified_Tooltip", "Locally modified");
 	case EWorkspaceState::Conflicted:
 		return LOCTEXT("ContentsConflict_Tooltip", "Conflict with updates received from the repository");
-	case EWorkspaceState::LockedByOther:
-		return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
 	case EWorkspaceState::Private:
 		return LOCTEXT("NotControlled_Tooltip", "Private: not under version control");
 	}
@@ -486,7 +493,7 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 	{
 		*Who = LockedBy;
 	}
-	const bool bIsLockedByOther = WorkspaceState == EWorkspaceState::LockedByOther;
+	const bool bIsLockedByOther = (WorkspaceState != EWorkspaceState::CheckedOut) && !LockedBy.IsEmpty();
 
 	if (bIsLockedByOther)
 	{

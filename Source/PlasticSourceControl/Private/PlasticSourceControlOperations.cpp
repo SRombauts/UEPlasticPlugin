@@ -1229,11 +1229,6 @@ bool FPlasticGetPendingChangelistsWorker::UpdateStates()
 			for (const auto& FileState : OutCLFilesStates[StatusIndex])
 			{
 				TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> CachedFileState = GetProvider().GetStateInternal(FileState.LocalFilename);
-				// Don't override "fileinfo" information and the potential LockedByOther state
-				if (CachedFileState->WorkspaceState != EWorkspaceState::LockedByOther)
-				{
-					CachedFileState->WorkspaceState = FileState.WorkspaceState;
-				}
 				CachedFileState->Changelist = CLStatus.Changelist;
 				ChangelistState->Files.AddUnique(CachedFileState);
 			}
