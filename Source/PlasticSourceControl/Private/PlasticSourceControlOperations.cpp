@@ -652,12 +652,6 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 	{
 		Files.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
 	}
-	// detect the special case of a Sync of the root folder:
-	else if ((InCommand.Files.Num() == 1) && (InCommand.Files[0] == InCommand.PathToWorkspaceRoot))
-	{
-		// only update the status of assets in the Content directory
-		Files[0] = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir());
-	}
 	PlasticSourceControlUtils::RunUpdateStatus(Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
