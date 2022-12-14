@@ -7,9 +7,12 @@
 
 #include "ISourceControlModule.h"
 
-#include "HAL/PlatformProcess.h"
 #include "Misc/ScopeLock.h"
+#include "HAL/PlatformProcess.h"
 #include "HAL/PlatformTime.h"
+
+#include "Framework/Notifications/NotificationManager.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 #if PLATFORM_LINUX
 #include <sys/ioctl.h>
@@ -19,6 +22,9 @@
 #include "Windows/WindowsHWrapper.h" // SECURITY_ATTRIBUTES
 #undef GetUserName
 #endif
+
+
+#define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
 
 #if ENGINE_MAJOR_VERSION == 4
@@ -50,6 +56,8 @@ static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 
 namespace PlasticSourceControlShell
 {
+static const TCHAR* ShellCommandResultText = TEXT("CommandResult ");
+static const TCHAR* ShellUserInteractText = TEXT("Select your system [0-1]");
 
 // In/Out Pipes for the 'cm shell' persistent child process
 static void*			ShellOutputPipeRead = nullptr;
@@ -109,7 +117,8 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 }
 
 // Internal function (called under the critical section)
-static void _ExitBackgroundCommandLineShell()
+// bInForceExit: set to true to immediately force close the process without trying to "exit" and wait for it
+static void _ExitBackgroundCommandLineShell(const bool bInForceExit = false)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlShell::_ExitBackgroundCommandLineShell);
 
@@ -117,20 +126,27 @@ static void _ExitBackgroundCommandLineShell()
 	{
 		if (FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
-			// Tell the 'cm shell' to exit
-			FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
-			// And wait up to one second for its termination
-			const double Timeout = 1.0;
-			const double StartTimestamp = FPlatformTime::Seconds();
-			while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
+			if (bInForceExit)
 			{
-				if ((FPlatformTime::Seconds() - StartTimestamp) > Timeout)
+				FPlatformProcess::TerminateProc(ShellProcessHandle);
+			}
+			else
+			{
+				// Tell the 'cm shell' to exit
+				FPlatformProcess::WritePipe(ShellInputPipeWrite, TEXT("exit"));
+				// And wait up to one second for its termination
+				const double Timeout = 1.0;
+				const double StartTimestamp = FPlatformTime::Seconds();
+				while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
 				{
-					UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefully in %lfs."), Timeout);
-					FPlatformProcess::TerminateProc(ShellProcessHandle);
-					break;
+					if ((FPlatformTime::Seconds() - StartTimestamp) > Timeout)
+					{
+						UE_LOG(LogSourceControl, Warning, TEXT("ExitBackgroundCommandLineShell: cm shell didn't stop gracefully in %lfs."), Timeout);
+						FPlatformProcess::TerminateProc(ShellProcessHandle);
+						break;
+					}
+					FPlatformProcess::Sleep(0.01f);
 				}
-				FPlatformProcess::Sleep(0.01f);
 			}
 		}
 		FPlatformProcess::CloseProc(ShellProcessHandle);
@@ -139,14 +155,27 @@ static void _ExitBackgroundCommandLineShell()
 }
 
 // Internal function (called under the critical section)
-static void _RestartBackgroundCommandLineShell()
+// bInForceExit: set to true to immediately force close the process without trying to "exit" and wait for it
+static void _RestartBackgroundCommandLineShell(const bool bInForceExit = false)
 {
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString& PathToPlasticBinary = Provider.AccessSettings().GetBinaryPath();
 	const FString& WorkingDirectory = Provider.GetPathToWorkspaceRoot();
 
-	_ExitBackgroundCommandLineShell();
+	_ExitBackgroundCommandLineShell(bInForceExit);
 	_StartBackgroundPlasticShell(PathToPlasticBinary, WorkingDirectory);
+}
+
+
+// Display a temporary failure notification in case of an error in the shell
+void DisplayFailureNotification(const FText& InNotificationText)
+{
+	FNotificationInfo* Info = new FNotificationInfo(InNotificationText);
+	Info->ExpireDuration = 10.0f;
+	FSlateNotificationManager::Get().QueueNotification(Info);
+	// NOTE: all source control operations run in a thread, so we cannot use MessageLog nor Notify() them since they can only be used from the Main/UI thread
+	// FMessageLog("SourceControl").Error(InNotificationText);
+	UE_LOG(LogSourceControl, Error, TEXT("%s"), *InNotificationText.ToString());
 }
 
 // Internal function (called under the critical section)
@@ -206,7 +235,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			LastActivity = FPlatformTime::Seconds(); // freshen the timestamp while cm is still actively outputting information
 			OutResults.Append(MoveTemp(Output));
 			// Search the output for the line containing the result code, also indicating the end of the command
-			const uint32 IndexCommandResult = OutResults.Find(TEXT("CommandResult "), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
+			const uint32 IndexCommandResult = OutResults.Find(ShellCommandResultText, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
 			if (INDEX_NONE != IndexCommandResult)
 			{
 				const uint32 IndexEndResult = OutResults.Find(pchDelim, ESearchCase::CaseSensitive, ESearchDir::FromStart, IndexCommandResult + 14);
@@ -220,11 +249,23 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 					break;
 				}
 			}
+
+			// Search the output for a potential user interaction request (in case the authentication token isn't saved or valid anymore)
+			const uint32 IndexPrompt = OutResults.Find(ShellUserInteractText, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
+			if (INDEX_NONE != IndexPrompt)
+			{
+				const FText ShellRequiresInteractionError(LOCTEXT("SourceControlShell_AskAuthenticate", "Plastic SCM command line requires user interaction.\nSign in using the Plastic SCM client."));
+				DisplayFailureNotification(ShellRequiresInteractionError);
+
+				// Restart the shell without waiting, it is forever blocked waiting for user input
+				_RestartBackgroundCommandLineShell(true);
+				break; // and quit the loop
+			}
 		}
 		else if ((FPlatformTime::Seconds() - LastLog > LogInterval) && (PreviousLogLen < OutResults.Len()))
 		{
 			// In case of long running operation, start to print intermediate output from cm shell (like percentage of progress)
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' in progress for %.3lfs...\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' in progress for %.3lfs... (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len() - PreviousLogLen, *OutResults.Mid(PreviousLogLen));
 			PreviousLogLen = OutResults.Len();
 			LastLog = FPlatformTime::Seconds(); // freshen the timestamp of last log
 		}
@@ -232,12 +273,14 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		{
 			// In case of timeout, ask the blocking 'cm shell' process to exit, detach from it and restart it immediately
 			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
-			_RestartBackgroundCommandLineShell();
+			_RestartBackgroundCommandLineShell(true);
+			// Return output results as error so they get propagated to the Message Log window
+			OutErrors = MoveTemp(OutResults);
 			return false;
 		}
 		else if (IsEngineExitRequested())
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' Engine Exit was requested after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' Engine Exit was requested after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len() - PreviousLogLen, *OutResults.Mid(PreviousLogLen));
 			_ExitBackgroundCommandLineShell();
 		}
 
@@ -320,3 +363,5 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 }
 
 } // namespace PlasticSourceControlShell
+
+#undef LOCTEXT_NAMESPACE
