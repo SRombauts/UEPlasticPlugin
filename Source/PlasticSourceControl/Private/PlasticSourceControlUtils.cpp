@@ -1305,7 +1305,10 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				}
 
 				// Detect and skip more recent changesets on other branches (ie above the RevisionHeadChangeset)
-				if (SourceControlRevision->ChangesetNumber > InOutState.DepotRevisionChangeset)
+				// since we usually don't want to display changes from other branches in the History window...
+				// except in case of a merge conflict, where the Editor expects the tip of the "source (remote)" branch to be at the top of the history!
+				if (   (SourceControlRevision->ChangesetNumber > InOutState.DepotRevisionChangeset)
+					&& (SourceControlRevision->ChangesetNumber != InOutState.PendingMergeSourceChangeset))
 				{
 					InOutState.HeadBranch = SourceControlRevision->Branch;
 					InOutState.HeadAction = SourceControlRevision->Action;

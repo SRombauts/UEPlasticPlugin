@@ -866,7 +866,8 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 			{
 				if (State.IsConflicted())
 				{
-					// In case of a merge conflict, we need to put the tip of the "remote branch" on top of the history
+					// In case of a merge conflict, the Editor expects the tip of the "source (remote)" branch to be at the top of the history (index 0)
+					// as a way to represent the "merge in progress" in a 1D graph of the current branch "target (local)"
 					UE_LOG(LogSourceControl, Log, TEXT("%s: PendingMergeSourceChangeset %d"), *State.LocalFilename, State.PendingMergeSourceChangeset);
 					for (int32 IdxRevision = 0; IdxRevision < State.History.Num(); IdxRevision++)
 					{
