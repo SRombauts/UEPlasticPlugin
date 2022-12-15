@@ -300,14 +300,14 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	NoCommas.UseGrouping = false;
 	if (!IsCurrent())
 	{
-		return FText::Format(LOCTEXT("NotCurrent", "Not at the head revision CS:{0} {1} (currently CS:{2})"),
+		return FText::Format(LOCTEXT("NotCurrent", "Not at the head revision CS:{0} {1} (local revision is CS:{2})"),
 			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
 	else if (WorkspaceState != EWorkspaceState::LockedByOther)
 	{
 		if (IsModifiedInOtherBranch())
 		{
-			return FText::Format(LOCTEXT("ModifiedOtherBranch", "Modified in {0} CS:{1} by {2} (currently CS:{3})"),
+			return FText::Format(LOCTEXT("ModifiedOtherBranch", "Modified in {0} as CS:{1} by {2} (local revision is CS:{3})"),
 				FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 		}
 	}
@@ -353,14 +353,14 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 	NoCommas.UseGrouping = false;
 	if (!IsCurrent())
 	{
-		return FText::Format(LOCTEXT("NotCurrent_Tooltip", "Not at the head revision CS:{0} {1} (currently CS:{2})"),
+		return FText::Format(LOCTEXT("NotCurrent_Tooltip", "Not at the head revision CS:{0} {1} (local revision is CS:{2})"),
 			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
 	else if (WorkspaceState != EWorkspaceState::LockedByOther)
 	{
 		if (IsModifiedInOtherBranch())
 		{
-			return FText::Format(LOCTEXT("ModifiedOtherBranch_Tooltip", "Modified in {0} CS:{1} by {2} (currently CS:{3})"),
+			return FText::Format(LOCTEXT("ModifiedOtherBranch_Tooltip", "Modified in {0} as CS:{1} by {2} (local revision is CS:{3})"),
 				FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 		}
 	}
