@@ -1312,6 +1312,11 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 					InOutState.HeadChangeList = SourceControlRevision->ChangesetNumber;
 					InOutState.HeadUserName = SourceControlRevision->UserName;
 					InOutState.HeadModTime = SourceControlRevision->Date.ToUnixTimestamp();
+					// In case of a merge conflict, we need to put the tip of the "remote branch" on top of the history
+					if (SourceControlRevision->ChangesetNumber == InOutState.PendingMergeSourceChangeset)
+					{
+						InOutState.History.Add(SourceControlRevision);
+					}
 				}
 				else if (bInUpdateHistory)
 				{
