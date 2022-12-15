@@ -430,6 +430,11 @@ bool FPlasticSourceControlProvider::UsesChangelists() const
 	return true; // We don't want to show ChangeList column anymore (Plastic SCM term would be ChangeSet) BUT we need this to display the changelists in the source control menu
 }
 
+bool FPlasticSourceControlProvider::UsesUncontrolledChangelists() const
+{
+	return false; // TODO: not working yet as far as I know; see for instance the Reconcile action when not using readonly flags
+}
+
 bool FPlasticSourceControlProvider::UsesCheckout() const
 {
 	return GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange;
