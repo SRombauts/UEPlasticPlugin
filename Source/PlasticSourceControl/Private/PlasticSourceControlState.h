@@ -29,7 +29,6 @@ namespace EWorkspaceState
 		LocallyDeleted, // Missing
 		Changed, // Modified but not CheckedOut
 		Conflicted,
-		LockedByOther, // LockedBy with name of someone else than cm whoami
 		Private, // "Not Controlled"/"Not In Depot"/"Untracked"
 	};
 
@@ -70,6 +69,7 @@ public:
 		PendingMergeSourceChangeset = InState.PendingMergeSourceChangeset;
 		PendingMergeParameters = MoveTemp(InState.PendingMergeParameters);
 		// Update "fileinfo" information only if the command was issued
+		// Don't override "fileinfo" information in case of an optimized/lightweight "whole folder status" triggered by a global Submit Content or Refresh
 		if (InState.DepotRevisionChangeset != INVALID_REVISION)
 		{
 			LockedBy = MoveTemp(InState.LockedBy);
@@ -83,12 +83,6 @@ public:
 			HeadChangeList = MoveTemp(InState.HeadChangeList);
 			HeadUserName = MoveTemp(InState.HeadUserName);
 			HeadModTime = MoveTemp(InState.HeadModTime);
-		}
-		// Don't override "fileinfo" information in case of an optimized/lightweight "whole folder status" triggered by a global Submit Content or Refresh
-		// and regenerate the LockedByOther state based on LockedBy
-		else if (!IsCheckedOut() && !LockedBy.IsEmpty())
-		{
-			WorkspaceState = EWorkspaceState::LockedByOther;
 		}
 		MovedFrom = MoveTemp(InState.MovedFrom);
 		TimeStamp = InState.TimeStamp;
