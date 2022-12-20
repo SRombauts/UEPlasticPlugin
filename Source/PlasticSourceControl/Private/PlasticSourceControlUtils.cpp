@@ -311,7 +311,7 @@ static FString RenamedFromPlasticStatus(const FString& InResult)
 {
 	FString RenamedFrom;
 	int32 RenameIndex;
-	if (InResult.FindLastChar('>', RenameIndex))
+	if (InResult.FindLastChar(TEXT('>'), RenameIndex))
 	{
 		// Extract only the first part of a rename "from -> to" (after the 2 letters status surrounded by 2 spaces)
 		RenamedFrom = InResult.Mid(9, RenameIndex - 9 - 2);
@@ -324,6 +324,7 @@ static FString RenamedFromPlasticStatus(const FString& InResult)
  *
  * Examples of status results:
  CO Content\CheckedOut_BP.uasset
+ CO Content\Merged_BP.uasset (Merge from 140)
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  *
  * @param[in] InResult One line of status
@@ -335,7 +336,7 @@ static FString FilenameFromPlasticStatus(const FString& InResult)
 {
 	FString RelativeFilename;
 	int32 RenameIndex;
-	if (InResult.FindLastChar('>', RenameIndex))
+	if (InResult.FindLastChar(TEXT('>'), RenameIndex))
 	{
 		// Extract only the second part of a rename "from -> to"
 		RelativeFilename = InResult.RightChop(RenameIndex + 2);
@@ -344,6 +345,12 @@ static FString FilenameFromPlasticStatus(const FString& InResult)
 	{
 		// Extract the relative filename from the Plastic SCM status result (after the 2 letters status surrounded by 2 spaces)
 		RelativeFilename = InResult.RightChop(4);
+
+		const int32 MergeIndex = RelativeFilename.Find(TEXT(" (Merge from "));
+		if (MergeIndex != INDEX_NONE)
+		{
+			RelativeFilename.LeftInline(MergeIndex);
+		}
 	}
 
 	return RelativeFilename;
@@ -1298,7 +1305,10 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				}
 
 				// Detect and skip more recent changesets on other branches (ie above the RevisionHeadChangeset)
-				if (SourceControlRevision->ChangesetNumber > InOutState.DepotRevisionChangeset)
+				// since we usually don't want to display changes from other branches in the History window...
+				// except in case of a merge conflict, where the Editor expects the tip of the "source (remote)" branch to be at the top of the history!
+				if (   (SourceControlRevision->ChangesetNumber > InOutState.DepotRevisionChangeset)
+					&& (SourceControlRevision->ChangesetNumber != InOutState.PendingMergeSourceChangeset))
 				{
 					InOutState.HeadBranch = SourceControlRevision->Branch;
 					InOutState.HeadAction = SourceControlRevision->Action;
