@@ -387,7 +387,12 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 	case EWorkspaceState::Added:
 		return LOCTEXT("Added_Tooltip", "Added");
 	case EWorkspaceState::Moved:
-		return LOCTEXT("Moved_Tooltip", "Moved or renamed");
+	{
+		FString MoveOrigin = MovedFrom;
+		FPaths::MakePathRelativeTo(MoveOrigin, *LocalFilename);
+		return FText::Format(LOCTEXT("Moved_Tooltip", "Moved from {0}"),
+			FText::FromString(FPaths::GetBaseFilename(MoveOrigin, false)));
+	}
 	case EWorkspaceState::Copied:
 		return LOCTEXT("Copied_Tooltip", "Copied");
 	case EWorkspaceState::Replaced:
