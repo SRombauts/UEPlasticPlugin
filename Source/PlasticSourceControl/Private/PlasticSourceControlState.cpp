@@ -642,7 +642,7 @@ bool FPlasticSourceControlState::CanAdd() const
 
 bool FPlasticSourceControlState::IsConflicted() const
 {
-	if (WorkspaceState == EWorkspaceState::Conflicted) UE_LOG(LogSourceControl, Log, TEXT("%s IsConflicted"), *LocalFilename);
+	if (WorkspaceState == EWorkspaceState::Conflicted) UE_LOG(LogSourceControl, Verbose, TEXT("%s IsConflicted"), *LocalFilename);
 
 	return WorkspaceState == EWorkspaceState::Conflicted;
 }
