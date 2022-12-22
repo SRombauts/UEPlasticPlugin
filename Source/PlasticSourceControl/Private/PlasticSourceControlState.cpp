@@ -500,7 +500,15 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 	{
 		*Who = LockedBy;
 	}
-	const bool bIsLockedByOther = (WorkspaceState != EWorkspaceState::CheckedOut) && !LockedBy.IsEmpty();
+
+	// If the asset is Locked but not CheckedOut locally, it means it is locked somewhere else
+	const bool bIsLocked = !LockedBy.IsEmpty();
+	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
+							|| WorkspaceState == EWorkspaceState::Added
+							|| WorkspaceState == EWorkspaceState::Moved
+							|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merged
+							|| WorkspaceState == EWorkspaceState::Replaced;		// In source control, merged, waiting for checkin to conclude the merge
+	const bool bIsLockedByOther = bIsLocked && !bIsCheckedOut;
 
 	if (bIsLockedByOther)
 	{
