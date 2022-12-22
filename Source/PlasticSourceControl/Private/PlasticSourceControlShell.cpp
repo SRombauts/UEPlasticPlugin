@@ -99,7 +99,22 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 	verify(FPlatformProcess::CreatePipe(ShellInputPipeRead, ShellInputPipeWrite, true));	// For writing commands to cm shell child process
 #endif
 
+#if PLATFORM_WINDOWS
 	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
+#else
+	// Update working directory
+	char OriginalWorkingDirectory[PATH_MAX];
+	getcwd(OriginalWorkingDirectory, PATH_MAX);
+	char* NewWorkingDirectory = TCHAR_TO_ANSI(*InWorkingDirectory);
+	chdir(NewWorkingDirectory);
+
+	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, nullptr, ShellOutputPipeWrite, ShellInputPipeRead);
+
+	// Restore working directory
+	chdir(OriginalWorkingDirectory);
+
+#endif
+
 	if (!ShellProcessHandle.IsValid())
 	{
 		UE_LOG(LogSourceControl, Warning, TEXT("Failed to launch 'cm shell'")); // not a bug, just no Plastic SCM cli found
