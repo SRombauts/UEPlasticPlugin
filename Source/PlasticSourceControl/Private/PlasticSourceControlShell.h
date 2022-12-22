@@ -8,9 +8,9 @@
 namespace PlasticSourceControlShell
 {
 #if PLATFORM_WINDOWS
-	constexpr TCHAR* pchDelim = TEXT("\r\n");
+	constexpr const TCHAR* pchDelim = TEXT("\r\n");
 #else
-	constexpr TCHAR* pchDelim = TEXT("\n");
+	constexpr const TCHAR* pchDelim = TEXT("\n");
 #endif
 
 
