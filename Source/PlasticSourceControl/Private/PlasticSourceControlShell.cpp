@@ -105,8 +105,7 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 	// Update working directory
 	char OriginalWorkingDirectory[PATH_MAX];
 	getcwd(OriginalWorkingDirectory, PATH_MAX);
-	char* NewWorkingDirectory = TCHAR_TO_ANSI(*InWorkingDirectory);
-	chdir(NewWorkingDirectory);
+	chdir(TCHAR_TO_ANSI(*InWorkingDirectory));
 
 	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, nullptr, ShellOutputPipeWrite, ShellInputPipeRead);
 
