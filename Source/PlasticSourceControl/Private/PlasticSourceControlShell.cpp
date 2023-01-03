@@ -99,9 +99,10 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 	verify(FPlatformProcess::CreatePipe(ShellInputPipeRead, ShellInputPipeWrite, true));	// For writing commands to cm shell child process
 #endif
 
-#if PLATFORM_WINDOWS
+
+#if !PLATFORM_LINUX
 	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
-#else
+#else // PLATFORM_LINUX
 	// Update working directory
 	char OriginalWorkingDirectory[PATH_MAX];
 	getcwd(OriginalWorkingDirectory, PATH_MAX);
@@ -111,7 +112,6 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 
 	// Restore working directory
 	chdir(OriginalWorkingDirectory);
-
 #endif
 
 	if (!ShellProcessHandle.IsValid())
