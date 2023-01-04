@@ -478,7 +478,7 @@ This version here is the development version, so it always contains additional f
  - Toggle verbose logs from the Source Control settings UI
  - Run 'cm' CLI commands directly from the Unreal Editor Console, Blueprints of C++ code.
  - Use custom icons on UE5.1 for files locally Changed (not checked-out), locally Deleted, Conflicted and Ignored
- - Windows only
+ - Supported on Windows and Linux
 
 ### Feature Requests
  - Unreal Engine 5.1 full support
