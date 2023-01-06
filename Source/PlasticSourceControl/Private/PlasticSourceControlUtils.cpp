@@ -1676,6 +1676,7 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 	return true;
 }
 
+// Run a Plastic "status --changelist --xml" and parse its XML result.
 bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates, TArray<FString>& OutErrorMessages)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunGetChangelists);
@@ -1711,6 +1712,220 @@ bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangeli
 	}
 
 	return bResult;
+}
+
+// Parse the one letter file status in front of each line of the 'cm diff sh:<ShelveId>'
+EWorkspaceState::Type ParseShelveFileStatus(const TCHAR InFileStatus)
+{
+	if (InFileStatus == 'A') // Added
+	{
+		return EWorkspaceState::Added;
+	}
+	else if (InFileStatus == 'D') // Deleted
+	{
+		return EWorkspaceState::Deleted;
+	}
+	else if (InFileStatus == 'C') // Changed (CheckedOut or not)
+	{
+		return EWorkspaceState::CheckedOut;
+	}
+	else if (InFileStatus == 'M') // Moved/Renamed (or Locally Moved)
+	{
+		return EWorkspaceState::Moved;
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Warning, TEXT("Unknown file status '%c'"), InFileStatus);
+		return EWorkspaceState::Unknown;
+	}
+}
+
+/**
+ * Parse results of the 'cm diff sh:<ShelveId>' command.
+ *
+ * Results of the diff command looks like that:
+C "Content\NewFolder\BP_CheckedOut.uasset"
+C "Content\NewFolder\BP_Renamed.uasset"
+A "Content\NewFolder\BP_ControlledUnchanged.uasset"
+D "Content\NewFolder\BP_Changed.uasset"
+M "Content\NewFolder\BP_ControlledUnchanged.uasset" "Content\NewFolder\BP_Renamed.uasset"
+*/
+bool ParseShelveDiffResults(const FString InWorkingDirectory, TArray<FString>&& InResults, FPlasticSourceControlChangelistState& InOutChangelistsState)
+{
+	bool bCommandSuccessful = true;
+
+	for (FString& Result : InResults)
+	{
+		EWorkspaceState::Type WorkspaceState = ParseShelveFileStatus(Result[0]);
+		
+		// Remove outer double quotes
+		Result.MidInline(3, Result.Len() - 4, false);
+		if (WorkspaceState == EWorkspaceState::Moved)
+		{
+			// Search for the inner double quotes in the middle of "Content/Source.uasset" "Content/Destination.uasset" to keep only the destination filename
+			int32 RenameIndex;
+			if (Result.FindLastChar(TEXT('"'), RenameIndex))
+			{
+				Result.RightChopInline(RenameIndex + 1);
+			}
+		}
+		
+		if (WorkspaceState != EWorkspaceState::Unknown && !Result.IsEmpty())
+		{
+			FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(InWorkingDirectory, MoveTemp(Result));
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = MakeShareable(new FPlasticSourceControlState(MoveTemp(AbsoluteFilename)));
+			FileState->WorkspaceState = WorkspaceState;
+
+			// In case of a Moved file, it would appear twice in the list, so overwrite it if already in
+			if (FSourceControlStateRef* ExistingState = InOutChangelistsState.ShelvedFiles.FindByPredicate(
+				[&FileState](const FSourceControlStateRef& State)
+				{
+					return State->GetFilename().Equals(FileState->GetFilename());
+				}))
+			{
+				*ExistingState = MoveTemp(FileState);
+			}
+			else
+			{
+				InOutChangelistsState.ShelvedFiles.Add(MoveTemp(FileState));
+			}
+		}
+		else
+		{
+			bCommandSuccessful = false;
+		}
+	}
+
+	return bCommandSuccessful;
+}
+
+/**
+ * Run for each shelve a "diff sh:<ShelveId>" and parse their result to list their files.
+ * @param	InOutChangelistsStates	The list of changelists, filled with their shelved files
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunGetShelveFiles(TArray<FPlasticSourceControlChangelistState>& InOutChangelistsStates, TArray<FString>& OutErrorMessages)
+{
+	bool bCommandSuccessful = true;
+
+	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
+
+	for (FPlasticSourceControlChangelistState& ChangelistState : InOutChangelistsStates)
+	{
+		if (ChangelistState.ShelveId != ISourceControlState::INVALID_REVISION)
+		{
+			TArray<FString> Results;
+			TArray<FString> Parameters;
+			Parameters.Add(FString::Printf(TEXT("sh:%d"), ChangelistState.ShelveId));
+			const bool bDiffSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("diff"), Parameters, TArray<FString>(), Results, OutErrorMessages);
+			if (bDiffSuccessful)
+			{
+				bCommandSuccessful = ParseShelveDiffResults(WorkingDirectory, MoveTemp(Results), ChangelistState);
+			}
+		}
+	}
+
+	return bCommandSuccessful;
+}
+
+/**
+ * Parse results of the 'cm find "shelves where owner='me'" --xml --encoding="utf-8"' command.
+ *
+ * Find shelves with comments starting like "ChangelistXXX: " and matching an existing Changelist number XXX
+ *
+ * Results of the find command looks like the following; note the "Changelist67: " prefix of the comment:
+<?xml version="1.0" encoding="utf-8" ?>
+<PLASTICQUERY>
+  <SHELVE>
+	<ID>1376</ID>
+	<SHELVEID>9</SHELVEID>
+    <COMMENT>Changelist67: test by Sebastien</COMMENT>
+	<DATE>2022-06-30T16:39:55+02:00</DATE>
+    <OWNER>sebastien.rombauts@unity3d.com</OWNER>
+    <REPOSITORY>UE5PlasticPluginDev</REPOSITORY>
+    <REPNAME>UE5PlasticPluginDev</REPNAME>
+    <REPSERVER>test@cloud</REPSERVER>
+	<PARENT>45</PARENT>
+	<GUID>8fbefbcc-81a7-4b81-9b99-b51f4873d09f</GUID>
+  </SHELVE>
+  [...]
+</PLASTICQUERY>
+*/
+static bool ParseShelvesResults(const FXmlFile& InXmlResult, TArray<FPlasticSourceControlChangelistState>& InOutChangelistsStates)
+{
+	static const FString PlasticQuery(TEXT("PLASTICQUERY"));
+	static const FString Shelve(TEXT("SHELVE"));
+	static const FString ShelveId(TEXT("SHELVEID"));
+	static const FString Comment(TEXT("COMMENT"));
+
+	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
+
+	const FXmlNode* PlasticQueryNode = InXmlResult.GetRootNode();
+	if (PlasticQueryNode == nullptr || PlasticQueryNode->GetTag() != PlasticQuery)
+	{
+		return false;
+	}
+
+	const TArray<FXmlNode*>& ShelvesNodes = PlasticQueryNode->GetChildrenNodes();
+	for (const FXmlNode* ShelveNode : ShelvesNodes)
+	{
+		check(ShelveNode);
+		const FXmlNode* ShelveIdNode = ShelveNode->FindChildNode(ShelveId);
+		const FXmlNode* CommentNode = ShelveNode->FindChildNode(Comment);
+		if (ShelveIdNode == nullptr || CommentNode == nullptr)
+		{
+			continue;
+		}
+
+		const FString& ShelveIdString = ShelveIdNode->GetContent();
+		const FString& CommentString = CommentNode->GetContent();
+
+		// Search if there is a changelist matching the shelve (that is, a shelve with a comment starting with "ChangelistXXX: ")
+		for (FPlasticSourceControlChangelistState& ChangelistState : InOutChangelistsStates)
+		{
+			FPlasticSourceControlChangelistRef Changelist = StaticCastSharedRef<FPlasticSourceControlChangelist>(ChangelistState.GetChangelist());
+			const FString ChangelistPrefix = FString::Printf(TEXT("Changelist%s: "), *Changelist->GetName());
+			if (CommentString.StartsWith(ChangelistPrefix))
+			{
+				ChangelistState.ShelveId = FCString::Atoi(*ShelveIdString);
+			}
+		}
+	}
+
+	return true;
+}
+
+// Run find "shelves where owner='me'" and for each shelve matching a changelist a "diff sh:<ShelveId>" and parse their results.
+bool RunGetShelves(TArray<FPlasticSourceControlChangelistState>& InOutChangelistsStates, TArray<FString>& OutErrorMessages)
+{
+	bool bCommandSuccessful;
+
+	FString Results;
+	FString Errors;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("\"shelves where owner = 'me'\""));
+	Parameters.Add(TEXT("--xml"));
+	Parameters.Add(TEXT("--encoding=\"utf-8\""));
+	bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("find"), Parameters, TArray<FString>(), Results, Errors);
+	if (bCommandSuccessful)
+	{
+		FXmlFile XmlFile;
+		bCommandSuccessful = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+		if (bCommandSuccessful)
+		{
+			bCommandSuccessful = ParseShelvesResults(XmlFile, InOutChangelistsStates);
+			if (bCommandSuccessful)
+			{
+				bCommandSuccessful = RunGetShelveFiles(InOutChangelistsStates, OutErrorMessages);
+			}
+		}
+	}
+	if (!Errors.IsEmpty())
+	{
+		OutErrorMessages.Add(MoveTemp(Errors));
+	}
+
+	return bCommandSuccessful;
 }
 
 #endif
