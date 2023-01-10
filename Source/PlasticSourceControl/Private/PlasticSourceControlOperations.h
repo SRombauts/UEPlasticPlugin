@@ -441,4 +441,25 @@ protected:
 	FPlasticSourceControlChangelist DestinationChangelist;
 };
 
+class FPlasticDeleteShelveWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticDeleteShelveWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticDeleteShelveWorker() = default;
+
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+protected:
+	/** List of files to remove from shelved files in changelist state */
+	TArray<FString> FilesToRemove;
+
+	/** Changelist to be updated */
+	FPlasticSourceControlChangelist ChangelistToUpdate;
+};
+
 #endif

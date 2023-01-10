@@ -11,13 +11,15 @@
 #include "PlasticSourceControlVersions.h"
 #include "ScopedTempFile.h"
 
+#include "Algo/AnyOf.h"
+#include "Algo/NoneOf.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"
-#include "SourceControlOperations.h"
+
 #include "ISourceControlModule.h"
-#include "Algo/NoneOf.h"
+#include "SourceControlOperations.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -51,6 +53,8 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("DeleteChangelist", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteChangelistWorker>));
 	PlasticSourceControlProvider.RegisterWorker("EditChangelist", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticEditChangelistWorker>));
 	PlasticSourceControlProvider.RegisterWorker("MoveToChangelist", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticReopenWorker>));
+
+ 	PlasticSourceControlProvider.RegisterWorker("DeleteShelved", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteShelveWorker>));
 #endif
 }
 
@@ -1637,6 +1641,79 @@ bool FPlasticReopenWorker::UpdateStates()
 		}
 
 		return ReopenedFiles.Num() > 0;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+FName FPlasticDeleteShelveWorker::GetName() const
+{
+	return "DeleteShelved";
+}
+
+bool FPlasticDeleteShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticDeleteShelveWorker::Execute);
+
+	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
+
+	if (InCommand.Files.Num() < ChangelistState->ShelvedFiles.Num())
+	{
+		// Don't delete the shelve if not all files are selected (since we cannot edit shelves (yet))
+		InCommand.ErrorMessages.Add(TEXT("Plastic SCM cannot delete a selection of files from a shelve. Delete them all at once."));
+		InCommand.bCommandSuccessful = false;
+	}
+	else
+	{
+		InCommand.bCommandSuccessful = true;
+	}
+
+	if (InCommand.bCommandSuccessful)
+	{
+		TArray<FString> Parameters;
+		Parameters.Add(TEXT("delete"));
+		Parameters.Add(FString::Printf(TEXT("sh:%d"), ChangelistState->ShelveId));
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+
+		if (InCommand.bCommandSuccessful)
+		{
+			ChangelistToUpdate = InCommand.Changelist;
+			FilesToRemove = InCommand.Files;
+		}
+	}
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticDeleteShelveWorker::UpdateStates()
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticDeleteShelveWorker::UpdateStates);
+
+	if (ChangelistToUpdate.IsInitialized())
+	{
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(ChangelistToUpdate);
+		
+		ChangelistState->ShelveId = ISourceControlState::INVALID_REVISION;
+
+		if (FilesToRemove.Num() > 0)
+		{
+			// NOTE: for now, Plastic SCM cannot delete a selection of files from a shelve, so FilesToRemove and this specific case aren't really needed (yet)
+			return ChangelistState->ShelvedFiles.RemoveAll([this](FSourceControlStateRef& State) -> bool
+				{
+					return Algo::AnyOf(FilesToRemove, [&State](const FString& File) {
+						return State->GetFilename() == File;
+					});
+				}) > 0;
+		}
+		else
+		{
+			bool bHadShelvedFiles = (ChangelistState->ShelvedFiles.Num() > 0);
+			ChangelistState->ShelvedFiles.Reset();
+			return bHadShelvedFiles;
+		}
 	}
 	else
 	{
