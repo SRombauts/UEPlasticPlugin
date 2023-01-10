@@ -78,7 +78,9 @@ public:
 
 	TArray<FSourceControlStateRef> Files;
 
-	TArray<FSourceControlStateRef> ShelvedFiles; // TODO: shelves are not yet implemented
+	int32 ShelveId = ISourceControlState::INVALID_REVISION;
+
+	TArray<FSourceControlStateRef> ShelvedFiles; // TODO: shelves
 
 	/** The timestamp of the last update */
 	FDateTime TimeStamp;
