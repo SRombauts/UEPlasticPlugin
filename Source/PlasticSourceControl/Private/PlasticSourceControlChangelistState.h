@@ -80,7 +80,7 @@ public:
 
 	int32 ShelveId = ISourceControlState::INVALID_REVISION;
 
-	TArray<FSourceControlStateRef> ShelvedFiles; // TODO: shelves
+	TArray<FSourceControlStateRef> ShelvedFiles;
 
 	/** The timestamp of the last update */
 	FDateTime TimeStamp;
