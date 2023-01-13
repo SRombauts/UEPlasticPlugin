@@ -17,17 +17,12 @@
 	"Modules": [
 		{
 			"Name": "PlasticSourceControl",
-			"Type": "Editor",
-			"LoadingPhase": "Default",
+			"Type": "UncookedOnly",
+			"LoadingPhase": "EarliestPossible",
 			"PlatformAllowList": [
 				"Win64",
 				"Linux"
 			]
-		},
-		{
-			"Name": "XmlParser2",
-			"Type": "Editor",
-			"LoadingPhase": "Default"
 		}
 	]
 }
