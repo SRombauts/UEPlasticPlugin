@@ -55,28 +55,38 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
 
 #### Unreal default version of the plugin
 
-An old version of this PlasticSCM plugin has now been integrated in Unreal Engine and has been shipping with it since UE4.24 and UE5.0.
+An old version of this PlasticSCM plugin 1.4.6 has been integrated in Unreal Engine and has been shipping with it since UE4.24 and UE5.0.
+A very recently updated version 1.6.2 shipped with UE5.1.
 
-Why: This is the easiest way to get started with Plastic SCM in Unreal Engine, but it will always be lagging behind the latest release here.
+**Why?**: Why is it integrated, as opposed to, eg. being shared through the Marketplace?
+
+It helps with discoverability of the plugin, and it is the easiest way to get started with Plastic SCM in Unreal Engine.
+But it will always be lagging somewhat behind the latest release in Github.
 
 #### Manual installation from the latest version here
 
-Why: if you want the latest features, performance improvements and bug fixes that are missing from Unreal integrated plugin.
+**Why?**: Why would you update to latest version in Github?
+
+If you want the latest features, performance improvements and bug fixes that are missing from Unreal integrated plugin.
 
  1. Download the [latest binary release UE5PlasticPlugin-x.x.x.zip](https://github.com/PlasticSCM/UEPlasticPlugin/releases) targeting your UE5 version (resp UE4).
  2. Either:
      1. Unzip the content of the ZIP directly at the root of your project folder.
-        This creates a "Plugins/UEPlasticPlugin/" subdirectory into your project.
-        This is the way to go to use Plastic SCM only on a specific project.
-     2. Unzip the content of the ZIP in the Engine/ directory of UE4.x directly for all your projects
-        (for instance "C:\Program Files\Epic Games\4.25\Engine\")
-        This creates a "UEPlasticPlugin" folder into the "Plugins/" subdirectory.
-        This is the way to enable Plastic SCM for all Unreal Engine projects.
+        This creates a "Plugins\UEPlasticPlugin\" subdirectory into your project.
+        This is the way to go to use Plastic SCM on a specific project,
+		and to share the plugin with other team members by adding it to source control.
+        Some users reported they also had to remove the integrated plugin from "Engine\Plugins\Developer\PlasticSourceControl" to avoid a collision.
+        This is only needed for some specific use case I have not yet identified (eg. on CI/CD, or on Unix OSes).
+     2. Unzip the content of the ZIP in the Engine\ directory of UE4.x directly for all your projects
+        (for instance "C:\Program Files\Epic Games\5.1\Engine\")
+        This creates a "UEPlasticPlugin" folder into the "Plugins\" subdirectory.
+        Then remove the integrated plugin from "Engine\Plugins\Developer\PlasticSourceControl" to avoid the collision.
+        This is the way to enable Plastic SCM for all Unreal Engine projects on the machine.
  3. Then, launch your Unreal project, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
 #### How to build from sources
 
-Why: If your project is already a C++ project, you only have to re-generate Visual Studio project files (step 4 below) and the plugin will get rebuilt the next time you compile your project.
+**Why?**: If your project is already a C++ project, you only have to re-generate Visual Studio project files (step 4 below) and the plugin will get rebuilt the next time you compile your project.
 
 Else, if you want to rebuild the plugin for a Blueprint project:
 
