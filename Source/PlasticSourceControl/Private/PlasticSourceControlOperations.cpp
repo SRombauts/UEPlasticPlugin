@@ -2,6 +2,7 @@
 
 #include "PlasticSourceControlOperations.h"
 
+#include "PackageUtils.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
@@ -1860,7 +1861,8 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 	}
 
-	// TODO: Have the Editor unlink the files so that source control can override them
+	// Make the Editor Unlink the assets if they are loaded in memory so that source control can override the corresponding files
+	PackageUtils::UnlinkPackagesInMainThread(InCommand.Files);
 
 	{
 		// 'cm shelveset apply sh:88 "/Content/Blueprints/BP_CheckedOut.uasset"'
@@ -1870,6 +1872,9 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
 
+	// Reload packages that where updated by the Unshelve operation (and the current map if needed)
+	PackageUtils::ReloadPackagesInMainThread(InCommand.Files);
+
 	if (InCommand.bCommandSuccessful)
 	{
 		// move all the unshelved files back to the changelist
@@ -1878,11 +1883,12 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	if (InCommand.bCommandSuccessful)
 	{
-		ChangelistToUpdate = InCommand.Changelist;
-
 		// now update the status of our files
 		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+
+		ChangelistToUpdate = InCommand.Changelist;
 	}
+
 	return InCommand.bCommandSuccessful;
 }
 
