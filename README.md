@@ -34,7 +34,7 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
      - [Source Control Menu](#source-control-menu)
      - [Source Control Windows](#source-control-windows)
      - [Redirectors](#redirectors)
-     - [Branches Support](#branches-support)
+     - [Detect Changes on other Branches](#detect-changes-on-other-branches)
      - [Merge conflicts on Blueprints](#merge-conflicts-on-blueprints)
      - [Workflows](#workflows)
        - [Mainline](#mainline)
@@ -319,10 +319,13 @@ You can show them in the Content Browser using a dedicated filter:
 You can also delete them recursively using the context menu "Fix Up Redirectors in Folder":
 ![Source Control - Show Redirectors](Screenshots/UE4PlasticPlugin-FixUpRedirectorsInFolder.png)
 
-#### Branches support
+#### Detect Changes on other Branches
 
 If you are making use of multiple branches, either for releases and patches, or for tasks or features,
 you can enable an option to check for changes in all other branches.
+
+Enable "Update Status" to also checks the history to detect changes on other branches:
+![Source Control Settings](Screenshots/UEPlasticPlugin-SourceControlSettings.png)
 
 Tooltip in the Content Browser when an asset is already checked-out somewhere else:
 ![Asset checked-out by someone else](Screenshots/UEPlasticPlugin-CheckedOutOther-Tooltip.png)
@@ -462,7 +465,7 @@ This version here is the development version, so it always contains additional f
  - show current branch name and CL in status text
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
  - display locked files, and by who
- - branches support, to check outdated files vs. remote across multiple branches
+ - Detect Changes on other Branches, to check outdated files vs. remote across multiple branches
  - add, duplicate a file
  - move/rename a file or a folder
  - revert modifications of a file (works best with the "Content Hot-Reload" option since UE4.15)
