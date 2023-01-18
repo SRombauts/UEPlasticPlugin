@@ -1756,11 +1756,11 @@ bool ParseShelveDiffResults(const FString InWorkingDirectory, TArray<FString>&& 
 
 	for (FString& Result : InResults)
 	{
-		EWorkspaceState::Type WorkspaceState = ParseShelveFileStatus(Result[0]);
+		EWorkspaceState::Type ShelveStatus = ParseShelveFileStatus(Result[0]);
 		
 		// Remove outer double quotes
 		Result.MidInline(3, Result.Len() - 4, false);
-		if (WorkspaceState == EWorkspaceState::Moved)
+		if (ShelveStatus == EWorkspaceState::Moved)
 		{
 			// Search for the inner double quotes in the middle of "Content/Source.uasset" "Content/Destination.uasset" to keep only the destination filename
 			int32 RenameIndex;
@@ -1770,24 +1770,23 @@ bool ParseShelveDiffResults(const FString InWorkingDirectory, TArray<FString>&& 
 			}
 		}
 		
-		if (WorkspaceState != EWorkspaceState::Unknown && !Result.IsEmpty())
+		if (ShelveStatus != EWorkspaceState::Unknown && !Result.IsEmpty())
 		{
 			FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(InWorkingDirectory, MoveTemp(Result));
-			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = MakeShareable(new FPlasticSourceControlState(MoveTemp(AbsoluteFilename)));
-			FileState->WorkspaceState = WorkspaceState;
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> ShelveState = MakeShared<FPlasticSourceControlState>(MoveTemp(AbsoluteFilename), ShelveStatus);
 
 			// In case of a Moved file, it would appear twice in the list, so overwrite it if already in
-			if (FSourceControlStateRef* ExistingState = InOutChangelistsState.ShelvedFiles.FindByPredicate(
-				[&FileState](const FSourceControlStateRef& State)
+			if (FSourceControlStateRef* ExistingShelveState = InOutChangelistsState.ShelvedFiles.FindByPredicate(
+				[&ShelveState](const FSourceControlStateRef& State)
 				{
-					return State->GetFilename().Equals(FileState->GetFilename());
+					return State->GetFilename().Equals(ShelveState->GetFilename());
 				}))
 			{
-				*ExistingState = MoveTemp(FileState);
+				*ExistingShelveState = MoveTemp(ShelveState);
 			}
 			else
 			{
-				InOutChangelistsState.ShelvedFiles.Add(MoveTemp(FileState));
+				InOutChangelistsState.ShelvedFiles.Add(MoveTemp(ShelveState));
 			}
 		}
 		else

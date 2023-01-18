@@ -44,6 +44,12 @@ public:
 	{
 	}
 
+	FPlasticSourceControlState(FString&& InLocalFilename, EWorkspaceState::Type InWorkspaceState)
+		: LocalFilename(MoveTemp(InLocalFilename))
+		, WorkspaceState(InWorkspaceState)
+	{
+	}
+
 	FPlasticSourceControlState() = delete;
 	FPlasticSourceControlState(const FPlasticSourceControlState& InState) = delete;
 	const FPlasticSourceControlState& operator=(const FPlasticSourceControlState& InState) = delete;

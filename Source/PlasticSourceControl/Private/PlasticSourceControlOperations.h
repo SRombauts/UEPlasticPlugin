@@ -441,6 +441,35 @@ protected:
 	FPlasticSourceControlChangelist DestinationChangelist;
 };
 
+class FPlasticShelveWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticShelveWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticShelveWorker() = default;
+
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+protected:
+	int32 ShelveId = ISourceControlState::INVALID_REVISION;
+
+	TArray<FString> ShelvedFiles;
+
+	/** Files that were moved to a new changelist if shelving from the Default Changelist */
+	TArray<FString> MovedFiles;
+
+	/** Changelist description if needed */
+	FString ChangelistDescription;
+
+	/** Changelist(s) to be updated */
+	FPlasticSourceControlChangelist InChangelistToUpdate;
+	FPlasticSourceControlChangelist OutChangelistToUpdate;
+};
+
 class FPlasticDeleteShelveWorker final : public IPlasticSourceControlWorker
 {
 public:
