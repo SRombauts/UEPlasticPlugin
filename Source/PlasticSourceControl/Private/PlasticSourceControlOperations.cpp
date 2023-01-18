@@ -1822,6 +1822,52 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticUnshelveWorker::Execute);
 
+	// Get the state of the changelist to operate on
+	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
+
+	// TODO: Detect if any file to unshelve have some local modification, which would fail the "unshelve" operation with a merge conflict
+	// NOTE: we could decide to automatically undo the local changes in order for this process too be automatic, like with Perforce
+	if (ChangelistState->Files.Num() > 0)
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("Revert local changes in order to unshelve the corresponding changes from the shelve."));
+		InCommand.bCommandSuccessful = false;
+		return false;
+	}
+
+	// TODO: Get the list of files to unshelve if not all of them are selected
+	TArray<FString> Files;
+
+	if (InCommand.Files.Num() < ChangelistState->ShelvedFiles.Num())
+	{
+		// On old version, don't unshelve the files if they are not all selected (since we couldn't apply only a selection of files from a shelve)
+		UE_LOG(LogSourceControl, Error, TEXT("Plastic SCM cannot unshelve a selection of files from a shelve. Unshelve them all at once."));
+		InCommand.bCommandSuccessful = false;
+		return false;
+	}
+
+	// TODO: Have the Editor unlink the files so that source control can override them
+
+	{
+		// 'cm shelveset apply sh:88 "/Content/Blueprints/BP_CheckedOut.uasset"'
+		TArray<FString> Parameters;
+		Parameters.Add(TEXT("apply"));
+		Parameters.Add(FString::Printf(TEXT("sh:%d"), ChangelistState->ShelveId));
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+
+	if (InCommand.bCommandSuccessful)
+	{
+		// move all the unshelved files back to the changelist
+		InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), InCommand.Changelist, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+
+	if (InCommand.bCommandSuccessful)
+	{
+		ChangelistToUpdate = InCommand.Changelist;
+
+		// now update the status of our files
+		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	}
 	return InCommand.bCommandSuccessful;
 }
 
