@@ -1825,24 +1825,39 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	// Get the state of the changelist to operate on
 	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
 
-	// TODO: Detect if any file to unshelve have some local modification, which would fail the "unshelve" operation with a merge conflict
+	// Detect if any file to unshelve has some local modification, which would fail the "unshelve" operation with a merge conflict
 	// NOTE: we could decide to automatically undo the local changes in order for this process too be automatic, like with Perforce
-	if (ChangelistState->Files.Num() > 0)
+	for (const FString& File : InCommand.Files)
 	{
-		UE_LOG(LogSourceControl, Error, TEXT("Revert local changes in order to unshelve the corresponding changes from the shelve."));
-		InCommand.bCommandSuccessful = false;
-		return false;
+		if (ChangelistState->Files.FindByPredicate([&File](const FSourceControlStateRef& FileState) { return FileState->GetFilename().Equals(File, ESearchCase::IgnoreCase); }))
+		{
+			UE_LOG(LogSourceControl, Error, TEXT("Revert local changes in order to unshelve the corresponding changes from the shelve."));
+			return false;
+		}
 	}
 
-	// TODO: Get the list of files to unshelve if not all of them are selected
+	// Get the list of files to unshelve if not all of them are selected
 	TArray<FString> Files;
-
 	if (InCommand.Files.Num() < ChangelistState->ShelvedFiles.Num())
 	{
-		// On old version, don't unshelve the files if they are not all selected (since we couldn't apply only a selection of files from a shelve)
-		UE_LOG(LogSourceControl, Error, TEXT("Plastic SCM cannot unshelve a selection of files from a shelve. Unshelve them all at once."));
-		InCommand.bCommandSuccessful = false;
-		return false;
+		if (GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::ShelvesetApplySelection)
+		{
+			// On old version, don't unshelve the files if they are not all selected (since we couldn't apply only a selection of files from a shelve)
+			UE_LOG(LogSourceControl, Error,
+				TEXT("Plastic SCM %s cannot unshelve a selection of files from a shelve. Unshelve them all at once or update to %s."),
+				*GetProvider().GetPlasticScmVersion().String,
+				*PlasticSourceControlVersions::ShelvesetApplySelection.String
+			);
+			return false;
+		}
+		const FString PathToWorkspaceRoot = GetProvider().GetPathToWorkspaceRoot();
+		Files.Reset(InCommand.Files.Num());
+		for (FString File : InCommand.Files)
+		{
+			// Make path relative the workspace root, since the shelveset apply operation require server paths
+			FPaths::MakePathRelativeTo(File, *PathToWorkspaceRoot);
+			Files.Add(TEXT("/") + File);
+		}
 	}
 
 	// TODO: Have the Editor unlink the files so that source control can override them
