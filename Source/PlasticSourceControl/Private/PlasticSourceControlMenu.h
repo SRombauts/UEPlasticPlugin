@@ -32,8 +32,6 @@ private:
 
 	bool				SaveDirtyPackages();
 	TArray<FString>		ListAllPackages();
-	TArray<UPackage*>	UnlinkPackages(const TArray<FString>& InPackageNames);
-	void				ReloadPackages(TArray<UPackage*>& InPackagesToReload);
 
 #if ENGINE_MAJOR_VERSION == 4
 	void AddMenuExtension(FMenuBuilder& Menu);

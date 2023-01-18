@@ -21,7 +21,7 @@
 #include "EditorStyleSet.h"
 #endif
 
-#include "PackageTools.h"
+#include "PackageUtils.h"
 #include "FileHelpers.h"
 #include "ISettingsModule.h"
 
@@ -108,92 +108,9 @@ bool FPlasticSourceControlMenu::SaveDirtyPackages()
 /// Find all packages in Content directory
 TArray<FString> FPlasticSourceControlMenu::ListAllPackages()
 {
-	TArray<FString> PackageRelativePaths;
-	FPackageName::FindPackagesInDirectory(PackageRelativePaths, FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-
-	TArray<FString> PackageNames;
-	PackageNames.Reserve(PackageRelativePaths.Num());
-	for (const FString& Path : PackageRelativePaths)
-	{
-		FString PackageName;
-		FString FailureReason;
-		if (FPackageName::TryConvertFilenameToLongPackageName(Path, PackageName, &FailureReason))
-		{
-			PackageNames.Add(PackageName);
-		}
-		else
-		{
-			FMessageLog("SourceControl").Error(FText::FromString(FailureReason));
-		}
-	}
-
-	return PackageNames;
-}
-
-// Unkink all loaded packages to allow to update them
-// Note: Extracted from AssetViewUtils::SyncPathsFromSourceControl()
-TArray<UPackage*> FPlasticSourceControlMenu::UnlinkPackages(const TArray<FString>& InPackageNames)
-{
-	// Form a list of loaded packages to unlink...
-	TArray<UPackage*> LoadedPackages;
-	LoadedPackages.Reserve(InPackageNames.Num());
-	for (const FString& PackageName : InPackageNames)
-	{
-		// NOTE: this will only find packages loaded in memory
-		if (UPackage* Package = FindPackage(nullptr, *PackageName))
-		{
-			LoadedPackages.Emplace(Package);
-
-			// Detach the linkers of any loaded packages so that SCC can overwrite the files...
-			if (!Package->IsFullyLoaded())
-			{
-				FlushAsyncLoading();
-				Package->FullyLoad();
-			}
-			ResetLoaders(Package);
-		}
-		// else not loaded in memory, nothing to unlink nor reload!
-	}
-	UE_LOG(LogSourceControl, Log, TEXT("Reseted Loader for %d Packages"), LoadedPackages.Num());
-
-	return LoadedPackages;
-}
-
-// Hot-Reload all packages after they have been updated
-// Note: Extracted from AssetViewUtils::SyncPathsFromSourceControl()
-void FPlasticSourceControlMenu::ReloadPackages(TArray<UPackage*>& InPackagesToReload)
-{
-	UE_LOG(LogSourceControl, Log, TEXT("Reloading %d Packages..."), InPackagesToReload.Num());
-
-	// Syncing may have deleted some packages, so we need to unload those rather than re-load them...
-	// Note: we will store the package using weak pointers here otherwise we might have garbage collection issues after the ReloadPackages call
-	TArray<TWeakObjectPtr<UPackage>> PackagesToUnload;
-	InPackagesToReload.RemoveAll([&](UPackage* InPackage) -> bool
-	{
-		const FString PackageExtension = InPackage->ContainsMap() ? FPackageName::GetMapPackageExtension() : FPackageName::GetAssetPackageExtension();
-		const FString PackageFilename = FPackageName::LongPackageNameToFilename(InPackage->GetName(), PackageExtension);
-		if (!FPaths::FileExists(PackageFilename))
-		{
-			PackagesToUnload.Emplace(MakeWeakObjectPtr(InPackage));
-			return true; // remove package
-		}
-		return false; // keep package
-	});
-
-	// Hot-reload the new packages...
-	UPackageTools::ReloadPackages(InPackagesToReload);
-
-	// Unload any deleted packages...
-	TArray<UPackage*> PackageRawPtrsToUnload;
-	for (TWeakObjectPtr<UPackage>& PackageToUnload : PackagesToUnload)
-	{
-		if (PackageToUnload.IsValid())
-		{
-			PackageRawPtrsToUnload.Emplace(PackageToUnload.Get());
-		}
-	}
-
-	UPackageTools::UnloadPackages(PackageRawPtrsToUnload);
+	TArray<FString> PackageFilePaths;
+	FPackageName::FindPackagesInDirectory(PackageFilePaths, FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+	return PackageFilePaths;
 }
 
 void FPlasticSourceControlMenu::SyncProjectClicked()
@@ -204,7 +121,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 		if (bSaved)
 		{
 			// Find and Unlink all packages in Content directory to allow to update them
-			UnlinkPackages(ListAllPackages());
+			PackageUtils::UnlinkPackages(ListAllPackages());
 
 			// Launch a custom "SyncAll" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -276,7 +193,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 			if (bSaved)
 			{
 				// Find and Unlink all packages in Content directory to allow to update them
-				UnlinkPackages(ListAllPackages());
+				PackageUtils::UnlinkPackages(ListAllPackages());
 
 				// Launch a "RevertAll" Operation
 				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -440,86 +357,6 @@ void FPlasticSourceControlMenu::DisplayFailureNotification(const FName& InOperat
 	UE_LOG(LogSourceControl, Error, TEXT("%s"), *NotificationText.ToString());
 }
 
-// Get the World currently loaded by the Editor (and thus, access to the corresponding map package)
-UWorld* GetCurrentWorld()
-{
-	if (GEditor)
-	{
-		if (UWorld* EditorWorld = GEditor->GetEditorWorldContext().World())
-		{
-			return EditorWorld;
-		}
-	}
-	return nullptr;
-}
-
-TArray<UPackage*> ListPackagesToReload(const TArray<FString>& InUpdatedFiles)
-{
-	TArray<UPackage*> PackagesToReload;
-
-	PackagesToReload.Reserve(InUpdatedFiles.Num() + 1);
-	for (const FString& FilePath : InUpdatedFiles)
-	{
-		FString PackageName;
-		FString FailureReason;
-		if (FPackageName::TryConvertFilenameToLongPackageName(FilePath, PackageName, &FailureReason))
-		{
-			// NOTE: this will only find packages loaded in memory
-			if (UPackage* Package = FindPackage(nullptr, *PackageName))
-			{
-				PackagesToReload.Emplace(Package);
-				UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *PackageName);
-			}
-		}
-		// else, it means the file is not an asset from the Content/ folder (eg config, source code, anything else)
-	}
-
-#if ENGINE_MAJOR_VERSION == 5
-	// Detects if some packages to reload are part of the current map
-	// (ie assets within __ExternalActors__ or __ExternalObjects__ from the new One File Per Actor (OFPA) in UE5)
-	// in which case the current map need to be reloaded, so it needs to be added to the list of packages if not already there
-	// (then UPackageTools::ReloadPackages() will handle unloading the map at the start of the reload, avoiding some crash, and reloading it at the end)
-	if (UWorld* CurrentWorld = GetCurrentWorld())
-	{
-		UPackage* CurrentMapPackage = CurrentWorld->GetOutermost();
-
-		// If the current map file has been updated, it will be reloaded automatically, so no need for the following
-		const FString CurrentMapFileAbsolute = FPaths::ConvertRelativePathToFull(CurrentMapPackage->GetLoadedPath().GetLocalFullPath());
-		const bool bHasCurrentMapBeenUpdated = InUpdatedFiles.FindByPredicate(
-			[&CurrentMapFileAbsolute](const FString& InFilePath) { return InFilePath.Equals(CurrentMapFileAbsolute, ESearchCase::IgnoreCase); }
-		) != nullptr;
-
-		if (!bHasCurrentMapBeenUpdated)
-		{
-			static const FString GamePath = FString("/Game");
-			const FString CurrentMapPath = *CurrentMapPackage->GetName();																	// eg "/Game/Maps/OpenWorld"
-			const FString CurrentMapPathWithoutGamePrefix = CurrentMapPath.RightChop(GamePath.Len());										// eg "/Maps/OpenWorld"
-			const FString CurrentMapExternalActorPath = FPackagePath::GetExternalActorsFolderName() + CurrentMapPathWithoutGamePrefix;		// eg "/__ExternalActors__/Maps/OpenWorld"
-			const FString CurrentMapExternalObjectPath = FPackagePath::GetExternalObjectsFolderName() + CurrentMapPathWithoutGamePrefix;	// eg "/__ExternalObjects__/Maps/OpenWorld"
-
-			bool bNeedReloadCurrentMap = false;
-
-			for (const FString& FilePath : InUpdatedFiles)
-			{
-				if (FilePath.Contains(CurrentMapExternalActorPath) || FilePath.Contains(CurrentMapExternalObjectPath))
-				{
-					bNeedReloadCurrentMap = true;
-					break;
-				}
-			}
-
-			if (bNeedReloadCurrentMap)
-			{
-				PackagesToReload.Add(CurrentMapPackage);
-				UE_LOG(LogSourceControl, Log, TEXT("Reload: %s"), *CurrentMapPath);
-			}
-		}
-	}
-#endif
-
-	return PackagesToReload;
-}
-
 void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	RemoveInProgressNotification();
@@ -528,21 +365,13 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 	{
 		// Reload packages that where updated by the Sync operation (and the current map if needed)
 		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
-		TArray<UPackage*> PackagesToReload = ListPackagesToReload(Operation->UpdatedFiles);
-		if (PackagesToReload.Num() > 0)
-		{
-			ReloadPackages(PackagesToReload);
-		}
+		PackageUtils::ReloadPackages(Operation->UpdatedFiles);
 	}
 	else if (InOperation->GetName() == "RevertAll")
 	{
 		// Reload packages that where updated by the Revert operation (and the current map if needed)
 		TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRevertAll>(InOperation);
-		TArray<UPackage*> PackagesToReload = ListPackagesToReload(Operation->UpdatedFiles);
-		if (PackagesToReload.Num() > 0)
-		{
-			ReloadPackages(PackagesToReload);
-		}
+		PackageUtils::ReloadPackages(Operation->UpdatedFiles);
 	}
 
 	// Report result with a notification
