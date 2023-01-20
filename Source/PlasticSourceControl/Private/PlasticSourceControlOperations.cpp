@@ -189,7 +189,15 @@ static void UpdateChangelistState(FPlasticSourceControlProvider& SCCProvider, co
 
 		for (const FPlasticSourceControlState& InState : InStates)
 		{
-			if ((InState.WorkspaceState != EWorkspaceState::CheckedOut) && (InState.WorkspaceState != EWorkspaceState::Added) && InState.WorkspaceState != EWorkspaceState::Deleted)
+			// cm cannot yet handle local modifications in changelists, only the GUI can
+			if (   InState.WorkspaceState != EWorkspaceState::CheckedOut
+				&& InState.WorkspaceState != EWorkspaceState::Added
+				&& InState.WorkspaceState != EWorkspaceState::Deleted
+				&& InState.WorkspaceState != EWorkspaceState::Copied
+				&& InState.WorkspaceState != EWorkspaceState::Moved
+				&& InState.WorkspaceState != EWorkspaceState::Conflicted	// In source control, waiting for merged
+				&& InState.WorkspaceState != EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge
+				)
 			{
 				continue;
 			}
