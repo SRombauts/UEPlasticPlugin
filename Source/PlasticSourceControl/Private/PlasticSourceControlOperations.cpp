@@ -1080,11 +1080,22 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			InCommand.bCommandSuccessful = true;
 		}
 
-		// now update the status of our files:
-		TArray<FString> BothFiles;
-		BothFiles.Add(Origin);
-		BothFiles.Add(Destination);
-		PlasticSourceControlUtils::RunUpdateStatus(BothFiles, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		// Now update the status of both our files
+		// Note: this call "status" on the common directory of both files, that could very well be the root Content/ folder itself, leading to an expensive call checking status of the whole project
+		// There is no perfect heuristic to know when a directory status is more expensive that two file status,
+		// let's assume that a "rename" (ie. source & destination in the same directory) is always worth grouping, while a "move" (different directories) is more at risk to create a huge status update.
+		if (FPaths::GetPath(Origin) == (FPaths::GetPath(Destination)))
+		{
+			TArray<FString> BothFiles;
+			BothFiles.Add(Origin);
+			BothFiles.Add(Destination);
+			PlasticSourceControlUtils::RunUpdateStatus(BothFiles, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		}
+		else
+		{
+			PlasticSourceControlUtils::RunUpdateStatus({ Origin }, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+			PlasticSourceControlUtils::RunUpdateStatus({ Destination }, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		}
 	}
 	else
 	{
