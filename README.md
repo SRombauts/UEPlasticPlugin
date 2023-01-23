@@ -77,7 +77,7 @@ If you want the latest features, performance improvements and bug fixes that are
 		and to share the plugin with other team members by adding it to source control.
         Some users reported they also had to remove the integrated plugin from "Engine\Plugins\Developer\PlasticSourceControl" to avoid a collision.
         This is only needed for some specific use case I have not yet identified (eg. on CI/CD, or on Unix OSes).
-     2. Unzip the content of the ZIP in the Engine\ directory of UE4.x directly for all your projects
+     2. Unzip the content of the ZIP in the Engine\ directory of UEX.Y directly for all your projects
         (for instance "C:\Program Files\Epic Games\5.1\Engine\")
         This creates a "UEPlasticPlugin" folder into the "Plugins\" subdirectory.
         Then remove the integrated plugin from "Engine\Plugins\Developer\PlasticSourceControl" to avoid the collision.
@@ -460,7 +460,7 @@ To configure a text diff for any uasset (not only Blueprints) use this command i
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.7.0 2022/12/09 for UE 5.1.1/Github 5.2.x and UE 4.27.2:
+### Version 1.7.1 2023/01/17 for UE 5.0/5.1/Github 5.2.x and UE 4.27.2:
  - manage connection to the server
  - show current branch name and CL in status text
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
@@ -477,14 +477,14 @@ This version here is the development version, so it always contains additional f
  - visual diff of a blueprint against depot or between previous versions of a file
  - Changelists in Unreal Engine 5: create, edit, move files, delete (no shelves yet)
  - One Files Per Actor (OFPA) in Unreal Engine 5: status batching to execute only one operation for all files in all subfolders
- - initialize a new workspace to manage your UE4 Game Project.
- - make the initial commit with a custom message
- - create an appropriate ignore.conf file as part of initialization
- - also permit late creation of the ignore.conf file
- - show conflicted files and 3-way visual diff
- - solve a merge conflict on a blueprint
- - top-menu global "Sync" instead of on folder's context menu
- - top-menu global "undo unchanged" and "undo all checkout"
+ - initialize a new workspace to manage your Unreal Engine Game Project.
+   - make the initial commit with a custom message
+   - create an appropriate ignore.conf file, either as part of initialization or later
+ - show merge conflict files with 3-way visual diff (but not resolving conflicts yet)
+ - "Source Control" menu global actions
+   - "Sync/update workspace" instead of on folder's context menu
+   - "Revert Unchanged" and "Revert All"
+   - "Refresh" to update local source control status icons (but doesn't re-evaluate locks or changes made on other branches)
  - [Partial Workspace (Gluon, for artists)](https://www.plasticscm.com/gluon) [see also](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
  - Plastic Cloud is fully supported
  - xlinks sub-repositories (for Plugins for instance)
@@ -497,22 +497,23 @@ This version here is the development version, so it always contains additional f
  - Unreal Engine 5.1 full support
    - Shelves of Changelists
    - Uncontrolled Changelists
+ - Solve a merge conflict on a blueprint (see Known issues below)
  - Mac OS X Support
  - add a menu entry to switch the workspace to Partial
  - add a setting to configure Plastic SCM to use "read-only flags" like Perforce
    - add a context menu entry to make it locally writable
  - add a menu entry to unlock a file
  - add a setting to pass the --update option to "check-in"
- - add a "clean directory" or "check-in deleted files"
+ - add a "clean directory"
 
 ### Known issues
- - Sync & RevertAll crash the Editor in Unreal Engine 5.0 and are temporarily disabled (https://github.com/SRombauts/UEPlasticPlugin/issues/89)
  - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
  - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
  - Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
  - Bug: the Editor does not handle visual diff for renamed/moved assets
 
-### Features not supported, reserved for internal use by Epic Games with Perforce only
+### Features not supported
+Some are reserved for internal use by Epic Games with Perforce only:
  - Branch and Merge workflow: not handled by the Unreal Editor
  - Directory source control status: not handled by the Unreal Editor
  - tags: get labels (used for crash when the full Engine is under Perforce)
