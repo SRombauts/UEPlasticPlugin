@@ -1835,14 +1835,20 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
 
 	// Detect if any file to unshelve has some local modification, which would fail the "unshelve" operation with a merge conflict
-	// NOTE: we could decide to automatically undo the local changes in order for this process too be automatic, like with Perforce
-	for (const FString& File : InCommand.Files)
+	// NOTE: we could decide to automatically undo the local changes in order for this process to be automatic, like with Perforce
+	bool bConflict = false;
+	for (FString& File : InCommand.Files)
 	{
 		if (ChangelistState->Files.FindByPredicate([&File](const FSourceControlStateRef& FileState) { return FileState->GetFilename().Equals(File, ESearchCase::IgnoreCase); }))
 		{
-			UE_LOG(LogSourceControl, Error, TEXT("Revert local changes in order to unshelve the corresponding changes from the shelve."));
-			return false;
+			FPaths::MakePathRelativeTo(File, *FPaths::ProjectDir());
+			UE_LOG(LogSourceControl, Error, TEXT("Revert your changes to /%s in order to unshelve the corresponding changes from the shelve."), *File);
+			bConflict = true;
 		}
+	}
+	if (bConflict)
+	{
+		return false;
 	}
 
 	// Get the list of files to unshelve if not all of them are selected
@@ -1853,7 +1859,7 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			// On old version, don't unshelve the files if they are not all selected (since we couldn't apply only a selection of files from a shelve)
 			UE_LOG(LogSourceControl, Error,
-				TEXT("Plastic SCM %s cannot unshelve a selection of files from a shelve. Unshelve them all at once or update to %s."),
+				TEXT("Plastic SCM %s cannot unshelve a selection of files from a shelve. Unshelve them all at once or update to %s or above."),
 				*GetProvider().GetPlasticScmVersion().String,
 				*PlasticSourceControlVersions::ShelvesetApplySelection.String
 			);
