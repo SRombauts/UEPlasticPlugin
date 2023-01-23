@@ -2,6 +2,7 @@
 
 #include "PlasticSourceControlOperations.h"
 
+#include "PackageUtils.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
@@ -55,7 +56,8 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("MoveToChangelist", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticReopenWorker>));
 
 	PlasticSourceControlProvider.RegisterWorker("Shelve", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticShelveWorker>));
- 	PlasticSourceControlProvider.RegisterWorker("DeleteShelved", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteShelveWorker>));
+	PlasticSourceControlProvider.RegisterWorker("Unshelve", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticUnshelveWorker>));
+	PlasticSourceControlProvider.RegisterWorker("DeleteShelved", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteShelveWorker>));
 #endif
 }
 
@@ -187,11 +189,20 @@ static void UpdateChangelistState(FPlasticSourceControlProvider& SCCProvider, co
 
 		for (const FPlasticSourceControlState& InState : InStates)
 		{
-			if ((InState.WorkspaceState != EWorkspaceState::CheckedOut) && (InState.WorkspaceState != EWorkspaceState::Added) && InState.WorkspaceState != EWorkspaceState::Deleted)
+			// cm cannot yet handle local modifications in changelists, only the GUI can
+			if (   InState.WorkspaceState != EWorkspaceState::CheckedOut
+				&& InState.WorkspaceState != EWorkspaceState::Added
+				&& InState.WorkspaceState != EWorkspaceState::Deleted
+				&& InState.WorkspaceState != EWorkspaceState::Copied
+				&& InState.WorkspaceState != EWorkspaceState::Moved
+				&& InState.WorkspaceState != EWorkspaceState::Conflicted	// In source control, waiting for merged
+				&& InState.WorkspaceState != EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge
+				)
 			{
 				continue;
 			}
 
+			// Add a shared reference to the state of the file, that will then be updated by PlasticSourceControlUtils::UpdateCachedStates()
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = SCCProvider.GetStateInternal(InState.GetFilename());
 			ChangelistState->Files.Add(State);
 
@@ -1809,6 +1820,100 @@ bool FPlasticShelveWorker::UpdateStates()
 	return bMovedFiles || ShelvedFiles.Num() > 0;
 }
 
+
+
+FName FPlasticUnshelveWorker::GetName() const
+{
+	return "Unshelve";
+}
+
+bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticUnshelveWorker::Execute);
+
+	// Get the state of the changelist to operate on
+	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
+
+	// Detect if any file to unshelve has some local modification, which would fail the "unshelve" operation with a merge conflict
+	// NOTE: we could decide to automatically undo the local changes in order for this process to be automatic, like with Perforce
+	bool bConflict = false;
+	for (FString& File : InCommand.Files)
+	{
+		if (ChangelistState->Files.FindByPredicate([&File](const FSourceControlStateRef& FileState) { return FileState->GetFilename().Equals(File, ESearchCase::IgnoreCase); }))
+		{
+			FPaths::MakePathRelativeTo(File, *FPaths::ProjectDir());
+			UE_LOG(LogSourceControl, Error, TEXT("Revert your changes to /%s in order to unshelve the corresponding changes from the shelve."), *File);
+			bConflict = true;
+		}
+	}
+	if (bConflict)
+	{
+		return false;
+	}
+
+	// Get the list of files to unshelve if not all of them are selected
+	TArray<FString> Files;
+	if (InCommand.Files.Num() < ChangelistState->ShelvedFiles.Num())
+	{
+		if (GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::ShelvesetApplySelection)
+		{
+			// On old version, don't unshelve the files if they are not all selected (since we couldn't apply only a selection of files from a shelve)
+			UE_LOG(LogSourceControl, Error,
+				TEXT("Plastic SCM %s cannot unshelve a selection of files from a shelve. Unshelve them all at once or update to %s or above."),
+				*GetProvider().GetPlasticScmVersion().String,
+				*PlasticSourceControlVersions::ShelvesetApplySelection.String
+			);
+			return false;
+		}
+		const FString PathToWorkspaceRoot = GetProvider().GetPathToWorkspaceRoot();
+		Files.Reset(InCommand.Files.Num());
+		for (FString File : InCommand.Files)
+		{
+			// Make path relative the workspace root, since the shelveset apply operation require server paths
+			FPaths::MakePathRelativeTo(File, *PathToWorkspaceRoot);
+			Files.Add(TEXT("/") + File);
+		}
+	}
+
+	// Make the Editor Unlink the assets if they are loaded in memory so that source control can override the corresponding files
+	PackageUtils::UnlinkPackagesInMainThread(InCommand.Files);
+
+	{
+		// 'cm shelveset apply sh:88 "/Content/Blueprints/BP_CheckedOut.uasset"'
+		TArray<FString> Parameters;
+		Parameters.Add(TEXT("apply"));
+		Parameters.Add(FString::Printf(TEXT("sh:%d"), ChangelistState->ShelveId));
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+
+	// Reload packages that where updated by the Unshelve operation (and the current map if needed)
+	PackageUtils::ReloadPackagesInMainThread(InCommand.Files);
+
+	if (InCommand.bCommandSuccessful)
+	{
+		// move all the unshelved files back to the changelist
+		InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), InCommand.Changelist, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+
+	if (InCommand.bCommandSuccessful)
+	{
+		// now update the status of our files
+		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+
+		ChangelistToUpdate = InCommand.Changelist;
+	}
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticUnshelveWorker::UpdateStates()
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticUnshelveWorker::UpdateStates);
+
+	UpdateChangelistState(GetProvider(), ChangelistToUpdate, States);
+
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
+}
 
 FName FPlasticDeleteShelveWorker::GetName() const
 {

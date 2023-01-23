@@ -470,6 +470,27 @@ protected:
 	FPlasticSourceControlChangelist OutChangelistToUpdate;
 };
 
+class FPlasticUnshelveWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticUnshelveWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticUnshelveWorker() = default;
+
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+protected:
+	/** List of files states after the unshelve */
+	TArray<FPlasticSourceControlState> States;
+
+	/** Changelist to be updated */
+	FPlasticSourceControlChangelist ChangelistToUpdate;
+};
+
 class FPlasticDeleteShelveWorker final : public IPlasticSourceControlWorker
 {
 public:
