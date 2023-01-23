@@ -447,7 +447,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		"PlasticRefresh",
 #endif
 		LOCTEXT("PlasticRefresh",			"Refresh"),
-		LOCTEXT("PlasticRefreshTooltip",	"Update the source control status of all files in the workspace."),
+		LOCTEXT("PlasticRefreshTooltip",	"Update the local source control status of all files in the workspace (no expensive checks for locks or changes on other branches)."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Refresh"),
 #else
