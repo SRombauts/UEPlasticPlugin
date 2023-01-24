@@ -1685,10 +1685,14 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TArray<FString> FilesToShelve = InCommand.Files;
 
+	int32 PreviousShelveId = ISourceControlState::INVALID_REVISION;
+
 	if (InCommand.Changelist.IsInitialized())
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
 
+		PreviousShelveId = ChangelistState->ShelveId;
+		
 		// If the command has specified a changelist but no files, then get all files from it
 		if (FilesToShelve.Num() == 0)
 		{
@@ -1755,6 +1759,12 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 					ShelveId = FCString::Atoi(*CreatedShelveStatus);
 				}
 			}
+			
+			// If there was already a shelve, we have now created a new one with updated files, so we must delete the old one
+			if (PreviousShelveId != ISourceControlState::INVALID_REVISION)
+			{
+				DeleteShelve(PreviousShelveId, InCommand.ErrorMessages);
+			}
 		}
 		else
 		{
@@ -1804,12 +1814,6 @@ bool FPlasticShelveWorker::UpdateStates()
 		bMovedFiles = true;
 	}
 
-	// If there was already a shelve, we have now created a new one with updated files, so we must delete the old one
-	if ((DestinationChangelistState->ShelveId != ISourceControlState::INVALID_REVISION) && (ShelveId != DestinationChangelistState->ShelveId))
-	{
-		TArray<FString> Errors;
-		DeleteShelve(DestinationChangelistState->ShelveId, Errors);
-	}
 	DestinationChangelistState->ShelveId = ShelveId;
 
 	// And finally, add the shelved files to the changelist state
