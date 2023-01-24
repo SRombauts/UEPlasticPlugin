@@ -1733,12 +1733,14 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	if (InCommand.bCommandSuccessful)
 	{
+		ChangelistDescription = *Operation->GetDescription().ToString();
+
 		TArray<FString> Results;
 		TArray<FString> Parameters;
-		ChangelistDescription = FString::Printf(TEXT("Changelist%s: %s"), *Changelist.GetName(), *Operation->GetDescription().ToString());
-		const FScopedTempFile CommitMsgFile(ChangelistDescription);
+		const FString ShelveDescription = FString::Printf(TEXT("Changelist%s: %s"), *Changelist.GetName(), *ChangelistDescription);
+		const FScopedTempFile CommentsFile(ShelveDescription);
 		Parameters.Add(TEXT("create"));
-		Parameters.Add(FString::Printf(TEXT("-commentsfile=\"%s\""), *FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename())));
+		Parameters.Add(FString::Printf(TEXT("-commentsfile=\"%s\""), *FPaths::ConvertRelativePathToFull(CommentsFile.GetFilename())));
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, FilesToShelve , Results, InCommand.ErrorMessages);
 		if (InCommand.bCommandSuccessful && Results.Num() > 0)
 		{
