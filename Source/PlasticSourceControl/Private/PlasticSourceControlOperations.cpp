@@ -1660,6 +1660,43 @@ bool FPlasticReopenWorker::UpdateStates()
 	}
 }
 
+bool CreateShelve(const FString& InChangelistName, const FString& InChangelistDescription, const TArray<FString>& InFilesToShelve, int32& OutShelveId, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Results;
+	TArray<FString> Parameters;
+	const FString ShelveDescription = FString::Printf(TEXT("Changelist%s: %s"), *InChangelistName, *InChangelistDescription);
+	const FScopedTempFile CommentsFile(ShelveDescription);
+	Parameters.Add(TEXT("create"));
+	Parameters.Add(FString::Printf(TEXT("-commentsfile=\"%s\""), *FPaths::ConvertRelativePathToFull(CommentsFile.GetFilename())));
+	const bool bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, InFilesToShelve, Results, OutErrorMessages);
+	if (bCommandSuccessful && Results.Num() > 0)
+	{
+		// Parse the result to update the changelist state with the id of the shelve
+		// "Created shelve sh:12@UE5PlasticPluginDev@test@cloud (mount:'/')"
+		FString CreatedShelveStatus = Results[Results.Num() - 1];
+		if (CreatedShelveStatus.StartsWith(TEXT("Created shelve sh:")))
+		{
+			CreatedShelveStatus.RightChopInline(18);
+			int32 SeparatorIndex;
+			if (CreatedShelveStatus.FindChar(TEXT('@'), SeparatorIndex))
+			{
+				CreatedShelveStatus.LeftInline(SeparatorIndex);
+				OutShelveId = FCString::Atoi(*CreatedShelveStatus);
+			}
+		}
+	}
+
+	return OutShelveId != ISourceControlState::INVALID_REVISION;
+}
+
+bool DeleteShelve(const int32 InShelveId, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Results;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("delete"));
+	Parameters.Add(FString::Printf(TEXT("sh:%d"), InShelveId));
+	return PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, TArray<FString>(), Results, OutErrorMessages);
+}
 
 FName FPlasticShelveWorker::GetName() const
 {
@@ -1677,10 +1714,14 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TArray<FString> FilesToShelve = InCommand.Files;
 
+	int32 PreviousShelveId = ISourceControlState::INVALID_REVISION;
+
 	if (InCommand.Changelist.IsInitialized())
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
 
+		PreviousShelveId = ChangelistState->ShelveId;
+		
 		// If the command has specified a changelist but no files, then get all files from it
 		if (FilesToShelve.Num() == 0)
 		{
@@ -1721,31 +1762,19 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	if (InCommand.bCommandSuccessful)
 	{
-		TArray<FString> Results;
-		TArray<FString> Parameters;
-		ChangelistDescription = FString::Printf(TEXT("Changelist%s: %s"), *Changelist.GetName(), *Operation->GetDescription().ToString());
-		const FScopedTempFile CommitMsgFile(ChangelistDescription);
-		Parameters.Add(TEXT("create"));
-		Parameters.Add(FString::Printf(TEXT("-commentsfile=\"%s\""), *FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename())));
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, FilesToShelve , Results, InCommand.ErrorMessages);
-		if (InCommand.bCommandSuccessful && Results.Num() > 0)
+		ChangelistDescription = *Operation->GetDescription().ToString();
+
+		InCommand.bCommandSuccessful = CreateShelve(Changelist.GetName(), ChangelistDescription, FilesToShelve, ShelveId, InCommand.ErrorMessages);
+		if (InCommand.bCommandSuccessful)
 		{
 			InChangelistToUpdate = InCommand.Changelist;
 			OutChangelistToUpdate = Changelist;
 			ShelvedFiles = FilesToShelve;
-
-			// Parse the result to update the changelist state with the id of the shelve
-			// "Created shelve sh:12@UE5PlasticPluginDev@test@cloud (mount:'/')"
-			FString CreatedShelveStatus = Results[Results.Num() - 1];
-			if (CreatedShelveStatus.StartsWith(TEXT("Created shelve sh:")))
+			
+			// If there was already a shelve, we have now created a new one with updated files, so we must delete the old one
+			if (PreviousShelveId != ISourceControlState::INVALID_REVISION)
 			{
-				CreatedShelveStatus.RightChopInline(18);
-				int32 SeparatorIndex;
-				if (CreatedShelveStatus.FindChar(TEXT('@'), SeparatorIndex))
-				{
-					CreatedShelveStatus.LeftInline(SeparatorIndex);
-					ShelveId = FCString::Atoi(*CreatedShelveStatus);
-				}
+				DeleteShelve(PreviousShelveId, InCommand.ErrorMessages);
 			}
 		}
 		else
@@ -1796,16 +1825,6 @@ bool FPlasticShelveWorker::UpdateStates()
 		bMovedFiles = true;
 	}
 
-	// If there was already a shelve, we have now created a new one with updated files, so we must delete the old one
-	if ((DestinationChangelistState->ShelveId != ISourceControlState::INVALID_REVISION) && (ShelveId != DestinationChangelistState->ShelveId))
-	{
-		TArray<FString> Results;
-		TArray<FString> Errors;
-		TArray<FString> Parameters;
-		Parameters.Add(TEXT("delete"));
-		Parameters.Add(FString::Printf(TEXT("sh:%d"), DestinationChangelistState->ShelveId));
-		PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, TArray<FString>(), Results, Errors);
-	}
 	DestinationChangelistState->ShelveId = ShelveId;
 
 	// And finally, add the shelved files to the changelist state
@@ -1939,10 +1958,7 @@ bool FPlasticDeleteShelveWorker::Execute(FPlasticSourceControlCommand& InCommand
 
 	if (InCommand.bCommandSuccessful)
 	{
-		TArray<FString> Parameters;
-		Parameters.Add(TEXT("delete"));
-		Parameters.Add(FString::Printf(TEXT("sh:%d"), ChangelistState->ShelveId));
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = DeleteShelve(ChangelistState->ShelveId, InCommand.ErrorMessages);
 
 		if (InCommand.bCommandSuccessful)
 		{
