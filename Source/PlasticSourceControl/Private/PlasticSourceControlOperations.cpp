@@ -1660,6 +1660,14 @@ bool FPlasticReopenWorker::UpdateStates()
 	}
 }
 
+bool DeleteShelve(const int32 InShelveId, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Results;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("delete"));
+	Parameters.Add(FString::Printf(TEXT("sh:%d"), InShelveId));
+	return PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, TArray<FString>(), Results, OutErrorMessages);
+}
 
 FName FPlasticShelveWorker::GetName() const
 {
@@ -1799,12 +1807,8 @@ bool FPlasticShelveWorker::UpdateStates()
 	// If there was already a shelve, we have now created a new one with updated files, so we must delete the old one
 	if ((DestinationChangelistState->ShelveId != ISourceControlState::INVALID_REVISION) && (ShelveId != DestinationChangelistState->ShelveId))
 	{
-		TArray<FString> Results;
 		TArray<FString> Errors;
-		TArray<FString> Parameters;
-		Parameters.Add(TEXT("delete"));
-		Parameters.Add(FString::Printf(TEXT("sh:%d"), DestinationChangelistState->ShelveId));
-		PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, TArray<FString>(), Results, Errors);
+		DeleteShelve(DestinationChangelistState->ShelveId, Errors);
 	}
 	DestinationChangelistState->ShelveId = ShelveId;
 
@@ -1939,10 +1943,7 @@ bool FPlasticDeleteShelveWorker::Execute(FPlasticSourceControlCommand& InCommand
 
 	if (InCommand.bCommandSuccessful)
 	{
-		TArray<FString> Parameters;
-		Parameters.Add(TEXT("delete"));
-		Parameters.Add(FString::Printf(TEXT("sh:%d"), ChangelistState->ShelveId));
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = DeleteShelve(ChangelistState->ShelveId, InCommand.ErrorMessages);
 
 		if (InCommand.bCommandSuccessful)
 		{
