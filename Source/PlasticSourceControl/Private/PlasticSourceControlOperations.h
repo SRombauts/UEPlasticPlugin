@@ -510,6 +510,9 @@ protected:
 
 	/** Changelist to be updated */
 	FPlasticSourceControlChangelist ChangelistToUpdate;
+
+	/** Id of the new shelve (if only a selection of files are deleted from the shelve) */
+	int32 ShelveId = ISourceControlState::INVALID_REVISION;
 };
 
 #endif

@@ -1945,26 +1945,50 @@ bool FPlasticDeleteShelveWorker::Execute(FPlasticSourceControlCommand& InCommand
 
 	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
 
+	InCommand.bCommandSuccessful = true;
+
+	// Get the list of files to keep in the shelve if not all of them are selected (to create a new shelve with them)
+	TArray<FString> FilesToShelve;
 	if (InCommand.Files.Num() < ChangelistState->ShelvedFiles.Num())
 	{
-		// Don't delete the shelve if not all files are selected (since we cannot edit shelves (yet))
-		InCommand.ErrorMessages.Add(TEXT("Plastic SCM cannot delete a selection of files from a shelve. Delete them all at once."));
-		InCommand.bCommandSuccessful = false;
-	}
-	else
-	{
-		InCommand.bCommandSuccessful = true;
+		for (const auto& ShelveState : ChangelistState->ShelvedFiles)
+		{
+			if (!InCommand.Files.Contains(ShelveState->GetFilename()))
+			{
+				FString File = ShelveState->GetFilename();
+				
+				// Check that all this files are is still in the corresponding changelist, else we won't be able to create the new shelve!
+				if (ChangelistState->Files.ContainsByPredicate([&File](FSourceControlStateRef& State) { return File == State->GetFilename(); }))
+				{
+					FilesToShelve.Add(MoveTemp(File));
+				}
+				else
+				{
+
+					FPaths::MakePathRelativeTo(File, *FPaths::ProjectDir());
+					UE_LOG(LogSourceControl, Error, TEXT("The file /%s is not in the changelist anymore, so the shelve cannot be updated. Unshelve the corresponding change and retry."), *File);
+					InCommand.bCommandSuccessful = false;
+				}
+			}
+		}
 	}
 
 	if (InCommand.bCommandSuccessful)
 	{
-		InCommand.bCommandSuccessful = DeleteShelve(ChangelistState->ShelveId, InCommand.ErrorMessages);
+		ChangelistToUpdate = InCommand.Changelist;
+		FilesToRemove = InCommand.Files;
+	}
+	
+	if (InCommand.bCommandSuccessful && FilesToShelve.Num() > 0)
+	{
+		// Create a new shelve with the other files
+		InCommand.bCommandSuccessful = CreateShelve(InCommand.Changelist.GetName(), ChangelistState->GetDescriptionText().ToString(), FilesToShelve, ShelveId, InCommand.ErrorMessages);
+	}
 
-		if (InCommand.bCommandSuccessful)
-		{
-			ChangelistToUpdate = InCommand.Changelist;
-			FilesToRemove = InCommand.Files;
-		}
+	if (InCommand.bCommandSuccessful)
+	{
+		// Delete the old shelve
+		InCommand.bCommandSuccessful = DeleteShelve(ChangelistState->ShelveId, InCommand.ErrorMessages);
 	}
 
 	return InCommand.bCommandSuccessful;
@@ -1978,7 +2002,7 @@ bool FPlasticDeleteShelveWorker::UpdateStates()
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(ChangelistToUpdate);
 		
-		ChangelistState->ShelveId = ISourceControlState::INVALID_REVISION;
+		ChangelistState->ShelveId = ShelveId;
 
 		if (FilesToRemove.Num() > 0)
 		{
