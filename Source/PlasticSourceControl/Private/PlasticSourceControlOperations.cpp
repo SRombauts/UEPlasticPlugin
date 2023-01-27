@@ -1716,6 +1716,8 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	int32 PreviousShelveId = ISourceControlState::INVALID_REVISION;
 
+	InCommand.bCommandSuccessful = true;
+
 	if (InCommand.Changelist.IsInitialized())
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
@@ -1727,37 +1729,48 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			FilesToShelve = FileNamesFromFileStates(ChangelistState->Files);
 		}
-		// If the command has specified some files but not all, and if there was already a shelve with,
+		// If the command has specified some files, and if there was already a shelve,
 		// ensure that the previous shelved files are also put back into the new one.
 		// This is to mimic Perforce behavior, where we can add files to a shelve after we made more changes.
 		// NOTE: this is a workaround for the fact that we cannot edit an existing shelve.
-		else if ((FilesToShelve.Num() < ChangelistState->Files.Num()) && (ChangelistState->ShelvedFiles.Num() > 0))
+		else if (ChangelistState->ShelvedFiles.Num() > 0)
 		{
 			for (const FSourceControlStateRef& ShelveFile : ChangelistState->ShelvedFiles)
 			{
 				FilesToShelve.AddUnique(ShelveFile->GetFilename());
 			}
 		}
-	}
 
-	// If the command is issued on the default changelist, then we need to create a new changelist,
-	// move the files to the new changelist, then shelve the files
-	if (InCommand.Changelist.IsDefault())
-	{
-		// Create a new numbered persistent changelist ala Perforce
-		Changelist = CreatePendingChangelist(GetProvider(), Operation->GetDescription().ToString(), InCommand.InfoMessages, InCommand.ErrorMessages);
-		if (Changelist.IsInitialized())
+		// Ensure that all the files to shelve are indeed in the changelist, so that we can actually shelve them
+		// NOTE: this is because of the workaround that requires to create a new shelve and delete the old one
+		for (FString& FileToShelve : FilesToShelve)
 		{
-			InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), Changelist, FilesToShelve, InCommand.InfoMessages, InCommand.ErrorMessages);
-			if (InCommand.bCommandSuccessful)
+			if (!ChangelistState->Files.ContainsByPredicate([&FileToShelve](const FSourceControlStateRef& FileState) { return FileToShelve == FileState->GetFilename(); }))
 			{
-				MovedFiles = FilesToShelve;
+				FPaths::MakePathRelativeTo(FileToShelve, *FPaths::ProjectDir());
+				UE_LOG(LogSourceControl, Error, TEXT("The file /%s is not in the changelist anymore, so the shelve cannot be updated. Unshelve the corresponding change and retry."), *FileToShelve);
+				InCommand.bCommandSuccessful = false;
 			}
 		}
 	}
-	else
+
+	if (InCommand.bCommandSuccessful)
 	{
-		InCommand.bCommandSuccessful = true;
+		// If the command is issued on the default changelist, then we need to create a new changelist,
+		// move the files to the new changelist, then shelve the files
+		if (InCommand.Changelist.IsDefault())
+		{
+			// Create a new numbered persistent changelist ala Perforce
+			Changelist = CreatePendingChangelist(GetProvider(), Operation->GetDescription().ToString(), InCommand.InfoMessages, InCommand.ErrorMessages);
+			if (Changelist.IsInitialized())
+			{
+				InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), Changelist, FilesToShelve, InCommand.InfoMessages, InCommand.ErrorMessages);
+				if (InCommand.bCommandSuccessful)
+				{
+					MovedFiles = FilesToShelve;
+				}
+			}
+		}
 	}
 
 	if (InCommand.bCommandSuccessful)
