@@ -1853,60 +1853,60 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	// Get the state of the changelist to operate on
 	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
 
+	InCommand.bCommandSuccessful = true;
+
 	// Detect if any file to unshelve has some local modification, which would fail the "unshelve" operation with a merge conflict
 	// NOTE: we could decide to automatically undo the local changes in order for this process to be automatic, like with Perforce
-	bool bConflict = false;
 	for (FString& File : InCommand.Files)
 	{
 		if (ChangelistState->Files.FindByPredicate([&File](const FSourceControlStateRef& FileState) { return FileState->GetFilename().Equals(File, ESearchCase::IgnoreCase); }))
 		{
 			FPaths::MakePathRelativeTo(File, *FPaths::ProjectDir());
-			UE_LOG(LogSourceControl, Error, TEXT("Revert your changes to /%s in order to unshelve the corresponding changes from the shelve."), *File);
-			bConflict = true;
+			UE_LOG(LogSourceControl, Error, TEXT("Revert /%s before unshelving the corresponding change from the shelve."), *File);
+			InCommand.bCommandSuccessful = false;
 		}
 	}
-	if (bConflict)
-	{
-		return false;
-	}
 
-	// Get the list of files to unshelve if not all of them are selected
-	TArray<FString> Files;
-	if (InCommand.Files.Num() < ChangelistState->ShelvedFiles.Num())
+	if (InCommand.bCommandSuccessful)
 	{
-		if (GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::ShelvesetApplySelection)
+		// Get the list of files to unshelve if not all of them are selected
+		TArray<FString> FilesToUnshelve;
+		if (InCommand.Files.Num() < ChangelistState->ShelvedFiles.Num())
 		{
-			// On old version, don't unshelve the files if they are not all selected (since we couldn't apply only a selection of files from a shelve)
-			UE_LOG(LogSourceControl, Error,
-				TEXT("Plastic SCM %s cannot unshelve a selection of files from a shelve. Unshelve them all at once or update to %s or above."),
-				*GetProvider().GetPlasticScmVersion().String,
-				*PlasticSourceControlVersions::ShelvesetApplySelection.String
-			);
-			return false;
+			if (GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::ShelvesetApplySelection)
+			{
+				// On old version, don't unshelve the files if they are not all selected (since we couldn't apply only a selection of files from a shelve)
+				UE_LOG(LogSourceControl, Error,
+					TEXT("Plastic SCM %s cannot unshelve a selection of files from a shelve. Unshelve them all at once or update to %s or above."),
+					*GetProvider().GetPlasticScmVersion().String,
+					*PlasticSourceControlVersions::ShelvesetApplySelection.String
+				);
+				return false;
+			}
+			const FString PathToWorkspaceRoot = GetProvider().GetPathToWorkspaceRoot();
+			FilesToUnshelve.Reset(InCommand.Files.Num());
+			for (FString File : InCommand.Files)
+			{
+				// Make path relative the workspace root, since the shelveset apply operation require server paths
+				FPaths::MakePathRelativeTo(File, *PathToWorkspaceRoot);
+				FilesToUnshelve.Add(TEXT("/") + File);
+			}
 		}
-		const FString PathToWorkspaceRoot = GetProvider().GetPathToWorkspaceRoot();
-		Files.Reset(InCommand.Files.Num());
-		for (FString File : InCommand.Files)
+
+		// Make the Editor Unlink the assets if they are loaded in memory so that source control can override the corresponding files
+		PackageUtils::UnlinkPackagesInMainThread(InCommand.Files);
+
 		{
-			// Make path relative the workspace root, since the shelveset apply operation require server paths
-			FPaths::MakePathRelativeTo(File, *PathToWorkspaceRoot);
-			Files.Add(TEXT("/") + File);
+			// 'cm shelveset apply sh:88 "/Content/Blueprints/BP_CheckedOut.uasset"'
+			TArray<FString> Parameters;
+			Parameters.Add(TEXT("apply"));
+			Parameters.Add(FString::Printf(TEXT("sh:%d"), ChangelistState->ShelveId));
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, FilesToUnshelve, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
+
+		// Reload packages that where updated by the Unshelve operation (and the current map if needed)
+		PackageUtils::ReloadPackagesInMainThread(InCommand.Files);
 	}
-
-	// Make the Editor Unlink the assets if they are loaded in memory so that source control can override the corresponding files
-	PackageUtils::UnlinkPackagesInMainThread(InCommand.Files);
-
-	{
-		// 'cm shelveset apply sh:88 "/Content/Blueprints/BP_CheckedOut.uasset"'
-		TArray<FString> Parameters;
-		Parameters.Add(TEXT("apply"));
-		Parameters.Add(FString::Printf(TEXT("sh:%d"), ChangelistState->ShelveId));
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
-	}
-
-	// Reload packages that where updated by the Unshelve operation (and the current map if needed)
-	PackageUtils::ReloadPackagesInMainThread(InCommand.Files);
 
 	if (InCommand.bCommandSuccessful)
 	{
