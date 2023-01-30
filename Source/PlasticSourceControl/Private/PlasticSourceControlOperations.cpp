@@ -552,18 +552,19 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	check(InCommand.Operation->GetName() == GetName());
 
-	TArray<FString> Files;
+	TArray<FString> Files = InCommand.Files;
+
 #if ENGINE_MAJOR_VERSION == 5
 	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
 		Files = FileNamesFromFileStates(ChangelistState->Files);
 	}
-	else
+
+	TSharedRef<FRevert, ESPMode::ThreadSafe> RevertOperation = StaticCastSharedRef<FRevert>(InCommand.Operation);
+
+	bool shouldDeleteNewFiles = RevertOperation->ShouldDeleteNewFiles();
 #endif
-	{
-		Files = InCommand.Files;
-	}
 
 	for (int i = 0; i < Files.Num(); i++) // Required for loop on index since we are adding to the Files array as we go
 	{
@@ -574,7 +575,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		if (State->WorkspaceState == EWorkspaceState::Moved)
 		{
 			const FString& MovedFrom = State->MovedFrom;
-			
+
 			// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector file Added)
 			// and add it to the list of files to revert (only if it is not already in) to revert both at once
 			if (!Files.FindByPredicate([&MovedFrom](const FString& File) { return File.Equals(MovedFrom, ESearchCase::IgnoreCase); }))
@@ -585,6 +586,13 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			// and delete the Redirector (else the reverted file will collide with it and create a *.private.0 file)
 			IFileManager::Get().Delete(*MovedFrom);
 		}
+
+#if ENGINE_MAJOR_VERSION == 5
+		if (State->WorkspaceState == EWorkspaceState::Added && shouldDeleteNewFiles)
+		{
+			RevertOperation->AddDeletedFile(File);
+		}
+#endif
 	}
 
 	InCommand.bCommandSuccessful = true;
@@ -1721,7 +1729,7 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
 
 		PreviousShelveId = ChangelistState->ShelveId;
-		
+
 		// If the command has specified a changelist but no files, then get all files from it
 		if (FilesToShelve.Num() == 0)
 		{
@@ -1770,7 +1778,7 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			InChangelistToUpdate = InCommand.Changelist;
 			OutChangelistToUpdate = Changelist;
 			ShelvedFiles = FilesToShelve;
-			
+
 			// If there was already a shelve, we have now created a new one with updated files, so we must delete the old one
 			if (PreviousShelveId != ISourceControlState::INVALID_REVISION)
 			{
@@ -1977,7 +1985,7 @@ bool FPlasticDeleteShelveWorker::UpdateStates()
 	if (ChangelistToUpdate.IsInitialized())
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(ChangelistToUpdate);
-		
+
 		ChangelistState->ShelveId = ISourceControlState::INVALID_REVISION;
 
 		if (FilesToRemove.Num() > 0)
