@@ -563,7 +563,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TSharedRef<FRevert, ESPMode::ThreadSafe> RevertOperation = StaticCastSharedRef<FRevert>(InCommand.Operation);
 
-	bool shouldDeleteNewFiles = RevertOperation->ShouldDeleteNewFiles();
+	bool ShouldDeleteNewFiles = RevertOperation->ShouldDeleteNewFiles();
 #endif
 
 	for (int i = 0; i < Files.Num(); i++) // Required for loop on index since we are adding to the Files array as we go
@@ -588,9 +588,9 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 
 #if ENGINE_MAJOR_VERSION == 5
-		if (State->WorkspaceState == EWorkspaceState::Added && shouldDeleteNewFiles)
+		if (State->WorkspaceState == EWorkspaceState::Added && ShouldDeleteNewFiles)
 		{
-			RevertOperation->AddDeletedFile(File);
+			IFileManager::Get().Delete(*File);
 		}
 #endif
 	}
