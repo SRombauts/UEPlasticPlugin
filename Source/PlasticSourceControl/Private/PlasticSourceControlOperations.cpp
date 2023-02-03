@@ -2023,7 +2023,7 @@ bool FPlasticDeleteShelveWorker::UpdateStates()
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(ChangelistToUpdate);
 
-		ChangelistState->ShelveId = ISourceControlState::INVALID_REVISION;
+		ChangelistState->ShelveId = ShelveId;
 
 		if (FilesToRemove.Num() > 0)
 		{
