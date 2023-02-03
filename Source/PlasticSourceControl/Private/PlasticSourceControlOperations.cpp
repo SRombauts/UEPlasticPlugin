@@ -1874,7 +1874,7 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	// Get the state of the changelist to operate on
 	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
 
-	InCommand.bCommandSuccessful = true;
+	InCommand.bCommandSuccessful = (ChangelistState->ShelveId != ISourceControlState::INVALID_REVISION);
 
 	// Detect if any file to unshelve has some local modification, which would fail the "unshelve" operation with a merge conflict
 	// NOTE: we could decide to automatically undo the local changes in order for this process to be automatic, like with Perforce
@@ -1966,7 +1966,7 @@ bool FPlasticDeleteShelveWorker::Execute(FPlasticSourceControlCommand& InCommand
 
 	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
 
-	InCommand.bCommandSuccessful = true;
+	InCommand.bCommandSuccessful = (ChangelistState->ShelveId != ISourceControlState::INVALID_REVISION);
 
 	// Get the list of files to keep in the shelve if not all of them are selected (to create a new shelve with them)
 	TArray<FString> FilesToShelve;
@@ -2023,7 +2023,7 @@ bool FPlasticDeleteShelveWorker::UpdateStates()
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(ChangelistToUpdate);
 
-		ChangelistState->ShelveId = ISourceControlState::INVALID_REVISION;
+		ChangelistState->ShelveId = ShelveId;
 
 		if (FilesToRemove.Num() > 0)
 		{
