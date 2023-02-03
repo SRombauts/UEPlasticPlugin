@@ -165,9 +165,12 @@ EnableVerboseLogs=False
 
 Unreal Engine allows you to configure project-related settings.
 
+- **Should Delete New Files on Revert** (true by default)
+  - If enabled, when you revert a file that was added to the project, it will be deleted from disk instead of being left untracked (Private).
+    This is the expected behavior when shelving files and reverting the local changes.
+
 TODO: Some are not yet supported by the plugin:
-- **Should Delete New Files on Revert**
-- **Enable Uncontrolled Changelists**
+- **Enable Uncontrolled Changelists** (true by default)
 
 ![Project Settings - Source Control](Screenshots/UEPlasticPlugin-ProjectSettingsSourceControl.png)
 
@@ -460,7 +463,7 @@ To configure a text diff for any uasset (not only Blueprints) use this command i
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.7.1 2023/01/17 for UE 5.0/5.1/Github 5.2.x and UE 4.27.2:
+### Version 1.8.0 2023/02/1 for UE 5.0/5.1/Github 5.2.x and UE 4.27.2:
  - manage connection to the server
  - show current branch name and CL in status text
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
@@ -475,7 +478,7 @@ This version here is the development version, so it always contains additional f
  - update workspace to latest head (Sync command)
  - show history of a file
  - visual diff of a blueprint against depot or between previous versions of a file
- - Changelists in Unreal Engine 5: create, edit, move files, delete (no shelves yet)
+ - Changelists and Shelves in Unreal Engine 5: create, edit, move files, shelves and unshelve, revert, delete
  - One Files Per Actor (OFPA) in Unreal Engine 5: status batching to execute only one operation for all files in all subfolders
  - initialize a new workspace to manage your Unreal Engine Game Project.
    - make the initial commit with a custom message
@@ -495,7 +498,6 @@ This version here is the development version, so it always contains additional f
 
 ### Feature Requests
  - Unreal Engine 5.1 full support
-   - Shelves of Changelists
    - Uncontrolled Changelists
  - Solve a merge conflict on a blueprint (see Known issues below)
  - Mac OS X Support
