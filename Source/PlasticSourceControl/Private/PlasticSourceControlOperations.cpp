@@ -424,6 +424,13 @@ bool FPlasticCheckInWorker::UpdateStates()
 		}
 		else
 		{
+			// Remove references to the changelist (else it later creates a phantom of the old changelist in the cache)
+			for (const FPlasticSourceControlState& NewState : States)
+			{
+				TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
+				State->Changelist.Reset();
+			}
+
 			GetProvider().RemoveChangelistFromCache(InChangelist);
 		}
 	}
