@@ -326,6 +326,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FCheckIn, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCheckIn>(InCommand.Operation);
+	FText Description = Operation->GetDescription();
 
 	TArray<FString> Files;
 #if ENGINE_MAJOR_VERSION == 5
@@ -333,6 +334,11 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	{
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
 		Files = FileNamesFromFileStates(ChangelistState->Files);
+
+		if (Description.IsEmpty())
+		{
+			Description = ChangelistState->GetDescriptionText();
+		}
 
 		InChangelist = InCommand.Changelist;
 	}
@@ -344,10 +350,10 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	if (Files.Num() > 0)
 	{
-		UE_LOG(LogSourceControl, Verbose, TEXT("CheckIn: %d file(s) Description: '%s'"), Files.Num(), *Operation->GetDescription().ToString());
+		UE_LOG(LogSourceControl, Verbose, TEXT("CheckIn: %d file(s) Description: '%s'"), Files.Num(), *Description.ToString());
 
 		// make a temp file to place our commit message in
-		const FScopedTempFile CommitMsgFile(Operation->GetDescription());
+		const FScopedTempFile CommitMsgFile(Description);
 		if (!CommitMsgFile.GetFilename().IsEmpty())
 		{
 			TArray<FString> Parameters;
