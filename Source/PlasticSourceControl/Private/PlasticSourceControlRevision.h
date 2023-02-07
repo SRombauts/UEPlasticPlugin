@@ -56,6 +56,9 @@ public:
 	/** The revision to display to the user: use the changeset number */
 	FString Revision;
 
+	/** The Shelve ID instead of Changeset / Revision for case of shelved files */
+	int32 ShelveId = ISourceControlState::INVALID_REVISION;
+
 	/** The description of this revision */
 	FString Description;
 

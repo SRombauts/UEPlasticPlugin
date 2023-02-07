@@ -33,7 +33,15 @@ bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Ty
 		// create the diff dir if we don't already have it (Plastic wont)
 		IFileManager::Get().MakeDirectory(*FPaths::DiffDir(), true);
 		// create a unique temp file name based on the unique revision Id
-		const FString TempFileName = FString::Printf(TEXT("%stemp-%d-%s"), *FPaths::DiffDir(), ChangesetNumber, *FPaths::GetCleanFilename(Filename));
+		FString TempFileName;
+		if (ShelveId != ISourceControlState::INVALID_REVISION)
+		{
+			TempFileName = FString::Printf(TEXT("%stemp-sh%d-%s"), *FPaths::DiffDir(), ShelveId, *FPaths::GetCleanFilename(Filename));
+		}
+		else
+		{
+			TempFileName = FString::Printf(TEXT("%stemp-cs%d-%s"), *FPaths::DiffDir(), ChangesetNumber, *FPaths::GetCleanFilename(Filename));
+		}
 		InOutFilename = FPaths::ConvertRelativePathToFull(TempFileName);
 	}
 
@@ -46,8 +54,18 @@ bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Ty
 	{
 		const FString& PathToPlasticBinary = FPlasticSourceControlModule::Get().GetProvider().AccessSettings().GetBinaryPath();
 
-		// Format the revision specification of the file, like rev:Content/BP.uasset#cs:12@repo@server:8087
-		const FString RevisionSpecification = FString::Printf(TEXT("rev:%s#cs:%d@%s"), *Filename, ChangesetNumber, *State->RepSpec);
+		FString RevisionSpecification;
+		if (ShelveId != ISourceControlState::INVALID_REVISION)
+		{
+			// Format the revision specification of the shelved file, like rev:Content/BP.uasset#sh:33
+			// Note: the plugin doesn't support shelves on Xlinks (no known RepSpec)
+			RevisionSpecification = FString::Printf(TEXT("rev:%s#sh:%d"), *Filename, ShelveId);
+		}
+		else
+		{
+			// Format the revision specification of the checked-in file, like rev:Content/BP.uasset#cs:12@repo@server:8087
+			RevisionSpecification = FString::Printf(TEXT("rev:%s#cs:%d@%s"), *Filename, ChangesetNumber, *State->RepSpec);
+		}
 		bCommandSuccessful = PlasticSourceControlUtils::RunDumpToFile(PathToPlasticBinary, RevisionSpecification, InOutFilename);
 	}
 	else
