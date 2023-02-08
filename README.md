@@ -499,6 +499,7 @@ This version here is the development version, so it always contains additional f
 ### Feature Requests
  - Unreal Engine 5.1 full support
    - Uncontrolled Changelists
+ - Shelves on Xlinks sub-repositories
  - Solve a merge conflict on a blueprint (see Known issues below)
  - Mac OS X Support
  - add a menu entry to switch the workspace to Partial
