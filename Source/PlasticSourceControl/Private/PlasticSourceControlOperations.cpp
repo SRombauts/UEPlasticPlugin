@@ -1820,43 +1820,50 @@ bool FPlasticShelveWorker::UpdateStates()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticShelveWorker::UpdateStates);
 
-	TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> DestinationChangelistState = GetProvider().GetStateInternal(OutChangelistToUpdate);
-
-	bool bMovedFiles = false;
-
-	// If we moved files to a new changelist, then we must make sure that the files are properly moved
-	if (InChangelistToUpdate != OutChangelistToUpdate && MovedFiles.Num() > 0)
+	if (OutChangelistToUpdate.IsInitialized())
 	{
-		const FDateTime Now = FDateTime::Now();
-		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> SourceChangelistState = GetProvider().GetStateInternal(InChangelistToUpdate);
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> DestinationChangelistState = GetProvider().GetStateInternal(OutChangelistToUpdate);
 
-		DestinationChangelistState->Changelist = OutChangelistToUpdate;
-		DestinationChangelistState->Description = ChangelistDescription;
+		bool bMovedFiles = false;
 
-		for (const FString& MovedFile : MovedFiles)
+		// If we moved files to a new changelist, then we must make sure that the files are properly moved
+		if (InChangelistToUpdate != OutChangelistToUpdate && MovedFiles.Num() > 0)
 		{
-			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = GetProvider().GetStateInternal(MovedFile);
+			const FDateTime Now = FDateTime::Now();
+			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> SourceChangelistState = GetProvider().GetStateInternal(InChangelistToUpdate);
 
-			SourceChangelistState->Files.Remove(FileState);
-			DestinationChangelistState->Files.Add(FileState);
-			FileState->Changelist = OutChangelistToUpdate;
-			FileState->TimeStamp = Now;
+			DestinationChangelistState->Changelist = OutChangelistToUpdate;
+			DestinationChangelistState->Description = ChangelistDescription;
+
+			for (const FString& MovedFile : MovedFiles)
+			{
+				TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = GetProvider().GetStateInternal(MovedFile);
+
+				SourceChangelistState->Files.Remove(FileState);
+				DestinationChangelistState->Files.Add(FileState);
+				FileState->Changelist = OutChangelistToUpdate;
+				FileState->TimeStamp = Now;
+			}
+
+			bMovedFiles = true;
 		}
 
-		bMovedFiles = true;
+		DestinationChangelistState->ShelveId = ShelveId;
+
+		// And finally, add the shelved files to the changelist state
+		DestinationChangelistState->ShelvedFiles.Reset(ShelvedFiles.Num());
+		for (FString ShelvedFile : ShelvedFiles)
+		{
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = GetProvider().GetStateInternal(ShelvedFile);
+			PlasticSourceControlUtils::AddShelvedFileToChangelist(DestinationChangelistState.Get(), MoveTemp(ShelvedFile), FileState->WorkspaceState);
+		}
+
+		return bMovedFiles || ShelvedFiles.Num() > 0;
 	}
-
-	DestinationChangelistState->ShelveId = ShelveId;
-
-	// And finally, add the shelved files to the changelist state
-	DestinationChangelistState->ShelvedFiles.Reset(ShelvedFiles.Num());
-	for (FString ShelvedFile : ShelvedFiles)
+	else
 	{
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = GetProvider().GetStateInternal(ShelvedFile);
-		PlasticSourceControlUtils::AddShelvedFileToChangelist(DestinationChangelistState.Get(), MoveTemp(ShelvedFile), FileState->WorkspaceState);
+		return false;
 	}
-
-	return bMovedFiles || ShelvedFiles.Num() > 0;
 }
 
 
