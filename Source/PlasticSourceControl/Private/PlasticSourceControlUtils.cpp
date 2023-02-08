@@ -1752,6 +1752,7 @@ void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChang
 		SourceControlRevision->Filename = ShelveState->GetFilename();
 		SourceControlRevision->ShelveId = InOutChangelistsState.ShelveId;
 		SourceControlRevision->ChangesetNumber = InOutChangelistsState.ShelveId; // Note: for display in the diff window only
+		SourceControlRevision->Date = InOutChangelistsState.ShelveDate; // Note: not yet used for display as of UE5.1.1
 
 		ShelveState->History.Add(SourceControlRevision);
 	}
@@ -1874,6 +1875,7 @@ static bool ParseShelvesResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 	static const FString PlasticQuery(TEXT("PLASTICQUERY"));
 	static const FString Shelve(TEXT("SHELVE"));
 	static const FString ShelveId(TEXT("SHELVEID"));
+	static const FString Date(TEXT("DATE"));
 	static const FString Comment(TEXT("COMMENT"));
 
 	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
@@ -1906,6 +1908,12 @@ static bool ParseShelvesResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 			if (CommentString.StartsWith(ChangelistPrefix))
 			{
 				ChangelistState.ShelveId = FCString::Atoi(*ShelveIdString);
+
+				if (const FXmlNode* DateNode = ShelveNode->FindChildNode(Date))
+				{
+					const FString& DateIso = DateNode->GetContent();
+					FDateTime::ParseIso8601(*DateIso, ChangelistState.ShelveDate);
+				}
 			}
 		}
 	}
