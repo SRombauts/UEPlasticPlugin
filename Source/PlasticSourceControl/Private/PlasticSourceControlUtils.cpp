@@ -1740,6 +1740,39 @@ EWorkspaceState::Type ParseShelveFileStatus(const TCHAR InFileStatus)
 	}
 }
 
+void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState::Type InShelveStatus)
+{
+	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> ShelveState = MakeShared<FPlasticSourceControlState>(MoveTemp(InFilename), InShelveStatus);
+
+	// Add one revision to be able to fetch the shelved file for diff, if it's not marked for deletion.
+	if (InShelveStatus != EWorkspaceState::Deleted)
+	{
+		const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
+		SourceControlRevision->State = &ShelveState.Get();
+		SourceControlRevision->Filename = ShelveState->GetFilename();
+		SourceControlRevision->ShelveId = InOutChangelistsState.ShelveId;
+		SourceControlRevision->ChangesetNumber = InOutChangelistsState.ShelveId; // Note: for display in the diff window only
+		SourceControlRevision->Date = InOutChangelistsState.ShelveDate; // Note: not yet used for display as of UE5.1.1
+
+		ShelveState->History.Add(SourceControlRevision);
+	}
+
+	// In case of a Moved file, it would appear twice in the list, so overwrite it if already in
+	if (FSourceControlStateRef* ExistingShelveState = InOutChangelistsState.ShelvedFiles.FindByPredicate(
+		[&ShelveState](const FSourceControlStateRef& State)
+		{
+			return State->GetFilename().Equals(ShelveState->GetFilename());
+		}))
+	{
+		*ExistingShelveState = MoveTemp(ShelveState);
+	}
+	else
+	{
+		InOutChangelistsState.ShelvedFiles.Add(MoveTemp(ShelveState));
+	}
+}
+
+
 /**
  * Parse results of the 'cm diff sh:<ShelveId>' command.
  *
@@ -1754,6 +1787,7 @@ bool ParseShelveDiffResults(const FString InWorkingDirectory, TArray<FString>&& 
 {
 	bool bCommandSuccessful = true;
 
+	InOutChangelistsState.ShelvedFiles.Reset(InResults.Num());
 	for (FString& Result : InResults)
 	{
 		EWorkspaceState::Type ShelveStatus = ParseShelveFileStatus(Result[0]);
@@ -1773,21 +1807,7 @@ bool ParseShelveDiffResults(const FString InWorkingDirectory, TArray<FString>&& 
 		if (ShelveStatus != EWorkspaceState::Unknown && !Result.IsEmpty())
 		{
 			FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(InWorkingDirectory, MoveTemp(Result));
-			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> ShelveState = MakeShared<FPlasticSourceControlState>(MoveTemp(AbsoluteFilename), ShelveStatus);
-
-			// In case of a Moved file, it would appear twice in the list, so overwrite it if already in
-			if (FSourceControlStateRef* ExistingShelveState = InOutChangelistsState.ShelvedFiles.FindByPredicate(
-				[&ShelveState](const FSourceControlStateRef& State)
-				{
-					return State->GetFilename().Equals(ShelveState->GetFilename());
-				}))
-			{
-				*ExistingShelveState = MoveTemp(ShelveState);
-			}
-			else
-			{
-				InOutChangelistsState.ShelvedFiles.Add(MoveTemp(ShelveState));
-			}
+			AddShelvedFileToChangelist(InOutChangelistsState, MoveTemp(AbsoluteFilename), ShelveStatus);
 		}
 		else
 		{
@@ -1855,6 +1875,7 @@ static bool ParseShelvesResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 	static const FString PlasticQuery(TEXT("PLASTICQUERY"));
 	static const FString Shelve(TEXT("SHELVE"));
 	static const FString ShelveId(TEXT("SHELVEID"));
+	static const FString Date(TEXT("DATE"));
 	static const FString Comment(TEXT("COMMENT"));
 
 	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
@@ -1887,6 +1908,12 @@ static bool ParseShelvesResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 			if (CommentString.StartsWith(ChangelistPrefix))
 			{
 				ChangelistState.ShelveId = FCString::Atoi(*ShelveIdString);
+
+				if (const FXmlNode* DateNode = ShelveNode->FindChildNode(Date))
+				{
+					const FString& DateIso = DateNode->GetContent();
+					FDateTime::ParseIso8601(*DateIso, ChangelistState.ShelveDate);
+				}
 			}
 		}
 	}

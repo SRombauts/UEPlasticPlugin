@@ -79,6 +79,7 @@ public:
 	TArray<FSourceControlStateRef> Files;
 
 	int32 ShelveId = ISourceControlState::INVALID_REVISION;
+	FDateTime ShelveDate;
 
 	TArray<FSourceControlStateRef> ShelvedFiles;
 

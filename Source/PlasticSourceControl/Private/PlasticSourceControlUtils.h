@@ -13,6 +13,11 @@ class FPlasticSourceControlCommand;
 class FPlasticSourceControlState;
 struct FSoftwareVersion;
 
+namespace EWorkspaceState
+{
+	enum Type;
+}
+
 namespace PlasticSourceControlUtils
 {
 
@@ -178,6 +183,14 @@ bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangeli
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
  */
 bool RunGetShelves(TArray<FPlasticSourceControlChangelistState>& InOutChangelistsStates, TArray<FString>& OutErrorMessages);
+
+/**
+ * Add a file to the shelve associated with a changelist.
+ * @param	InOutChangelistsState	The changelist to add the file to
+ * @param	InFilename				The file to add to the shelve
+ * @param	InShelveStatus			The status of the file
+ */
+void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState::Type InShelveStatus);
 
 #endif
 
