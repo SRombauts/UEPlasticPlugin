@@ -741,6 +741,13 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			if (State.IsModified())
 			{
+#if ENGINE_MAJOR_VERSION == 5
+				if (State.WorkspaceState == EWorkspaceState::Added && Operation->ShouldDeleteNewFiles())
+				{
+					IFileManager::Get().Delete(*State.GetFilename());
+				}
+#endif
+
 				// Add all modified files to the list of files to be updated (reverted and then reloaded)
 				Operation->UpdatedFiles.Add(MoveTemp(State.LocalFilename));
 
