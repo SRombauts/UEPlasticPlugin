@@ -581,14 +581,9 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertWorker::Execute);
 
 	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FRevert, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FRevert>(InCommand.Operation);
 
 	TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
-
-#if ENGINE_MAJOR_VERSION == 5
-	TSharedRef<FRevert, ESPMode::ThreadSafe> RevertOperation = StaticCastSharedRef<FRevert>(InCommand.Operation);
-
-	const bool ShouldDeleteNewFiles = RevertOperation->ShouldDeleteNewFiles();
-#endif
 
 	for (int i = 0; i < Files.Num(); i++) // Required for loop on index since we are adding to the Files array as we go
 	{
@@ -612,7 +607,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 
 #if ENGINE_MAJOR_VERSION == 5
-		if (State->WorkspaceState == EWorkspaceState::Added && ShouldDeleteNewFiles)
+		if (State->WorkspaceState == EWorkspaceState::Added && Operation->ShouldDeleteNewFiles())
 		{
 			IFileManager::Get().Delete(*File);
 		}
