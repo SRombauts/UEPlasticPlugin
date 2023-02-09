@@ -315,6 +315,25 @@ static FText ParseCheckInResults(const TArray<FString>& InResults)
 	return FText();
 }
 
+
+TArray<FString> GetFilesFromCommand(FPlasticSourceControlProvider& PlasticSourceControlProvider, FPlasticSourceControlCommand& InCommand)
+{
+	TArray<FString> Files;
+#if ENGINE_MAJOR_VERSION == 5
+	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
+	{
+		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = PlasticSourceControlProvider.GetStateInternal(InCommand.Changelist);
+		Files = FileNamesFromFileStates(ChangelistState->Files);
+	}
+	else
+#endif
+	{
+		Files = InCommand.Files;
+	}
+	return Files;
+}
+
+
 FName FPlasticCheckInWorker::GetName() const
 {
 	return "CheckIn";
@@ -328,28 +347,24 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TSharedRef<FCheckIn, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FCheckIn>(InCommand.Operation);
 	FText Description = Operation->GetDescription();
 
-	TArray<FString> Files;
-#if ENGINE_MAJOR_VERSION == 5
-	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
-	{
-		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
-		Files = FileNamesFromFileStates(ChangelistState->Files);
-
-		if (Description.IsEmpty())
-		{
-			Description = ChangelistState->GetDescriptionText();
-		}
-
-		InChangelist = InCommand.Changelist;
-	}
-	else
-#endif
-	{
-		Files = InCommand.Files;
-	}
+	const TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
 
 	if (Files.Num() > 0)
 	{
+#if ENGINE_MAJOR_VERSION == 5
+		if (InCommand.Changelist.IsInitialized())
+		{
+			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
+
+			if (Description.IsEmpty())
+			{
+				Description = ChangelistState->GetDescriptionText();
+			}
+
+			InChangelist = InCommand.Changelist;
+		}
+#endif
+
 		UE_LOG(LogSourceControl, Verbose, TEXT("CheckIn: %d file(s) Description: '%s'"), Files.Num(), *Description.ToString());
 
 		// make a temp file to place our commit message in
@@ -567,15 +582,9 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	check(InCommand.Operation->GetName() == GetName());
 
-	TArray<FString> Files = InCommand.Files;
+	TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
 
 #if ENGINE_MAJOR_VERSION == 5
-	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
-	{
-		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
-		Files = FileNamesFromFileStates(ChangelistState->Files);
-	}
-
 	TSharedRef<FRevert, ESPMode::ThreadSafe> RevertOperation = StaticCastSharedRef<FRevert>(InCommand.Operation);
 
 	const bool ShouldDeleteNewFiles = RevertOperation->ShouldDeleteNewFiles();
@@ -672,18 +681,7 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("-R"));
 
-	TArray<FString> Files;
-#if ENGINE_MAJOR_VERSION == 5
-	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
-	{
-		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
-		Files = FileNamesFromFileStates(ChangelistState->Files);
-	}
-	else
-#endif
-	{
-		Files = InCommand.Files;
-	}
+	TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
 
 	// revert the checkout of all unchanged files recursively
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("uncounchanged"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
@@ -868,18 +866,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	UE_LOG(LogSourceControl, Log, TEXT("status (of %d files, ShouldUpdateHistory=%d, ShouldGetOpenedOnly=%d, ShouldUpdateModifiedState=%d)"),
 		InCommand.Files.Num(), Operation->ShouldUpdateHistory(), Operation->ShouldGetOpenedOnly(), Operation->ShouldUpdateModifiedState());
 
-	TArray<FString> Files;
-#if ENGINE_MAJOR_VERSION == 5
-	if (InCommand.Changelist.IsInitialized() && InCommand.Files.IsEmpty())
-	{
-		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
-		Files = FileNamesFromFileStates(ChangelistState->Files);
-	}
-	else
-#endif
-	{
-		Files = InCommand.Files;
-	}
+	const TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
 
 	if (Files.Num() > 0)
 	{
