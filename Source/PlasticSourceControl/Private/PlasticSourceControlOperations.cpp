@@ -445,6 +445,8 @@ bool FPlasticCheckInWorker::UpdateStates()
 				// 1- Remove these files from their previous changelist
 				TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(State->Changelist);
 				PreviousChangelist->Files.Remove(State);
+				// 2- And reset the reference to their previous changelist
+				State->Changelist.Reset();
 			}
 		}
 	}
@@ -647,6 +649,8 @@ bool FPlasticRevertWorker::UpdateStates()
 			// 1- Remove these files from their previous changelist
 			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(State->Changelist);
 			PreviousChangelist->Files.Remove(State);
+			// 2- And reset the reference to their previous changelist
+			State->Changelist.Reset();
 		}
 	}
 #endif
@@ -710,6 +714,8 @@ bool FPlasticRevertUnchangedWorker::UpdateStates()
 				// 1- Remove these files from their previous changelist
 				TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(State->Changelist);
 				PreviousChangelist->Files.Remove(State);
+				// 2- And reset the reference to their previous changelist
+				State->Changelist.Reset();
 			}
 		}
 	}
@@ -802,6 +808,8 @@ bool FPlasticRevertAllWorker::UpdateStates()
 				// 1- Remove these files from their previous changelist
 				TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(State->Changelist);
 				PreviousChangelist->Files.Remove(State);
+				// 2- And reset the reference to their previous changelist
+				State->Changelist.Reset();
 			}
 		}
 	}
@@ -973,6 +981,8 @@ bool FPlasticUpdateStatusWorker::UpdateStates()
 				// 1- Remove these files from their previous changelist
 				TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> PreviousChangelist = GetProvider().GetStateInternal(State->Changelist);
 				PreviousChangelist->Files.Remove(State);
+				// 2- And reset the reference to their previous changelist
+				State->Changelist.Reset();
 			}
 		}
 	}
