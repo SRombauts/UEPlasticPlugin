@@ -54,7 +54,7 @@ public:
 /**
  * Internal operation used to revert checked-out files
 */
-class FPlasticRevertAll final : public ISourceControlOperation
+class FPlasticRevertAll final : public FRevert
 {
 public:
 	// ISourceControlOperation interface
