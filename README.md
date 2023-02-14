@@ -463,7 +463,7 @@ To configure a text diff for any uasset (not only Blueprints) use this command i
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.8.0 2023/02/1 for UE 5.0/5.1/Github 5.2.x and UE 4.27.2:
+### Version 1.8.0 2023/02/14 for UE 5.0/5.1/Github 5.2.x and UE 4.27.2:
  - manage connection to the server
  - show current branch name and CL in status text
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
