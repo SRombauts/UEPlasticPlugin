@@ -431,13 +431,13 @@ bool FPlasticSourceControlProvider::UsesLocalReadOnlyState() const
 
 bool FPlasticSourceControlProvider::UsesChangelists() const
 {
-	// TODO this is the wrong usage for UsesChangelists()
-	return true; // We don't want to show ChangeList column anymore (Plastic SCM term would be ChangeSet) BUT we need this to display the changelists in the source control menu
+	// We don't want to show ChangeList column anymore (Plastic SCM term would be ChangeSet) BUT we need this to display the changelists in the source control menu
+	return true; // TODO: we should make this configurable, in order for users to be able to hide the View Changelists window from the menu
 }
 
 bool FPlasticSourceControlProvider::UsesUncontrolledChangelists() const
 {
-	return false; // TODO: not working yet as far as I know; see for instance the Reconcile action when not using readonly flags
+	return false; // TODO: not working yet; see for instance the Reconcile action when not using readonly flags
 }
 
 bool FPlasticSourceControlProvider::UsesCheckout() const
@@ -447,8 +447,29 @@ bool FPlasticSourceControlProvider::UsesCheckout() const
 
 bool FPlasticSourceControlProvider::UsesFileRevisions() const
 {
+	/* TODO: this API is broken, it is preventing the user to use the source control context menu, as well as selecting what files to submit
+
 	// Only a partial workspace can sync files individually like Perforce, a regular workspace needs to update completely
 	return IsPartialWorkspace();
+	
+	I believe that the logic is in fact flawed from what we would expect!
+	IMO Context & selected check-in should be forbidden if the provider use changelists, not the reverse!
+	(and using changelists could become a setting)
+
+	NOTE: the bug was introduced in UE5.1 by:
+
+Commit 5803c744 by marco anastasi, 10/04/2022 02:36 AM
+
+Remove / disable 'Check-in' context menu item in Content Explorer and Scene Outliner for Source Control providers that do not use changelists
+
+#rb stuart.hill, wouter.burgers
+#preflight 633ac338c37844870ac69f67
+
+[CL 22322177 by marco anastasi in ue5-main branch]
+
+	*/
+	
+	return true;
 }
 
 bool FPlasticSourceControlProvider::AllowsDiffAgainstDepot() const
