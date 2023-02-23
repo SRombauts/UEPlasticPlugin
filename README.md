@@ -140,6 +140,12 @@ and are saved locally in `Saved\Config\WindowsEditor\SourceControlSettings.ini`.
 - UpdateStatusOtherBranches: Enable Update status to detect more recent changes on other branches in order to display the "Changed In Other Branch" warnings and icon. 
 - EnableVerboseLogs: Override LogSourceControl default verbosity level to Verbose (except if already set to VeryVerbose).
 
+##### Add an ignore.conf file
+
+If you have a project in Plastic SCM but without an ignore.conf file at the root of the workspace,
+you can use "Source Control" -> "Change Source Control Settings..." -> "Add a ignore.conf file" button to create a standard one:
+![Source Control Login window - Add a ignore.conf file](Screenshots/UEPlasticPlugin-SourceControlSettings-AddIgnoreConfFile.png)
+
 ##### Sharing settings
 
 In order to share this with the team, copy and rename this file into `Config\DefaultSourceControlSettings.ini`,
