@@ -595,50 +595,64 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FRevert, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FRevert>(InCommand.Operation);
 
-	TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
+	const TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
 
-	for (int i = 0; i < Files.Num(); i++) // Required for loop on index since we are adding to the Files array as we go
+	TArray<FString> ChangedFiles;
+	TArray<FString> CheckedOutFiles;
+
+	for (const FString& File : Files)
 	{
-		const FString& File = Files[i];
-
 		const TSharedRef<const FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(File);
 
-		if (State->WorkspaceState == EWorkspaceState::Moved)
+		if (State->WorkspaceState == EWorkspaceState::Changed)
 		{
-			const FString& MovedFrom = State->MovedFrom;
-
-			// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector file Added)
-			// and add it to the list of files to revert (only if it is not already in) to revert both at once
-			if (!Files.FindByPredicate([&MovedFrom](const FString& File) { return File.Equals(MovedFrom, ESearchCase::IgnoreCase); }))
+			ChangedFiles.Add(State->LocalFilename);
+		}
+		else
+		{
+			CheckedOutFiles.Add(State->LocalFilename);
+			// in case of a Moved/Renamed, find the rename origin to revert both at once
+			if (State->WorkspaceState == EWorkspaceState::Moved)
 			{
-				Files.Add(MovedFrom);
+				const FString& MovedFrom = State->MovedFrom;
+
+				// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector file Added)
+				// and add it to the list of files to revert (only if it is not already in) to revert both at once
+				if (!CheckedOutFiles.FindByPredicate([&MovedFrom](const FString& File) { return File.Equals(MovedFrom, ESearchCase::IgnoreCase); }))
+				{
+					CheckedOutFiles.Add(MovedFrom);
+				}
+
+				// and delete the Redirector (else the reverted file will collide with it and create a *.private.0 file)
+				IFileManager::Get().Delete(*MovedFrom);
 			}
-
-			// and delete the Redirector (else the reverted file will collide with it and create a *.private.0 file)
-			IFileManager::Get().Delete(*MovedFrom);
-		}
-
 #if ENGINE_MAJOR_VERSION == 5
-		if (State->WorkspaceState == EWorkspaceState::Added && Operation->ShouldDeleteNewFiles())
-		{
-			IFileManager::Get().Delete(*File);
-		}
+			else if (State->WorkspaceState == EWorkspaceState::Added && Operation->ShouldDeleteNewFiles())
+			{
+				IFileManager::Get().Delete(*File);
+			}
 #endif
+		}
 	}
 
 	InCommand.bCommandSuccessful = true;
 
-	if (Files.Num() > 0)
+	if (ChangedFiles.Num() > 0)
+	{
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undo"), TArray<FString>(), ChangedFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+
+	if (CheckedOutFiles.Num() > 0)
 	{
 		// revert the checkout and any changes of the given file in workspace
 		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 		if (-1 != InCommand.ChangesetNumber)
 		{
-			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undo"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), TArray<FString>(), CheckedOutFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 		else
 		{
-			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undo"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), TArray<FString>(), CheckedOutFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 	}
 
