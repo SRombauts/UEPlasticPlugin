@@ -69,7 +69,11 @@ FName FPlasticRevertUnchanged::GetName() const
 
 FText FPlasticRevertUnchanged::GetInProgressString() const
 {
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
+	return LOCTEXT("SourceControl_RevertUnchanged", "Reverting unchanged file(s) in Revision Control...");
+#else
 	return LOCTEXT("SourceControl_RevertUnchanged", "Reverting unchanged file(s) in Source Control...");
+#endif
 }
 
 FName FPlasticRevertAll::GetName() const
@@ -79,7 +83,11 @@ FName FPlasticRevertAll::GetName() const
 
 FText FPlasticRevertAll::GetInProgressString() const
 {
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
+	return LOCTEXT("SourceControl_RevertAll", "Reverting checked-out file(s) in Revision Control...");
+#else
 	return LOCTEXT("SourceControl_RevertAll", "Reverting checked-out file(s) in Source Control...");
+#endif
 }
 
 FName FPlasticMakeWorkspace::GetName() const
@@ -154,7 +162,11 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 		else
 		{
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
+			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic SCM revision control. You need to create a Plastic SCM workspace for the project first."));
+#else
 			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic SCM source control. You need to create a Plastic SCM workspace for the project first."));
+#endif
 			Operation->SetErrorText(ErrorText);
 			InCommand.ErrorMessages.Add(ErrorText.ToString());
 		}

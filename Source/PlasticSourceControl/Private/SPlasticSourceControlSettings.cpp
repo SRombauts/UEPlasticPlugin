@@ -343,7 +343,11 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedEnableVerboseLogs)
 			[
 				SNew(STextBlock)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
+				.Text(LOCTEXT("EnableVerboseLogs", "Enable Revision Control Verbose logs"))
+#else
 				.Text(LOCTEXT("EnableVerboseLogs", "Enable Source Control Verbose logs"))
+#endif
 				.Font(Font)
 			]
 		]

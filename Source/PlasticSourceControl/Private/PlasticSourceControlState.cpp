@@ -346,7 +346,11 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	case EWorkspaceState::Conflicted:
 		return LOCTEXT("Conflicted", "Conflicted");
 	case EWorkspaceState::Private:
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
+		return LOCTEXT("NotControlled", "Not Under Revision Control");
+#else
 		return LOCTEXT("NotControlled", "Not Under Source Control");
+#endif
 	}
 
 	return FText();
@@ -407,7 +411,11 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 		return FText::Format(LOCTEXT("Conflicted_Tooltip", "Conflict merging from source/remote CS:{0} into target/local CS:{1})"),
 			FText::AsNumber(PendingMergeSourceChangeset, &NoCommas), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	case EWorkspaceState::Private:
-		return LOCTEXT("NotControlled_Tooltip", "Private: not under version control");
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
+		return LOCTEXT("NotControlled_Tooltip", "Private: not under revision control");
+#else
+		return LOCTEXT("NotControlled_Tooltip", "Private: not under source control");
+#endif
 	}
 
 	return FText();

@@ -447,7 +447,11 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		"PlasticRefresh",
 #endif
 		LOCTEXT("PlasticRefresh",			"Refresh"),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
+		LOCTEXT("PlasticRefreshTooltip",	"Update the local revision control status of all files in the workspace (no expensive checks for locks or changes on other branches)."),
+#else
 		LOCTEXT("PlasticRefreshTooltip",	"Update the local source control status of all files in the workspace (no expensive checks for locks or changes on other branches)."),
+#endif
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Refresh"),
 #else
@@ -479,8 +483,13 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #if ENGINE_MAJOR_VERSION == 5
 	Menu.AddMenuEntry(
 		"SourceControlProjectSettings",
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
+		LOCTEXT("SourceControlProjectSettings",			"Project Settings - Revision Control"),
+		LOCTEXT("SourceControlProjectSettingsTooltip",	"Open the Revision Control section in the Project Settings."),
+#else
 		LOCTEXT("SourceControlProjectSettings",			"Project Settings - Source Control"),
 		LOCTEXT("SourceControlProjectSettingsTooltip",	"Open the Source Control section in the Project Settings."),
+#endif
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ProjectSettings.TabIcon"),
 #else
