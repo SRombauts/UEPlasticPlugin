@@ -594,15 +594,26 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FRevert, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FRevert>(InCommand.Operation);
+#if ENGINE_MAJOR_VERSION == 5
 	const bool bIsSoftRevert = Operation->IsSoftRevert();
+#else
+	const bool bIsSoftRevert = false;
+#endif
 	if (bIsSoftRevert && GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::UndoCheckoutKeepChanges)
 	{
-		// On old version, don't revert the files if changes aren't be kept
-		UE_LOG(LogSourceControl, Error,
-			TEXT("Plastic SCM %s cannot keep changes to selected files from a revert. Make a copy of them before reverting or update to %s version or above."),
-			*GetProvider().GetPlasticScmVersion().String,
-			*PlasticSourceControlVersions::UndoCheckoutKeepChanges.String
-		);
+		// If a soft revert is requested but not supported by the version of Plastic SCM, warn the user and stop
+		FText FailureText = FText::FormatOrdered(
+			LOCTEXT("Plastic version Error", "Plastic SCM {0} cannot keep changes when undoing the checkout of the selected files. Update to version {1} or above."),
+			FText::FromString(*GetProvider().GetPlasticScmVersion().String),
+			FText::FromString(*PlasticSourceControlVersions::UndoCheckoutKeepChanges.String));
+
+		AsyncTask(ENamedThreads::GameThread, [FailureText]
+		{
+			FMessageLog LocalizationServiceMessageLog("SourceControl");
+			LocalizationServiceMessageLog.Error(FailureText);
+			LocalizationServiceMessageLog.Notify(FailureText, EMessageSeverity::Error, true);
+		});
+		
 		return false;
 	}
 
