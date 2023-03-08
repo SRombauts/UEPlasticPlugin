@@ -619,7 +619,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	const TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
 
-	TArray<FString> ChangedFiles;
+	TArray<FString> LocallyChangedFiles;
 	TArray<FString> CheckedOutFiles;
 
 	for (const FString& File : Files)
@@ -628,7 +628,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 		if (State->WorkspaceState == EWorkspaceState::Changed)
 		{
-			ChangedFiles.Add(State->LocalFilename);
+			LocallyChangedFiles.Add(State->LocalFilename);
 		}
 		else
 		{
@@ -659,9 +659,17 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	InCommand.bCommandSuccessful = true;
 
-	if (ChangedFiles.Num() > 0)
+	if (LocallyChangedFiles.Num() > 0)
 	{
-		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undo"), TArray<FString>(), ChangedFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+		if (-1 != InCommand.ChangesetNumber)
+		{
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), LocallyChangedFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+		else
+		{
+			// partial undochange doesn't exist in partial mode
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undo"), TArray<FString>(), LocallyChangedFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
 	}
 
 	if (CheckedOutFiles.Num() > 0)
