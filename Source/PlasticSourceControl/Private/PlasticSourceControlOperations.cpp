@@ -594,6 +594,17 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FRevert, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FRevert>(InCommand.Operation);
+	const bool bIsSoftRevert = Operation->IsSoftRevert();
+	if (bIsSoftRevert && GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::UndoCheckoutKeepChanges)
+	{
+		// On old version, don't revert the files if changes aren't be kept
+		UE_LOG(LogSourceControl, Error,
+			TEXT("Plastic SCM %s cannot keep changes to selected files from a revert. Make a copy of them before reverting or update to %s version or above."),
+			*GetProvider().GetPlasticScmVersion().String,
+			*PlasticSourceControlVersions::UndoCheckoutKeepChanges.String
+		);
+		return false;
+	}
 
 	const TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
 
@@ -644,20 +655,21 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	if (CheckedOutFiles.Num() > 0)
 	{
+		TArray<FString> Parameters;
+		if (bIsSoftRevert)
+		{
+			Parameters.Add(TEXT("--keepchanges"));
+		}
+
 		// revert the checkout and any changes of the given file in workspace
 		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 		if (-1 != InCommand.ChangesetNumber)
 		{
-			TArray<FString> Parameters;
-			if (Operation->IsSoftRevert())
-			{
-				Parameters.Add(TEXT("--keepchanges"));
-			}
 			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), Parameters, CheckedOutFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 		else
 		{
-			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), TArray<FString>(), CheckedOutFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), Parameters, CheckedOutFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 	}
 
