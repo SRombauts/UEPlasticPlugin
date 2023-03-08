@@ -594,51 +594,101 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FRevert, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FRevert>(InCommand.Operation);
-
-	TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
-
-	for (int i = 0; i < Files.Num(); i++) // Required for loop on index since we are adding to the Files array as we go
+#if ENGINE_MAJOR_VERSION == 5
+	const bool bIsSoftRevert = Operation->IsSoftRevert();
+#else
+	const bool bIsSoftRevert = false;
+#endif
+	if (bIsSoftRevert && GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::UndoCheckoutKeepChanges)
 	{
-		const FString& File = Files[i];
+		// If a soft revert is requested but not supported by the version of Plastic SCM, warn the user and stop
+		FText FailureText = FText::FormatOrdered(
+			LOCTEXT("Plastic version Error", "Plastic SCM {0} cannot keep changes when undoing the checkout of the selected files. Update to version {1} or above."),
+			FText::FromString(*GetProvider().GetPlasticScmVersion().String),
+			FText::FromString(*PlasticSourceControlVersions::UndoCheckoutKeepChanges.String));
 
+		AsyncTask(ENamedThreads::GameThread, [FailureText]
+		{
+			FMessageLog LocalizationServiceMessageLog("SourceControl");
+			LocalizationServiceMessageLog.Error(FailureText);
+			LocalizationServiceMessageLog.Notify(FailureText, EMessageSeverity::Error, true);
+		});
+		
+		return false;
+	}
+
+	const TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
+
+	TArray<FString> LocallyChangedFiles;
+	TArray<FString> CheckedOutFiles;
+
+	for (const FString& File : Files)
+	{
 		const TSharedRef<const FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(File);
 
-		if (State->WorkspaceState == EWorkspaceState::Moved)
+		if (State->WorkspaceState == EWorkspaceState::Changed)
 		{
-			const FString& MovedFrom = State->MovedFrom;
-
-			// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector file Added)
-			// and add it to the list of files to revert (only if it is not already in) to revert both at once
-			if (!Files.FindByPredicate([&MovedFrom](const FString& File) { return File.Equals(MovedFrom, ESearchCase::IgnoreCase); }))
+			LocallyChangedFiles.Add(State->LocalFilename);
+		}
+		else
+		{
+			CheckedOutFiles.Add(State->LocalFilename);
+			// in case of a Moved/Renamed, find the rename origin to revert both at once
+			if (State->WorkspaceState == EWorkspaceState::Moved)
 			{
-				Files.Add(MovedFrom);
+				const FString& MovedFrom = State->MovedFrom;
+
+				// In case of a file Moved/Renamed, consider the rename Origin (where there is now a Redirector file Added)
+				// and add it to the list of files to revert (only if it is not already in) to revert both at once
+				if (!CheckedOutFiles.FindByPredicate([&MovedFrom](const FString& File) { return File.Equals(MovedFrom, ESearchCase::IgnoreCase); }))
+				{
+					CheckedOutFiles.Add(MovedFrom);
+				}
+
+				// and delete the Redirector (else the reverted file will collide with it and create a *.private.0 file)
+				IFileManager::Get().Delete(*MovedFrom);
 			}
-
-			// and delete the Redirector (else the reverted file will collide with it and create a *.private.0 file)
-			IFileManager::Get().Delete(*MovedFrom);
-		}
-
 #if ENGINE_MAJOR_VERSION == 5
-		if (State->WorkspaceState == EWorkspaceState::Added && Operation->ShouldDeleteNewFiles())
-		{
-			IFileManager::Get().Delete(*File);
-		}
+			else if (State->WorkspaceState == EWorkspaceState::Added && Operation->ShouldDeleteNewFiles())
+			{
+				IFileManager::Get().Delete(*File);
+			}
 #endif
+		}
 	}
 
 	InCommand.bCommandSuccessful = true;
 
-	if (Files.Num() > 0)
+	if (LocallyChangedFiles.Num() > 0)
 	{
+		if (-1 != InCommand.ChangesetNumber)
+		{
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), LocallyChangedFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+		else
+		{
+			// partial undochange doesn't exist in partial mode
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undo"), TArray<FString>(), LocallyChangedFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+	}
+
+	if (CheckedOutFiles.Num() > 0)
+	{
+		TArray<FString> Parameters;
+		if (bIsSoftRevert)
+		{
+			Parameters.Add(TEXT("--keepchanges"));
+		}
+
 		// revert the checkout and any changes of the given file in workspace
 		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 		if (-1 != InCommand.ChangesetNumber)
 		{
-			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undo"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), Parameters, CheckedOutFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 		else
 		{
-			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undo"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("partial undocheckout"), Parameters, CheckedOutFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 	}
 

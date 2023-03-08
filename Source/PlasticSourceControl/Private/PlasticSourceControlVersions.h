@@ -29,4 +29,8 @@ namespace PlasticSourceControlVersions
 	// https://www.plasticscm.com/download/releasenotes/11.0.16.7608
 	static const FSoftwareVersion NewHistoryLimit(TEXT("11.0.16.7608"));
 
+	// 11.0.16.7608 add support for undocheckout --keepchanges. It allows undo checkout and preserve all local changes.
+	// https://www.plasticscm.com/download/releasenotes/11.0.16.7665
+	static const FSoftwareVersion UndoCheckoutKeepChanges(TEXT("11.0.16.7665"));
+
 } // namespace PlasticSourceControlVersions

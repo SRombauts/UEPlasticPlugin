@@ -20,14 +20,14 @@ namespace EWorkspaceState
 		Unknown,
 		Ignored,
 		Controlled, // called "Pristine" in Perforce, "Unchanged" in Git, "Clean" in SVN
-		CheckedOut,
+		CheckedOut, // Checked-out, without telling if Changed or not
 		Added,
 		Moved, // Renamed
 		Copied,
 		Replaced, // Replaced / Merged
 		Deleted,
 		LocallyDeleted, // Missing
-		Changed, // Modified but not CheckedOut
+		Changed, // Locally Changed but not CheckedOut
 		Conflicted,
 		Private, // "Not Controlled"/"Not In Depot"/"Untracked"
 	};
