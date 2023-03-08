@@ -585,7 +585,7 @@ public:
 };
 
 /**
- * @brief Run a "status" command for a directory to get workspace file states
+ * @brief Run a "status" command for a directory to get the local workspace file states
  *
  *  ie. Changed, CheckedOut, Copied, Replaced, Added, Private, Ignored, Deleted, LocallyDeleted, Moved, LocallyMoved
  *
@@ -594,12 +594,13 @@ public:
  *
  * @param[in]	InDir				The path to the common directory of all the files listed after.
  * @param[in]	InFiles				List of files in a directory, or the path to the directory itself (never empty).
+ * @param[in]	InSearchType		Call "status" with "--all", or with just "--controlledchanged" when doing only a quick check following a source control operation
  * @param[out]	OutErrorMessages	Error messages from the "status" command
  * @param[out]	OutStates			States of files for witch the status has been gathered (distinct than InFiles in case of a "directory status")
  * @param[out]	OutChangeset		The current Changeset Number
  * @param[out]	OutBranchName		Name of the current checked-out branch
  */
-static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
+static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const EStatusSearchType InSearchType, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunStatus);
 
@@ -608,8 +609,16 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, TArray<FS
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--compact"));
 	Parameters.Add(TEXT("--noheaders"));
-	Parameters.Add(TEXT("--all"));
-	Parameters.Add(TEXT("--ignored"));
+	if (InSearchType == EStatusSearchType::All)
+	{
+		Parameters.Add(TEXT("--all"));
+		Parameters.Add(TEXT("--ignored"));
+	}
+	else if (InSearchType == EStatusSearchType::ControlledOnly)
+	{
+		Parameters.Add(TEXT("--controlledchanged"));
+	}
+
 	// "cm status" only operate on one path (file or directory) at a time, so use one common path for multiple files in a directory
 	TArray<FString> OnePath;
 	// Only one file: optim very useful for the .uproject file at the root to avoid parsing the whole repository
@@ -952,7 +961,7 @@ struct FFilesInCommonDir
 };
 
 // Run a batch of Plastic "status" and "fileinfo" commands to update status of given files and directories.
-bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
+bool RunUpdateStatus(const TArray<FString>& InFiles, const EStatusSearchType InSearchType, const bool bInUpdateHistory, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
 	bool bResults = true;
 
@@ -1047,7 +1056,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory
 		// Run a "status" command on the directory to get workspace file states.
 		// (ie. Changed, CheckedOut, Copied, Replaced, Added, Private, Ignored, Deleted, LocallyDeleted, Moved, LocallyMoved)
 		TArray<FPlasticSourceControlState> States;
-		const bool bGroupOk = RunStatus(Group.Value.CommonDir, MoveTemp(Group.Value.Files), OutErrorMessages, States, OutChangeset, OutBranchName);
+		const bool bGroupOk = RunStatus(Group.Value.CommonDir, MoveTemp(Group.Value.Files), InSearchType, OutErrorMessages, States, OutChangeset, OutBranchName);
 		if (!bGroupOk)
 		{
 			bResults = false;

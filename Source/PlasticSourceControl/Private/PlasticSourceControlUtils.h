@@ -124,10 +124,19 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
  */
 bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages);
 
+
+// Specify the "search type" for the "status" command
+enum class EStatusSearchType
+{
+	All,			// status --all --ignored (this can take much longer, searching for local changes, especially on the first call)
+	ControlledOnly	// status --controlledchanged
+};
+
 /**
  * Run a Plastic "status" command and parse it.
  *
  * @param	InFiles				The files to be operated on
+ * @param	InSearchType		Call "status" with "--all", or with just "--controlledchanged" when doing only a quick check following a source control operation
  * @param	bInUpdateHistory	If getting the history of files, force execute the fileinfo command required to do get RepSpec of xlinks (history view or visual diff)
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  * @param	OutStates			States of the files
@@ -135,7 +144,7 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
  * @param	OutBranchName		Name of the current checked-out branch
  * @returns true if the command succeeded and returned no errors
  */
-bool RunUpdateStatus(const TArray<FString>& InFiles, const bool bInUpdateHistory, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName);
+bool RunUpdateStatus(const TArray<FString>& InFiles, const EStatusSearchType InSearchType, const bool bInUpdateHistory, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName);
 
 /**
  * Run a Plastic "cat" command to dump the binary content of a revision into a file.
