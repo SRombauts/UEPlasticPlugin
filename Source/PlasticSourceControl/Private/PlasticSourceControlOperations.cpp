@@ -239,8 +239,7 @@ bool FPlasticCheckOutWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	check(InCommand.Operation->GetName() == GetName());
 
-	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-	if (-1 != InCommand.ChangesetNumber)
+	if (!GetProvider().IsPartialWorkspace())
 	{
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkout"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
@@ -386,8 +385,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			TArray<FString> Parameters;
 			Parameters.Add(FString::Printf(TEXT("--commentsfile=\"%s\""), *FPaths::ConvertRelativePathToFull(CommitMsgFile.GetFilename())));
-			// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-			if (-1 != InCommand.ChangesetNumber)
+			if (!GetProvider().IsPartialWorkspace())
 			{
 				Parameters.Add(TEXT("--all")); // Also files Changed (not CheckedOut) and Moved/Deleted Locally
 			//  NOTE: --update added as #23 but removed as #32 because most assets are locked by the Unreal Editor
@@ -512,8 +510,7 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			Parameters.Add(TEXT("-R"));	// needed only at the time of workspace creation, to add directories recursively
 		}
-		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-		if (-1 != InCommand.ChangesetNumber)
+		if (!GetProvider().IsPartialWorkspace())
 		{
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
@@ -556,8 +553,7 @@ bool FPlasticDeleteWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	check(InCommand.Operation->GetName() == GetName());
 
-	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-	if (-1 != InCommand.ChangesetNumber)
+	if (!GetProvider().IsPartialWorkspace())
 	{
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("remove"), TArray<FString>(), InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
@@ -662,7 +658,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	if (LocallyChangedFiles.Num() > 0)
 	{
-		if (-1 != InCommand.ChangesetNumber)
+		if (!GetProvider().IsPartialWorkspace())
 		{
 			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undochange"), TArray<FString>(), LocallyChangedFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
@@ -682,8 +678,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 
 		// revert the checkout and any changes of the given file in workspace
-		// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-		if (-1 != InCommand.ChangesetNumber)
+		if (!GetProvider().IsPartialWorkspace())
 		{
 			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), Parameters, CheckedOutFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
@@ -831,8 +826,7 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--all"));
 	// revert the checkout of all files recursively
-	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-	if (-1 != InCommand.ChangesetNumber)
+	if (!GetProvider().IsPartialWorkspace())
 	{
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("undocheckout"), Parameters, TArray<FString>(), Results, InCommand.ErrorMessages);
 	}
@@ -1131,8 +1125,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				TArray<FString> Files;
 				Files.Add(Origin);
 				Files.Add(Destination);
-				// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-				if (-1 != InCommand.ChangesetNumber)
+				if (!GetProvider().IsPartialWorkspace())
 				{
 					InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("move"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 				}
@@ -1146,8 +1139,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			{
 				TArray<FString> Files;
 				Files.Add(Origin);
-				// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
-				if (-1 != InCommand.ChangesetNumber)
+				if (!GetProvider().IsPartialWorkspace())
 				{
 					InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), TArray<FString>(), Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 				}
