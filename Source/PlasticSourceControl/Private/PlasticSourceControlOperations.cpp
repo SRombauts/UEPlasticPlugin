@@ -17,6 +17,7 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "HAL/FileManager.h"
+#include "Logging/MessageLog.h"
 #include "Misc/Paths.h"
 
 #include "ISourceControlModule.h"
@@ -609,9 +610,9 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 		AsyncTask(ENamedThreads::GameThread, [FailureText]
 		{
-			FMessageLog LocalizationServiceMessageLog("SourceControl");
-			LocalizationServiceMessageLog.Error(FailureText);
-			LocalizationServiceMessageLog.Notify(FailureText, EMessageSeverity::Error, true);
+			FMessageLog SourceControlLog("SourceControl");
+			SourceControlLog.Error(FailureText);
+			SourceControlLog.Notify(FailureText, EMessageSeverity::Error, true);
 		});
 		
 		return false;
