@@ -155,7 +155,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				}
 				else
 				{
-					const FText ErrorText(LOCTEXT("FailedToConnect", "Failed to connect to the Plastic SCM server."));
+					const FText ErrorText(LOCTEXT("FailedToConnect", "Failed to connect to the Unity Version Control server."));
 					Operation->SetErrorText(ErrorText);
 					InCommand.ErrorMessages.Add(ErrorText.ToString());
 				}
@@ -164,9 +164,9 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		else
 		{
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
-			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic SCM revision control. You need to create a Plastic SCM workspace for the project first."));
+			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Unity Version Control revision control. You need to create a Unity Version Control workspace for the project first."));
 #else
-			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Plastic SCM source control. You need to create a Plastic SCM workspace for the project first."));
+			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Unity Version Control source control. You need to create a Unity Version Control workspace for the project first."));
 #endif
 			Operation->SetErrorText(ErrorText);
 			InCommand.ErrorMessages.Add(ErrorText.ToString());
@@ -174,7 +174,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	}
 	else
 	{
-		const FText ErrorText(LOCTEXT("PlasticScmCliUnavaillable", "Failed to launch Plastic SCM 'cm' command line tool. You need to install it and make sure that 'cm' is on the Path and correctly configured."));
+		const FText ErrorText(LOCTEXT("PlasticScmCliUnavaillable", "Failed to launch Unity Version Control 'cm' command line tool. You need to install it and make sure that 'cm' is on the Path and correctly configured."));
 		Operation->SetErrorText(ErrorText);
 		InCommand.ErrorMessages.Add(ErrorText.ToString());
 	}
@@ -598,9 +598,9 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 #endif
 	if (bIsSoftRevert && GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::UndoCheckoutKeepChanges)
 	{
-		// If a soft revert is requested but not supported by the version of Plastic SCM, warn the user and stop
+		// If a soft revert is requested but not supported by the version of Unity Version Control, warn the user and stop
 		FText FailureText = FText::FormatOrdered(
-			LOCTEXT("Plastic version Error", "Plastic SCM {0} cannot keep changes when undoing the checkout of the selected files. Update to version {1} or above."),
+			LOCTEXT("PlasticUndoKeepChangesVersionError", "Unity Version Control {0} cannot keep changes when undoing the checkout of the selected files. Update to version {1} or above."),
 			FText::FromString(*GetProvider().GetPlasticScmVersion().String),
 			FText::FromString(*PlasticSourceControlVersions::UndoCheckoutKeepChanges.String));
 
@@ -1110,7 +1110,7 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		if (bIsMoveOperation)
 		{
 			UE_LOG(LogSourceControl, Log, TEXT("Moving %s to %s..."), *Origin, *Destination);
-			// In case of rename, we have to undo what the Editor (created a redirector and added the dest asset), and then redo it with Plastic SCM
+			// In case of rename, we have to undo what the Editor (created a redirector and added the dest asset), and then redo it with Unity Version Control
 			// - revert the 'cm add' that was applied to the destination by the Editor
 			{
 				TArray<FString> DestinationFiles;
@@ -1971,7 +1971,7 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			{
 				// On old version, don't unshelve the files if they are not all selected (since we couldn't apply only a selection of files from a shelve)
 				UE_LOG(LogSourceControl, Error,
-					TEXT("Plastic SCM %s cannot unshelve a selection of files from a shelve. Unshelve them all at once or update to %s or above."),
+					TEXT("Unity Version Control %s cannot unshelve a selection of files from a shelve. Unshelve them all at once or update to %s or above."),
 					*GetProvider().GetPlasticScmVersion().String,
 					*PlasticSourceControlVersions::ShelvesetApplySelection.String
 				);
@@ -2100,7 +2100,7 @@ bool FPlasticDeleteShelveWorker::UpdateStates()
 
 		if (FilesToRemove.Num() > 0)
 		{
-			// NOTE: for now, Plastic SCM cannot delete a selection of files from a shelve, so FilesToRemove and this specific case aren't really needed (yet)
+			// NOTE: for now, Unity Version Control cannot delete a selection of files from a shelve, so FilesToRemove and this specific case aren't really needed (yet)
 			return ChangelistState->ShelvedFiles.RemoveAll([this](FSourceControlStateRef& State) -> bool
 				{
 					return Algo::AnyOf(FilesToRemove, [&State](const FString& File) {

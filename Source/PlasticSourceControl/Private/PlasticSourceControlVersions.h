@@ -6,9 +6,9 @@
 #include "SoftwareVersion.h"
 
 /**
- * List of key versions of Plastic SCM enabling new features for "cm" CLI.
+ * List of key versions of Unity Version Control enabling new features for "cm" CLI.
  *
- * Plastic SCM version strings in the form "X.Y.Z.C", ie Major.Minor.Patch.Changeset (as returned by GetPlasticScmVersion)
+ * Unity Version Control version strings in the form "X.Y.Z.C", ie Major.Minor.Patch.Changeset (as returned by GetPlasticScmVersion)
 */
 namespace PlasticSourceControlVersions
 {

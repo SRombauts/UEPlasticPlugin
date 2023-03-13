@@ -10,7 +10,7 @@
 #include "ISourceControlChangelist.h"
 
 /**
- * Unique Identifier of a changelist under source control: a "name" in Plastic SCM
+ * Unique Identifier of a changelist under source control: a "name" in Unity Version Control
  */
 class FPlasticSourceControlChangelist : public ISourceControlChangelist
 {

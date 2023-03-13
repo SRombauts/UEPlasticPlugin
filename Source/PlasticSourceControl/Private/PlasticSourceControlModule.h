@@ -8,7 +8,7 @@
 #include "PlasticSourceControlProvider.h"
 
 /**
- * PlasticSourceControl is the official Plastic SCM Source Control Plugin for Unreal Engine
+ * PlasticSourceControl is the official Unity Version Control Plugin for Unreal Engine
  *
  * Written and contributed by Sebastien Rombauts (sebastien.rombauts@gmail.com) for Codice Software
  */

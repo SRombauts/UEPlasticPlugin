@@ -15,7 +15,7 @@ namespace PlasticSourceControlShell
 
 
 /**
- * Launch the Plastic SCM "shell" command line process to run it in the background.
+ * Launch the Unity Version Control "shell" command line process to run it in the background.
  *
  * @param	InPathToPlasticBinary	The path to the Plastic binary
  * @param	InWorkspaceRoot			The workspace from where to run the command - usually the Game directory
