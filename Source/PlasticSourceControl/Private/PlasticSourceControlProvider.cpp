@@ -435,13 +435,13 @@ bool FPlasticSourceControlProvider::UsesLocalReadOnlyState() const
 
 bool FPlasticSourceControlProvider::UsesChangelists() const
 {
-	// We don't want to show ChangeList column anymore (Plastic SCM term would be ChangeSet) BUT we need this to display the changelists in the source control menu
-	return true; // TODO: we should make this configurable, in order for users to be able to hide the View Changelists window from the menu
+	// Note: We don't want to show ChangeList column (Plastic SCM term would be ChangeSet) BUT we need this to display the changelists in the source control menu
+	return true;
 }
 
 bool FPlasticSourceControlProvider::UsesUncontrolledChangelists() const
 {
-	return false; // TODO: not working yet; see for instance the Reconcile action when not using readonly flags
+	return true;
 }
 
 bool FPlasticSourceControlProvider::UsesCheckout() const

@@ -174,8 +174,6 @@ Unreal Engine allows you to configure project-related settings.
 - **Should Delete New Files on Revert** (true by default)
   - If enabled, when you revert a file that was added to the project, it will be deleted from disk instead of being left untracked (Private).
     This is the expected behavior when shelving files and reverting the local changes.
-
-TODO: Some are not yet supported by the plugin:
 - **Enable Uncontrolled Changelists** (true by default)
 
 ![Project Settings - Source Control](Screenshots/UEPlasticPlugin-ProjectSettingsSourceControl.png)
