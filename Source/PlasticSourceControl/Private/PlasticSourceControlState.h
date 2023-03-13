@@ -13,28 +13,22 @@
 #include "PlasticSourceControlChangelist.h"
 #endif
 
-namespace EWorkspaceState
+enum class EWorkspaceState
 {
-	enum Type
-	{
-		Unknown,
-		Ignored,
-		Controlled, // called "Pristine" in Perforce, "Unchanged" in Git, "Clean" in SVN
-		CheckedOut, // Checked-out, without telling if Changed or not
-		Added,
-		Moved, // Renamed
-		Copied,
-		Replaced, // Replaced / Merged
-		Deleted,
-		LocallyDeleted, // Missing
-		Changed, // Locally Changed but not CheckedOut
-		Conflicted,
-		Private, // "Not Controlled"/"Not In Depot"/"Untracked"
-	};
-
-	// debug log utility
-	const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState);
-} // namespace EWorkspaceState
+	Unknown,
+	Ignored,
+	Controlled, // called "Pristine" in Perforce, "Unchanged" in Git, "Clean" in SVN
+	CheckedOut, // Checked-out, without telling if Changed or not
+	Added,
+	Moved, // Renamed
+	Copied,
+	Replaced, // Replaced / Merged
+	Deleted,
+	LocallyDeleted, // Missing
+	Changed, // Locally Changed but not CheckedOut
+	Conflicted,
+	Private, // "Not Controlled"/"Not In Depot"/"Untracked"
+};
 
 class FPlasticSourceControlState : public ISourceControlState
 {
@@ -44,7 +38,7 @@ public:
 	{
 	}
 
-	FPlasticSourceControlState(FString&& InLocalFilename, EWorkspaceState::Type InWorkspaceState)
+	FPlasticSourceControlState(FString&& InLocalFilename, EWorkspaceState InWorkspaceState)
 		: LocalFilename(MoveTemp(InLocalFilename))
 		, WorkspaceState(InWorkspaceState)
 	{
@@ -101,10 +95,7 @@ public:
 	}
 
 	// debug log utility
-	const TCHAR* ToString() const
-	{
-		return EWorkspaceState::ToString(WorkspaceState);
-	}
+	const TCHAR* ToString() const;
 
 	/** ISourceControlState interface */
 	virtual int32 GetHistorySize() const override;
@@ -175,7 +166,7 @@ public:
 	FString LockedWhere;
 
 	/** State of the workspace */
-	EWorkspaceState::Type WorkspaceState = EWorkspaceState::Unknown;
+	EWorkspaceState WorkspaceState = EWorkspaceState::Unknown;
 
 	/** Latest revision number of the file in the depot (on the current branch) */
 	int DepotRevisionChangeset = INVALID_REVISION;

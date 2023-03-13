@@ -12,10 +12,7 @@ class FPlasticSourceControlCommand;
 class FPlasticSourceControlState;
 struct FSoftwareVersion;
 
-namespace EWorkspaceState
-{
-	enum Type;
-}
+enum class EWorkspaceState;
 
 namespace PlasticSourceControlUtils
 {
@@ -189,7 +186,7 @@ bool RunGetShelves(TArray<FPlasticSourceControlChangelistState>& InOutChangelist
  * @param	InFilename				The file to add to the shelve
  * @param	InShelveStatus			The status of the file
  */
-void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState::Type InShelveStatus);
+void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState InShelveStatus);
 
 #endif
 

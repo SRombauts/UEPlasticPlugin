@@ -9,31 +9,28 @@
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl.State"
 
-namespace EWorkspaceState
-{
-const TCHAR* ToString(EWorkspaceState::Type InWorkspaceState)
+const TCHAR* FPlasticSourceControlState::ToString() const
 {
 	const TCHAR* WorkspaceStateStr = nullptr;
-	switch (InWorkspaceState)
+	switch (WorkspaceState)
 	{
-	case EWorkspaceState::Unknown: WorkspaceStateStr = TEXT("Unknown"); break;
-	case EWorkspaceState::Ignored: WorkspaceStateStr = TEXT("Ignored"); break;
-	case EWorkspaceState::Controlled: WorkspaceStateStr = TEXT("Controlled"); break;
-	case EWorkspaceState::CheckedOut: WorkspaceStateStr = TEXT("CheckedOut"); break;
-	case EWorkspaceState::Added: WorkspaceStateStr = TEXT("Added"); break;
-	case EWorkspaceState::Moved: WorkspaceStateStr = TEXT("Moved"); break;
-	case EWorkspaceState::Copied: WorkspaceStateStr = TEXT("Copied"); break;
-	case EWorkspaceState::Replaced: WorkspaceStateStr = TEXT("Replaced"); break;
-	case EWorkspaceState::Deleted: WorkspaceStateStr = TEXT("Deleted"); break;
-	case EWorkspaceState::LocallyDeleted: WorkspaceStateStr = TEXT("LocallyDeleted"); break;
-	case EWorkspaceState::Changed: WorkspaceStateStr = TEXT("Changed"); break;
-	case EWorkspaceState::Conflicted: WorkspaceStateStr = TEXT("Conflicted"); break;
-	case EWorkspaceState::Private: WorkspaceStateStr = TEXT("Private"); break;
-	default: WorkspaceStateStr = TEXT("???"); break;
+		case EWorkspaceState::Unknown: WorkspaceStateStr = TEXT("Unknown"); break;
+		case EWorkspaceState::Ignored: WorkspaceStateStr = TEXT("Ignored"); break;
+		case EWorkspaceState::Controlled: WorkspaceStateStr = TEXT("Controlled"); break;
+		case EWorkspaceState::CheckedOut: WorkspaceStateStr = TEXT("CheckedOut"); break;
+		case EWorkspaceState::Added: WorkspaceStateStr = TEXT("Added"); break;
+		case EWorkspaceState::Moved: WorkspaceStateStr = TEXT("Moved"); break;
+		case EWorkspaceState::Copied: WorkspaceStateStr = TEXT("Copied"); break;
+		case EWorkspaceState::Replaced: WorkspaceStateStr = TEXT("Replaced"); break;
+		case EWorkspaceState::Deleted: WorkspaceStateStr = TEXT("Deleted"); break;
+		case EWorkspaceState::LocallyDeleted: WorkspaceStateStr = TEXT("LocallyDeleted"); break;
+		case EWorkspaceState::Changed: WorkspaceStateStr = TEXT("Changed"); break;
+		case EWorkspaceState::Conflicted: WorkspaceStateStr = TEXT("Conflicted"); break;
+		case EWorkspaceState::Private: WorkspaceStateStr = TEXT("Private"); break;
+		default: WorkspaceStateStr = TEXT("???"); break;
 	}
 	return WorkspaceStateStr;
 }
-} // namespace EWorkspaceState
 
 
 int32 FPlasticSourceControlState::GetHistorySize() const

@@ -395,9 +395,9 @@ private:
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
  */
-static EWorkspaceState::Type StateFromPlasticStatus(const FString& InResult)
+static EWorkspaceState StateFromPlasticStatus(const FString& InResult)
 {
-	EWorkspaceState::Type State;
+	EWorkspaceState State;
 	const FString FileStatus = (InResult[0] == TEXT(' ')) ? InResult.Mid(1, 2) : InResult;
 
 	if (FileStatus == "CH") // Modified but not Checked-Out
@@ -552,7 +552,7 @@ static void ParseDirectoryStatusResultForDeleted(const TArray<FString>& InResult
 	// Iterate on each line of result of the status command
 	for (const FString& Result : InResults)
 	{
-		const EWorkspaceState::Type WorkspaceState = StateFromPlasticStatus(Result);
+		const EWorkspaceState WorkspaceState = StateFromPlasticStatus(Result);
 		if ((EWorkspaceState::Deleted == WorkspaceState) || (EWorkspaceState::LocallyDeleted == WorkspaceState))
 		{
 			FString RelativeFilename = FilenameFromPlasticStatus(Result);
@@ -1715,7 +1715,7 @@ bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangeli
 }
 
 // Parse the one letter file status in front of each line of the 'cm diff sh:<ShelveId>'
-EWorkspaceState::Type ParseShelveFileStatus(const TCHAR InFileStatus)
+EWorkspaceState ParseShelveFileStatus(const TCHAR InFileStatus)
 {
 	if (InFileStatus == 'A') // Added
 	{
@@ -1740,7 +1740,7 @@ EWorkspaceState::Type ParseShelveFileStatus(const TCHAR InFileStatus)
 	}
 }
 
-void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState::Type InShelveStatus)
+void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState InShelveStatus)
 {
 	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> ShelveState = MakeShared<FPlasticSourceControlState>(MoveTemp(InFilename), InShelveStatus);
 
@@ -1790,7 +1790,7 @@ bool ParseShelveDiffResults(const FString InWorkingDirectory, TArray<FString>&& 
 	InOutChangelistsState.ShelvedFiles.Reset(InResults.Num());
 	for (FString& Result : InResults)
 	{
-		EWorkspaceState::Type ShelveStatus = ParseShelveFileStatus(Result[0]);
+		EWorkspaceState ShelveStatus = ParseShelveFileStatus(Result[0]);
 		
 		// Remove outer double quotes
 		Result.MidInline(3, Result.Len() - 4, false);
