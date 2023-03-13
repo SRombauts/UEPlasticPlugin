@@ -4,6 +4,7 @@
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "HAL/PlatformFileManager.h"
 
 #include "ISourceControlModule.h" // LogSourceControl
 
