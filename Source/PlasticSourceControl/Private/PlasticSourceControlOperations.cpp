@@ -144,7 +144,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				{
 					TArray<FString> ContentDir;
 					ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-					PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+					PlasticSourceControlUtils::RunUpdateStatus(ContentDir, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 				}
 			}
 			else
@@ -249,7 +249,7 @@ bool FPlasticCheckOutWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	}
 
 	// now update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
 }
@@ -424,7 +424,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 
 		// now update the status of our files
-		PlasticSourceControlUtils::RunUpdateStatus(Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		PlasticSourceControlUtils::RunUpdateStatus(Files, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 	else
 	{
@@ -520,7 +520,7 @@ bool FPlasticMarkForAddWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 
 		// now update the status of our files
-		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 	else
 	{
@@ -563,7 +563,7 @@ bool FPlasticDeleteWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	}
 
 	// now update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
 }
@@ -690,8 +690,9 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	// NOTE: optim, in UE4 there was no need to update the status of our files since this is done immediately after by the Editor, except now that we are using changelists
 #if ENGINE_MAJOR_VERSION == 5
-	// update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	// update the status of our files: need to check for local changes in case of a SoftRevert
+	const PlasticSourceControlUtils::EStatusSearchType SearchType = bIsSoftRevert ? PlasticSourceControlUtils::EStatusSearchType::All : PlasticSourceControlUtils::EStatusSearchType::ControlledOnly;
+	PlasticSourceControlUtils::RunUpdateStatus(Files, SearchType, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 #endif
 
 	return InCommand.bCommandSuccessful;
@@ -744,7 +745,7 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 	{
 		Files.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
 	}
-	PlasticSourceControlUtils::RunUpdateStatus(Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	PlasticSourceControlUtils::RunUpdateStatus(Files, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
 }
@@ -792,8 +793,7 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		TArray<FPlasticSourceControlState> TempStates;
 		TArray<FString> ContentDir;
 		ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-		// TODO: here we would just need a fast "status" to only retrieve the local status of files, not server locks etc.
-		PlasticSourceControlUtils::RunUpdateStatus(ContentDir, false, InCommand.ErrorMessages, TempStates, InCommand.ChangesetNumber, InCommand.BranchName);
+		PlasticSourceControlUtils::RunUpdateStatus(ContentDir, PlasticSourceControlUtils::EStatusSearchType::All, false, InCommand.ErrorMessages, TempStates, InCommand.ChangesetNumber, InCommand.BranchName);
 
 		for (auto& State : TempStates)
 		{
@@ -842,7 +842,7 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	// now update the status of the updated files
 	if (Operation->UpdatedFiles.Num())
 	{
-		PlasticSourceControlUtils::RunUpdateStatus(Operation->UpdatedFiles, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		PlasticSourceControlUtils::RunUpdateStatus(Operation->UpdatedFiles, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 
 	return InCommand.bCommandSuccessful;
@@ -929,7 +929,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 
 	if (Files.Num() > 0)
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Files, Operation->ShouldUpdateHistory(), InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Files, PlasticSourceControlUtils::EStatusSearchType::All, Operation->ShouldUpdateHistory(), InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 		// Remove all "is not in a workspace" error and convert the result to "success" if there are no other errors
 		PlasticSourceControlUtils::RemoveRedundantErrors(InCommand, TEXT("is not in a workspace."));
 		if (!InCommand.bCommandSuccessful)
@@ -995,7 +995,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	{
 		TArray<FString> ProjectDirs;
 		ProjectDirs.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, Operation->ShouldUpdateHistory(), InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(ProjectDirs, PlasticSourceControlUtils::EStatusSearchType::All, Operation->ShouldUpdateHistory(), InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 	else
 	{
@@ -1155,11 +1155,11 @@ bool FPlasticCopyWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			InCommand.bCommandSuccessful = true;
 		}
 
-		// now update the status of our files:
+		// now update the status of our files
 		TArray<FString> BothFiles;
 		BothFiles.Add(Origin);
 		BothFiles.Add(Destination);
-		PlasticSourceControlUtils::RunUpdateStatus(BothFiles, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		PlasticSourceControlUtils::RunUpdateStatus(BothFiles, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 	else
 	{
@@ -1191,7 +1191,7 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	// now update the status of the updated files
 	if (UpdatedFiles.Num())
 	{
-		PlasticSourceControlUtils::RunUpdateStatus(UpdatedFiles, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		PlasticSourceControlUtils::RunUpdateStatus(UpdatedFiles, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 
 	if ((InCommand.Operation->GetName() == FName("SyncAll")))
@@ -1245,7 +1245,7 @@ bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	}
 
 	// now update the status of our files
-	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
 }
@@ -2011,7 +2011,7 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if (InCommand.bCommandSuccessful)
 	{
 		// now update the status of our files
-		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+		PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 		ChangelistToUpdate = InCommand.Changelist;
 	}
