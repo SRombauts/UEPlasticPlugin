@@ -797,7 +797,7 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		TArray<FPlasticSourceControlState> TempStates;
 		TArray<FString> ContentDir;
 		ContentDir.Add(FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-		PlasticSourceControlUtils::RunUpdateStatus(ContentDir, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, TempStates, InCommand.ChangesetNumber, InCommand.BranchName);
+		PlasticSourceControlUtils::RunUpdateStatus(ContentDir, PlasticSourceControlUtils::EStatusSearchType::All, false, InCommand.ErrorMessages, TempStates, InCommand.ChangesetNumber, InCommand.BranchName);
 
 		for (auto& State : TempStates)
 		{
