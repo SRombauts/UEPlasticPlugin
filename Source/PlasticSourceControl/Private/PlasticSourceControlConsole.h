@@ -18,7 +18,7 @@ public:
 	void Unregister();
 
 private:
-	// PlasticSCM Command Line Interface: Run 'cm' commands directly from the Unreal Editor Console.
+	// Unity Version Control Command Line Interface: Run 'cm' commands directly from the Unreal Editor Console.
 	void ExecutePlasticConsoleCommand(const TArray<FString>& a_args);
 
 	/** Console command for interacting with 'cm' CLI directly */
