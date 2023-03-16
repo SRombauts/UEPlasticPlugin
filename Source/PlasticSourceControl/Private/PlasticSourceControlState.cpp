@@ -420,15 +420,11 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 
 const FString& FPlasticSourceControlState::GetFilename() const
 {
-	// UE_LOG(LogSourceControl, Log, TEXT("GetFilename(%s)"), *LocalFilename);
-
 	return LocalFilename;
 }
 
 const FDateTime& FPlasticSourceControlState::GetTimeStamp() const
 {
-	// UE_LOG(LogSourceControl, Log, TEXT("GetTimeStamp(%s)=%s"), *LocalFilename, *TimeStamp.ToString());
-
 	return TimeStamp;
 }
 
@@ -570,7 +566,7 @@ bool FPlasticSourceControlState::IsSourceControlled() const
 								  && WorkspaceState != EWorkspaceState::Ignored;
 								  // WorkspaceState != EWorkspaceState::Unknown 
 
-	if (!bIsSourceControlled && !IsUnknown()) UE_LOG(LogSourceControl, Log, TEXT("%s NOT SourceControlled"), *LocalFilename);
+	if (!bIsSourceControlled && !IsUnknown()) UE_LOG(LogSourceControl, Verbose, TEXT("%s NOT SourceControlled"), *LocalFilename);
 
 	return bIsSourceControlled;
 }
@@ -580,7 +576,7 @@ bool FPlasticSourceControlState::IsAdded() const
 	const bool bIsAdded =	WorkspaceState == EWorkspaceState::Added
 						 || WorkspaceState == EWorkspaceState::Copied;
 
-	if (bIsAdded) UE_LOG(LogSourceControl, Log, TEXT("%s IsAdded"), *LocalFilename);
+	if (bIsAdded) UE_LOG(LogSourceControl, Verbose, TEXT("%s IsAdded"), *LocalFilename);
 
 	return bIsAdded;
 }
@@ -590,14 +586,14 @@ bool FPlasticSourceControlState::IsDeleted() const
 	const bool bIsDeleted =	WorkspaceState == EWorkspaceState::Deleted
 						 || WorkspaceState == EWorkspaceState::LocallyDeleted;
 
-	if (bIsDeleted) UE_LOG(LogSourceControl, Log, TEXT("%s IsDeleted"), *LocalFilename);
+	if (bIsDeleted) UE_LOG(LogSourceControl, Verbose, TEXT("%s IsDeleted"), *LocalFilename);
 
 	return bIsDeleted;
 }
 
 bool FPlasticSourceControlState::IsIgnored() const
 {
-	if (WorkspaceState == EWorkspaceState::Ignored) UE_LOG(LogSourceControl, Log, TEXT("%s IsIgnored"), *LocalFilename);
+	if (WorkspaceState == EWorkspaceState::Ignored) UE_LOG(LogSourceControl, Verbose, TEXT("%s IsIgnored"), *LocalFilename);
 
 	return WorkspaceState == EWorkspaceState::Ignored;
 }
@@ -610,7 +606,7 @@ bool FPlasticSourceControlState::CanEdit() const
 						|| WorkspaceState == EWorkspaceState::Copied
 						|| WorkspaceState == EWorkspaceState::Replaced;
 
-	UE_LOG(LogSourceControl, Log, TEXT("%s CanEdit=%d"), *LocalFilename, bCanEdit);
+	UE_LOG(LogSourceControl, Verbose, TEXT("%s CanEdit=%d"), *LocalFilename, bCanEdit);
 
 	return bCanEdit;
 }
@@ -654,7 +650,7 @@ bool FPlasticSourceControlState::IsModified() const
 
 bool FPlasticSourceControlState::CanAdd() const
 {
-	if (!IsUnknown()) UE_LOG(LogSourceControl, Log, TEXT("%s CanAdd=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Private);
+	if (!IsUnknown()) UE_LOG(LogSourceControl, Verbose, TEXT("%s CanAdd=%d"), *LocalFilename, WorkspaceState == EWorkspaceState::Private);
 
 	return WorkspaceState == EWorkspaceState::Private;
 }
