@@ -3,7 +3,7 @@
 	"Version": 80,
 	"VersionName": "1.8.0+dev",
 	"FriendlyName": "Unity Version Control",
-	"Description": "Unity Version Control provider (Previously Plastic SCM)",
+	"Description": "Unity Version Control (formerly Plastic SCM)",
 	"Category": "Source Control",
 	"CreatedBy": "Unity Technologies",
 	"CreatedByURL": "https://unity.com/solutions/version-control",

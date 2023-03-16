@@ -43,7 +43,7 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		if (Plugin.IsValid())
 		{
 			PluginVersion = Plugin->GetDescriptor().VersionName;
-			UE_LOG(LogSourceControl, Log, TEXT("Unity Version Control (Plastic SCM) plugin '%s'"), *PluginVersion);
+			UE_LOG(LogSourceControl, Log, TEXT("Unity Version Control (formerly Plastic SCM) plugin '%s'"), *PluginVersion);
 		}
 
 		CheckPlasticAvailability();
@@ -229,7 +229,7 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	}
 	Args.Add(TEXT("ErrorText"), FormattedError);
 
-	return FText::Format(LOCTEXT("PlasticStatusText", "{ErrorText}Unity Version Control (Plastic SCM) {PlasticScmVersion}  (plugin v{PluginVersion})\nWorkspace: {WorkspaceName}  ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: '{UserName}'  {DisplayName}"), Args);
+	return FText::Format(LOCTEXT("PlasticStatusText", "{ErrorText}Unity Version Control (formerly Plastic SCM) {PlasticScmVersion}\t(plugin v{PluginVersion})\nWorkspace: {WorkspaceName}  ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: '{UserName}'  {DisplayName}"), Args);
 }
 
 /** Quick check if source control is enabled. Specifically, it returns true if a source control provider is set (regardless of whether the provider is available) and false if no provider is set. So all providers except the stub DefaultSourceProvider will return true. */

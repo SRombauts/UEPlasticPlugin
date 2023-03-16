@@ -6,8 +6,8 @@
 #include "Engine/DeveloperSettings.h"
 #include "PlasticSourceControlProjectSettings.generated.h"
 
-/** Project Settings for Unity Version Control. Saved in Config/DefaultEditor.ini */
-UCLASS(config = Editor, defaultconfig, meta = (DisplayName = "Source Control - Unity Version Control (Previously Plastic SCM)"))
+/** Project Settings for Unity Version Control (formerly Plastic SCM). Saved in Config/DefaultEditor.ini */
+UCLASS(config = Editor, defaultconfig, meta = (DisplayName = "Source Control - Unity Version Control"))
 class UPlasticSourceControlProjectSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()

@@ -507,7 +507,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		"PlasticProjectSettings",
 #endif
 		LOCTEXT("PlasticProjectSettings",			"Project Settings - Source Control - Unity Version Control"),
-		LOCTEXT("PlasticProjectSettingsTooltip",	"Open the Unity Version Control (Previously Plastic SCM) section in the Project Settings."),
+		LOCTEXT("PlasticProjectSettingsTooltip",	"Open the Unity Version Control (formerly Plastic SCM) section in the Project Settings."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ProjectSettings.TabIcon"),
 #else
@@ -543,7 +543,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		"PlasticSupportURL",
 #endif
 		LOCTEXT("PlasticSupportURL",		"Unity Version Control Support"),
-		LOCTEXT("PlasticSupportURLTooltip",	"Submit a support request for Unity Version Control (Previously Plastic SCM)."),
+		LOCTEXT("PlasticSupportURLTooltip",	"Submit a support request for Unity Version Control (formerly Plastic SCM)."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Support"),
 #elif ENGINE_MAJOR_VERSION == 5

@@ -67,12 +67,12 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SHorizontalBox)
-			.ToolTipText(LOCTEXT("PlasticVersions_Tooltip", "Unity Version Control (Previously Plastic SCM) and Plugin versions"))
+			.ToolTipText(LOCTEXT("PlasticVersions_Tooltip", "Unity Version Control (formerly Plastic SCM) and Plugin versions"))
 			+SHorizontalBox::Slot()
 			.FillWidth(1.0f)
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("PlasticVersions", "Unity VCS (Plastic SCM)"))
+				.Text(LOCTEXT("PlasticVersions", "Unity Version Control"))
 				.Font(Font)
 			]
 			+SHorizontalBox::Slot()
@@ -424,7 +424,7 @@ void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText
 FText SPlasticSourceControlSettings::GetVersions() const
 {
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-	return FText::FromString(Provider.GetPlasticScmVersion().String + TEXT(" (plugin v") + Provider.GetPluginVersion() + TEXT(")"));
+	return FText::FromString(Provider.GetPlasticScmVersion().String + TEXT("\t(plugin v") + Provider.GetPluginVersion() + TEXT(")"));
 }
 
 FText SPlasticSourceControlSettings::GetPathToWorkspaceRoot() const
