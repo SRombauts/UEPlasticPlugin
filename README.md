@@ -55,15 +55,17 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
 
 #### Unreal default version of the plugin
 
-An old version of this PlasticSCM plugin 1.4.6 has been integrated in Unreal Engine and has been shipping with it since UE4.24 and UE5.0.
-A very recently updated version 1.6.2 shipped with UE5.1.
+- UE4.24 to 4.27 shipped with an old version 1.4.6 of this plugin
+- UE5.0 shipped with the same outdated version 1.4.6, not performing well overall with UE5, especially on OFPA
+- UE5.1 shipped with the version 1.6.2 of the plugin with support for the new View Changelists window
+- UE5.2 is going to ship with the version 1.8.0 of the plugin with support for the Shelves in the renamed View Changes window
 
 **Why?**: Why is it integrated, as opposed to, eg. being shared through the Marketplace?
 
 It helps with discoverability of the plugin, and it is the easiest way to get started with Plastic SCM in Unreal Engine.
 But it will always be lagging somewhat behind the latest release in Github.
 
-#### Manual installation from the latest version here
+#### Manual update from the latest release in Github
 
 **Why?**: Why would you update to latest version in Github?
 
@@ -86,7 +88,9 @@ If you want the latest features, performance improvements and bug fixes that are
 
 #### How to build from sources
 
-**Why?**: If your project is already a C++ project, you only have to re-generate Visual Studio project files (step 4 below) and the plugin will get rebuilt the next time you compile your project.
+**Why?**: Why would you build from sources? It enable you to test features before they are released, debug issues, and contribute. It's required if you have your own fork of Unreal Engine.
+
+If your project is already a C++ project, you only have to re-generate Visual Studio project files (step 4 below) and the plugin will get rebuilt the next time you compile your project.
 
 Else, if you want to rebuild the plugin for a Blueprint project:
 
