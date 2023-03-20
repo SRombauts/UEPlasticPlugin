@@ -164,9 +164,9 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		else
 		{
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
-			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Unity Version Control revision control. You need to create a Unity Version Control workspace for the project first."));
+			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable revision control. You need to create a Unity Version Control workspace for the project first."));
 #else
-			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Unity Version Control source control. You need to create a Unity Version Control workspace for the project first."));
+			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable source control. You need to create a Unity Version Control workspace for the project first."));
 #endif
 			Operation->SetErrorText(ErrorText);
 			InCommand.ErrorMessages.Add(ErrorText.ToString());
