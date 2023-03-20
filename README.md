@@ -1,21 +1,21 @@
-Plastic SCM plugin for Unreal Engine
-------------------------------------
+Unity Version Control (formerly Plastic SCM) plugin for Unreal Engine
+---------------------------------------------------------------------
 
 [![release](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
 [![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
-This is the **official [Plastic SCM](https://www.plasticscm.com/) Source Control Provider plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0 to 5.1).
+This is the **official [Unity Version Control (formerly Plastic SCM)](https://plasticscm.com/) plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0 to 5.2).
 An old version 1.4.6+ has been integrated in Unreal Engine 4.24 and has been shipping with it since then.
 The most recent version 1.6.2 has been integrated in Github for the upcoming Unreal Engine 5.1 so it is eventually going to ship to everyone.
 But in the meantime, if you have a project of a certain size, chances are you need to upgrade manually to a version we provide from Github
 in order to benefit from all the performance improvements we have made since then.
 See the Status section below for more details.
 
-It is not intended to replace [Plastic SCM GUI](https://www.plasticscm.com/documentation/gui/plastic-scm-version-control-gui-guide)
-or [command line interface "cm"](https://www.plasticscm.com/documentation/cli/plastic-scm-version-control-cli-guide).
+It is not intended to replace the desktop [Unity Version Control GUI](https://docs.plasticscm.com/gui/plastic-scm-version-control-gui-guide)
+or [command line interface "cm"](https://docs.plasticscm.com/cli/plastic-scm-version-control-cli-guide).
 It is a complementary tool improving efficiency in your daily workflow with assets in Editor.
 
-It automates tracking of assets, brings common SCM tasks inside the Editor, and provides visual diffing of Blueprints.
+It automates tracking status of assets, brings common source control tasks inside the Editor, and provides visual diffing of Blueprints.
 It also helps import an existing Unreal Project into source control, with appropriate *ignore.conf* file.
 Since Unreal does not manage C++ source code, but only assets, the plugin is especially useful for GDs and artists.
 
@@ -39,9 +39,9 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
      - [Workflows](#workflows)
        - [Mainline](#mainline)
        - [Task branches](#task-branches)
-   - [Plastic SCM Setup](#plastic-scm-setup)
+   - [Unity Version Control Setup](#unity-version-control-setup)
      - [Configure Locks for Unreal Assets (exclusive checkout)](#configure-locks-for-unreal-assets-exclusive-checkout)
-     - [Configure Visual Diff of Blueprints from Plastic SCM GUI](#configure-visual-diff-of-blueprints-from-plastic-scm-gui)
+     - [Configure Visual Diff of Blueprints from Unity Version Control GUI](#configure-visual-diff-of-blueprints-from-unity-version-control-gui)
  - [Status](#status)
  - [Support](#support)
    - [Enable debug logs](#enable-debug-logs)
@@ -58,11 +58,11 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
 - UE4.24 to 4.27 shipped with an old version 1.4.6 of this plugin
 - UE5.0 shipped with the same outdated version 1.4.6, not performing well overall with UE5, especially on OFPA
 - UE5.1 shipped with the version 1.6.2 of the plugin with support for the new View Changelists window
-- UE5.2 is going to ship with the version 1.8.0 of the plugin with support for the Shelves in the renamed View Changes window
+- UE5.2 shipped with the version 1.8.0 of the plugin with support for the Shelves in the renamed View Changes window
 
 **Why?**: Why is it integrated, as opposed to, eg. being shared through the Marketplace?
 
-It helps with discoverability of the plugin, and it is the easiest way to get started with Plastic SCM in Unreal Engine.
+It helps with discoverability of the plugin, and it is the easiest way to get started with Unity Version Control in Unreal Engine.
 But it will always be lagging somewhat behind the latest release in Github.
 
 #### Manual update from the latest release in Github
@@ -75,7 +75,7 @@ If you want the latest features, performance improvements and bug fixes that are
  2. Either:
      1. Unzip the content of the ZIP directly at the root of your project folder.
         This creates a "Plugins\UEPlasticPlugin\" subdirectory into your project.
-        This is the way to go to use Plastic SCM on a specific project,
+        This is the way to go to use Unity Version Control on a specific project,
         and to share the plugin with other team members by adding it to source control.
         Some users reported they also had to remove the integrated plugin from "Engine\Plugins\Developer\PlasticSourceControl" to avoid a collision.
         This is only needed for some specific use case I have not yet identified (eg. on CI/CD, or on Unix OSes).
@@ -83,7 +83,7 @@ If you want the latest features, performance improvements and bug fixes that are
         (for instance "C:\Program Files\Epic Games\5.1\Engine\")
         This creates a "UEPlasticPlugin" folder into the "Plugins\" subdirectory.
         Then remove the integrated plugin from "Engine\Plugins\Developer\PlasticSourceControl" to avoid the collision.
-        This is the way to enable Plastic SCM for all Unreal Engine projects on the machine.
+        This is the way to enable Unity Version Control for all Unreal Engine projects on the machine.
  3. Then, launch your Unreal project, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
 #### How to build from sources
@@ -105,7 +105,7 @@ To release the plugin, zip the _Plugins_ folder. But before that, remove the _In
 
 ### Project Setup
 
-Start by [saving your connection credentials with the Plastic SCM GUI](#save-connection-credentials)
+Start by [saving your connection credentials with the Unity Version Control GUI](#save-connection-credentials)
 
 #### Enable Source Control
 
@@ -139,14 +139,14 @@ Wait for this to succeed before accepting source control settings to not lock th
 Source control settings can be changed using the Source Control menu,
 and are saved locally in `Saved\Config\WindowsEditor\SourceControlSettings.ini`.
 
-- BinaryPath: Path to the Plastic SCM Command Line tool 'cm' binary. Default is good if the cli is in the PATH. Can be changed to an absolute path to the cm executable if needed.
+- BinaryPath: Path to the Unity Version Control Command Line tool 'cm' binary. Default is good if the cli is in the PATH. Can be changed to an absolute path to the cm executable if needed.
 - UpdateStatusAtStartup: Triggers an asynchronous "Update Status" operation at Editor startup. Can take quite some time on big projects, with no source control status available in the meantime.
 - UpdateStatusOtherBranches: Enable Update status to detect more recent changes on other branches in order to display the "Changed In Other Branch" warnings and icon. 
 - EnableVerboseLogs: Override LogSourceControl default verbosity level to Verbose (except if already set to VeryVerbose).
 
 ##### Add an ignore.conf file
 
-If you have a project in Plastic SCM but without an ignore.conf file at the root of the workspace,
+If you have a project in Unity Version Control but without an ignore.conf file at the root of the workspace,
 you can use "Source Control" -> "Change Source Control Settings..." -> "Add a ignore.conf file" button to create a standard one:
 ![Source Control Login window - Add a ignore.conf file](Screenshots/UEPlasticPlugin-SourceControlSettings-AddIgnoreConfFile.png)
 
@@ -209,11 +209,11 @@ Unreal Engine allows you to configure project-related settings.
 
 ![Project Settings - Source Control](Screenshots/UEPlasticPlugin-ProjectSettingsSourceControl.png)
 
-##### Source Control - Plastic SCM
+##### Source Control - Unity Version Control
 
 The plugin allows you to configure project-related settings.
 
-![Project Settings - Source Control - Plastic SCM](Screenshots/UEPlasticPlugin-ProjectSettingsPlasticSCM.png)
+![Project Settings - Source Control - Unity Version Control](Screenshots/UEPlasticPlugin-ProjectSettingsPlasticSCM.png)
 
 There are 3 settings available at the moment:
 
@@ -227,8 +227,8 @@ There are 3 settings available at the moment:
      This mimics how Git works, i.e. allowing the user to perform changes without worrying about checking out items.
      Note: Changelists don't currently support locally changed assets (ie not checked-out)
  - **Limit Number Of Revisions in History** (50 by default)
-   - If a non-null value is set, limit the maximum number of revisions requested to Plastic SCM to display in the "History" window.
-   - Requires [Plastic SCM 11.0.16.7608](https://www.plasticscm.com/download/releasenotes/11.0.16.7608) that added support for history --limit
+   - If a non-null value is set, limit the maximum number of revisions requested to Unity Version Control to display in the "History" window.
+   - Requires [Unity Version Control 11.0.16.7608](https://plasticscm.com/download/releasenotes/11.0.16.7608) that added support for history --limit
 
 #### Editor Preferences
 
@@ -299,12 +299,12 @@ Plastic SCM forums:
 Source Control status tooltip, when hovering the Source Control icon in toolbar:
 ![Source Control Status Tooltip](Screenshots/UE4PlasticPlugin-SourceControlStatus.png)
 
-Source Control top Menu, extended with commands specific to Plastic SCM:
+Source Control top Menu, extended with commands specific to Unity Version Control:
 ![Source Control Top Menu](Screenshots/UE4PlasticPlugin-SourceControlMenu.png)
 
 ##### Unreal Engine 5 Source Control Menu
 
-Source Control Menu and status tooltip, extended with commands specific to Plastic SCM:
+Source Control Menu and status tooltip, extended with commands specific to Unity Version Control:
 ![Source Control Menu](Screenshots/UE5PlasticPlugin-SourceControlMenu.png)
 
 Each Asset Editor also provide some source control operation, typically to Submit Content:
@@ -381,14 +381,14 @@ Warning when trying to modify an asset that has been modified in another branch:
 
 In case you ever use branches with binary assets without relying on exclusive checkouts (file locks) ([see Workflows below](#workflows))
 you will encounter cases of merge conflicts on binary assets.
-You have to trigger the resolve in the Plastic SCM GUI, but then skip it without saving changes in order to let the Editor present you with a visual diff.
+You have to trigger the resolve in the Unity Version Control GUI, but then skip it without saving changes in order to let the Editor present you with a visual diff.
 
-TODO: take screenshots of Plastic SCM GUI
+TODO: take screenshots of Unity Version Control GUI
 
 Branch explorer showing the merge pending with an asset in conflict:
 ![Merged branch with a pending conflict resolution](Screenshots/UE4PlasticPlugin-MergeBranch-Pending.png)
 
-Corresponding icon in the Content Browser (only showing after the resolved has been triggered in Plastic SCM):
+Corresponding icon in the Content Browser (only showing after the resolved has been triggered in Unity Version Control):
 ![Merge Conflict](Screenshots/Icons/UEPlasticPlugin-NotAtHead.png)
 
 Right click on the asset in conflict to open the _Merge_ Tool (just a conflict solver with 3-way Visual Diff, no merge):
@@ -416,18 +416,18 @@ The reason is that a partial workspace enables you to checkin assets without the
 3. then check-in (submit) the assets, either from within the Editor, or from the GUI after closing the Editor (the benefit of closing is you ensure that everything is saved)
 4. when needed, close the Editor and update the workspace again
 
-If you try to use a full workspace (with Plastic SCM GUI instead of Gluon) you will often need to update the workspace before being able to checkin.
+If you try to use a full workspace (with Unity Version Control GUI instead of Gluon) you will often need to update the workspace before being able to checkin.
 
 ##### Task branches
 
 Handling of binary assets works best in only one branch (regardless of the source control used)
 since they cannot be merged, and since they increase the cost (time/bandwidth) of switching between branches.
 
-But with Plastic SCM you can use branches that are easy and cheap to create and merge:
+But with Unity Version Control you can use branches that are easy and cheap to create and merge:
 using them for code will enable you to leverage the built-in code review on these branches.
 
 Note that some studios also use task branches for assets, and include them in their code reviews.
-Plastic SCM locks extend to all branches, preventing two people from working at the same time on the same assets regardless of the branch they are one.
+Unity Version Control locks extend to all branches, preventing two people from working at the same time on the same assets regardless of the branch they are one.
 The Plastic plugin also offers [some branch support to warn users if an asset has been changed in another branch](#branches-support).
 
 To use branches, you would need to also close the Editor before switching from a branch to another, and before merging a branch into another:
@@ -442,16 +442,16 @@ To use branches, you would need to also close the Editor before switching from a
 
 The plugin also leverages the [visual diff merge conflicts resolution tool from the Editor](#merge-conflicts-on-blueprints) but this is a pain and isn't working as expected currently (as of 1.5.0 & UE5.0)
 
-### Plastic SCM Setup
+### Unity Version Control Setup
 
 #### Save connection credentials
 
 The plugin works with the command line interface "cm" that currently requires your credentials to be stored.
-Use the Plastic SCM or Gluon GUI to enter and save your credentials before enabling Plastic SCM in Unreal.
+Use the Unity Version Control or Gluon GUI to enter and save your credentials before enabling Unity Version Control in Unreal.
 
 #### Configure Locks for Unreal Assets (exclusive checkout)
 
-[Administrator guide - Chapter 7: Configuring exclusive checkout (Lock)](https://www.plasticscm.com/documentation/administration/plastic-scm-version-control-administrator-guide#Chapter7:Configuringexclusivecheckout(Lock))
+[Administrator guide - Chapter 7: Configuring exclusive checkout (Lock)](https://docs.plasticscm.com/administration/plastic-scm-version-control-administrator-guide#Chapter7:Configuringexclusivecheckout(Lock))
 
 Binary assets should be locked for exclusive access to avoid merge conflicts.
 
@@ -475,7 +475,7 @@ On Plastic Cloud, you can just set-up lock rules like that:
 
     /Content
 
-#### Configure Visual Diff of Blueprints from Plastic SCM GUI
+#### Configure Visual Diff of Blueprints from Unity Version Control GUI
 
 In "Preferences -> Diff tools" add a new config for uasset and move it up **before** the existing `$binary` one:
 ![Diff tools](Screenshots/UEPlasticPlugin-GUIDiffToolsUasset.png)
@@ -518,7 +518,7 @@ This version here is the development version, so it always contains additional f
  - move/rename a file or a folder
  - revert modifications of a file (works best with the "Content Hot-Reload" option since UE4.15)
  - check-in a set of files with a multi-line UTF-8 comment
- - migrate (copy) an asset between two projects if both are using Plastic SCM
+ - migrate (copy) an asset between two projects if both are using Unity Version Control
  - delete file (but no way to check-in them, see known issues below)
  - update workspace to latest head (Sync command)
  - show history of a file
@@ -533,7 +533,7 @@ This version here is the development version, so it always contains additional f
    - "Sync/update workspace" instead of on folder's context menu
    - "Revert Unchanged" and "Revert All"
    - "Refresh" to update local source control status icons (but doesn't re-evaluate locks or changes made on other branches)
- - [Partial Workspace (Gluon, for artists)](https://www.plasticscm.com/gluon) [see also](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
+ - [Partial Workspace (Gluon, for artists)](https://docs.plasticscm.com/gluon/plastic-scm-version-control-gluon-guide) [see also](http://blog.plasticscm.com/2015/03/plastic-gluon-is-out-version-control.html)
  - Plastic Cloud is fully supported
  - xlinks sub-repositories (for Plugins for instance)
  - Toggle verbose logs from the Source Control settings UI
@@ -548,7 +548,7 @@ This version here is the development version, so it always contains additional f
  - Solve a merge conflict on a blueprint (see Known issues below)
  - Mac OS X Support
  - add a menu entry to switch the workspace to Partial
- - add a setting to configure Plastic SCM to use "read-only flags" like Perforce
+ - add a setting to configure Unity Version Control to use "read-only flags" like Perforce
    - add a context menu entry to make it locally writable
  - add a menu entry to unlock a file
  - add a setting to pass the --update option to "check-in"
@@ -556,7 +556,7 @@ This version here is the development version, so it always contains additional f
 
 ### Known issues
  - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
- - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Plastic SCM GUI
+ - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Unity Version Control GUI
  - Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
  - Bug: the Editor does not handle visual diff for renamed/moved assets
 
@@ -570,8 +570,9 @@ Some are reserved for internal use by Epic Games with Perforce only:
 ## Support
 
 You can always ask for support in:
- - [Plastic SCM support](https://www.plasticscm.com/support)
- - [Plastic SCM Unreal Engine forum](https://forum.plasticscm.com/forum/42-unreal-engine/)
+ - [Unity Version Control support](https://support.unity.com/hc/en-us/requests/new?ticket_form_id=360001051792)
+ - [Unity Version Control forums](https://forum.unity.com/forums/unity-version-control.605/)
+ - [Unity Version Control (Plastic SCM) forums](https://forum.plasticscm.com/forum/42-unreal-engine/)
  - [Unreal Engine forums](https://forums.unrealengine.com/)
  - [Unreal Slackers Discord community](https://discord.gg/unreal-slackers)
 
@@ -583,16 +584,16 @@ To help diagnose any issue related to the plugin or to the Editor, toggle Verbos
 
 Unreal log files are in `<ProjectName>/Save/Logs/ProjectName.log`.
 
-#### Enable logging for Plastic SCM
+#### Enable logging for Unity Version Control
 
-To help diagnose any issue related to the underlying Plastic SCM "cm" Command Line Interface,
-[enable logging for Plastic SCM](https://www.plasticscm.com/documentation/technical-articles/kb-enabling-logging-for-plastic-scm-part-i).
+To help diagnose any issue related to the underlying Unity Version Control "cm" Command Line Interface,
+[enable logging for Unity Version Control](https://www.plasticscm.com/documentation/technical-articles/kb-enabling-logging-for-plastic-scm-part-i).
 
 cm log files are typically in `<LOCALAPPDATA>\plastic4\logs\cm.log.txt`.
 
 ### Report an issue
 
-To report an issue, please create a support ticket as it helps sort the priorities [Plastic SCM support](https://www.plasticscm.com/support).
+To report an issue, please create a support ticket as it helps sort the priorities [Unity Version Control support](https://support.unity.com/hc/en-us/requests/new?ticket_form_id=360001051792).
 
 You can also use the [Github issue-tracker](https://github.com/SRombauts/UEPlasticPlugin/issues?q=is%3Aissue).
 
@@ -637,7 +638,7 @@ All the relevant C++ source code of the plugin reside in one subdirectory `<Proj
    - implements information about a revision in the history of a file
  - **PlasticSourceControlChangelist**.cpp/.h
    - `class FPlasticSourceControlChangelist : public ISourceControlChangelist`
-   - Unique Identifier of a changelist under source control: a "name" in Plastic SCM
+   - Unique Identifier of a changelist under source control: a "name" in Unity Version Control
  - **PlasticSourceControlChangelistState**.cpp/.h
    - `class FPlasticSourceControlChangelistState : public ISourceControlChangelistState`
    - The state of a pending changelist under source control: description and list of files
@@ -664,9 +665,9 @@ All the relevant C++ source code of the plugin reside in one subdirectory `<Proj
  - **PlasticSourceControlMenu**.cpp/.h
    - extends the main source control menu, now in the status bar at the bottom of the Editor
  - **PlasticSourceControlProjectSettings**.h
-   - add a section "Source Control - Plastic SCM" to the Project Settings (saved in `Config\DefaultEditor.ini`)
+   - add a section "Editor - Source Control - Unity Version Control" to the Project Settings (saved in `Config\DefaultEditor.ini`)
  - **PlasticSourceControlConsole**.cpp/.h
-   - add a console command that can be executed from the Editor status bar or Output Log to execute "cm" commands in order to query Plastic SCM, eg:
+   - add a console command that can be executed from the Editor status bar or Output Log to execute "cm" commands in order to query Unity Version Control, eg:
    - `cm location`
    - `cm find revision "where item='Content/ThirdPerson/Blueprints/BP_ThirdPersonCharacter.uasset'"`
  - **ScopedTempFile**.cpp/.h
