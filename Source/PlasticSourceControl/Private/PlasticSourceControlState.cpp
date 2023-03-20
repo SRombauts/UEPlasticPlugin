@@ -523,7 +523,7 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 /** Get whether this file is checked out in a different branch, if no branch is specified defaults to FEngineVerion current branch */
 bool FPlasticSourceControlState::IsCheckedOutInOtherBranch(const FString& CurrentBranch /* = FString() */) const
 {
-	// Note: to my knowledge, it's not possible to detect that with PlasticSCM without the Locks,
+	// Note: to my knowledge, it's not possible to detect that with Unity Version Control without the Locks,
 	// which are already detected by fileinfo LockedBy/LockedWhere and reported by IsCheckedOutOther() above
 	return false;
 }

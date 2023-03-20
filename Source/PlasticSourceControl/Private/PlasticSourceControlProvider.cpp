@@ -36,14 +36,14 @@ FPlasticSourceControlProvider::FPlasticSourceControlProvider()
 
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {
-	// Init() is called multiple times at startup: do not check Plastic SCM each time
+	// Init() is called multiple times at startup: do not check Unity Version Control each time
 	if (!bPlasticAvailable)
 	{
 		const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
 		if (Plugin.IsValid())
 		{
 			PluginVersion = Plugin->GetDescriptor().VersionName;
-			UE_LOG(LogSourceControl, Log, TEXT("Plastic SCM plugin '%s'"), *PluginVersion);
+			UE_LOG(LogSourceControl, Log, TEXT("Unity Version Control (formerly Plastic SCM) plugin '%s'"), *PluginVersion);
 		}
 
 		CheckPlasticAvailability();
@@ -96,7 +96,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		// Find the path to the root Plastic directory (if any, else uses the ProjectDir)
 		const FString PathToProjectDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
 
-		// Launch the Plastic SCM cli shell on the background to issue all commands during this session
+		// Launch the Unity Version Control cli shell on the background to issue all commands during this session
 		bPlasticAvailable = PlasticSourceControlShell::Launch(PathToPlasticBinary, PathToProjectDir);
 		if (!bPlasticAvailable)
 		{
@@ -117,7 +117,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 		bUsesLocalReadOnlyState = PlasticSourceControlUtils::GetConfigSetFilesAsReadOnly();
 
-		// Get user name (from the global Plastic SCM client config)
+		// Get user name (from the global Unity Version Control client config)
 		PlasticSourceControlUtils::GetUserName(UserName);
 
 		// Register Console Commands
@@ -229,7 +229,7 @@ FText FPlasticSourceControlProvider::GetStatusText() const
 	}
 	Args.Add(TEXT("ErrorText"), FormattedError);
 
-	return FText::Format(LOCTEXT("PlasticStatusText", "{ErrorText}Plastic SCM {PlasticScmVersion}  (plugin v{PluginVersion})\nWorkspace: {WorkspaceName}  ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: '{UserName}'  {DisplayName}"), Args);
+	return FText::Format(LOCTEXT("PlasticStatusText", "{ErrorText}Unity Version Control (formerly Plastic SCM) {PlasticScmVersion}\t(plugin v{PluginVersion})\nWorkspace: {WorkspaceName}  ({WorkspacePath})\n{BranchName}\nChangeset: {ChangesetNumber}\nUser: '{UserName}'  {DisplayName}"), Args);
 }
 
 /** Quick check if source control is enabled. Specifically, it returns true if a source control provider is set (regardless of whether the provider is available) and false if no provider is set. So all providers except the stub DefaultSourceProvider will return true. */
@@ -435,7 +435,7 @@ bool FPlasticSourceControlProvider::UsesLocalReadOnlyState() const
 
 bool FPlasticSourceControlProvider::UsesChangelists() const
 {
-	// Note: We don't want to show ChangeList column (Plastic SCM term would be ChangeSet) BUT we need this to display the changelists in the source control menu
+	// We don't want to show ChangeList column anymore (Unity Version Control term would be ChangeSet) BUT we need this to display the changelists in the source control menu
 	return true;
 }
 
@@ -544,7 +544,7 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 					FFormatNamedArguments Args;
 					Args.Add(TEXT("PlasticScmVersion"), FText::FromString(PlasticScmVersion.String));
 					Args.Add(TEXT("OldestSupportedPlasticScmVersion"), FText::FromString(PlasticSourceControlUtils::GetOldestSupportedPlasticScmVersion().String));
-					const FText UnsuportedVersionWarning = FText::Format(LOCTEXT("Plastic_UnsuportedVersion", "Plastic SCM {PlasticScmVersion} is not supported anymore by this plugin.\nPlastic SCM {OldestSupportedPlasticScmVersion} or a more recent version is required.\nPlease upgrade to the latest version."), Args);
+					const FText UnsuportedVersionWarning = FText::Format(LOCTEXT("Plastic_UnsuportedVersion", "Unity Version Control {PlasticScmVersion} is not supported anymore by this plugin.\nUnity Version Control {OldestSupportedPlasticScmVersion} or a more recent version is required.\nPlease upgrade to the latest version."), Args);
 					FMessageLog("SourceControl").Warning(UnsuportedVersionWarning);
 					FMessageDialog::Open(EAppMsgType::Ok, UnsuportedVersionWarning);
 				}

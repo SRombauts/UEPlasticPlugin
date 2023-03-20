@@ -51,7 +51,7 @@ void FPlasticSourceControlMenu::Register()
 	if (UToolMenus* ToolMenus = UToolMenus::Get())
 	{
 		UToolMenu* SourceControlMenu = ToolMenus->ExtendMenu("StatusBar.ToolBar.SourceControl");
-		FToolMenuSection& Section = SourceControlMenu->AddSection("PlasticSourceControlActions", LOCTEXT("PlasticSourceControlMenuHeadingActions", "Plastic SCM"), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
+		FToolMenuSection& Section = SourceControlMenu->AddSection("PlasticSourceControlActions", LOCTEXT("PlasticSourceControlMenuHeadingActions", "Unity Version Control"), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
 
 		AddMenuExtension(Section);
 	}
@@ -506,8 +506,8 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #if ENGINE_MAJOR_VERSION == 5
 		"PlasticProjectSettings",
 #endif
-		LOCTEXT("PlasticProjectSettings",			"Project Settings - Source Control - Plastic SCM"),
-		LOCTEXT("PlasticProjectSettingsTooltip",	"Open the Plastic SCM section in the Project Settings."),
+		LOCTEXT("PlasticProjectSettings",			"Project Settings - Source Control - Unity Version Control"),
+		LOCTEXT("PlasticProjectSettingsTooltip",	"Open the Unity Version Control (formerly Plastic SCM) section in the Project Settings."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ProjectSettings.TabIcon"),
 #else
@@ -542,8 +542,8 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #if ENGINE_MAJOR_VERSION == 5
 		"PlasticSupportURL",
 #endif
-		LOCTEXT("PlasticSupportURL",		"Plastic SCM Support"),
-		LOCTEXT("PlasticSupportURLTooltip",	"Visit official support for Plastic SCM."),
+		LOCTEXT("PlasticSupportURL",		"Unity Version Control Support"),
+		LOCTEXT("PlasticSupportURLTooltip",	"Submit a support request for Unity Version Control (formerly Plastic SCM)."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Support"),
 #elif ENGINE_MAJOR_VERSION == 5

@@ -9,7 +9,7 @@
 class FMenuBuilder;
 struct FToolMenuSection;
 
-/** Plastic SCM extension of the Source Control toolbar menu */
+/** Unity Version Control extension of the Source Control toolbar menu */
 class FPlasticSourceControlMenu
 {
 public:

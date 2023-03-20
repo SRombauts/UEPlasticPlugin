@@ -156,7 +156,7 @@ public:
 	/** Changeset of the source/remote revision of the merge in progress */
 	int32 PendingMergeSourceChangeset = INVALID_REVISION;
 
-	/** Plastic SCM Parameters of the merge in progress */
+	/** Unity Version Control Parameters of the merge in progress */
 	TArray<FString> PendingMergeParameters;
 
 	/** If a user (another or ourself) has this file locked, this contains their name. */

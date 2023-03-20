@@ -60,19 +60,19 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 	[
 #endif
 		SNew(SVerticalBox)
-		// Versions (Plugin & Plastic SCM) useful eg to help diagnose issues from screenshots
+		// Versions (Plugin & Unity Version Control) useful eg to help diagnose issues from screenshots
 		+SVerticalBox::Slot()
 		.AutoHeight()
 		.Padding(2.0f)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SHorizontalBox)
-			.ToolTipText(LOCTEXT("PlasticVersions_Tooltip", "Plastic SCM and Plugin versions"))
+			.ToolTipText(LOCTEXT("PlasticVersions_Tooltip", "Unity Version Control (formerly Plastic SCM) and Plugin versions"))
 			+SHorizontalBox::Slot()
 			.FillWidth(1.0f)
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("PlasticVersions", "Plastic SCM version"))
+				.Text(LOCTEXT("PlasticVersions", "Unity Version Control"))
 				.Font(Font)
 			]
 			+SHorizontalBox::Slot()
@@ -83,30 +83,30 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.Font(Font)
 			]
 		]
-		// Plastic SCM command line tool not available warning
+		// Unity Version Control command line tool not available warning
 		+SVerticalBox::Slot()
 		.FillHeight(1.0f)
 		.Padding(2.0f)
 		[
 			SNew(STextBlock)
 			.Visibility(this, &SPlasticSourceControlSettings::PlasticNotAvailable)
-			.ToolTipText(LOCTEXT("PlasticNotAvailable_Tooltip", "Failed to launch Plastic SCM 'cm' command line tool. You need to install it and make sure that 'cm' is on the Path and correctly configured."))
-			.Text(LOCTEXT("PlasticNotAvailable", "Plastic SCM Command Line tool 'cm' failed to start:"))
+			.ToolTipText(LOCTEXT("PlasticNotAvailable_Tooltip", "Failed to launch Unity Version Control 'cm' command line tool. You need to install it and make sure that 'cm' is on the Path and correctly configured."))
+			.Text(LOCTEXT("PlasticNotAvailable", "Unity Version Control Command Line tool 'cm' failed to start:"))
 			.Font(Font)
 		]
-		// Path to the Plastic SCM binary
+		// Path to the Unity Version Control binary
 		+SVerticalBox::Slot()
 		.AutoHeight()
 		.Padding(2.0f)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SHorizontalBox)
-			.ToolTipText(LOCTEXT("BinaryPathLabel_Tooltip", "Path to the Plastic SCM Command Line tool 'cm' binary"))
+			.ToolTipText(LOCTEXT("BinaryPathLabel_Tooltip", "Path to the Unity Version Control Command Line tool 'cm' executable"))
 			+SHorizontalBox::Slot()
 			.FillWidth(1.0f)
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("PathLabel", "Plastic SCM path to cm"))
+				.Text(LOCTEXT("PathLabel", "Path to cm"))
 				.Font(Font)
 			]
 			+SHorizontalBox::Slot()
@@ -114,7 +114,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			[
 				SNew(SEditableTextBox)
 				.Text(this, &SPlasticSourceControlSettings::GetBinaryPathText)
-				.HintText(LOCTEXT("BinaryPathLabel", "Path to the Plastic SCM binary"))
+				.HintText(LOCTEXT("BinaryPathLabel", "Path to the Unity Version Control 'cm' executable"))
 				.OnTextCommitted(this, &SPlasticSourceControlSettings::OnBinaryPathTextCommited)
 				.Font(Font)
 			]
@@ -149,7 +149,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SHorizontalBox)
-			.ToolTipText(LOCTEXT("PlasticUserName_Tooltip", "User name configured for the Plastic SCM workspace"))
+			.ToolTipText(LOCTEXT("PlasticUserName_Tooltip", "User name configured for the Unity Version Control workspace"))
 			+SHorizontalBox::Slot()
 			.FillWidth(1.0f)
 			[
@@ -181,7 +181,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			SNew(STextBlock)
 			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
 			.ToolTipText(LOCTEXT("WorkspaceNotFound_Tooltip", "No Workspace found at the level or above the current Project. Use the form to create a new one."))
-			.Text(LOCTEXT("WorkspaceNotFound", "Current Project is not in a Plastic SCM Workspace. Create a new one:"))
+			.Text(LOCTEXT("WorkspaceNotFound", "Current Project is not in a Unity Version Control Workspace. Create a new one:"))
 			.Font(Font)
 		]
 		// Workspace and Repository Name
@@ -267,7 +267,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.Font(Font)
 			]
 		]
-		// Option to Make the initial Plastic SCM checkin
+		// Option to Make the initial Unity Version Control checkin
 		+SVerticalBox::Slot()
 		.AutoHeight()
 		.Padding(2.0f)
@@ -275,7 +275,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		[
 			SNew(SHorizontalBox)
 			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
-			.ToolTipText(LOCTEXT("InitialCommit_Tooltip", "Make the initial Plastic SCM checkin"))
+			.ToolTipText(LOCTEXT("InitialCommit_Tooltip", "Make the initial Unity Version Control checkin"))
 			+SHorizontalBox::Slot()
 			.FillWidth(0.7f)
 			[
@@ -364,8 +364,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			[
 				SNew(SButton)
 				.IsEnabled(this, &SPlasticSourceControlSettings::IsReadyToInitializePlasticWorkspace)
-				.Text(LOCTEXT("PlasticInitWorkspace", "Create a new Plastic SCM workspace for the current project"))
-				.ToolTipText(LOCTEXT("PlasticInitWorkspace_Tooltip", "Create and initialize a new Plastic SCM workspace and repository for the current project"))
+				.Text(LOCTEXT("PlasticInitWorkspace", "Create a new Unity Version Control workspace for the current project"))
+				.ToolTipText(LOCTEXT("PlasticInitWorkspace_Tooltip", "Create and initialize a new Unity Version Control workspace and repository for the current project"))
 				.OnClicked(this, &SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace)
 				.HAlign(HAlign_Center)
 				.ContentPadding(6)
@@ -424,7 +424,7 @@ void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText
 FText SPlasticSourceControlSettings::GetVersions() const
 {
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-	return FText::FromString(Provider.GetPlasticScmVersion().String + TEXT(" (plugin v") + Provider.GetPluginVersion() + TEXT(")"));
+	return FText::FromString(Provider.GetPlasticScmVersion().String + TEXT("\t(plugin v") + Provider.GetPluginVersion() + TEXT(")"));
 }
 
 FText SPlasticSourceControlSettings::GetPathToWorkspaceRoot() const
@@ -676,7 +676,7 @@ void SPlasticSourceControlSettings::DisplayFailureNotification(const FName& InOp
 	UE_LOG(LogSourceControl, Error, TEXT("%s"), *NotificationText.ToString());
 }
 
-/** Delegate to check for presence of a Plastic ignore.conf file to an existing Plastic SCM workspace */
+/** Delegate to check for presence of a Plastic ignore.conf file to an existing Unity Version Control workspace */
 EVisibility SPlasticSourceControlSettings::CanAddIgnoreFile() const
 {
 	const bool bPlasticWorkspaceFound = FPlasticSourceControlModule::Get().GetProvider().IsWorkspaceFound();
@@ -684,12 +684,12 @@ EVisibility SPlasticSourceControlSettings::CanAddIgnoreFile() const
 	return (bPlasticWorkspaceFound && !bIgnoreFileFound) ? EVisibility::Visible : EVisibility::Collapsed;
 }
 
-/** Delegate to add a Plastic ignore.conf file to an existing Plastic SCM workspace */
+/** Delegate to add a Plastic ignore.conf file to an existing Unity Version Control workspace */
 FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 {
 	if (CreateIgnoreFile())
 	{
-		// Add ignore.conf to Plastic SCM
+		// Add ignore.conf to Unity Version Control
 		TArray<FString> InfoMessages;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;

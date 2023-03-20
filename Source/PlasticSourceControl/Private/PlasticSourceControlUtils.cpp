@@ -297,7 +297,7 @@ FString UserNameToDisplayName(const FString& InUserName)
 }
 
 /**
- * @brief Extract the renamed from filename from a Plastic SCM status result.
+ * @brief Extract the renamed from filename from a Unity Version Control status result.
  *
  * Examples of status results:
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
@@ -320,7 +320,7 @@ static FString RenamedFromPlasticStatus(const FString& InResult)
 }
 
 /**
- * @brief Extract the relative filename from a Plastic SCM status result.
+ * @brief Extract the relative filename from a Unity Version Control status result.
  *
  * Examples of status results:
  CO Content\CheckedOut_BP.uasset
@@ -343,7 +343,7 @@ static FString FilenameFromPlasticStatus(const FString& InResult)
 	}
 	else
 	{
-		// Extract the relative filename from the Plastic SCM status result (after the 2 letters status surrounded by 2 spaces)
+		// Extract the relative filename from the Unity Version Control status result (after the 2 letters status surrounded by 2 spaces)
 		RelativeFilename = InResult.RightChop(4);
 
 		const int32 MergeIndex = RelativeFilename.Find(TEXT(" (Merge from "));
@@ -357,7 +357,7 @@ static FString FilenameFromPlasticStatus(const FString& InResult)
 }
 
 /**
- * @brief Match the relative filename of a Plastic SCM status result with a provided absolute filename
+ * @brief Match the relative filename of a Unity Version Control status result with a provided absolute filename
  *
  * Examples of status results:
  CO Content\CheckedOut_BP.uasset
@@ -1574,7 +1574,7 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
   <Changelists>
 	<Changelist>
 	  <Name>Default</Name>
-	  <Description>Default Plastic SCM changelist</Description>
+	  <Description>Default Unity Version Control changelist</Description>
 	  <Changes>
 		<Change>
 		  <Type>CO</Type>

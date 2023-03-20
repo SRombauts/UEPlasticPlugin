@@ -134,13 +134,13 @@ public:
 		return (ChangesetNumber == -1);
 	}
 
-	/** Version of the Plastic SCM executable used */
+	/** Version of the Unity Version Control executable used */
 	inline const FSoftwareVersion& GetPlasticScmVersion() const
 	{
 		return PlasticScmVersion;
 	}
 
-	/** Version of the Plastic SCM plugin */
+	/** Version of the Unity Version Control plugin */
 	const FString& GetPluginVersion() const
 	{
 		return PluginVersion;
@@ -203,7 +203,7 @@ private:
 	/** Indicates if source control integration is available or not. */
 	bool bServerAvailable = false;
 
-	/** Whether Plastic SCM is configured to uses local read-only state to signal whether a file is editable ("SetFilesAsReadOnly" in client.conf) */
+	/** Whether Unity Version Control is configured to uses local read-only state to signal whether a file is editable ("SetFilesAsReadOnly" in client.conf) */
 	bool bUsesLocalReadOnlyState = false;
 
 	/** Critical section for thread safety of error messages that occurred after last Plastic command */
@@ -226,10 +226,10 @@ private:
 	/** Update workspace status on Connect and UpdateStatus operations */
 	void UpdateWorkspaceStatus(const class FPlasticSourceControlCommand& InCommand);
 
-	/** Version of the Plastic SCM executable used */
+	/** Version of the Unity Version Control executable used */
 	FSoftwareVersion PlasticScmVersion;
 
-	/** Version of the Plastic SCM plugin */
+	/** Version of the Unity Version Control plugin */
 	FString PluginVersion;
 
 	/** Path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */

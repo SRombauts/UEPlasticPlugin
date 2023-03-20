@@ -33,28 +33,28 @@ FString FindPlasticBinaryPath();
 bool GetWorkspacePath(const FString& InPathToGameDir, FString& OutWorkspaceRoot);
 
 /**
- * Get Plastic SCM CLI version
- * @param	OutCliVersion		Version of the Plastic SCM Command Line Interface tool
+ * Get Unity Version Control CLI version
+ * @param	OutCliVersion		Version of the Unity Version Control Command Line Interface tool
  * @returns true if the command succeeded
 */
 bool GetPlasticScmVersion(FSoftwareVersion& OutPlasticScmVersion);
 
 /**
- * Get Plastic SCM CLI location
+ * Get Unity Version Control CLI location
  * @param	OutCmLocation		Path to the "cm" executable
  * @returns true if the command succeeded
 */
 bool GetCmLocation(FString& OutCmLocation);
 
 /**
- * Checks weather Plastic SCM is configured to set files as read-only on update & checkin
+ * Checks weather Unity Version Control is configured to set files as read-only on update & checkin
  * @returns true if SetFilesAsReadOnly is enabled in client.conf
 */
 bool GetConfigSetFilesAsReadOnly();
 
 /**
- * Get Plastic SCM current user
- * @param	OutUserName			Name of the Plastic SCM user configured globally
+ * Get Unity Version Control current user
+ * @param	OutUserName			Name of the Unity Version Control user configured globally
  */
 void GetUserName(FString& OutUserName);
 
@@ -89,11 +89,11 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 bool GetWorkspaceInfo(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages);
 
 /**
- * Use the Project Settings to replace Plastic SCM full username/e-mail by a shorter version for display.
+ * Use the Project Settings to replace Unity Version Control full username/e-mail by a shorter version for display.
  *
  * Used when retrieving the username of a revision, to display in history and content browser asset tooltip.
  *
- * @param	InUserName			The Plastic SCM username to shorten for display.
+ * @param	InUserName			The Unity Version Control username to shorten for display.
  */
 FString UserNameToDisplayName(const FString& InUserName);
 
