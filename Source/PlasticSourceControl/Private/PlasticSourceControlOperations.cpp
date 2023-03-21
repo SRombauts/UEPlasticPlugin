@@ -155,7 +155,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				}
 				else
 				{
-					const FText ErrorText(LOCTEXT("FailedToConnect", "Failed to connect to the Unity Version Control server."));
+					const FText ErrorText(LOCTEXT("FailedToConnect", "Failed to connect to the Unity Version Control (formerly Plastic SCM) server."));
 					Operation->SetErrorText(ErrorText);
 					InCommand.ErrorMessages.Add(ErrorText.ToString());
 				}
@@ -163,18 +163,14 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		}
 		else
 		{
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
-			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable revision control. You need to create a Unity Version Control workspace for the project first."));
-#else
-			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable source control. You need to create a Unity Version Control workspace for the project first."));
-#endif
+			const FText ErrorText(LOCTEXT("NotAPlasticRepository", "Failed to enable Unity Version Control (formerly Plastic SCM). You need to create a workspace for the project first."));
 			Operation->SetErrorText(ErrorText);
 			InCommand.ErrorMessages.Add(ErrorText.ToString());
 		}
 	}
 	else
 	{
-		const FText ErrorText(LOCTEXT("PlasticScmCliUnavaillable", "Failed to launch Unity Version Control 'cm' command line tool. You need to install it and make sure that 'cm' is on the Path and correctly configured."));
+		const FText ErrorText(LOCTEXT("PlasticScmCliUnavaillable", "Failed to launch Unity Version Control (formerly Plastic SCM) 'cm' command line tool. You need to install it and make sure that 'cm' is on the Path and correctly configured."));
 		Operation->SetErrorText(ErrorText);
 		InCommand.ErrorMessages.Add(ErrorText.ToString());
 	}
