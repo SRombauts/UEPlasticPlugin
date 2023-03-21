@@ -188,8 +188,8 @@ void DisplayFailureNotification(const FText& InNotificationText)
 	FNotificationInfo* Info = new FNotificationInfo(InNotificationText);
 	Info->ExpireDuration = 10.0f;
 	FSlateNotificationManager::Get().QueueNotification(Info);
-	// TODO: all source control operations run in a thread, so we cannot use MessageLog nor Notify() them since they can only be used from the Main/UI thread
-	FMessageLog("SourceControl").Error(InNotificationText);
+	// TODO: all source control operations run in a thread, so we cannot use MessageLog designed for the Main/UI thread. We could use an AsyncTask though!
+	// FMessageLog("SourceControl").Error(InNotificationText);
 	UE_LOG(LogSourceControl, Error, TEXT("%s"), *InNotificationText.ToString());
 }
 
