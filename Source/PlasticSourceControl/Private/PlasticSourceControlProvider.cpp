@@ -451,29 +451,19 @@ bool FPlasticSourceControlProvider::UsesCheckout() const
 
 bool FPlasticSourceControlProvider::UsesFileRevisions() const
 {
-	/* TODO: this API is broken, it is preventing the user to use the source control context menu, as well as selecting what files to submit
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
 
-	// Only a partial workspace can sync files individually like Perforce, a regular workspace needs to update completely
+	// Only a Partial/Gluon workspace can sync/update files individually, operating on revisions (can use the context menu)
+	// while a regular workspace can only update all the files as a whole, operating at the changeset level (requires the global menu)
 	return IsPartialWorkspace();
-	
-	I believe that the logic is in fact flawed from what we would expect!
-	IMO Context & selected check-in should be forbidden if the provider use changelists, not the reverse!
-	(and using changelists could become a setting)
 
-	NOTE: the bug was introduced in UE5.1 by:
-
-Commit 5803c744 by marco anastasi, 10/04/2022 02:36 AM
-
-Remove / disable 'Check-in' context menu item in Content Explorer and Scene Outliner for Source Control providers that do not use changelists
-
-#rb stuart.hill, wouter.burgers
-#preflight 633ac338c37844870ac69f67
-
-[CL 22322177 by marco anastasi in ue5-main branch]
-
-	*/
-	
+#else
+	// This API introduced in UE5.1 was broken (preventing the user to use the source control context menu for checkin,
+	// as well as selecting what files to submit in the global Submit Content window)
+	// but is now fixed in UE5.2 through the use of the new following UsesSnapshots() API
 	return true;
+
+#endif
 }
 
 bool FPlasticSourceControlProvider::UsesSnapshots() const
