@@ -604,7 +604,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			FMessageLog SourceControlLog("SourceControl");
 			SourceControlLog.Error(FailureText);
-			SourceControlLog.Notify(FailureText, EMessageSeverity::Error, true);
+			SourceControlLog.Notify();
 		});
 		
 		return false;
