@@ -476,6 +476,11 @@ Remove / disable 'Check-in' context menu item in Content Explorer and Scene Outl
 	return true;
 }
 
+bool FPlasticSourceControlProvider::UsesSnapshots() const
+{
+	return false;
+}
+
 bool FPlasticSourceControlProvider::AllowsDiffAgainstDepot() const
 {
 	return true;
