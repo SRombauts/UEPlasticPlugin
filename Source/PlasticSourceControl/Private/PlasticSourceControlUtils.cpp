@@ -710,8 +710,6 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseFileinfoResults);
 
-	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-
 	ensureMsgf(InResults.Num() == InOutStates.Num(), TEXT("The fileinfo command should gives the same number of infos as the status command"));
 
 	// Iterate on all files and all status of the result (assuming same number of line of results than number of file states)
