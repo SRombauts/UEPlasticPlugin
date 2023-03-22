@@ -47,7 +47,7 @@ public:
 #elif ENGINE_MAJOR_VERSION == 5
 	virtual ECommandResult::Type Execute(const FSourceControlOperationRef& InOperation, FSourceControlChangelistPtr InChangelist, const TArray<FString>& InFiles, EConcurrency::Type InConcurrency = EConcurrency::Synchronous, const FSourceControlOperationComplete& InOperationCompleteDelegate = FSourceControlOperationComplete() ) override;
 #endif
-	virtual bool CanExecuteOperation( const FSourceControlOperationRef& InOperation ) const; /* override	NOTE: added in UE5.2 */
+	virtual bool CanExecuteOperation( const FSourceControlOperationRef& InOperation ) const; /* override	NOTE: added in UE5.3 */
 	virtual bool CanCancelOperation(const FSourceControlOperationRef& InOperation) const override;
 	virtual void CancelOperation(const FSourceControlOperationRef& InOperation) override;
 	virtual bool UsesLocalReadOnlyState() const override;
@@ -55,6 +55,7 @@ public:
 	virtual bool UsesUncontrolledChangelists() const; /* override	NOTE: added in UE5.2 */
 	virtual bool UsesCheckout() const override;
 	virtual bool UsesFileRevisions() const; /* override				NOTE: added in UE5.1 */
+	virtual bool UsesSnapshots() const; /* override					NOTE: added in UE5.2 */
 	virtual bool AllowsDiffAgainstDepot() const; /* override		NOTE: added in UE5.2 */
 	virtual TOptional<bool> IsAtLatestRevision() const; /* override	NOTE: added in UE5.1 */
 	virtual TOptional<int> GetNumLocalChanges() const; /* override	NOTE: added in UE5.1 */
