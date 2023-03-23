@@ -1311,7 +1311,7 @@ bool FPlasticGetPendingChangelistsWorker::UpdateStates()
 		ChangelistState->TimeStamp = Now;
 		bUpdated = true;
 
-		// Update files states for files in the changelist
+		// Update files in the changelist
 		bool bUpdateFilesStates = (OutCLFilesStates.Num() == OutChangelistsStates.Num());
 		if (bUpdateFilesStates)
 		{

@@ -398,7 +398,8 @@ private:
 static EWorkspaceState StateFromPlasticStatus(const FString& InResult)
 {
 	EWorkspaceState State;
-	const FString FileStatus = (InResult[0] == TEXT(' ')) ? InResult.Mid(1, 2) : InResult;
+
+	const FString FileStatus = InResult.Mid(1, 2);
 
 	if (FileStatus == "CH") // Modified but not Checked-Out
 	{
@@ -1554,19 +1555,10 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 #if ENGINE_MAJOR_VERSION == 5
 
 /**
- * Parse results of the 'cm status --changelists --controlledchanged --xml --encoding="utf-8"' command.
+ * Parse results of the 'cm status --changelists --controlledchanged --noheader --xml --encoding="utf-8"' command.
  *
  * Results of the status changelists command looks like that:
 <StatusOutput>
-  <WorkspaceStatus>
-	<Status>
-	  <RepSpec>
-		<Server>test@cloud</Server>
-		<Name>UEPlasticPluginDev</Name>
-	  </RepSpec>
-	  <Changeset>11</Changeset>
-	</Status>
-  </WorkspaceStatus>
   <WkConfigType>Branch</WkConfigType>
   <WkConfigName>/main@rep:UEPlasticPluginDev@repserver:test@cloud</WkConfigName>
   <Changelists>
@@ -1648,8 +1640,7 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 			{
 				check(ChangeNode);
 				const FXmlNode* PathNode = ChangeNode->FindChildNode(Path);
-				const FXmlNode* TypeNode = ChangeNode->FindChildNode(Type);
-				if (PathNode == nullptr || TypeNode == nullptr)
+				if (PathNode == nullptr)
 				{
 					continue;
 				}
@@ -1660,7 +1651,6 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 				if (FileName.FindChar(TEXT('.'), DotIndex))
 				{
 					FPlasticSourceControlState FileState(FPaths::ConvertRelativePathToFull(WorkingDirectory, MoveTemp(FileName)));
-					FileState.WorkspaceState = PlasticSourceControlUtils::StateFromPlasticStatus(TypeNode->GetContent());
 					FileState.Changelist = ChangelistState.Changelist;
 					OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
 				}
