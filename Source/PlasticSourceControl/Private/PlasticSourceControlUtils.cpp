@@ -299,7 +299,7 @@ FString UserNameToDisplayName(const FString& InUserName)
 /**
  * @brief Extract the renamed from filename from a cm "status" result.
  *
- * Examples of status results:
+ * Examples of status results (note that it always state "100%"):
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  *
  * @param[in] InResult One line of status
@@ -307,13 +307,13 @@ FString UserNameToDisplayName(const FString& InUserName)
  *
  * @see FilenameFromStatusResult()
  */
-static FString RenamedFromPlasticStatus(const FString& InResult)
+static FString RenamedFromStatusResult(const FString& InResult)
 {
 	FString RenamedFrom;
 	int32 RenameIndex;
 	if (InResult.FindLastChar(TEXT('>'), RenameIndex))
 	{
-		// Extract only the first part of a rename "from -> to" (after the 2 letters status surrounded by 2 spaces)
+		// Extract only the first part of a rename "from -> to" (after the 2 letters status and the 100%)
 		RenamedFrom = InResult.Mid(9, RenameIndex - 9 - 2);
 	}
 	return RenamedFrom;
@@ -331,7 +331,7 @@ static FString RenamedFromPlasticStatus(const FString& InResult)
  * @param[in] InResult One line of status
  * @return Relative filename extracted from the line of status
  *
- * @see FPlasticStatusFileMatcher and StateFromPlasticStatus()
+ * @see RenamedFromStatusResult, FPlasticStatusFileMatcher and StateFromStatus()
  */
 static FString FilenameFromStatusResult(const FString& InResult)
 {
@@ -549,7 +549,7 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 			// Extract the original name of a Moved/Renamed file
 			if (EWorkspaceState::Moved == FileState.WorkspaceState)
 			{
-				FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkingDirectory, RenamedFromPlasticStatus(InResults[IdxResult]));
+				FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkingDirectory, RenamedFromStatusResult(InResults[IdxResult]));
 			}
 		}
 		else
