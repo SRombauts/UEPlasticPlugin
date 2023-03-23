@@ -297,7 +297,7 @@ FString UserNameToDisplayName(const FString& InUserName)
 }
 
 /**
- * @brief Extract the renamed from filename from a Unity Version Control status result.
+ * @brief Extract the renamed from filename from a cm "status" result.
  *
  * Examples of status results:
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
@@ -320,7 +320,7 @@ static FString RenamedFromPlasticStatus(const FString& InResult)
 }
 
 /**
- * @brief Extract the relative filename from a Unity Version Control status result.
+ * @brief Extract the relative filename from a cm "status" result.
  *
  * Examples of status results:
  CO Content\CheckedOut_BP.uasset
@@ -343,7 +343,7 @@ static FString FilenameFromPlasticStatus(const FString& InResult)
 	}
 	else
 	{
-		// Extract the relative filename from the Unity Version Control status result (after the 2 letters status surrounded by 2 spaces)
+		// Extract the relative filename from the cm "status" result (after the 2 letters status surrounded by 2 spaces)
 		RelativeFilename = InResult.RightChop(4);
 
 		const int32 MergeIndex = RelativeFilename.Find(TEXT(" (Merge from "));
@@ -357,7 +357,7 @@ static FString FilenameFromPlasticStatus(const FString& InResult)
 }
 
 /**
- * @brief Match the relative filename of a Unity Version Control status result with a provided absolute filename
+ * @brief Match the relative filename of a cm "status" result with a provided absolute filename
  *
  * Examples of status results:
  CO Content\CheckedOut_BP.uasset
@@ -381,8 +381,25 @@ private:
 };
 
 /**
- * Extract and interpret the file state from the given Plastic "status" result.
- * empty string = unmodified/controlled or hidden changes
+ * Extract the 2 letters file status from the given cm "status" result.
+ *
+ * @param InResult One line of status from a "status" command
+ * @return the 2 letters file status
+ *
+ * @see StateFromStatusResult for examples
+ */
+static FString StatusFromResult(const FString& InResult)
+{
+	return InResult.Mid(1, 2);
+}
+
+/**
+ * Extract and interpret the file state from the cm "status" result.
+ *
+ * @param InResult One line of status from a "status" command
+ * @return EWorkspaceState
+ *
+ * Examples of status results:
  CH Content\Changed_BP.uasset
  CO Content\CheckedOut_BP.uasset
  CP Content\Copied_BP.uasset
@@ -394,12 +411,14 @@ private:
  LD Content\Deleted2_BP.uasset
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
- */
-static EWorkspaceState StateFromPlasticStatus(const FString& InResult)
+ *
+ * empty string = unmodified/controlled or hidden changes
+*/
+static EWorkspaceState StateFromStatusResult(const FString& InResult)
 {
 	EWorkspaceState State;
-
-	const FString FileStatus = InResult.Mid(1, 2);
+	
+	const FString FileStatus = StatusFromResult(InResult);
 
 	if (FileStatus == "CH") // Modified but not Checked-Out
 	{
@@ -495,7 +514,7 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 		if (IdxResult != INDEX_NONE)
 		{
 			// File found in status results; only the case for "changed" files
-			FileState.WorkspaceState = StateFromPlasticStatus(InResults[IdxResult]);
+			FileState.WorkspaceState = StateFromStatusResult(InResults[IdxResult]);
 
 			// Extract the original name of a Moved/Renamed file
 			if (EWorkspaceState::Moved == FileState.WorkspaceState)
@@ -553,7 +572,7 @@ static void ParseDirectoryStatusResultForDeleted(const TArray<FString>& InResult
 	// Iterate on each line of result of the status command
 	for (const FString& Result : InResults)
 	{
-		const EWorkspaceState WorkspaceState = StateFromPlasticStatus(Result);
+		const EWorkspaceState WorkspaceState = StateFromStatusResult(Result);
 		if ((EWorkspaceState::Deleted == WorkspaceState) || (EWorkspaceState::LocallyDeleted == WorkspaceState))
 		{
 			FString RelativeFilename = FilenameFromPlasticStatus(Result);
@@ -1645,7 +1664,7 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 					continue;
 				}
 
-				// Here we make sure to only collect file states, since we shouldn't display the added directories to the Editor
+				// Here we make sure to only collect file states, not directories, since we shouldn't display the added directories to the Editor
 				FString FileName = PathNode->GetContent();
 				int32 DotIndex;
 				if (FileName.FindChar(TEXT('.'), DotIndex))
