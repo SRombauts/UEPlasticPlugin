@@ -381,27 +381,36 @@ private:
 };
 
 /**
- * Extract the 2 letters file status from the given cm "status" result.
+ * Extract the 2-to-5 letters file status from the given cm "status" result.
  *
  * @param InResult One line of status from a "status" command
- * @return the 2 letters file status
+ * @return the 2-to-5 letters file status
  *
  * @see StateFromStatusResult for examples
  */
 static FString StatusFromResult(const FString& InResult)
 {
-	return InResult.Mid(1, 2);
+	// Find the second space after the 2-to-5 letters status (eg " CO " or " CO+CH ")
+	const int32 SpaceIndex = InResult.Find(TEXT(" "), ESearchCase::CaseSensitive, ESearchDir::FromStart, 1);
+	if (SpaceIndex > 1)
+	{
+		return InResult.Mid(1, SpaceIndex - 1);
+	}
+
+	return FString();
 }
 
 /**
  * Extract and interpret the file state from the cm "status" result.
  *
  * @param InResult One line of status from a "status" command
+ * @param bInUsesCheckedOutChanged If using the new --iscochanged "CO+CH"
  * @return EWorkspaceState
  *
  * Examples of status results:
  CH Content\Changed_BP.uasset
- CO Content\CheckedOut_BP.uasset
+ CO Content\CheckedOutUnchanged_BP.uasset
+ CO+CH Content\CheckedOutChanged_BP.uasset
  CP Content\Copied_BP.uasset
  RP Content\Replaced_BP.uasset
  AD Content\Added_BP.uasset
@@ -414,7 +423,7 @@ static FString StatusFromResult(const FString& InResult)
  *
  * empty string = unmodified/controlled or hidden changes
 */
-static EWorkspaceState StateFromStatusResult(const FString& InResult)
+static EWorkspaceState StateFromStatusResult(const FString& InResult, const bool bInUsesCheckedOutChanged)
 {
 	EWorkspaceState State;
 	
@@ -424,9 +433,22 @@ static EWorkspaceState StateFromStatusResult(const FString& InResult)
 	{
 		State = EWorkspaceState::Changed;
 	}
-	else if (FileStatus == "CO") // Checked-Out for modification
+	else if (FileStatus == "CO") // Checked-Out with no change, or "don't know" if using on an old version of cm
 	{
-		State = EWorkspaceState::CheckedOutChanged;
+		// Recent version can distinguish between CheckedOut with or with no changes
+		if (bInUsesCheckedOutChanged)
+		{
+			State = EWorkspaceState::CheckedOutUnchanged; // Recent version; here it's checkedout with no change
+		}
+		else
+		{
+			State = EWorkspaceState::CheckedOutChanged; // Older version; need to assume it is changed to retain behavior
+		}
+		
+	}
+	else if (FileStatus == "CO+CH") // Checked-Out and changed from the new --iscochanged
+	{
+		State = EWorkspaceState::CheckedOutChanged; // Recent version; here it's checkedout with changes
 	}
 	else if (FileStatus == "CP")
 	{
@@ -495,7 +517,9 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseFileStatusResult);
 
-	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString& WorkingDirectory = Provider.GetPathToWorkspaceRoot();
+	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
 	// Parse the first two lines with Changeset number and Branch name (the second being requested only once at init)
 	FString RepositoryName, ServerUrl;
@@ -514,7 +538,7 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 		if (IdxResult != INDEX_NONE)
 		{
 			// File found in status results; only the case for "changed" files
-			FileState.WorkspaceState = StateFromStatusResult(InResults[IdxResult]);
+			FileState.WorkspaceState = StateFromStatusResult(InResults[IdxResult], bUsesCheckedOutChanged);
 
 			// Extract the original name of a Moved/Renamed file
 			if (EWorkspaceState::Moved == FileState.WorkspaceState)
@@ -567,12 +591,14 @@ static void ParseDirectoryStatusResultForDeleted(const TArray<FString>& InResult
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseDirectoryStatusResultForDeleted);
 
-	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString& WorkingDirectory = Provider.GetPathToWorkspaceRoot();
+	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
 	// Iterate on each line of result of the status command
 	for (const FString& Result : InResults)
 	{
-		const EWorkspaceState WorkspaceState = StateFromStatusResult(Result);
+		const EWorkspaceState WorkspaceState = StateFromStatusResult(Result, bUsesCheckedOutChanged);
 		if ((EWorkspaceState::Deleted == WorkspaceState) || (EWorkspaceState::LocallyDeleted == WorkspaceState))
 		{
 			FString RelativeFilename = FilenameFromPlasticStatus(Result);
