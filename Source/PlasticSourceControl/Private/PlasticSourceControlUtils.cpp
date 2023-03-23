@@ -305,7 +305,7 @@ FString UserNameToDisplayName(const FString& InUserName)
  * @param[in] InResult One line of status
  * @return Renamed from filename extracted from the line of status
  *
- * @see FilenameFromPlasticStatus()
+ * @see FilenameFromStatusResult()
  */
 static FString RenamedFromPlasticStatus(const FString& InResult)
 {
@@ -323,7 +323,8 @@ static FString RenamedFromPlasticStatus(const FString& InResult)
  * @brief Extract the relative filename from a cm "status" result.
  *
  * Examples of status results:
- CO Content\CheckedOut_BP.uasset
+ CO Content\CheckedOutUnchanged_BP.uasset
+ CO+CH Content\CheckedOutChanged_BP.uasset
  CO Content\Merged_BP.uasset (Merge from 140)
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  *
@@ -332,7 +333,7 @@ static FString RenamedFromPlasticStatus(const FString& InResult)
  *
  * @see FPlasticStatusFileMatcher and StateFromPlasticStatus()
  */
-static FString FilenameFromPlasticStatus(const FString& InResult)
+static FString FilenameFromStatusResult(const FString& InResult)
 {
 	FString RelativeFilename;
 	int32 RenameIndex;
@@ -343,10 +344,15 @@ static FString FilenameFromPlasticStatus(const FString& InResult)
 	}
 	else
 	{
-		// Extract the relative filename from the cm "status" result (after the 2 letters status surrounded by 2 spaces)
-		RelativeFilename = InResult.RightChop(4);
+		// Find the second space after the 2-to-5 letters status (eg " CO " or " CO+CH ") to remove it
+		const int32 SpaceIndex = InResult.Find(TEXT(" "), ESearchCase::CaseSensitive, ESearchDir::FromStart, 1);
+		if (SpaceIndex != INDEX_NONE)
+		{
+			RelativeFilename = InResult.RightChop(SpaceIndex + 1);
+		}
 
-		const int32 MergeIndex = RelativeFilename.Find(TEXT(" (Merge from "));
+		// Search if the filename is followed by a "Merged from" annotation, to remove it
+		const int32 MergeIndex = RelativeFilename.Find(TEXT(" (Merge from "), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
 		if (MergeIndex != INDEX_NONE)
 		{
 			RelativeFilename.LeftInline(MergeIndex);
@@ -373,7 +379,7 @@ public:
 
 	bool operator()(const FString& InResult) const
 	{
-		return AbsoluteFilename.Contains(FilenameFromPlasticStatus(InResult));
+		return AbsoluteFilename.Contains(FilenameFromStatusResult(InResult));
 	}
 
 private:
@@ -601,7 +607,7 @@ static void ParseDirectoryStatusResultForDeleted(const TArray<FString>& InResult
 		const EWorkspaceState WorkspaceState = StateFromStatusResult(Result, bUsesCheckedOutChanged);
 		if ((EWorkspaceState::Deleted == WorkspaceState) || (EWorkspaceState::LocallyDeleted == WorkspaceState))
 		{
-			FString RelativeFilename = FilenameFromPlasticStatus(Result);
+			FString RelativeFilename = FilenameFromStatusResult(Result);
 			FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(WorkingDirectory, MoveTemp(RelativeFilename));
 			FPlasticSourceControlState FileState(MoveTemp(AbsoluteFilename));
 			FileState.WorkspaceState = WorkspaceState;
