@@ -39,7 +39,7 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 	return PlasticSourceControlShell::RunCommand(InCommand, InParameters, InFiles, OutResults, OutErrors);
 }
 
-// Run a command with basic parsing or results & errors from the Plastic command line process
+// Run a command with basic parsing or results & errors from the cm command line process
 bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
 {
 	FString Results;
@@ -67,7 +67,7 @@ FString FindPlasticBinaryPath()
 #endif
 }
 
-// Find the root of the Plastic workspace, looking from the provided path and upward in its parent directories.
+// Find the root of the workspace, looking from the provided path and upward in its parent directories.
 bool GetWorkspacePath(const FString& InPath, FString& OutWorkspaceRoot)
 {
 	TArray<FString> Results;

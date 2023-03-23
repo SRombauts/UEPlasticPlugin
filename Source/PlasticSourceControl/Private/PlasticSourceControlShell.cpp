@@ -209,7 +209,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		_RestartBackgroundCommandLineShell();
 	}
 
-	// Start with the Plastic command itself ("status", "log", "checkin"...)
+	// Start with the command itself ("status", "log", "checkin"...)
 	FString FullCommand = InCommand;
 	// Append to the command all parameters, and then finally the files
 	for (const FString& Parameter : InParameters)

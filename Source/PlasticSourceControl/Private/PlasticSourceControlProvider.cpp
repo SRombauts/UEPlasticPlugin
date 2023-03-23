@@ -83,7 +83,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 	{
 		bPlasticAvailable = false;
 
-		// Try to find Plastic binary, and update settings accordingly
+		// Try to find cm binary, and update settings accordingly
 		PathToPlasticBinary = PlasticSourceControlUtils::FindPlasticBinaryPath();
 		if (!PathToPlasticBinary.IsEmpty())
 		{
@@ -93,7 +93,6 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 	if (!PathToPlasticBinary.IsEmpty())
 	{
-		// Find the path to the root Plastic directory (if any, else uses the ProjectDir)
 		const FString PathToProjectDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
 
 		// Launch the Unity Version Control cli shell on the background to issue all commands during this session
@@ -112,8 +111,8 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		FString ActualPathToPlasticBinary;
 		PlasticSourceControlUtils::GetCmLocation(ActualPathToPlasticBinary);
 
+		// Find the path to the workspace directory (if any, else uses the ProjectDir)
 		bWorkspaceFound = PlasticSourceControlUtils::GetWorkspacePath(PathToProjectDir, PathToWorkspaceRoot);
-
 
 		bUsesLocalReadOnlyState = PlasticSourceControlUtils::GetConfigSetFilesAsReadOnly();
 
@@ -742,9 +741,6 @@ ECommandResult::Type FPlasticSourceControlProvider::ExecuteSynchronousCommand(FP
 		}
 		else
 		{
-			// TODO If the command failed, inform the user that they need to try again (see Perforce, but they suppressed it!) Add a project settings for that!
-			// FMessageDialog::Open( EAppMsgType::Ok, LOCTEXT("Plastic_ServerUnresponsive", "Plastic server is unresponsive. Please check your connection and try again.") );
-
 			UE_LOG(LogSourceControl, Error, TEXT("Command '%s' Failed!"), *InCommand.Operation->GetName().ToString());
 		}
 	}
