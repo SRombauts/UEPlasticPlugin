@@ -18,7 +18,7 @@ enum class EWorkspaceState
 	Unknown,
 	Ignored,
 	Controlled, // called "Pristine" in Perforce, "Unchanged" in Git, "Clean" in SVN
-	CheckedOut, // Checked-out, without telling if Changed or not
+	CheckedOutChanged, // Checked-out, with changes (or without knowing for older version of Unity Version Control)
 	Added,
 	Moved, // Renamed
 	Copied,

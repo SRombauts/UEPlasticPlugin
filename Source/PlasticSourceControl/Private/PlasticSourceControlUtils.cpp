@@ -406,7 +406,7 @@ static EWorkspaceState StateFromPlasticStatus(const FString& InResult)
 	}
 	else if (FileStatus == "CO") // Checked-Out for modification
 	{
-		State = EWorkspaceState::CheckedOut;
+		State = EWorkspaceState::CheckedOutChanged;
 	}
 	else if (FileStatus == "CP")
 	{
@@ -1734,7 +1734,7 @@ EWorkspaceState ParseShelveFileStatus(const TCHAR InFileStatus)
 	}
 	else if (InFileStatus == 'C') // Changed (CheckedOut or not)
 	{
-		return EWorkspaceState::CheckedOut;
+		return EWorkspaceState::CheckedOutChanged;
 	}
 	else if (InFileStatus == 'M') // Moved/Renamed (or Locally Moved)
 	{
