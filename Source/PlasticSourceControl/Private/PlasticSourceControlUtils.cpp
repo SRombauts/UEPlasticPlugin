@@ -631,8 +631,23 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	Parameters.Add(TEXT("--noheaders"));
 	if (InSearchType == EStatusSearchType::All)
 	{
-		Parameters.Add(TEXT("--all"));
+		// NOTE: don't use "--all" to avoid searching for --localmoved since it's the most time consuming (beside --changed)
+		// and its not used by the plugin (matching similarities doesn't seem to work with .uasset files)
+		Parameters.Add(TEXT("--controlledchanged"));
+		// TODO: add a user settings to avoid searching for --changed and --localdeleted, to work like Perforce on big projects,
+		// provided that the user understands the consequences (they won't see assets modified locally without a proper checkout)
+		Parameters.Add(TEXT("--changed"));
+		Parameters.Add(TEXT("--localdeleted"));
+		Parameters.Add(TEXT("--private"));
 		Parameters.Add(TEXT("--ignored"));
+
+		// If the version of cm is recent enough use the new --iscochanged for "CO+CH" status
+		const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+		const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
+		if (bUsesCheckedOutChanged)
+		{
+			Parameters.Add(TEXT("--iscochanged"));
+		}
 	}
 	else if (InSearchType == EStatusSearchType::ControlledOnly)
 	{
