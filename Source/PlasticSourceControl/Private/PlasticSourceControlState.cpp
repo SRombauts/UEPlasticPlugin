@@ -642,13 +642,14 @@ bool FPlasticSourceControlState::IsUnknown() const
 
 bool FPlasticSourceControlState::IsModified() const
 {
-	// Warning: for a clean "checkin" (commit) checked-out files unmodified should be removed from the changeset (the index)
+	// Warning: for a clean "checkin" (commit) checked-out files unmodified should be removed from the changeset (Perforce)
 	//
 	// Thus, before checkin UE4 Editor call RevertUnchangedFiles() in PromptForCheckin() and CheckinFiles().
 	//
 	// So here we must take care to enumerate all states that need to be committed, all other will be discarded:
 	//  - Unknown
 	//  - Controlled (Unchanged)
+	//  - CheckedOutUnchanged
 	//  - Private (Not Controlled)
 	//  - Ignored
 	const bool bIsModified =   WorkspaceState == EWorkspaceState::CheckedOutChanged
@@ -683,7 +684,7 @@ bool FPlasticSourceControlState::IsConflicted() const
 
 bool FPlasticSourceControlState::CanRevert() const
 {
-	return IsModified();
+	return IsModified() || WorkspaceState == EWorkspaceState::CheckedOutUnchanged;
 }
 
 #undef LOCTEXT_NAMESPACE
