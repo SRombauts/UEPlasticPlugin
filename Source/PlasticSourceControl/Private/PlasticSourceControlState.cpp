@@ -505,6 +505,20 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 	}
 }
 
+bool FPlasticSourceControlState::IsCheckedOutImplementation() const
+{
+	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOutChanged
+							|| WorkspaceState == EWorkspaceState::CheckedOutUnchanged
+							|| WorkspaceState == EWorkspaceState::Added
+							|| WorkspaceState == EWorkspaceState::Deleted
+							|| WorkspaceState == EWorkspaceState::Copied
+							|| WorkspaceState == EWorkspaceState::Moved
+							|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merge
+							|| WorkspaceState == EWorkspaceState::Replaced;		// In source control, merged, waiting for checkin to conclude the merge
+
+	return bIsCheckedOut;
+}
+
 bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 {
 	if (Who != NULL)

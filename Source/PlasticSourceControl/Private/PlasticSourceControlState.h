@@ -138,6 +138,8 @@ public:
 	virtual bool IsConflicted() const override;
 	virtual bool CanRevert() const override;
 
+	bool IsCheckedOutImplementation() const;
+
 public:
 	/** History of the item, if any */
 	TPlasticSourceControlHistory History;
