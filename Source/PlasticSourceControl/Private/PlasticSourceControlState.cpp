@@ -467,8 +467,7 @@ bool FPlasticSourceControlState::CanCheckout() const
 	}
 
 	const bool bCanCheckout  =    (WorkspaceState == EWorkspaceState::Controlled	// In source control, Unmodified
-								|| WorkspaceState == EWorkspaceState::Changed		// In source control, but not checked-out
-								|| WorkspaceState == EWorkspaceState::Replaced)		// In source control, merged, waiting for checkin to conclude the merge
+								|| WorkspaceState == EWorkspaceState::Changed)		// In source control, but not checked-out
 								&& !IsCheckedOutOther()	// Is not already checked-out elsewhere
 								&& IsCurrent();			// Is up to date (at the revision of the repo)
 
