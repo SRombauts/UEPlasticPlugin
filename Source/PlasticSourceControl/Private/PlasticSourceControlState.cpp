@@ -482,11 +482,7 @@ bool FPlasticSourceControlState::CanCheckout() const
 
 bool FPlasticSourceControlState::IsCheckedOut() const
 {
-	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOutChanged
-							|| WorkspaceState == EWorkspaceState::CheckedOutUnchanged
-							|| WorkspaceState == EWorkspaceState::Moved
-							|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merged
-							|| WorkspaceState == EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge
+	const bool bIsCheckedOut = IsCheckedOutImplementation()
 							|| WorkspaceState == EWorkspaceState::Changed;		// Note: Workaround to enable checkin (still required by UE5.0)
 
 	if (bIsCheckedOut)
@@ -519,6 +515,11 @@ bool FPlasticSourceControlState::IsCheckedOutImplementation() const
 	return bIsCheckedOut;
 }
 
+bool FPlasticSourceControlState::IsLocked() const
+{
+	return !LockedBy.IsEmpty();
+}
+
 bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 {
 	if (Who != NULL)
@@ -526,15 +527,8 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 		*Who = LockedBy;
 	}
 
-	// If the asset is Locked but not CheckedOut locally, it means it is locked somewhere else
-	const bool bIsLocked = !LockedBy.IsEmpty();
-	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOutChanged
-							|| WorkspaceState == EWorkspaceState::CheckedOutUnchanged
-							|| WorkspaceState == EWorkspaceState::Added
-							|| WorkspaceState == EWorkspaceState::Moved
-							|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merged
-							|| WorkspaceState == EWorkspaceState::Replaced;		// In source control, merged, waiting for checkin to conclude the merge
-	const bool bIsLockedByOther = bIsLocked && !bIsCheckedOut;
+	// An asset is locked somewhere else if it is Locked but not CheckedOut on the current workspace
+	const bool bIsLockedByOther = IsLocked() && !IsCheckedOutImplementation();
 
 	if (bIsLockedByOther)
 	{
@@ -543,7 +537,6 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 
 	return bIsLockedByOther;
 }
-
 
 /** Get whether this file is checked out in a different branch, if no branch is specified defaults to FEngineVerion current branch */
 bool FPlasticSourceControlState::IsCheckedOutInOtherBranch(const FString& CurrentBranch /* = FString() */) const

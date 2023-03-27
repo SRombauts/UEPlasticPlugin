@@ -139,6 +139,7 @@ public:
 	virtual bool CanRevert() const override;
 
 	bool IsCheckedOutImplementation() const;
+	bool IsLocked() const;
 
 public:
 	/** History of the item, if any */
