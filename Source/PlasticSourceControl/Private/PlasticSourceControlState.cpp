@@ -160,7 +160,7 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	{
 		return FName("Perforce.NotAtHeadRevision_Small");
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && (WorkspaceState != EWorkspaceState::CheckedOutUnchanged)
+	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged)
 	{
 		if (IsCheckedOutOther())
 		{
