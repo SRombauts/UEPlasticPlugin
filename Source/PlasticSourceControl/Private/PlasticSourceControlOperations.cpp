@@ -747,7 +747,7 @@ bool FPlasticRevertUnchangedWorker::UpdateStates()
 	// Update affected changelists if any
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		if (!NewState.CanRevert()) // IsModified() || CheckedOutUnchanged
+		if (!NewState.IsCheckedOutImplementation())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
@@ -786,7 +786,7 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 		for (auto& State : TempStates)
 		{
-			if (State.CanRevert()) // IsModified() || CheckedOutUnchanged
+			if (State.CanRevert())
 			{
 #if ENGINE_MAJOR_VERSION == 5
 				if (State.WorkspaceState == EWorkspaceState::Added && Operation->ShouldDeleteNewFiles())
@@ -846,7 +846,7 @@ bool FPlasticRevertAllWorker::UpdateStates()
 	for (const FPlasticSourceControlState& NewState : States)
 	{
 		// TODO: also detect files that were added and are now private! Should be removed as well from their changelist
-		if (!NewState.CanRevert()) // IsModified() || CheckedOutUnchanged
+		if (!NewState.IsCheckedOutImplementation())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
@@ -1008,7 +1008,7 @@ bool FPlasticUpdateStatusWorker::UpdateStates()
 	// Update affected changelists if any (in case of a file reverted outside of the Unreal Editor)
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		if (!NewState.CanRevert()) // IsModified() || CheckedOutUnchanged
+		if (!NewState.IsCheckedOutImplementation())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
