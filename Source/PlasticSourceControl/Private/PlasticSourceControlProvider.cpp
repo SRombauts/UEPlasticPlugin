@@ -24,6 +24,8 @@
 #include "Misc/MessageDialog.h"
 #include "HAL/PlatformProcess.h"
 #include "Misc/QueuedThreadPool.h"
+#include "UObject/ObjectSaveContext.h"
+#include "UObject/SavePackage.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -32,6 +34,29 @@ static FName ProviderName("Plastic SCM");
 FPlasticSourceControlProvider::FPlasticSourceControlProvider()
 {
 	PlasticSourceControlSettings.LoadSettings();
+	
+	UPackage::PackageSavedWithContextEvent.AddRaw(this, &FPlasticSourceControlProvider::HandlePackageSaved);
+}
+
+FPlasticSourceControlProvider::~FPlasticSourceControlProvider()
+{
+	UPackage::PackageSavedWithContextEvent.RemoveAll(this);
+}
+
+void FPlasticSourceControlProvider::HandlePackageSaved(const FString& PackageFilename, UPackage* Package, FObjectPostSaveContext ObjectSaveContext)
+{
+	const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(PackageFilename);
+	auto FileState = GetStateInternal(AbsoluteFilename);
+	// Note: the Editor doesn't refresh the status of an asset after it is saved, but only before saving (to check that it's possible to save)
+	// So when an asset with no changes is saved, update its status to tell that it is now changed
+	if (FileState->WorkspaceState == EWorkspaceState::Controlled)
+	{
+		FileState->WorkspaceState = EWorkspaceState::Changed; // Note that this isn't enough to refresh the icon (it requires switching directory in the Content Browser)
+	}
+	else if (FileState->WorkspaceState == EWorkspaceState::CheckedOutUnchanged)
+	{
+		FileState->WorkspaceState = EWorkspaceState::CheckedOutChanged;
+	}
 }
 
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
@@ -64,6 +89,7 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		{
 			Parameters.Add(FString::Printf(TEXT("--server=%s"), *ServerUrl));
 		}
+		// TODO check how long this takes, I suspect that it's much faster than the later call to "status" in the "Connect" operation; check on bigger projects!
 		bServerAvailable = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
 		if (!bServerAvailable)
 		{
@@ -93,7 +119,6 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 	if (!PathToPlasticBinary.IsEmpty())
 	{
-		// Find the path to the root Plastic directory (if any, else uses the ProjectDir)
 		const FString PathToProjectDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
 
 		// Launch the Unity Version Control cli shell on the background to issue all commands during this session
@@ -112,8 +137,8 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		FString ActualPathToPlasticBinary;
 		PlasticSourceControlUtils::GetCmLocation(ActualPathToPlasticBinary);
 
+		// Find the path to the root Plastic directory (if any, else uses the ProjectDir)
 		bWorkspaceFound = PlasticSourceControlUtils::GetWorkspacePath(PathToProjectDir, PathToWorkspaceRoot);
-
 
 		bUsesLocalReadOnlyState = PlasticSourceControlUtils::GetConfigSetFilesAsReadOnly();
 
