@@ -18,7 +18,8 @@ enum class EWorkspaceState
 	Unknown,
 	Ignored,
 	Controlled, // called "Pristine" in Perforce, "Unchanged" in Git, "Clean" in SVN
-	CheckedOut, // Checked-out, without telling if Changed or not
+	CheckedOutChanged, // Checked-out, with changes (or without knowing for older version of Unity Version Control)
+	CheckedOutUnchanged, // Checked-out with no changes (cannot be checked-in and can be reverted by UndoUnchanged)
 	Added,
 	Moved, // Renamed
 	Copied,
@@ -136,6 +137,9 @@ public:
 	virtual bool CanDelete() const override;
 	virtual bool IsConflicted() const override;
 	virtual bool CanRevert() const override;
+
+	bool IsCheckedOutImplementation() const;
+	bool IsLocked() const;
 
 public:
 	/** History of the item, if any */

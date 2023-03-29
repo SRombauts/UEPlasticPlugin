@@ -24,6 +24,8 @@
 #include "Misc/MessageDialog.h"
 #include "HAL/PlatformProcess.h"
 #include "Misc/QueuedThreadPool.h"
+#include "UObject/ObjectSaveContext.h"
+#include "UObject/SavePackage.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -32,6 +34,13 @@ static FName ProviderName("Plastic SCM");
 FPlasticSourceControlProvider::FPlasticSourceControlProvider()
 {
 	PlasticSourceControlSettings.LoadSettings();
+	
+	UPackage::PackageSavedWithContextEvent.AddRaw(this, &FPlasticSourceControlProvider::HandlePackageSaved);
+}
+
+FPlasticSourceControlProvider::~FPlasticSourceControlProvider()
+{
+	UPackage::PackageSavedWithContextEvent.RemoveAll(this);
 }
 
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
@@ -64,6 +73,7 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		{
 			Parameters.Add(FString::Printf(TEXT("--server=%s"), *ServerUrl));
 		}
+		// TODO check how long this takes, I suspect that it's much faster than the later call to "status" in the "Connect" operation; check on bigger projects!
 		bServerAvailable = PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), Parameters, TArray<FString>(), InfoMessages, ErrorMessages);
 		if (!bServerAvailable)
 		{
@@ -111,7 +121,7 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		FString ActualPathToPlasticBinary;
 		PlasticSourceControlUtils::GetCmLocation(ActualPathToPlasticBinary);
 
-		// Find the path to the workspace directory (if any, else uses the ProjectDir)
+		// Find the path to the root Plastic directory (if any, else uses the ProjectDir)
 		bWorkspaceFound = PlasticSourceControlUtils::GetWorkspacePath(PathToProjectDir, PathToWorkspaceRoot);
 
 		bUsesLocalReadOnlyState = PlasticSourceControlUtils::GetConfigSetFilesAsReadOnly();
@@ -188,6 +198,26 @@ TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> FPlasticSo
 	}
 }
 #endif
+
+// Note: called once for each asset being saved, which can be hundreds in the case of a map using One File Per Actor (OFPA) in UE5
+void FPlasticSourceControlProvider::HandlePackageSaved(const FString& InPackageFilename, UPackage* InPackage, FObjectPostSaveContext InObjectSaveContext)
+{
+	const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(InPackageFilename);
+	auto FileState = GetStateInternal(AbsoluteFilename);
+
+	// Note: the Editor doesn't ask to refresh the source control status of an asset after it is saved, only *before* (to check that it's possible to save)
+	// So when an asset with no change is saved, update its state in cache to record the fact that the asset is now changed.
+	if (FileState->WorkspaceState == EWorkspaceState::Controlled)
+	{
+		// Note that updating the state in cache isn't enough to refresh the status icon in the Content Browser (since the Editor isn't made aware of the change)
+		// but source control operations are working as expected (eg. "Checkin" and "Revert" are available in the context menu)
+		FileState->WorkspaceState = EWorkspaceState::Changed; // The icon will only appears later when the UI is refreshed (eg switching directory in the Content Browser)
+	}
+	else if (FileState->WorkspaceState == EWorkspaceState::CheckedOutUnchanged)
+	{
+		FileState->WorkspaceState = EWorkspaceState::CheckedOutChanged; // In this case the "CheckedOut" icon is already displayed (both states are using the same status icon)
+	}
+}
 
 FText FPlasticSourceControlProvider::GetStatusText() const
 {

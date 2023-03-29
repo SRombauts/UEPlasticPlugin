@@ -198,15 +198,8 @@ static void UpdateChangelistState(FPlasticSourceControlProvider& SCCProvider, co
 
 		for (const FPlasticSourceControlState& InState : InStates)
 		{
-			// cm cannot yet handle local modifications in changelists, only the GUI can
-			if (   InState.WorkspaceState != EWorkspaceState::CheckedOut
-				&& InState.WorkspaceState != EWorkspaceState::Added
-				&& InState.WorkspaceState != EWorkspaceState::Deleted
-				&& InState.WorkspaceState != EWorkspaceState::Copied
-				&& InState.WorkspaceState != EWorkspaceState::Moved
-				&& InState.WorkspaceState != EWorkspaceState::Conflicted	// In source control, waiting for merged
-				&& InState.WorkspaceState != EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge
-				)
+			// Note: cannot use IsModified() because cm cannot yet handle local modifications in changelists, only the GUI can
+			if (!InState.IsCheckedOutImplementation())
 			{
 				continue;
 			}
@@ -754,7 +747,7 @@ bool FPlasticRevertUnchangedWorker::UpdateStates()
 	// Update affected changelists if any
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		if (!NewState.IsModified())
+		if (!NewState.IsCheckedOutImplementation())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
@@ -793,7 +786,7 @@ bool FPlasticRevertAllWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 		for (auto& State : TempStates)
 		{
-			if (State.IsModified())
+			if (State.CanRevert())
 			{
 #if ENGINE_MAJOR_VERSION == 5
 				if (State.WorkspaceState == EWorkspaceState::Added && Operation->ShouldDeleteNewFiles())
@@ -853,7 +846,7 @@ bool FPlasticRevertAllWorker::UpdateStates()
 	for (const FPlasticSourceControlState& NewState : States)
 	{
 		// TODO: also detect files that were added and are now private! Should be removed as well from their changelist
-		if (!NewState.IsModified())
+		if (!NewState.IsCheckedOutImplementation())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
@@ -1015,7 +1008,7 @@ bool FPlasticUpdateStatusWorker::UpdateStates()
 	// Update affected changelists if any (in case of a file reverted outside of the Unreal Editor)
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		if (!NewState.IsModified())
+		if (!NewState.IsCheckedOutImplementation())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
@@ -1311,7 +1304,7 @@ bool FPlasticGetPendingChangelistsWorker::UpdateStates()
 		ChangelistState->TimeStamp = Now;
 		bUpdated = true;
 
-		// Update files states for files in the changelist
+		// Update files in the changelist
 		bool bUpdateFilesStates = (OutCLFilesStates.Num() == OutChangelistsStates.Num());
 		if (bUpdateFilesStates)
 		{

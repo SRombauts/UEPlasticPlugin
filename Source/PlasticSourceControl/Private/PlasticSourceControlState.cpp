@@ -17,7 +17,8 @@ const TCHAR* FPlasticSourceControlState::ToString() const
 		case EWorkspaceState::Unknown: WorkspaceStateStr = TEXT("Unknown"); break;
 		case EWorkspaceState::Ignored: WorkspaceStateStr = TEXT("Ignored"); break;
 		case EWorkspaceState::Controlled: WorkspaceStateStr = TEXT("Controlled"); break;
-		case EWorkspaceState::CheckedOut: WorkspaceStateStr = TEXT("CheckedOut"); break;
+		case EWorkspaceState::CheckedOutChanged: WorkspaceStateStr = TEXT("CheckedOutChanged"); break;
+		case EWorkspaceState::CheckedOutUnchanged: WorkspaceStateStr = TEXT("CheckedOutUnchanged"); break;
 		case EWorkspaceState::Added: WorkspaceStateStr = TEXT("Added"); break;
 		case EWorkspaceState::Moved: WorkspaceStateStr = TEXT("Moved"); break;
 		case EWorkspaceState::Copied: WorkspaceStateStr = TEXT("Copied"); break;
@@ -106,7 +107,7 @@ FName FPlasticSourceControlState::GetIconName() const
 	{
 		return FName("Perforce.NotAtHeadRevision");
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOut)
+	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged)
 	{
 		if (IsCheckedOutOther())
 		{
@@ -120,7 +121,8 @@ FName FPlasticSourceControlState::GetIconName() const
 
 	switch (WorkspaceState)
 	{
-	case EWorkspaceState::CheckedOut:
+	case EWorkspaceState::CheckedOutChanged:
+	case EWorkspaceState::CheckedOutUnchanged:
 	case EWorkspaceState::Replaced: // Merged (waiting for checkin)
 		return FName("Perforce.CheckedOut");
 	case EWorkspaceState::Added:
@@ -158,7 +160,7 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	{
 		return FName("Perforce.NotAtHeadRevision_Small");
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOut)
+	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged)
 	{
 		if (IsCheckedOutOther())
 		{
@@ -172,7 +174,8 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 
 	switch (WorkspaceState)
 	{
-	case EWorkspaceState::CheckedOut:
+	case EWorkspaceState::CheckedOutChanged:
+	case EWorkspaceState::CheckedOutUnchanged:
 	case EWorkspaceState::Replaced: // Merged (waiting for checkin)
 		return FName("Perforce.CheckedOut_Small");
 	case EWorkspaceState::Added:
@@ -212,7 +215,7 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	{
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotAtHeadRevision");
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOut && WorkspaceState != EWorkspaceState::Conflicted)
+	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged && WorkspaceState != EWorkspaceState::Conflicted)
 	{
 		if (IsCheckedOutOther())
 		{
@@ -228,7 +231,8 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 
 	switch (WorkspaceState)
 	{
-	case EWorkspaceState::CheckedOut:
+	case EWorkspaceState::CheckedOutChanged:
+	case EWorkspaceState::CheckedOutUnchanged:
 	case EWorkspaceState::Replaced: // Merged (waiting for check-in)
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Plastic.CheckedOut");
 	case EWorkspaceState::Changed: // Changed but unchecked-out file custom color icon
@@ -258,7 +262,8 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 
 	switch (WorkspaceState)
 	{
-	case EWorkspaceState::CheckedOut:
+	case EWorkspaceState::CheckedOutChanged:
+	case EWorkspaceState::CheckedOutUnchanged:
 	case EWorkspaceState::Replaced: // Merged (waiting for checkin)
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.CheckedOut");
 	case EWorkspaceState::Added:
@@ -303,7 +308,7 @@ FText FPlasticSourceControlState::GetDisplayName() const
 		return FText::Format(LOCTEXT("NotCurrent", "Not at the head revision CS:{0} {1} (local revision is CS:{2})"),
 			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOut && WorkspaceState != EWorkspaceState::Conflicted)
+	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged && WorkspaceState != EWorkspaceState::Conflicted)
 	{
 		if (IsCheckedOutOther())
 		{
@@ -324,8 +329,10 @@ FText FPlasticSourceControlState::GetDisplayName() const
 		return LOCTEXT("Ignored", "Ignored");
 	case EWorkspaceState::Controlled:
 		return LOCTEXT("Controlled", "Controlled");
-	case EWorkspaceState::CheckedOut:
-		return LOCTEXT("CheckedOut", "Checked-out");
+	case EWorkspaceState::CheckedOutChanged:
+		return LOCTEXT("CheckedOutChanged", "Checked-out (Changed)");
+	case EWorkspaceState::CheckedOutUnchanged:
+		return LOCTEXT("CheckedOutUnchanged", "Checked-out (Unchanged)");
 	case EWorkspaceState::Added:
 		return LOCTEXT("Added", "Added");
 	case EWorkspaceState::Moved:
@@ -362,7 +369,7 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 		return FText::Format(LOCTEXT("NotCurrent_Tooltip", "Not at the head revision CS:{0} {1} (local revision is CS:{2})"),
 			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOut && WorkspaceState != EWorkspaceState::Conflicted)
+	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged && WorkspaceState != EWorkspaceState::Conflicted)
 	{
 		if (IsCheckedOutOther())
 		{
@@ -383,8 +390,10 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 		return LOCTEXT("Ignored_Tooltip", "Ignored");
 	case EWorkspaceState::Controlled:
 		return FText();
-	case EWorkspaceState::CheckedOut:
-		return LOCTEXT("CheckedOut_Tooltip", "Checked-out");
+	case EWorkspaceState::CheckedOutChanged:
+		return LOCTEXT("CheckedOut_Tooltip", "Checked-out (Changed)");
+	case EWorkspaceState::CheckedOutUnchanged:
+		return LOCTEXT("CheckedOut_Tooltip", "Checked-out (Unchanged)");
 	case EWorkspaceState::Added:
 		return LOCTEXT("Added_Tooltip", "Added");
 	case EWorkspaceState::Moved:
@@ -438,7 +447,7 @@ bool FPlasticSourceControlState::CanCheckIn() const
 							|| WorkspaceState == EWorkspaceState::Moved
 							|| WorkspaceState == EWorkspaceState::Copied
 							|| WorkspaceState == EWorkspaceState::Replaced
-							|| WorkspaceState == EWorkspaceState::CheckedOut)
+							|| WorkspaceState == EWorkspaceState::CheckedOutChanged)
 							&& !IsCheckedOutOther()	// Is not already checked-out elsewhere
 							&& IsCurrent();			// Is up to date (at the revision of the repo)
 
@@ -458,8 +467,7 @@ bool FPlasticSourceControlState::CanCheckout() const
 	}
 
 	const bool bCanCheckout  =    (WorkspaceState == EWorkspaceState::Controlled	// In source control, Unmodified
-								|| WorkspaceState == EWorkspaceState::Changed		// In source control, but not checked-out
-								|| WorkspaceState == EWorkspaceState::Replaced)		// In source control, merged, waiting for checkin to conclude the merge
+								|| WorkspaceState == EWorkspaceState::Changed)		// In source control, but not checked-out
 								&& !IsCheckedOutOther()	// Is not already checked-out elsewhere
 								&& IsCurrent();			// Is up to date (at the revision of the repo)
 
@@ -473,10 +481,7 @@ bool FPlasticSourceControlState::CanCheckout() const
 
 bool FPlasticSourceControlState::IsCheckedOut() const
 {
-	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
-							|| WorkspaceState == EWorkspaceState::Moved
-							|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merged
-							|| WorkspaceState == EWorkspaceState::Replaced		// In source control, merged, waiting for checkin to conclude the merge
+	const bool bIsCheckedOut = IsCheckedOutImplementation()
 							|| WorkspaceState == EWorkspaceState::Changed;		// Note: Workaround to enable checkin (still required by UE5.0)
 
 	if (bIsCheckedOut)
@@ -495,6 +500,25 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 	}
 }
 
+bool FPlasticSourceControlState::IsCheckedOutImplementation() const
+{
+	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOutChanged
+							|| WorkspaceState == EWorkspaceState::CheckedOutUnchanged
+							|| WorkspaceState == EWorkspaceState::Added
+							|| WorkspaceState == EWorkspaceState::Deleted
+							|| WorkspaceState == EWorkspaceState::Copied
+							|| WorkspaceState == EWorkspaceState::Moved
+							|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merge
+							|| WorkspaceState == EWorkspaceState::Replaced;		// In source control, merged, waiting for checkin to conclude the merge
+
+	return bIsCheckedOut;
+}
+
+bool FPlasticSourceControlState::IsLocked() const
+{
+	return !LockedBy.IsEmpty();
+}
+
 bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 {
 	if (Who != NULL)
@@ -502,14 +526,8 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 		*Who = LockedBy;
 	}
 
-	// If the asset is Locked but not CheckedOut locally, it means it is locked somewhere else
-	const bool bIsLocked = !LockedBy.IsEmpty();
-	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOut
-							|| WorkspaceState == EWorkspaceState::Added
-							|| WorkspaceState == EWorkspaceState::Moved
-							|| WorkspaceState == EWorkspaceState::Conflicted	// In source control, waiting for merged
-							|| WorkspaceState == EWorkspaceState::Replaced;		// In source control, merged, waiting for checkin to conclude the merge
-	const bool bIsLockedByOther = bIsLocked && !bIsCheckedOut;
+	// An asset is locked somewhere else if it is Locked but not CheckedOut on the current workspace
+	const bool bIsLockedByOther = IsLocked() && !IsCheckedOutImplementation();
 
 	if (bIsLockedByOther)
 	{
@@ -518,7 +536,6 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 
 	return bIsLockedByOther;
 }
-
 
 /** Get whether this file is checked out in a different branch, if no branch is specified defaults to FEngineVerion current branch */
 bool FPlasticSourceControlState::IsCheckedOutInOtherBranch(const FString& CurrentBranch /* = FString() */) const
@@ -600,7 +617,8 @@ bool FPlasticSourceControlState::IsIgnored() const
 
 bool FPlasticSourceControlState::CanEdit() const
 {
-	const bool bCanEdit =  WorkspaceState == EWorkspaceState::CheckedOut
+	const bool bCanEdit =  WorkspaceState == EWorkspaceState::CheckedOutChanged
+						|| WorkspaceState == EWorkspaceState::CheckedOutUnchanged
 						|| WorkspaceState == EWorkspaceState::Added
 						|| WorkspaceState == EWorkspaceState::Moved
 						|| WorkspaceState == EWorkspaceState::Copied
@@ -623,16 +641,17 @@ bool FPlasticSourceControlState::IsUnknown() const
 
 bool FPlasticSourceControlState::IsModified() const
 {
-	// Warning: for a clean "checkin" (commit) checked-out files unmodified should be removed from the changeset (the index)
+	// Warning: for a clean "checkin" (commit) checked-out files unmodified should be removed from the changeset (Perforce)
 	//
 	// Thus, before checkin UE4 Editor call RevertUnchangedFiles() in PromptForCheckin() and CheckinFiles().
 	//
 	// So here we must take care to enumerate all states that need to be committed, all other will be discarded:
 	//  - Unknown
 	//  - Controlled (Unchanged)
+	//  - CheckedOutUnchanged
 	//  - Private (Not Controlled)
 	//  - Ignored
-	const bool bIsModified =   WorkspaceState == EWorkspaceState::CheckedOut
+	const bool bIsModified =   WorkspaceState == EWorkspaceState::CheckedOutChanged
 							|| WorkspaceState == EWorkspaceState::Added
 							|| WorkspaceState == EWorkspaceState::Moved
 							|| WorkspaceState == EWorkspaceState::Copied
@@ -664,7 +683,7 @@ bool FPlasticSourceControlState::IsConflicted() const
 
 bool FPlasticSourceControlState::CanRevert() const
 {
-	return IsModified();
+	return IsModified() || WorkspaceState == EWorkspaceState::CheckedOutUnchanged;
 }
 
 #undef LOCTEXT_NAMESPACE

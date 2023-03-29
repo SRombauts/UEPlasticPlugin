@@ -22,8 +22,9 @@ DECLARE_DELEGATE_RetVal_OneParam(FPlasticSourceControlWorkerRef, FGetPlasticSour
 class FPlasticSourceControlProvider : public ISourceControlProvider
 {
 public:
-	/** Constructor */
+	/** Constructor & destructor */
 	FPlasticSourceControlProvider();
+	~FPlasticSourceControlProvider();
 
 	/* ISourceControlProvider implementation */
 	virtual void Init(bool bForceConnection = true) override;
@@ -226,6 +227,9 @@ private:
 
 	/** Update workspace status on Connect and UpdateStatus operations */
 	void UpdateWorkspaceStatus(const class FPlasticSourceControlCommand& InCommand);
+
+	/** Called after a package has been saved to disk, to update the source control cache */
+	void HandlePackageSaved(const FString& InPackageFilename, UPackage* InPackage, FObjectPostSaveContext InObjectSaveContext);
 
 	/** Version of the Unity Version Control executable used */
 	FSoftwareVersion PlasticScmVersion;
