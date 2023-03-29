@@ -412,7 +412,7 @@ void SPlasticSourceControlSettings::OnBinaryPathTextCommited(const FText& InText
 	const bool bChanged = Provider.AccessSettings().SetBinaryPath(InText.ToString());
 	if (bChanged)
 	{
-		// Re-Check provided Plastic binary path for each change
+		// Re-Check provided cm binary path for each change
 		Provider.CheckPlasticAvailability();
 		if (Provider.IsPlasticAvailable())
 		{
@@ -676,7 +676,7 @@ void SPlasticSourceControlSettings::DisplayFailureNotification(const FName& InOp
 	UE_LOG(LogSourceControl, Error, TEXT("%s"), *NotificationText.ToString());
 }
 
-/** Delegate to check for presence of a Plastic ignore.conf file to an existing Unity Version Control workspace */
+/** Delegate to check for presence of an ignore.conf file to an existing Unity Version Control workspace */
 EVisibility SPlasticSourceControlSettings::CanAddIgnoreFile() const
 {
 	const bool bPlasticWorkspaceFound = FPlasticSourceControlModule::Get().GetProvider().IsWorkspaceFound();
@@ -684,7 +684,7 @@ EVisibility SPlasticSourceControlSettings::CanAddIgnoreFile() const
 	return (bPlasticWorkspaceFound && !bIgnoreFileFound) ? EVisibility::Visible : EVisibility::Collapsed;
 }
 
-/** Delegate to add a Plastic ignore.conf file to an existing Unity Version Control workspace */
+/** Delegate to add an ignore.conf file to an existing Unity Version Control workspace */
 FReply SPlasticSourceControlSettings::OnClickedAddIgnoreFile() const
 {
 	if (CreateIgnoreFile())

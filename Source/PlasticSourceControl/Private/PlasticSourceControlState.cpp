@@ -137,7 +137,7 @@ FName FPlasticSourceControlState::GetIconName() const
 		return FName("Perforce.NotAtHeadRevision");
 	case EWorkspaceState::Private: // Not controlled
 		return FName("Perforce.NotInDepot");
-	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
+	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled
 		if (GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange)
 		{
 			return FName("Perforce.NotInDepot");
@@ -184,13 +184,13 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	case EWorkspaceState::Moved:
 		return FName("Perforce.Branched_Small");
 	case EWorkspaceState::Deleted:
-	case EWorkspaceState::LocallyDeleted: // TODO: would need a dedicated icon
+	case EWorkspaceState::LocallyDeleted:
 		return FName("Perforce.MarkedForDelete_Small");
-	case EWorkspaceState::Conflicted: // TODO: would need a dedicated icon
+	case EWorkspaceState::Conflicted:
 		return FName("Perforce.NotAtHeadRevision_Small");
 	case EWorkspaceState::Private: // Not controlled
 		return FName("Perforce.NotInDepot_Small");
-	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled - TODO: would need a dedicated icon
+	case EWorkspaceState::Changed: // Changed but unchecked-out file is in a certain way not controlled
 		if (GetDefault<UPlasticSourceControlProjectSettings>()->bPromptForCheckoutOnChange)
 		{
 			return FName("Perforce.NotInDepot_Small");

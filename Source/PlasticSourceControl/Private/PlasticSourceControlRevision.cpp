@@ -30,7 +30,7 @@ bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Ty
 	// if a filename for the temp file wasn't supplied generate a unique-ish one
 	if (InOutFilename.Len() == 0)
 	{
-		// create the diff dir if we don't already have it (Plastic wont)
+		// create the diff dir if we don't already have it
 		IFileManager::Get().MakeDirectory(*FPaths::DiffDir(), true);
 		// create a unique temp file name based on the unique revision Id
 		FString TempFileName;

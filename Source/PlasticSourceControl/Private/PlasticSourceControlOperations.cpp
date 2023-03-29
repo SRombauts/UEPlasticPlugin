@@ -995,7 +995,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 
 	// TODO: re-evaluate how to optimize this heavy operation using some of these hints flags
 	// - ShouldGetOpenedOnly hint would be to call for all a whole workspace status update
-	// - ShouldUpdateModifiedState hint not used as the above normal Plastic status has already told us this information (like Git and Mercurial)
+	// - ShouldUpdateModifiedState hint not used as the above normal status has already told us this information (like Git and Mercurial)
 
 	return InCommand.bCommandSuccessful;
 }
