@@ -43,22 +43,6 @@ FPlasticSourceControlProvider::~FPlasticSourceControlProvider()
 	UPackage::PackageSavedWithContextEvent.RemoveAll(this);
 }
 
-void FPlasticSourceControlProvider::HandlePackageSaved(const FString& PackageFilename, UPackage* Package, FObjectPostSaveContext ObjectSaveContext)
-{
-	const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(PackageFilename);
-	auto FileState = GetStateInternal(AbsoluteFilename);
-	// Note: the Editor doesn't refresh the status of an asset after it is saved, but only before saving (to check that it's possible to save)
-	// So when an asset with no changes is saved, update its status to tell that it is now changed
-	if (FileState->WorkspaceState == EWorkspaceState::Controlled)
-	{
-		FileState->WorkspaceState = EWorkspaceState::Changed; // Note that this isn't enough to refresh the icon (it requires switching directory in the Content Browser)
-	}
-	else if (FileState->WorkspaceState == EWorkspaceState::CheckedOutUnchanged)
-	{
-		FileState->WorkspaceState = EWorkspaceState::CheckedOutChanged;
-	}
-}
-
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
 {
 	// Init() is called multiple times at startup: do not check Unity Version Control each time
@@ -214,6 +198,26 @@ TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> FPlasticSo
 	}
 }
 #endif
+
+// Note: called once for each asset being saved, which can be hundreds in the case of a map using One File Per Actor (OFPA) in UE5
+void FPlasticSourceControlProvider::HandlePackageSaved(const FString& InPackageFilename, UPackage* InPackage, FObjectPostSaveContext InObjectSaveContext)
+{
+	const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(InPackageFilename);
+	auto FileState = GetStateInternal(AbsoluteFilename);
+
+	// Note: the Editor doesn't ask to refresh the source control status of an asset after it is saved, only *before* (to check that it's possible to save)
+	// So when an asset with no change is saved, update its state in cache to record the fact that the asset is now changed.
+	if (FileState->WorkspaceState == EWorkspaceState::Controlled)
+	{
+		// Note that updating the state in cache isn't enough to refresh the status icon in the Content Browser (since the Editor isn't made aware of the change)
+		// but source control operations are working as expected (eg. "Checkin" and "Revert" are available in the context menu)
+		FileState->WorkspaceState = EWorkspaceState::Changed; // The icon will only appears later when the UI is refreshed (eg switching directory in the Content Browser)
+	}
+	else if (FileState->WorkspaceState == EWorkspaceState::CheckedOutUnchanged)
+	{
+		FileState->WorkspaceState = EWorkspaceState::CheckedOutChanged; // In this case the "CheckedOut" icon is already displayed (both states are using the same status icon)
+	}
+}
 
 FText FPlasticSourceControlProvider::GetStatusText() const
 {

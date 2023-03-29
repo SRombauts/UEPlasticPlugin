@@ -228,8 +228,8 @@ private:
 	/** Update workspace status on Connect and UpdateStatus operations */
 	void UpdateWorkspaceStatus(const class FPlasticSourceControlCommand& InCommand);
 
-	/** Called after a package has been saved to disk */
-	void HandlePackageSaved(const FString& PackageFilename, UPackage* Package, FObjectPostSaveContext ObjectSaveContext);
+	/** Called after a package has been saved to disk, to update the source control cache */
+	void HandlePackageSaved(const FString& InPackageFilename, UPackage* InPackage, FObjectPostSaveContext InObjectSaveContext);
 
 	/** Version of the Unity Version Control executable used */
 	FSoftwareVersion PlasticScmVersion;
