@@ -566,7 +566,6 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 				FileState.WorkspaceState = EWorkspaceState::Private; // Not Controlled
 			}
 		}
-		FileState.TimeStamp.Now();
 
 		// debug log (only for the first few files)
 		if (OutStates.Num() < 20)
@@ -611,7 +610,6 @@ static void ParseDirectoryStatusResultForDeleted(const TArray<FString>& InResult
 			FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(WorkingDirectory, MoveTemp(RelativeFilename));
 			FPlasticSourceControlState FileState(MoveTemp(AbsoluteFilename));
 			FileState.WorkspaceState = WorkspaceState;
-			FileState.TimeStamp.Now();
 
 			UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.LocalFilename, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
 
