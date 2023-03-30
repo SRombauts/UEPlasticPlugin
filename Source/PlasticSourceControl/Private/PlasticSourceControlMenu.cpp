@@ -37,6 +37,11 @@
 
 void FPlasticSourceControlMenu::Register()
 {
+	if (bHasRegistered)
+	{
+		return;
+	}
+
 	// Register the menu extension with the level editor
 #if ENGINE_MAJOR_VERSION == 4
 	if (FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor"))
@@ -45,6 +50,8 @@ void FPlasticSourceControlMenu::Register()
 		auto& MenuExtenders = LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders();
 		MenuExtenders.Add(ViewMenuExtender);
 		ViewMenuExtenderHandle = MenuExtenders.Last().GetHandle();
+
+		bHasRegistered = true;
 	}
 #elif ENGINE_MAJOR_VERSION == 5
 	FToolMenuOwnerScoped SourceControlMenuOwner("PlasticSourceControlMenu");
@@ -54,12 +61,19 @@ void FPlasticSourceControlMenu::Register()
 		FToolMenuSection& Section = SourceControlMenu->AddSection("PlasticSourceControlActions", LOCTEXT("PlasticSourceControlMenuHeadingActions", "Unity Version Control"), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
 
 		AddMenuExtension(Section);
+
+		bHasRegistered = true;
 	}
 #endif
 }
 
 void FPlasticSourceControlMenu::Unregister()
 {
+	if (!bHasRegistered)
+	{
+		return;
+	}
+
 	// Unregister the menu extension from the level editor
 #if ENGINE_MAJOR_VERSION == 4
 	if (FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor"))
@@ -67,9 +81,10 @@ void FPlasticSourceControlMenu::Unregister()
 		LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders().RemoveAll([=](const FLevelEditorModule::FLevelEditorMenuExtender& Extender) { return Extender.GetHandle() == ViewMenuExtenderHandle; });
 	}
 #elif ENGINE_MAJOR_VERSION == 5
-	if (UToolMenus* ToolMenus = UToolMenus::Get())
+	if (UToolMenus* ToolMenus = UToolMenus::TryGet())
 	{
 		UToolMenus::Get()->UnregisterOwnerByName("PlasticSourceControlMenu");
+		bHasRegistered = false;
 	}
 #endif
 }
