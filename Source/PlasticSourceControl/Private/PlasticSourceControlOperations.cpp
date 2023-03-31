@@ -1840,11 +1840,16 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if (InCommand.bCommandSuccessful)
 	{
 		// Remove unmodified files from the list of files to shelve
-		for (int32 i = 0; i < FilesToShelve.Num(); i++)
+		int32 i = 0;
+		while (i < FilesToShelve.Num())
 		{
 			FString& FileToShelve = FilesToShelve[i];
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = GetProvider().GetStateInternal(FileToShelve);
-			if (!FileState->IsModified())
+			if (FileState->IsModified())
+			{
+				i++;
+			}
+			else
 			{
 				FPaths::MakePathRelativeTo(FileToShelve, *FPaths::ProjectDir());
 				UE_LOG(LogSourceControl, Warning, TEXT("The file /%s is unchanged, it cannot be shelved."), *FileToShelve);
