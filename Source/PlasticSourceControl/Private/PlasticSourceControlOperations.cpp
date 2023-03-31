@@ -1856,6 +1856,10 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			InCommand.bCommandSuccessful = CreateShelve(Changelist.GetName(), ChangelistDescription, FilesToShelve, ShelveId, InCommand.ErrorMessages);
 		}
+		else
+		{
+			InCommand.bCommandSuccessful = false;
+		}
 		if (InCommand.bCommandSuccessful)
 		{
 			InChangelistToUpdate = InCommand.Changelist;
@@ -1879,6 +1883,7 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				}
 
 				DeleteChangelist(GetProvider(), Changelist, InCommand.InfoMessages, InCommand.ErrorMessages);
+				GetProvider().RemoveChangelistFromCache(Changelist);
 			}
 		}
 	}
