@@ -1839,9 +1839,35 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	if (InCommand.bCommandSuccessful)
 	{
+		// Remove unmodified files from the list of files to shelve
+		int32 i = 0;
+		while (i < FilesToShelve.Num())
+		{
+			FString& FileToShelve = FilesToShelve[i];
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = GetProvider().GetStateInternal(FileToShelve);
+			if (FileState->IsModified())
+			{
+				i++;
+			}
+			else
+			{
+				FPaths::MakePathRelativeTo(FileToShelve, *FPaths::ProjectDir());
+				UE_LOG(LogSourceControl, Warning, TEXT("The file /%s is unchanged, it cannot be shelved."), *FileToShelve);
+				FilesToShelve.RemoveAt(i);
+			}
+		}
+
 		ChangelistDescription = *Operation->GetDescription().ToString();
 
-		InCommand.bCommandSuccessful = CreateShelve(Changelist.GetName(), ChangelistDescription, FilesToShelve, ShelveId, InCommand.ErrorMessages);
+		if (FilesToShelve.Num() > 0)
+		{
+			InCommand.bCommandSuccessful = CreateShelve(Changelist.GetName(), ChangelistDescription, FilesToShelve, ShelveId, InCommand.ErrorMessages);
+		}
+		else
+		{
+			UE_LOG(LogSourceControl, Error, TEXT("No file to Shelve"));
+			InCommand.bCommandSuccessful = false;
+		}
 		if (InCommand.bCommandSuccessful)
 		{
 			InChangelistToUpdate = InCommand.Changelist;
@@ -1865,6 +1891,7 @@ bool FPlasticShelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 				}
 
 				DeleteChangelist(GetProvider(), Changelist, InCommand.InfoMessages, InCommand.ErrorMessages);
+				GetProvider().RemoveChangelistFromCache(Changelist);
 			}
 		}
 	}
