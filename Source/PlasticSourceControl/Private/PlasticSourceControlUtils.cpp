@@ -13,11 +13,6 @@
 #include "ISourceControlModule.h"
 
 #include "Runtime/Launch/Resources/Version.h"
-#if ENGINE_MAJOR_VERSION == 4
-#include "HAL/PlatformFilemanager.h"
-#elif ENGINE_MAJOR_VERSION == 5
-#include "HAL/PlatformFileManager.h"
-#endif
 #include "HAL/PlatformProcess.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
@@ -498,9 +493,12 @@ static EWorkspaceState StateFromStatusResult(const FString& InResult, const bool
 }
 
 /**
- * @brief Parse the array of strings results of a 'cm status --noheaders --all --ignored' command
+ * @brief Parse status results in case of a regular operation for a list of files (not for a whole directory).
  *
- * Called in case of a regular status command for one or multiple files (not for a whole directory). 
+ * This is the most common scenario, for any operation from the Content Browser or the View Changes window.
+ * 
+ * In this case, iterates on the list of files the Editor provides,
+ * searching corresponding file status from the array of strings results of a 'status' command.
  *
  * @param[in]	InFiles		List of files in a directory (never empty).
  * @param[in]	InResults	Lines of results from the "status" command
@@ -518,6 +516,8 @@ static EWorkspaceState StateFromStatusResult(const FString& InResult, const bool
  LD Content\Deleted2_BP.uasset
  MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
  LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
+ *
+ * @see ParseDirectoryStatusResult() that use a different parse logic
  */
 static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
 {
@@ -583,18 +583,22 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 }
 
 /**
- * @brief Detect Deleted files in case of a "whole directory status" (no file listed in the command)
+ * @brief Parse file status in case of a "whole directory status" (no file listed in the command).
+ *
+ * This is a less common scenario, typically calling the Submit Content, Revert All or Refresh commands
+ * from the global source control menu.
  * 
- * Parse the array of strings results of a 'cm status --noheaders --all --ignored' command
+ * In this case, as there is no file list to iterate over,
+ * just parse each line of the array of strings results from the 'status' command.
  *
  * @param[in]	InResults	Lines of results from the "status" command
  * @param[out]	OutStates	States of files for witch the status has been gathered
  *
  * @see #ParseFileStatusResult() above for an example of a cm status results
 */
-static void ParseDirectoryStatusResultForDeleted(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
+static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseDirectoryStatusResultForDeleted);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseDirectoryStatusResult);
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString& WorkingDirectory = Provider.GetPathToWorkspaceRoot();
@@ -604,17 +608,14 @@ static void ParseDirectoryStatusResultForDeleted(const TArray<FString>& InResult
 	for (const FString& Result : InResults)
 	{
 		const EWorkspaceState WorkspaceState = StateFromStatusResult(Result, bUsesCheckedOutChanged);
-		if ((EWorkspaceState::Deleted == WorkspaceState) || (EWorkspaceState::LocallyDeleted == WorkspaceState))
-		{
-			FString RelativeFilename = FilenameFromStatusResult(Result);
-			FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(WorkingDirectory, MoveTemp(RelativeFilename));
-			FPlasticSourceControlState FileState(MoveTemp(AbsoluteFilename));
-			FileState.WorkspaceState = WorkspaceState;
+		FString RelativeFilename = FilenameFromStatusResult(Result);
+		FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(WorkingDirectory, MoveTemp(RelativeFilename));
+		FPlasticSourceControlState FileState(MoveTemp(AbsoluteFilename));
+		FileState.WorkspaceState = WorkspaceState;
 
-			UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.LocalFilename, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
+		UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.LocalFilename, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
 
-			OutStates.Add(MoveTemp(FileState));
-		}
+		OutStates.Add(MoveTemp(FileState));
 	}
 }
 
@@ -714,18 +715,12 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 		{
 			// 1) Special case for "status" of a directory: requires a specific parse logic.
 			//   (this is triggered by the "Submit to Source Control" top menu button)
-			// Find recursively all files in the directory: this enable getting the list of "Controlled" (unchanged) assets
-			FFileVisitor FileVisitor;
-			FPlatformFileManager::Get().GetPlatformFile().IterateDirectoryRecursively(*InDir, FileVisitor);
-			UE_LOG(LogSourceControl, Verbose, TEXT("RunStatus(%s): 1) special case for status of a directory containing %d file(s)"), *InDir, FileVisitor.Files.Num());
-			ParseFileStatusResult(MoveTemp(FileVisitor.Files), Results, OutStates, OutChangeset, OutBranchName);
-			// The above cannot detect assets removed / locally deleted since there is no file left to enumerate (either by the Content Browser or by File Manager)
-			// => so we also parse the status results to explicitly look for Removed/Deleted assets
+			UE_LOG(LogSourceControl, Verbose, TEXT("RunStatus(%s): 1) special case for status of a directory:"), *InDir);
 			if (Results.Num() > 0)
 			{
 				Results.RemoveAt(0, 1); // Before that, remove the first line (Workspace/Changeset info)
 			}
-			ParseDirectoryStatusResultForDeleted(Results, OutStates);
+			ParseDirectoryStatusResult(Results, OutStates);
 		}
 		else
 		{
