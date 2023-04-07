@@ -260,6 +260,29 @@ FString UserNameToDisplayName(const FString& InUserName)
 	return InUserName;
 }
 
+
+/**
+* Parse the current changeset from the header returned by "cm status --machinereadable --header --fieldseparator=;"
+*/
+static bool GetChangesetFromWorkspaceStatus(const TArray<FString>& InResults, int32& OutChangeset)
+{
+	// Get workspace status, in the form "STATUS;41;UEPlasticPlugin;localhost:8087" (disabled by the "--nostatus" flag)
+	//                                or "STATUS;41;UEPlasticPlugin;SRombauts@cloud" (when connected directly to the cloud)
+	if (InResults.Num() > 0)
+	{
+		const FString& WorkspaceStatus = InResults[0];
+		TArray<FString> WorkspaceInfos;
+		WorkspaceStatus.ParseIntoArray(WorkspaceInfos, TEXT(";"), false); // Don't cull empty values in csv
+		if (WorkspaceInfos.Num() >= 4)
+		{
+			OutChangeset = FCString::Atoi(*WorkspaceInfos[1]);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /**
  * @brief Extract the renamed from filename from a cm "status" result.
  *
@@ -675,11 +698,10 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	OutErrorMessages.Append(MoveTemp(ErrorMessages));
 	if (bResult)
 	{
-		// Parse the first line of status with the Changeset number and remove it
+		// Parse the first line of status with the Changeset number, then remove it to work on a plain list of files
 		if (Results.Num() > 0)
 		{
-			FString RepositoryName, ServerUrl;
-			ParseWorkspaceInformation(Results, OutChangeset, RepositoryName, ServerUrl, OutBranchName);
+			GetChangesetFromWorkspaceStatus(Results, OutChangeset);
 			Results.RemoveAt(0, 1, false);
 		}
 
