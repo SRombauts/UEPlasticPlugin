@@ -524,7 +524,7 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseFileStatusResult);
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-	const FString& WorkingDirectory = Provider.GetPathToWorkspaceRoot();
+	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
 	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
 	// Iterate on each file explicitly listed in the command
@@ -545,7 +545,7 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 			// Extract the original name of a Moved/Renamed file
 			if (EWorkspaceState::Moved == FileState.WorkspaceState)
 			{
-				FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkingDirectory, RenamedFromStatusResult(InResults[IdxResult]));
+				FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, RenamedFromStatusResult(InResults[IdxResult]));
 			}
 		}
 		else
@@ -597,7 +597,7 @@ static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseDirectoryStatusResult);
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-	const FString& WorkingDirectory = Provider.GetPathToWorkspaceRoot();
+	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
 	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
 	// Iterate on each line of result of the status command
@@ -605,7 +605,7 @@ static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<
 	{
 		const EWorkspaceState WorkspaceState = StateFromStatusResult(Result, bUsesCheckedOutChanged);
 		FString RelativeFilename = FilenameFromStatusResult(Result);
-		FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(WorkingDirectory, MoveTemp(RelativeFilename));
+		FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(WorkspaceRoot, MoveTemp(RelativeFilename));
 		FPlasticSourceControlState FileState(MoveTemp(AbsoluteFilename));
 		FileState.WorkspaceState = WorkspaceState;
 
@@ -1664,7 +1664,7 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 	static const FString Type(TEXT("Type"));
 	static const FString Path(TEXT("Path"));
 
-	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
+	const FString& WorkspaceRoot = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
 
 	const FXmlNode* StatusOutputNode = InXmlResult.GetRootNode();
 	if (StatusOutputNode == nullptr || StatusOutputNode->GetTag() != StatusOutput)
@@ -1709,7 +1709,7 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 				int32 DotIndex;
 				if (FileName.FindChar(TEXT('.'), DotIndex))
 				{
-					FPlasticSourceControlState FileState(FPaths::ConvertRelativePathToFull(WorkingDirectory, MoveTemp(FileName)));
+					FPlasticSourceControlState FileState(FPaths::ConvertRelativePathToFull(WorkspaceRoot, MoveTemp(FileName)));
 					FileState.Changelist = ChangelistState.Changelist;
 					OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
 				}
@@ -1839,7 +1839,7 @@ A "Content\NewFolder\BP_ControlledUnchanged.uasset"
 D "Content\NewFolder\BP_Changed.uasset"
 M "Content\NewFolder\BP_ControlledUnchanged.uasset" "Content\NewFolder\BP_Renamed.uasset"
 */
-bool ParseShelveDiffResults(const FString InWorkingDirectory, TArray<FString>&& InResults, FPlasticSourceControlChangelistState& InOutChangelistsState)
+bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InResults, FPlasticSourceControlChangelistState& InOutChangelistsState)
 {
 	bool bCommandSuccessful = true;
 
@@ -1862,7 +1862,7 @@ bool ParseShelveDiffResults(const FString InWorkingDirectory, TArray<FString>&& 
 		
 		if (ShelveStatus != EWorkspaceState::Unknown && !Result.IsEmpty())
 		{
-			FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(InWorkingDirectory, MoveTemp(Result));
+			FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(InWorkspaceRoot, MoveTemp(Result));
 			AddShelvedFileToChangelist(InOutChangelistsState, MoveTemp(AbsoluteFilename), ShelveStatus);
 		}
 		else
@@ -1883,7 +1883,7 @@ bool RunGetShelveFiles(TArray<FPlasticSourceControlChangelistState>& InOutChange
 {
 	bool bCommandSuccessful = true;
 
-	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
+	const FString& WorkspaceRoot = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
 
 	for (FPlasticSourceControlChangelistState& ChangelistState : InOutChangelistsStates)
 	{
@@ -1895,7 +1895,7 @@ bool RunGetShelveFiles(TArray<FPlasticSourceControlChangelistState>& InOutChange
 			const bool bDiffSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("diff"), Parameters, TArray<FString>(), Results, OutErrorMessages);
 			if (bDiffSuccessful)
 			{
-				bCommandSuccessful = ParseShelveDiffResults(WorkingDirectory, MoveTemp(Results), ChangelistState);
+				bCommandSuccessful = ParseShelveDiffResults(WorkspaceRoot, MoveTemp(Results), ChangelistState);
 			}
 		}
 	}
@@ -1933,8 +1933,6 @@ static bool ParseShelvesResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 	static const FString ShelveId(TEXT("SHELVEID"));
 	static const FString Date(TEXT("DATE"));
 	static const FString Comment(TEXT("COMMENT"));
-
-	const FString& WorkingDirectory = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
 
 	const FXmlNode* PlasticQueryNode = InXmlResult.GetRootNode();
 	if (PlasticQueryNode == nullptr || PlasticQueryNode->GetTag() != PlasticQuery)
