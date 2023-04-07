@@ -284,119 +284,9 @@ static bool GetChangesetFromWorkspaceStatus(const TArray<FString>& InResults, in
 }
 
 /**
- * @brief Extract the renamed from filename from a cm "status" result.
+ * Interpret the 2-to-8 letters file status from the given cm "status" result.
  *
- * Examples of status results (note that it always state "100%"):
- MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
- *
- * @param[in] InResult One line of status
- * @return Renamed from filename extracted from the line of status
- *
- * @see FilenameFromStatusResult()
- */
-static FString RenamedFromStatusResult(const FString& InResult)
-{
-	FString RenamedFrom;
-	int32 RenameIndex;
-	if (InResult.FindLastChar(TEXT('>'), RenameIndex))
-	{
-		// Extract only the first part of a rename "from -> to" (after the 2 letters status and the 100%)
-		RenamedFrom = InResult.Mid(9, RenameIndex - 9 - 2);
-	}
-	return RenamedFrom;
-}
-
-/**
- * @brief Extract the relative filename from a cm "status" result.
- *
- * Examples of status results:
- CO Content\CheckedOutUnchanged_BP.uasset
- CO+CH Content\CheckedOutChanged_BP.uasset
- CO Content\Merged_BP.uasset (Merge from 140)
- MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
- *
- * @param[in] InResult One line of status
- * @return Relative filename extracted from the line of status
- *
- * @see RenamedFromStatusResult, FPlasticStatusFileMatcher and StateFromStatus()
- */
-static FString FilenameFromStatusResult(const FString& InResult)
-{
-	FString RelativeFilename;
-	int32 RenameIndex;
-	if (InResult.FindLastChar(TEXT('>'), RenameIndex))
-	{
-		// Extract only the second part of a rename "from -> to"
-		RelativeFilename = InResult.RightChop(RenameIndex + 2);
-	}
-	else
-	{
-		// Find the second space after the 2-to-5 letters status (eg " CO " or " CO+CH ") to remove it
-		const int32 SpaceIndex = InResult.Find(TEXT(" "), ESearchCase::CaseSensitive, ESearchDir::FromStart, 1);
-		if (SpaceIndex != INDEX_NONE)
-		{
-			RelativeFilename = InResult.RightChop(SpaceIndex + 1);
-		}
-
-		// Search if the filename is followed by a "Merged from" annotation, to remove it
-		const int32 MergeIndex = RelativeFilename.Find(TEXT(" (Merge from "), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
-		if (MergeIndex != INDEX_NONE)
-		{
-			RelativeFilename.LeftInline(MergeIndex);
-		}
-	}
-
-	return RelativeFilename;
-}
-
-/**
- * @brief Match the relative filename of a cm "status" result with a provided absolute filename
- *
- * Examples of status results:
- CO Content\CheckedOut_BP.uasset
- MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
- */
-class FPlasticStatusFileMatcher
-{
-public:
-	explicit FPlasticStatusFileMatcher(const FString& InAbsoluteFilename)
-		: AbsoluteFilename(InAbsoluteFilename)
-	{
-	}
-
-	bool operator()(const FString& InResult) const
-	{
-		return AbsoluteFilename.Contains(FilenameFromStatusResult(InResult));
-	}
-
-private:
-	const FString& AbsoluteFilename;
-};
-
-/**
- * Extract the 2-to-5 letters file status from the given cm "status" result.
- *
- * @param InResult One line of status from a "status" command
- * @return the 2-to-5 letters file status
- *
- * @see StateFromStatusResult for examples
- */
-static FString StatusFromResult(const FString& InResult)
-{
-	// Find the second space after the 2-to-5 letters status (eg " CO " or " CO+CH ")
-	const int32 SpaceIndex = InResult.Find(TEXT(" "), ESearchCase::CaseSensitive, ESearchDir::FromStart, 1);
-	if (SpaceIndex > 1)
-	{
-		return InResult.Mid(1, SpaceIndex - 1);
-	}
-
-	return FString();
-}
-
-/**
- * Extract and interpret the file state from the cm "status" result.
- *
- * @param InResult One line of status from a "status" command
+ * @param InFileStatus The 2-to-8 letters file status from the given cm "status" result
  * @param bInUsesCheckedOutChanged If using the new --iscochanged "CO+CH"
  * @return EWorkspaceState
  *
@@ -416,17 +306,15 @@ static FString StatusFromResult(const FString& InResult)
  *
  * empty string = unmodified/controlled or hidden changes
 */
-static EWorkspaceState StateFromStatusResult(const FString& InResult, const bool bInUsesCheckedOutChanged)
+static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool bInUsesCheckedOutChanged)
 {
 	EWorkspaceState State;
 	
-	const FString FileStatus = StatusFromResult(InResult);
-
-	if (FileStatus == "CH") // Modified but not Checked-Out
+	if (InFileStatus == "CH") // Modified but not Checked-Out
 	{
 		State = EWorkspaceState::Changed;
 	}
-	else if (FileStatus == "CO") // Checked-Out with no change, or "don't know" if using on an old version of cm
+	else if (InFileStatus == "CO") // Checked-Out with no change, or "don't know" if using on an old version of cm
 	{
 		// Recent version can distinguish between CheckedOut with or with no changes
 		if (bInUsesCheckedOutChanged)
@@ -439,49 +327,87 @@ static EWorkspaceState StateFromStatusResult(const FString& InResult, const bool
 		}
 		
 	}
-	else if (FileStatus == "CO+CH") // Checked-Out and changed from the new --iscochanged
+	else if (InFileStatus == "CO+CH") // Checked-Out and changed from the new --iscochanged
 	{
 		State = EWorkspaceState::CheckedOutChanged; // Recent version; here it's checkedout with changes
 	}
-	else if (FileStatus == "CP")
+	else if ((InFileStatus == "CP") || (InFileStatus == "CO+CP"))
 	{
 		State = EWorkspaceState::Copied;
 	}
-	else if (FileStatus == "RP")
+	else if ((InFileStatus == "RP") || (InFileStatus == "CO+RP") || (InFileStatus == "CO+RP+CH"))
 	{
 		State = EWorkspaceState::Replaced;
 	}
-	else if (FileStatus == "AD")
+	else if (InFileStatus == "AD")
 	{
 		State = EWorkspaceState::Added;
 	}
-	else if ((FileStatus == "PR") || (FileStatus == "LM")) // Not Controlled/Not in Depot/Untracked (or Locally Moved/Renamed)
+	else if ((InFileStatus == "PR") || (InFileStatus == "LM")) // Not Controlled/Not in Depot/Untracked (or Locally Moved/Renamed)
 	{
 		State = EWorkspaceState::Private;
 	}
-	else if (FileStatus == "IG")
+	else if (InFileStatus == "IG")
 	{
 		State = EWorkspaceState::Ignored;
 	}
-	else if (FileStatus == "DE")
+	else if (InFileStatus == "DE")
 	{
 		State = EWorkspaceState::Deleted; // Deleted (removed from source control)
 	}
-	else if (FileStatus == "LD")
+	else if (InFileStatus == "LD")
 	{
 		State = EWorkspaceState::LocallyDeleted; // Locally Deleted (ie. missing)
 	}
-	else if (FileStatus == "MV")
+	else if ((InFileStatus == "MV") || (InFileStatus == "CO+CH+MV"))
 	{
 		State = EWorkspaceState::Moved; // Moved/Renamed
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("%s"), *InResult);
+		UE_LOG(LogSourceControl, Warning, TEXT("Unknown file status '%s'"), *InFileStatus);
 		State = EWorkspaceState::Unknown;
 	}
 
 	return State;
+}
+
+/**
+ * Extract and interpret the file state from the cm "status" result.
+ *
+ * @param InResult One line of status from a "status" command
+ * @param bInUsesCheckedOutChanged If using the new --iscochanged "CO+CH"
+ * @return A workspace state
+ *
+ * Examples:
+CO+CH;c:\Workspace\UEPlasticPluginDev\Content\Blueprints\CE_Game.uasset;False;NO_MERGES
+MV;100%;c:\Workspace\UEPlasticPluginDev\Content\Blueprints\BP_ToRename.uasset;c:\Workspace\UEPlasticPluginDev\Content\Blueprints\BP_Renamed.uasset;False;NO_MERGES
+*/
+static FPlasticSourceControlState StateFromStatusResult(const FString& InResult, const bool bInUsesCheckedOutChanged)
+{
+	TArray<FString> ResultElements;
+	InResult.ParseIntoArray(ResultElements, TEXT(";"), false); // Don't cull empty values in csv
+	if (ResultElements.Num() >= 4) // Note: should contain 4 or 6 elements (for moved files)
+	{
+		EWorkspaceState WorkspaceState = StateFromStatus(ResultElements[0], bInUsesCheckedOutChanged);
+		if (WorkspaceState == EWorkspaceState::Moved)
+		{
+			// Special case for an asset that has been moved/renamed
+			FString& File = ResultElements[3];
+			FPlasticSourceControlState State(MoveTemp(File), WorkspaceState);
+			State.MovedFrom = MoveTemp(ResultElements[2]);
+			return State;
+		}
+		else
+		{
+			FString& File = ResultElements[1];
+			return FPlasticSourceControlState(MoveTemp(File), WorkspaceState);
+		}
+	}
+
+	UE_LOG(LogSourceControl, Warning, TEXT("%s"), *InResult);
+
+	return FPlasticSourceControlState(FString());
 }
 
 /**
@@ -519,6 +445,15 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
 	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
+	// Parse the list of status results in a map indexed by absolute filename	
+	TMap<FString, FPlasticSourceControlState> FileToStateMap;
+	FileToStateMap.Reserve(InResults.Num());
+	for (const FString& InResult : InResults)
+	{
+		FPlasticSourceControlState State = StateFromStatusResult(InResult, bUsesCheckedOutChanged);
+		FileToStateMap.Add(State.LocalFilename, MoveTemp(State));
+	}
+
 	// Iterate on each file explicitly listed in the command
 	for (FString& InFile : InFiles)
 	{
@@ -526,18 +461,15 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 		const FString& File = FileState.LocalFilename;
 
 		// Search the file in the list of status
-		// NOTE: in case of rename by editor, there are two results: checked-out AND renamed
-		// => we want to get the second one, witch is always the rename, so we search from the end
-		int32 IdxResult = InResults.FindLastByPredicate(FPlasticStatusFileMatcher(File));
-		if (IdxResult != INDEX_NONE)
+		if (FPlasticSourceControlState* State = FileToStateMap.Find(File))
 		{
-			// File found in status results; only the case for "changed" files
-			FileState.WorkspaceState = StateFromStatusResult(InResults[IdxResult], bUsesCheckedOutChanged);
+			// File found in status results; only the case for "changed" (or checked-out) files
+			FileState.WorkspaceState = State->WorkspaceState;
 
 			// Extract the original name of a Moved/Renamed file
 			if (EWorkspaceState::Moved == FileState.WorkspaceState)
 			{
-				FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, RenamedFromStatusResult(InResults[IdxResult]));
+				FileState.MovedFrom = State->MovedFrom;
 			}
 		}
 		else
@@ -593,23 +525,15 @@ static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<
 	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
 	// Iterate on each line of result of the status command
-	for (const FString& Result : InResults)
+	for (const FString& InResult : InResults)
 	{
-		const EWorkspaceState WorkspaceState = StateFromStatusResult(Result, bUsesCheckedOutChanged);
-		FString RelativeFilename = FilenameFromStatusResult(Result);
-		FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(WorkspaceRoot, MoveTemp(RelativeFilename));
-		FPlasticSourceControlState FileState(MoveTemp(AbsoluteFilename));
-		FileState.WorkspaceState = WorkspaceState;
-
-		// Extract the original name of a Moved/Renamed file
-		if (EWorkspaceState::Moved == FileState.WorkspaceState)
+		FPlasticSourceControlState FileState = StateFromStatusResult(InResult, bUsesCheckedOutChanged);
+		if (!FileState.LocalFilename.IsEmpty())
 		{
-			FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, RenamedFromStatusResult(Result));
+			UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.LocalFilename, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
+
+			OutStates.Add(MoveTemp(FileState));
 		}
-
-		UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.LocalFilename, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
-
-		OutStates.Add(MoveTemp(FileState));
 	}
 }
 
@@ -652,8 +576,8 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	check(InFiles.Num() > 0);
 
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--compact"));
-	Parameters.Add(TEXT("--noheaders"));
+	Parameters.Add(TEXT("--machinereadable"));
+	Parameters.Add(TEXT("--fieldseparator=;"));
 	if (InSearchType == EStatusSearchType::All)
 	{
 		// NOTE: don't use "--all" to avoid searching for --localmoved since it's the most time consuming (beside --changed)
@@ -738,8 +662,8 @@ public:
 	explicit FPlasticFileinfoParser(const FString& InResult)
 	{
 		TArray<FString> Fileinfos;
-		const int32 NbElmts = InResult.ParseIntoArray(Fileinfos, TEXT(";"), false); // Don't cull empty values in csv
-		if (NbElmts == 5)
+		InResult.ParseIntoArray(Fileinfos, TEXT(";"), false); // Don't cull empty values in csv
+		if (Fileinfos.Num() == 5)
 		{
 			RevisionChangeset = FCString::Atoi(*Fileinfos[0]);
 			RevisionHeadChangeset = FCString::Atoi(*Fileinfos[1]);
