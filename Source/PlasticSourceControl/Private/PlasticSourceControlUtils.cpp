@@ -519,17 +519,13 @@ static EWorkspaceState StateFromStatusResult(const FString& InResult, const bool
  *
  * @see ParseDirectoryStatusResult() that use a different parse logic
  */
-static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
+static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseFileStatusResult);
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString& WorkingDirectory = Provider.GetPathToWorkspaceRoot();
 	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
-
-	// Parse the first two lines with Changeset number and Branch name (the second being requested only once at init)
-	FString RepositoryName, ServerUrl;
-	ParseWorkspaceInformation(InResults, OutChangeset, RepositoryName, ServerUrl, OutBranchName);
 
 	// Iterate on each file explicitly listed in the command
 	for (FString& InFile : InFiles)
@@ -704,7 +700,15 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	OutErrorMessages.Append(MoveTemp(ErrorMessages));
 	if (bResult)
 	{
-		// Normalize paths in the result (convert all '\' to '/')
+		// Parse the first line of status with the Changeset number and remove it
+		if (Results.Num() > 0)
+		{
+			FString RepositoryName, ServerUrl;
+			ParseWorkspaceInformation(Results, OutChangeset, RepositoryName, ServerUrl, OutBranchName);
+			Results.RemoveAt(0, 1, false);
+		}
+
+		// Normalize file paths in the result (convert all '\' to '/')
 		for (FString& Result : Results)
 		{
 			FPaths::NormalizeFilename(Result);
@@ -716,17 +720,13 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 			// 1) Special case for "status" of a directory: requires a specific parse logic.
 			//   (this is triggered by the "Submit to Source Control" top menu button)
 			UE_LOG(LogSourceControl, Verbose, TEXT("RunStatus(%s): 1) special case for status of a directory:"), *InDir);
-			if (Results.Num() > 0)
-			{
-				Results.RemoveAt(0, 1); // Before that, remove the first line (Workspace/Changeset info)
-			}
 			ParseDirectoryStatusResult(Results, OutStates);
 		}
 		else
 		{
 			// 2) General case for one or more files in the same directory.
 			UE_LOG(LogSourceControl, Verbose, TEXT("RunStatus(%s...): 2) general case for %d file(s) in a directory (%s)"), *InFiles[0], InFiles.Num(), *InDir);
-			ParseFileStatusResult(MoveTemp(InFiles), Results, OutStates, OutChangeset, OutBranchName);
+			ParseFileStatusResult(MoveTemp(InFiles), Results, OutStates);
 		}
 	}
 
