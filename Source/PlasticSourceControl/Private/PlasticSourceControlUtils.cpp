@@ -609,6 +609,12 @@ static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<
 		FPlasticSourceControlState FileState(MoveTemp(AbsoluteFilename));
 		FileState.WorkspaceState = WorkspaceState;
 
+		// Extract the original name of a Moved/Renamed file
+		if (EWorkspaceState::Moved == FileState.WorkspaceState)
+		{
+			FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, RenamedFromStatusResult(Result));
+		}
+
 		UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.LocalFilename, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
 
 		OutStates.Add(MoveTemp(FileState));
