@@ -159,64 +159,6 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName,
 	return bResult;
 }
 
-static bool ParseWorkspaceInformation(const TArray<FString>& InResults, int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName)
-{
-	bool bResult = true;
-
-	// Get workspace status, in the form "cs:41@rep:UEPlasticPlugin@repserver:localhost:8087" (disabled by the "--nostatus" flag)
-	//                                or "cs:41@rep:UEPlasticPlugin@repserver:SRombauts@cloud" (when connected directly to the cloud)
-	if (InResults.Num() > 0)
-	{
-		static const FString ChangesetPrefix(TEXT("cs:"));
-		static const FString RepPrefix(TEXT("@rep:"));
-		static const FString ServerPrefix(TEXT("@repserver:"));
-		const FString& WorkspaceStatus = InResults[0];
-		const int32 RepIndex = WorkspaceStatus.Find(RepPrefix, ESearchCase::CaseSensitive);
-		const int32 ServerIndex = WorkspaceStatus.Find(ServerPrefix, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
-		if ((RepIndex > INDEX_NONE) && (ServerIndex > INDEX_NONE))
-		{
-			const FString ChangesetString = WorkspaceStatus.Mid(ChangesetPrefix.Len(), RepIndex - ChangesetPrefix.Len());
-			OutChangeset = FCString::Atoi(*ChangesetString);
-			OutRepositoryName = WorkspaceStatus.Mid(RepIndex + RepPrefix.Len(), ServerIndex - RepIndex - RepPrefix.Len());
-			OutServerUrl = WorkspaceStatus.RightChop(ServerIndex + ServerPrefix.Len());
-		}
-		else
-		{
-			bResult = false;
-		}
-	}
-	// Get the branch name, in the form "Branch /main@UE5PlasticPluginDev@test@cloud" (enabled by the "--wkconfig" flag)
-	if (InResults.Num() > 1)
-	{
-		static const FString BranchPrefix(TEXT("Branch "));
-		const FString& BranchInfo = InResults[1];
-		const int32 BranchIndex = BranchInfo.Find(BranchPrefix, ESearchCase::CaseSensitive);
-		if (BranchIndex > INDEX_NONE)
-		{
-			OutBranchName = BranchInfo;
-		}
-	}
-
-	return bResult;
-}
-
-bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages)
-{
-	TArray<FString> Results;
-	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--compact"));
-	Parameters.Add(TEXT("--header")); // Only prints the workspace status. No file status.
-	// NOTE: --wkconfig results in two network calls GetBranchInfoByName & GetLastChangesetOnBranch so it's okay to do it once here but not all the time
-	Parameters.Add(TEXT("--wkconfig")); // Branch name. NOTE: Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/8.0.16.3000
-	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), Results, OutErrorMessages);
-	if (bResult)
-	{
-		bResult = ParseWorkspaceInformation(Results, OutChangeset, OutRepositoryName, OutServerUrl, OutBranchName);
-	}
-
-	return bResult;
-}
-
 static bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
 {
 	if (InResults.Num() == 0)
@@ -288,6 +230,16 @@ bool GetWorkspaceInfo(FString& OutBranchName, FString& OutRepositoryName, FStrin
 	}
 
 	return bResult;
+}
+
+bool RunCheckConnection(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutInfoMessages, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Parameters;
+	if (PlasticSourceControlUtils::GetWorkspaceInfo(OutBranchName, OutRepositoryName, OutServerUrl, OutErrorMessages))
+	{
+		Parameters.Add(FString::Printf(TEXT("--server=%s"), *OutServerUrl));
+	}
+	return PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), Parameters, TArray<FString>(), OutInfoMessages, OutErrorMessages);
 }
 
 FString UserNameToDisplayName(const FString& InUserName)
