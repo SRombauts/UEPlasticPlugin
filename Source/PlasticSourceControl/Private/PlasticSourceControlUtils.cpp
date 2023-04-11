@@ -260,13 +260,13 @@ static bool ParseWorkspaceInfo(const TArray<FString>& InResults, FString& OutBra
 	return true;
 }
 
-bool GetWorkspaceInfo(FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages)
+bool GetWorkspaceInfo(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Results;
 	bool bResult = RunCommand(TEXT("workspaceinfo"), TArray<FString>(), TArray<FString>(), Results, OutErrorMessages);
 	if (bResult)
 	{
-		bResult = ParseWorkspaceInfo(Results, OutRepositoryName, OutServerUrl, OutBranchName);
+		bResult = ParseWorkspaceInfo(Results, OutBranchName, OutRepositoryName, OutServerUrl);
 	}
 
 	return bResult;
