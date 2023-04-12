@@ -217,7 +217,7 @@ bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FS
 	return bResult;
 }
 
-static bool ParseWorkspaceInfo(const TArray<FString>& InResults, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
+static bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
 {
 	if (InResults.Num() == 0)
 	{
@@ -227,34 +227,52 @@ static bool ParseWorkspaceInfo(const TArray<FString>& InResults, FString& OutBra
 	// Get workspace information, in the form "Branch /main@UE5PlasticPluginDev@localhost:8087"
 	//                                     or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected directly to the cloud)
 	//                                     or "Branch /main@rep:UE5OpenWorldPerfTest@repserver:test@cloud"
+	//                                     or "Changeset 1234@UE5PlasticPluginDev@test@cloud" (when the workspace is switched on a changeset instead of a branch)
 	static const FString BranchPrefix(TEXT("Branch "));
-	if (!InResults[0].StartsWith(BranchPrefix, ESearchCase::CaseSensitive))
-	{
-		return false;
-	}
-	FString Temp = InResults[0].RightChop(BranchPrefix.Len());
-	int32 SeparatorIndex;
-	if (!Temp.FindChar(TEXT('@'), SeparatorIndex))
-	{
-		return false;
-	}
-	OutBranchName = Temp.Left(SeparatorIndex);
-	Temp.RightChopInline(SeparatorIndex + 1);
-	if (!Temp.FindChar(TEXT('@'), SeparatorIndex))
-	{
-		return false;
-	}
-	OutRepositoryName = Temp.Left(SeparatorIndex);
+	static const FString ChangesetPrefix(TEXT("Changeset "));
 	static const FString RepPrefix(TEXT("rep:"));
-	if (OutRepositoryName.StartsWith(RepPrefix, ESearchCase::CaseSensitive))
-	{
-		OutRepositoryName.RightChopInline(RepPrefix.Len());
-	}
-	OutServerUrl = Temp.RightChop(SeparatorIndex + 1);
 	static const FString RepserverPrefix(TEXT("repserver:"));
-	if (OutServerUrl.StartsWith(RepserverPrefix, ESearchCase::CaseSensitive))
+	FString& WorkspaceInfo = InResults[0];
+	if (WorkspaceInfo.StartsWith(BranchPrefix, ESearchCase::CaseSensitive))
 	{
-		OutServerUrl.RightChopInline(RepserverPrefix.Len());
+		WorkspaceInfo.RightChopInline(BranchPrefix.Len());
+	}
+	else if (WorkspaceInfo.StartsWith(ChangesetPrefix, ESearchCase::CaseSensitive))
+	{
+		WorkspaceInfo.RightChopInline(ChangesetPrefix.Len());
+	}
+	else 
+	{
+		return false;
+	}
+
+	TArray<FString> WorkspaceInfos;
+	WorkspaceInfo.ParseIntoArray(WorkspaceInfos, TEXT("@"), false); // Don't cull empty values
+	if (WorkspaceInfos.Num() >= 3)
+	{
+		OutBranchName = MoveTemp(WorkspaceInfos[0]);
+		OutRepositoryName = MoveTemp(WorkspaceInfos[1]);
+		OutServerUrl = MoveTemp(WorkspaceInfos[2]);
+		
+		if (OutRepositoryName.StartsWith(RepPrefix, ESearchCase::CaseSensitive))
+		{
+			OutRepositoryName.RightChopInline(RepPrefix.Len());
+		}
+		
+		if (OutServerUrl.StartsWith(RepserverPrefix, ESearchCase::CaseSensitive))
+		{
+			OutServerUrl.RightChopInline(RepserverPrefix.Len());
+		}
+
+		if (WorkspaceInfos.Num() >= 3)
+		{
+			OutServerUrl.Append(TEXT("@"));
+			OutServerUrl.Append(MoveTemp(WorkspaceInfos[3]));
+		}
+	}
+	else
+	{
+		return false;
 	}
 
 	return true;
