@@ -485,7 +485,7 @@ static EWorkspaceState StateFromStatusResult(const FString& InResult, const bool
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("Unknown file status '%s' (in line '%s')"), *FileStatus, *InResult);
+		UE_LOG(LogSourceControl, Warning, TEXT("%s"), *InResult);
 		State = EWorkspaceState::Unknown;
 	}
 
