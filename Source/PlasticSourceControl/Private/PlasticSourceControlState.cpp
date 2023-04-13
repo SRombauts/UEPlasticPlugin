@@ -406,7 +406,7 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 	case EWorkspaceState::Copied:
 		return LOCTEXT("Copied_Tooltip", "Copied");
 	case EWorkspaceState::Replaced:
-		return LOCTEXT("Replaced_Tooltip", "Replaced: merge conflict resolved");
+		return LOCTEXT("Replaced_Tooltip", "Replaced (merged)");
 	case EWorkspaceState::Deleted:
 		return LOCTEXT("Deleted_Tooltip", "Deleted");
 	case EWorkspaceState::LocallyDeleted:
