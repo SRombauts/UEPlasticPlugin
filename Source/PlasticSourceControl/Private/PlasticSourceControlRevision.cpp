@@ -2,7 +2,6 @@
 
 #include "PlasticSourceControlRevision.h"
 #include "PlasticSourceControlModule.h"
-#include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlSettings.h"
@@ -52,8 +51,6 @@ bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Ty
 	}
 	else if (State)
 	{
-		const FString& PathToPlasticBinary = FPlasticSourceControlModule::Get().GetProvider().AccessSettings().GetBinaryPath();
-
 		FString RevisionSpecification;
 		if (ShelveId != ISourceControlState::INVALID_REVISION)
 		{
@@ -66,7 +63,7 @@ bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Ty
 			// Format the revision specification of the checked-in file, like rev:Content/BP.uasset#cs:12@repo@server:8087
 			RevisionSpecification = FString::Printf(TEXT("rev:%s#cs:%d@%s"), *Filename, ChangesetNumber, *State->RepSpec);
 		}
-		bCommandSuccessful = PlasticSourceControlUtils::RunDumpToFile(PathToPlasticBinary, RevisionSpecification, InOutFilename);
+		bCommandSuccessful = PlasticSourceControlUtils::RunGetFile(RevisionSpecification, InOutFilename);
 	}
 	else
 	{

@@ -12,7 +12,6 @@
 #include "PlasticSourceControlVersions.h"
 #include "ISourceControlModule.h"
 
-#include "HAL/PlatformProcess.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "XmlParser.h"
@@ -1142,30 +1141,20 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EStatusSearchType InS
 	return bResults;
 }
 
-// Run a Plastic "cat" command to dump the binary content of a revision into a file.
-// cm cat revid:1230@rep:myrep@repserver:myserver:8084 --raw --file=Name124.tmp
-bool RunDumpToFile(const FString& InPathToPlasticBinary, const FString& InRevSpec, const FString& InDumpFileName)
+// Run a "getfile" command to dump the binary content of a revision into a file.
+bool RunGetFile(const FString& InRevSpec, const FString& InDumpFileName)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunDumpToFile);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunGetFile);
 
 	int32	ReturnCode = 0;
 	FString Results;
 	FString Errors;
 
-	// start with the Plastic command itself, then add revspec and temp filename to dump
-	FString FullCommand = TEXT("cat \"");
-	FullCommand += InRevSpec;
-	FullCommand += TEXT("\" --raw --file=\"");
-	FullCommand += InDumpFileName;
-	FullCommand += TEXT("\"");
-
-	UE_LOG(LogSourceControl, Verbose, TEXT("RunDumpToFile: '%s %s'"), *InPathToPlasticBinary, *FullCommand);
-	const bool bResult = FPlatformProcess::ExecProcess(*InPathToPlasticBinary, *FullCommand, &ReturnCode, &Results, &Errors);
-	UE_LOG(LogSourceControl, Log, TEXT("RunDumpToFile: ExecProcess ReturnCode=%d Results='%s'"), ReturnCode, *Results);
-	if (!bResult || !Errors.IsEmpty())
-	{
-		UE_LOG(LogSourceControl, Error, TEXT("RunDumpToFile: ExecProcess ReturnCode=%d Errors='%s'"), ReturnCode, *Errors);
-	}
+	TArray<FString> Parameters;
+	Parameters.Add(InRevSpec);
+	Parameters.Add(TEXT("--raw"));
+	Parameters.Add(FString::Printf(TEXT("--file=\"%s\""), *InDumpFileName));
+	const bool bResult = PlasticSourceControlUtils::RunCommand(TEXT("getfile"), Parameters, TArray<FString>(), Results, Errors);
 
 	return bResult;
 }
