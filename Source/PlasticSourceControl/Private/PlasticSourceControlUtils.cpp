@@ -359,7 +359,7 @@ static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool b
 	{
 		State = EWorkspaceState::LocallyDeleted; // Locally Deleted (ie. missing)
 	}
-	else if ((InFileStatus == "MV") || (InFileStatus == "CO+CH+MV"))
+	else if ((InFileStatus == "MV") || (InFileStatus == "CO+MV") || (InFileStatus == "CO+CH+MV") || (InFileStatus == "CO+RP+MV"))
 	{
 		State = EWorkspaceState::Moved; // Moved/Renamed
 	}
