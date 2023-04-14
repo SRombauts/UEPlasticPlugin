@@ -265,11 +265,16 @@ FString UserNameToDisplayName(const FString& InUserName)
 
 /**
 * Parse the current changeset from the header returned by "cm status --machinereadable --header --fieldseparator=;"
+*
+* Get workspace status in one of the form
+STATUS;41;UEPlasticPluginDev;localhost:8087
+STATUS;41;UEPlasticPluginDev;test@cloud
+*
+* @note The semicolon (";") that is used as filedseparator can also be used in the name of a repository.
+*       This wouldn't be an issue with the current code, but we have to keep that in mind for future evolutions.
 */
 static bool GetChangesetFromWorkspaceStatus(const TArray<FString>& InResults, int32& OutChangeset)
 {
-	// Get workspace status, in the form "STATUS;41;UEPlasticPlugin;localhost:8087" (disabled by the "--nostatus" flag)
-	//                                or "STATUS;41;UEPlasticPlugin;SRombauts@cloud" (when connected directly to the cloud)
 	if (InResults.Num() > 0)
 	{
 		const FString& WorkspaceStatus = InResults[0];
@@ -292,21 +297,7 @@ static bool GetChangesetFromWorkspaceStatus(const TArray<FString>& InResults, in
  * @param bInUsesCheckedOutChanged If using the new --iscochanged "CO+CH"
  * @return EWorkspaceState
  *
- * Examples of status results:
- CH Content\Changed_BP.uasset
- CO Content\CheckedOutUnchanged_BP.uasset
- CO+CH Content\CheckedOutChanged_BP.uasset
- CP Content\Copied_BP.uasset
- RP Content\Replaced_BP.uasset
- AD Content\Added_BP.uasset
- PR Content\Private_BP.uasset
- IG Content\Ignored_BP.uasset
- DE Content\Deleted_BP.uasset
- LD Content\Deleted2_BP.uasset
- MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
- LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
- *
- * empty string = unmodified/controlled or hidden changes
+ * @see #ParseFileStatusResult() for examples of results from "cm status --machinereadable"
 */
 static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool bInUsesCheckedOutChanged)
 {
@@ -384,6 +375,8 @@ static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool b
  * Examples:
 CO+CH;c:\Workspace\UEPlasticPluginDev\Content\Blueprints\CE_Game.uasset;False;NO_MERGES
 MV;100%;c:\Workspace\UEPlasticPluginDev\Content\Blueprints\BP_ToRename.uasset;c:\Workspace\UEPlasticPluginDev\Content\Blueprints\BP_Renamed.uasset;False;NO_MERGES
+ *
+ * @see #ParseFileStatusResult() for more examples of results from "cm status --machinereadable"
 */
 static FPlasticSourceControlState StateFromStatusResult(const FString& InResult, const bool bInUsesCheckedOutChanged)
 {
@@ -418,26 +411,26 @@ static FPlasticSourceControlState StateFromStatusResult(const FString& InResult,
  * This is the most common scenario, for any operation from the Content Browser or the View Changes window.
  * 
  * In this case, iterates on the list of files the Editor provides,
- * searching corresponding file status from the array of strings results of a 'status' command.
+ * searching corresponding file status from the array of strings results of a "status" command.
  *
  * @param[in]	InFiles		List of files in a directory (never empty).
  * @param[in]	InResults	Lines of results from the "status" command
  * @param[out]	OutStates	States of files for witch the status has been gathered
  *
- * Example cm status results:
- CH Content\Changed_BP.uasset
- CO Content\CheckedOut_BP.uasset
- CP Content\Copied_BP.uasset
- RP Content\Replaced_BP.uasset
- AD Content\Added_BP.uasset
- PR Content\Private_BP.uasset
- IG Content\Ignored_BP.uasset
- DE Content\Deleted_BP.uasset
- LD Content\Deleted2_BP.uasset
- MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
- LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
+ * Example of results from "cm status --machinereadable"
+CH;c:\Workspace\UEPlasticPluginDev\Content\Changed_BP.uasset;False;NO_MERGES
+CO;c:\Workspace\UEPlasticPluginDev\Content\CheckedOutUnchanged_BP.uasset;False;NO_MERGES
+CO+CH;c:\Workspace\UEPlasticPluginDev\Content\CheckedOutChanged_BP.uasset;False;NO_MERGES
+CO+CP;c:\Workspace\UEPlasticPluginDev\Content\Copied_BP.uasset;False;NO_MERGES
+CO+RP;c:\Workspace\UEPlasticPluginDev\Content\Replaced_BP.uasset;False;NO_MERGES
+AD;c:\Workspace\UEPlasticPluginDev\Content\Added_BP.uasset;False;NO_MERGES
+PR;c:\Workspace\UEPlasticPluginDev\Content\Private_BP.uasset;False;NO_MERGES
+IG;c:\Workspace\UEPlasticPluginDev\Content\Ignored_BP.uasset;False;NO_MERGES
+DE;c:\Workspace\UEPlasticPluginDev\Content\Deleted_BP.uasset;False;NO_MERGES
+LD;c:\Workspace\UEPlasticPluginDev\Content\Deleted2_BP.uasset;False;NO_MERGES
+MV;100%;c:\Workspace\UEPlasticPluginDev\Content\ToMove_BP.uasset;c:\Workspace\UEPlasticPluginDev\Content\Moved_BP.uasset
  *
- * @see ParseDirectoryStatusResult() that use a different parse logic
+ * @see #ParseDirectoryStatusResult() that use a different parse logic
  */
 static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
@@ -511,12 +504,12 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
  * from the global source control menu.
  * 
  * In this case, as there is no file list to iterate over,
- * just parse each line of the array of strings results from the 'status' command.
+ * just parse each line of the array of strings results from the "status" command.
  *
  * @param[in]	InResults	Lines of results from the "status" command
  * @param[out]	OutStates	States of files for witch the status has been gathered
  *
- * @see #ParseFileStatusResult() above for an example of a cm status results
+ * @see #ParseFileStatusResult() above for an example of a results from "cm status --machinereadable"
 */
 static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
