@@ -27,6 +27,8 @@
 namespace PlasticSourceControlUtils
 {
 
+#define FILE_STATUS_SEPARATOR TEXT(";")
+
 // Run a command and return the result as raw strings
 bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
 {
@@ -159,65 +161,7 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName,
 	return bResult;
 }
 
-static bool ParseWorkspaceInformation(const TArray<FString>& InResults, int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName)
-{
-	bool bResult = true;
-
-	// Get workspace status, in the form "cs:41@rep:UEPlasticPlugin@repserver:localhost:8087" (disabled by the "--nostatus" flag)
-	//                                or "cs:41@rep:UEPlasticPlugin@repserver:SRombauts@cloud" (when connected directly to the cloud)
-	if (InResults.Num() > 0)
-	{
-		static const FString ChangesetPrefix(TEXT("cs:"));
-		static const FString RepPrefix(TEXT("@rep:"));
-		static const FString ServerPrefix(TEXT("@repserver:"));
-		const FString& WorkspaceStatus = InResults[0];
-		const int32 RepIndex = WorkspaceStatus.Find(RepPrefix, ESearchCase::CaseSensitive);
-		const int32 ServerIndex = WorkspaceStatus.Find(ServerPrefix, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
-		if ((RepIndex > INDEX_NONE) && (ServerIndex > INDEX_NONE))
-		{
-			const FString ChangesetString = WorkspaceStatus.Mid(ChangesetPrefix.Len(), RepIndex - ChangesetPrefix.Len());
-			OutChangeset = FCString::Atoi(*ChangesetString);
-			OutRepositoryName = WorkspaceStatus.Mid(RepIndex + RepPrefix.Len(), ServerIndex - RepIndex - RepPrefix.Len());
-			OutServerUrl = WorkspaceStatus.RightChop(ServerIndex + ServerPrefix.Len());
-		}
-		else
-		{
-			bResult = false;
-		}
-	}
-	// Get the branch name, in the form "Branch /main@UE5PlasticPluginDev@test@cloud" (enabled by the "--wkconfig" flag)
-	if (InResults.Num() > 1)
-	{
-		static const FString BranchPrefix(TEXT("Branch "));
-		const FString& BranchInfo = InResults[1];
-		const int32 BranchIndex = BranchInfo.Find(BranchPrefix, ESearchCase::CaseSensitive);
-		if (BranchIndex > INDEX_NONE)
-		{
-			OutBranchName = BranchInfo;
-		}
-	}
-
-	return bResult;
-}
-
-bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages)
-{
-	TArray<FString> Results;
-	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--compact"));
-	Parameters.Add(TEXT("--header")); // Only prints the workspace status. No file status.
-	// NOTE: --wkconfig results in two network calls GetBranchInfoByName & GetLastChangesetOnBranch so it's okay to do it once here but not all the time
-	Parameters.Add(TEXT("--wkconfig")); // Branch name. NOTE: Deprecated in 8.0.16.3000 https://www.plasticscm.com/download/releasenotes/8.0.16.3000
-	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), Results, OutErrorMessages);
-	if (bResult)
-	{
-		bResult = ParseWorkspaceInformation(Results, OutChangeset, OutRepositoryName, OutServerUrl, OutBranchName);
-	}
-
-	return bResult;
-}
-
-static bool ParseWorkspaceInfo(const TArray<FString>& InResults, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
+static bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
 {
 	if (InResults.Num() == 0)
 	{
@@ -227,49 +171,77 @@ static bool ParseWorkspaceInfo(const TArray<FString>& InResults, FString& OutBra
 	// Get workspace information, in the form "Branch /main@UE5PlasticPluginDev@localhost:8087"
 	//                                     or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected directly to the cloud)
 	//                                     or "Branch /main@rep:UE5OpenWorldPerfTest@repserver:test@cloud"
+	//                                     or "Changeset 1234@UE5PlasticPluginDev@test@cloud" (when the workspace is switched on a changeset instead of a branch)
 	static const FString BranchPrefix(TEXT("Branch "));
-	if (!InResults[0].StartsWith(BranchPrefix, ESearchCase::CaseSensitive))
-	{
-		return false;
-	}
-	FString Temp = InResults[0].RightChop(BranchPrefix.Len());
-	int32 SeparatorIndex;
-	if (!Temp.FindChar(TEXT('@'), SeparatorIndex))
-	{
-		return false;
-	}
-	OutBranchName = Temp.Left(SeparatorIndex);
-	Temp.RightChopInline(SeparatorIndex + 1);
-	if (!Temp.FindChar(TEXT('@'), SeparatorIndex))
-	{
-		return false;
-	}
-	OutRepositoryName = Temp.Left(SeparatorIndex);
+	static const FString ChangesetPrefix(TEXT("Changeset "));
 	static const FString RepPrefix(TEXT("rep:"));
-	if (OutRepositoryName.StartsWith(RepPrefix, ESearchCase::CaseSensitive))
-	{
-		OutRepositoryName.RightChopInline(RepPrefix.Len());
-	}
-	OutServerUrl = Temp.RightChop(SeparatorIndex + 1);
 	static const FString RepserverPrefix(TEXT("repserver:"));
-	if (OutServerUrl.StartsWith(RepserverPrefix, ESearchCase::CaseSensitive))
+	FString& WorkspaceInfo = InResults[0];
+	if (WorkspaceInfo.StartsWith(BranchPrefix, ESearchCase::CaseSensitive))
 	{
-		OutServerUrl.RightChopInline(RepserverPrefix.Len());
+		WorkspaceInfo.RightChopInline(BranchPrefix.Len());
+	}
+	else if (WorkspaceInfo.StartsWith(ChangesetPrefix, ESearchCase::CaseSensitive))
+	{
+		WorkspaceInfo.RightChopInline(ChangesetPrefix.Len());
+	}
+	else 
+	{
+		return false;
+	}
+
+	TArray<FString> WorkspaceInfos;
+	WorkspaceInfo.ParseIntoArray(WorkspaceInfos, TEXT("@"), false); // Don't cull empty values
+	if (WorkspaceInfos.Num() >= 3)
+	{
+		OutBranchName = MoveTemp(WorkspaceInfos[0]);
+		OutRepositoryName = MoveTemp(WorkspaceInfos[1]);
+		OutServerUrl = MoveTemp(WorkspaceInfos[2]);
+		
+		if (OutRepositoryName.StartsWith(RepPrefix, ESearchCase::CaseSensitive))
+		{
+			OutRepositoryName.RightChopInline(RepPrefix.Len());
+		}
+		
+		if (OutServerUrl.StartsWith(RepserverPrefix, ESearchCase::CaseSensitive))
+		{
+			OutServerUrl.RightChopInline(RepserverPrefix.Len());
+		}
+
+		if (WorkspaceInfos.Num() >= 3)
+		{
+			OutServerUrl.Append(TEXT("@"));
+			OutServerUrl.Append(MoveTemp(WorkspaceInfos[3]));
+		}
+	}
+	else
+	{
+		return false;
 	}
 
 	return true;
 }
 
-bool GetWorkspaceInfo(FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages)
+bool GetWorkspaceInfo(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Results;
 	bool bResult = RunCommand(TEXT("workspaceinfo"), TArray<FString>(), TArray<FString>(), Results, OutErrorMessages);
 	if (bResult)
 	{
-		bResult = ParseWorkspaceInfo(Results, OutRepositoryName, OutServerUrl, OutBranchName);
+		bResult = ParseWorkspaceInfo(Results, OutBranchName, OutRepositoryName, OutServerUrl);
 	}
 
 	return bResult;
+}
+
+bool RunCheckConnection(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutInfoMessages, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Parameters;
+	if (PlasticSourceControlUtils::GetWorkspaceInfo(OutBranchName, OutRepositoryName, OutServerUrl, OutErrorMessages))
+	{
+		Parameters.Add(FString::Printf(TEXT("--server=%s"), *OutServerUrl));
+	}
+	return PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), Parameters, TArray<FString>(), OutInfoMessages, OutErrorMessages);
 }
 
 FString UserNameToDisplayName(const FString& InUserName)
@@ -290,150 +262,52 @@ FString UserNameToDisplayName(const FString& InUserName)
 	return InUserName;
 }
 
-/**
- * @brief Extract the renamed from filename from a cm "status" result.
- *
- * Examples of status results (note that it always state "100%"):
- MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
- *
- * @param[in] InResult One line of status
- * @return Renamed from filename extracted from the line of status
- *
- * @see FilenameFromStatusResult()
- */
-static FString RenamedFromStatusResult(const FString& InResult)
-{
-	FString RenamedFrom;
-	int32 RenameIndex;
-	if (InResult.FindLastChar(TEXT('>'), RenameIndex))
-	{
-		// Extract only the first part of a rename "from -> to" (after the 2 letters status and the 100%)
-		RenamedFrom = InResult.Mid(9, RenameIndex - 9 - 2);
-	}
-	return RenamedFrom;
-}
 
 /**
- * @brief Extract the relative filename from a cm "status" result.
- *
- * Examples of status results:
- CO Content\CheckedOutUnchanged_BP.uasset
- CO+CH Content\CheckedOutChanged_BP.uasset
- CO Content\Merged_BP.uasset (Merge from 140)
- MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
- *
- * @param[in] InResult One line of status
- * @return Relative filename extracted from the line of status
- *
- * @see RenamedFromStatusResult, FPlasticStatusFileMatcher and StateFromStatus()
- */
-static FString FilenameFromStatusResult(const FString& InResult)
+* Parse the current changeset from the header returned by "cm status --machinereadable --header --fieldseparator=;"
+*
+* Get workspace status in one of the form
+STATUS;41;UEPlasticPluginDev;localhost:8087
+STATUS;41;UEPlasticPluginDev;test@cloud
+*
+* @note The semicolon (";") that is used as filedseparator can also be used in the name of a repository.
+*       This wouldn't be an issue with the current code, but we have to keep that in mind for future evolutions.
+*/
+static bool GetChangesetFromWorkspaceStatus(const TArray<FString>& InResults, int32& OutChangeset)
 {
-	FString RelativeFilename;
-	int32 RenameIndex;
-	if (InResult.FindLastChar(TEXT('>'), RenameIndex))
+	if (InResults.Num() > 0)
 	{
-		// Extract only the second part of a rename "from -> to"
-		RelativeFilename = InResult.RightChop(RenameIndex + 2);
-	}
-	else
-	{
-		// Find the second space after the 2-to-5 letters status (eg " CO " or " CO+CH ") to remove it
-		const int32 SpaceIndex = InResult.Find(TEXT(" "), ESearchCase::CaseSensitive, ESearchDir::FromStart, 1);
-		if (SpaceIndex != INDEX_NONE)
+		const FString& WorkspaceStatus = InResults[0];
+		TArray<FString> WorkspaceInfos;
+		WorkspaceStatus.ParseIntoArray(WorkspaceInfos, FILE_STATUS_SEPARATOR, false); // Don't cull empty values in csv
+		if (WorkspaceInfos.Num() >= 4)
 		{
-			RelativeFilename = InResult.RightChop(SpaceIndex + 1);
-		}
-
-		// Search if the filename is followed by a "Merged from" annotation, to remove it
-		const int32 MergeIndex = RelativeFilename.Find(TEXT(" (Merge from "), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
-		if (MergeIndex != INDEX_NONE)
-		{
-			RelativeFilename.LeftInline(MergeIndex);
+			OutChangeset = FCString::Atoi(*WorkspaceInfos[1]);
+			return true;
 		}
 	}
 
-	return RelativeFilename;
+	return false;
 }
 
 /**
- * @brief Match the relative filename of a cm "status" result with a provided absolute filename
+ * Interpret the 2-to-8 letters file status from the given cm "status" result.
  *
- * Examples of status results:
- CO Content\CheckedOut_BP.uasset
- MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
- */
-class FPlasticStatusFileMatcher
-{
-public:
-	explicit FPlasticStatusFileMatcher(const FString& InAbsoluteFilename)
-		: AbsoluteFilename(InAbsoluteFilename)
-	{
-	}
-
-	bool operator()(const FString& InResult) const
-	{
-		return AbsoluteFilename.Contains(FilenameFromStatusResult(InResult));
-	}
-
-private:
-	const FString& AbsoluteFilename;
-};
-
-/**
- * Extract the 2-to-5 letters file status from the given cm "status" result.
- *
- * @param InResult One line of status from a "status" command
- * @return the 2-to-5 letters file status
- *
- * @see StateFromStatusResult for examples
- */
-static FString StatusFromResult(const FString& InResult)
-{
-	// Find the second space after the 2-to-5 letters status (eg " CO " or " CO+CH ")
-	const int32 SpaceIndex = InResult.Find(TEXT(" "), ESearchCase::CaseSensitive, ESearchDir::FromStart, 1);
-	if (SpaceIndex > 1)
-	{
-		return InResult.Mid(1, SpaceIndex - 1);
-	}
-
-	return FString();
-}
-
-/**
- * Extract and interpret the file state from the cm "status" result.
- *
- * @param InResult One line of status from a "status" command
+ * @param InFileStatus The 2-to-8 letters file status from the given cm "status" result
  * @param bInUsesCheckedOutChanged If using the new --iscochanged "CO+CH"
  * @return EWorkspaceState
  *
- * Examples of status results:
- CH Content\Changed_BP.uasset
- CO Content\CheckedOutUnchanged_BP.uasset
- CO+CH Content\CheckedOutChanged_BP.uasset
- CP Content\Copied_BP.uasset
- RP Content\Replaced_BP.uasset
- AD Content\Added_BP.uasset
- PR Content\Private_BP.uasset
- IG Content\Ignored_BP.uasset
- DE Content\Deleted_BP.uasset
- LD Content\Deleted2_BP.uasset
- MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
- LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
- *
- * empty string = unmodified/controlled or hidden changes
+ * @see #ParseFileStatusResult() for examples of results from "cm status --machinereadable"
 */
-static EWorkspaceState StateFromStatusResult(const FString& InResult, const bool bInUsesCheckedOutChanged)
+static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool bInUsesCheckedOutChanged)
 {
 	EWorkspaceState State;
 	
-	const FString FileStatus = StatusFromResult(InResult);
-
-	if (FileStatus == "CH") // Modified but not Checked-Out
+	if (InFileStatus == "CH") // Modified but not Checked-Out
 	{
 		State = EWorkspaceState::Changed;
 	}
-	else if (FileStatus == "CO") // Checked-Out with no change, or "don't know" if using on an old version of cm
+	else if (InFileStatus == "CO") // Checked-Out with no change, or "don't know" if using on an old version of cm
 	{
 		// Recent version can distinguish between CheckedOut with or with no changes
 		if (bInUsesCheckedOutChanged)
@@ -446,49 +320,89 @@ static EWorkspaceState StateFromStatusResult(const FString& InResult, const bool
 		}
 		
 	}
-	else if (FileStatus == "CO+CH") // Checked-Out and changed from the new --iscochanged
+	else if (InFileStatus == "CO+CH") // Checked-Out and changed from the new --iscochanged
 	{
 		State = EWorkspaceState::CheckedOutChanged; // Recent version; here it's checkedout with changes
 	}
-	else if (FileStatus == "CP")
+	else if ((InFileStatus == "CP") || (InFileStatus == "CO+CP"))
 	{
 		State = EWorkspaceState::Copied;
 	}
-	else if (FileStatus == "RP")
+	else if ((InFileStatus == "RP") || (InFileStatus == "CO+RP") || (InFileStatus == "CO+RP+CH"))
 	{
 		State = EWorkspaceState::Replaced;
 	}
-	else if (FileStatus == "AD")
+	else if (InFileStatus == "AD")
 	{
 		State = EWorkspaceState::Added;
 	}
-	else if ((FileStatus == "PR") || (FileStatus == "LM")) // Not Controlled/Not in Depot/Untracked (or Locally Moved/Renamed)
+	else if ((InFileStatus == "PR") || (InFileStatus == "LM")) // Not Controlled/Not in Depot/Untracked (or Locally Moved/Renamed)
 	{
 		State = EWorkspaceState::Private;
 	}
-	else if (FileStatus == "IG")
+	else if (InFileStatus == "IG")
 	{
 		State = EWorkspaceState::Ignored;
 	}
-	else if (FileStatus == "DE")
+	else if (InFileStatus == "DE")
 	{
 		State = EWorkspaceState::Deleted; // Deleted (removed from source control)
 	}
-	else if (FileStatus == "LD")
+	else if (InFileStatus == "LD")
 	{
 		State = EWorkspaceState::LocallyDeleted; // Locally Deleted (ie. missing)
 	}
-	else if (FileStatus == "MV")
+	else if ((InFileStatus == "MV") || (InFileStatus == "CO+MV") || (InFileStatus == "CO+CH+MV") || (InFileStatus == "CO+RP+MV"))
 	{
 		State = EWorkspaceState::Moved; // Moved/Renamed
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("%s"), *InResult);
+		UE_LOG(LogSourceControl, Warning, TEXT("Unknown file status '%s'"), *InFileStatus);
 		State = EWorkspaceState::Unknown;
 	}
 
 	return State;
+}
+
+/**
+ * Extract and interpret the file state from the cm "status" result.
+ *
+ * @param InResult One line of status from a "status" command
+ * @param bInUsesCheckedOutChanged If using the new --iscochanged "CO+CH"
+ * @return A workspace state
+ *
+ * Examples:
+CO+CH;c:\Workspace\UEPlasticPluginDev\Content\Blueprints\CE_Game.uasset;False;NO_MERGES
+MV;100%;c:\Workspace\UEPlasticPluginDev\Content\Blueprints\BP_ToRename.uasset;c:\Workspace\UEPlasticPluginDev\Content\Blueprints\BP_Renamed.uasset;False;NO_MERGES
+ *
+ * @see #ParseFileStatusResult() for more examples of results from "cm status --machinereadable"
+*/
+static FPlasticSourceControlState StateFromStatusResult(const FString& InResult, const bool bInUsesCheckedOutChanged)
+{
+	TArray<FString> ResultElements;
+	InResult.ParseIntoArray(ResultElements, FILE_STATUS_SEPARATOR, false); // Don't cull empty values in csv
+	if (ResultElements.Num() >= 4) // Note: should contain 4 or 6 elements (for moved files)
+	{
+		EWorkspaceState WorkspaceState = StateFromStatus(ResultElements[0], bInUsesCheckedOutChanged);
+		if (WorkspaceState == EWorkspaceState::Moved)
+		{
+			// Special case for an asset that has been moved/renamed
+			FString& File = ResultElements[3];
+			FPlasticSourceControlState State(MoveTemp(File), WorkspaceState);
+			State.MovedFrom = MoveTemp(ResultElements[2]);
+			return State;
+		}
+		else
+		{
+			FString& File = ResultElements[1];
+			return FPlasticSourceControlState(MoveTemp(File), WorkspaceState);
+		}
+	}
+
+	UE_LOG(LogSourceControl, Warning, TEXT("%s"), *InResult);
+
+	return FPlasticSourceControlState(FString());
 }
 
 /**
@@ -497,26 +411,26 @@ static EWorkspaceState StateFromStatusResult(const FString& InResult, const bool
  * This is the most common scenario, for any operation from the Content Browser or the View Changes window.
  * 
  * In this case, iterates on the list of files the Editor provides,
- * searching corresponding file status from the array of strings results of a 'status' command.
+ * searching corresponding file status from the array of strings results of a "status" command.
  *
  * @param[in]	InFiles		List of files in a directory (never empty).
  * @param[in]	InResults	Lines of results from the "status" command
  * @param[out]	OutStates	States of files for witch the status has been gathered
  *
- * Example cm status results:
- CH Content\Changed_BP.uasset
- CO Content\CheckedOut_BP.uasset
- CP Content\Copied_BP.uasset
- RP Content\Replaced_BP.uasset
- AD Content\Added_BP.uasset
- PR Content\Private_BP.uasset
- IG Content\Ignored_BP.uasset
- DE Content\Deleted_BP.uasset
- LD Content\Deleted2_BP.uasset
- MV 100% Content\ToMove_BP.uasset -> Content\Moved_BP.uasset
- LM 100% Content\ToMove2_BP.uasset -> Content\Moved2_BP.uasset
+ * Example of results from "cm status --machinereadable"
+CH;c:\Workspace\UEPlasticPluginDev\Content\Changed_BP.uasset;False;NO_MERGES
+CO;c:\Workspace\UEPlasticPluginDev\Content\CheckedOutUnchanged_BP.uasset;False;NO_MERGES
+CO+CH;c:\Workspace\UEPlasticPluginDev\Content\CheckedOutChanged_BP.uasset;False;NO_MERGES
+CO+CP;c:\Workspace\UEPlasticPluginDev\Content\Copied_BP.uasset;False;NO_MERGES
+CO+RP;c:\Workspace\UEPlasticPluginDev\Content\Replaced_BP.uasset;False;NO_MERGES
+AD;c:\Workspace\UEPlasticPluginDev\Content\Added_BP.uasset;False;NO_MERGES
+PR;c:\Workspace\UEPlasticPluginDev\Content\Private_BP.uasset;False;NO_MERGES
+IG;c:\Workspace\UEPlasticPluginDev\Content\Ignored_BP.uasset;False;NO_MERGES
+DE;c:\Workspace\UEPlasticPluginDev\Content\Deleted_BP.uasset;False;NO_MERGES
+LD;c:\Workspace\UEPlasticPluginDev\Content\Deleted2_BP.uasset;False;NO_MERGES
+MV;100%;c:\Workspace\UEPlasticPluginDev\Content\ToMove_BP.uasset;c:\Workspace\UEPlasticPluginDev\Content\Moved_BP.uasset
  *
- * @see ParseDirectoryStatusResult() that use a different parse logic
+ * @see #ParseDirectoryStatusResult() that use a different parse logic
  */
 static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
@@ -526,6 +440,15 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
 	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
+	// Parse the list of status results in a map indexed by absolute filename	
+	TMap<FString, FPlasticSourceControlState> FileToStateMap;
+	FileToStateMap.Reserve(InResults.Num());
+	for (const FString& InResult : InResults)
+	{
+		FPlasticSourceControlState State = StateFromStatusResult(InResult, bUsesCheckedOutChanged);
+		FileToStateMap.Add(State.LocalFilename, MoveTemp(State));
+	}
+
 	// Iterate on each file explicitly listed in the command
 	for (FString& InFile : InFiles)
 	{
@@ -533,18 +456,15 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 		const FString& File = FileState.LocalFilename;
 
 		// Search the file in the list of status
-		// NOTE: in case of rename by editor, there are two results: checked-out AND renamed
-		// => we want to get the second one, witch is always the rename, so we search from the end
-		int32 IdxResult = InResults.FindLastByPredicate(FPlasticStatusFileMatcher(File));
-		if (IdxResult != INDEX_NONE)
+		if (FPlasticSourceControlState* State = FileToStateMap.Find(File))
 		{
-			// File found in status results; only the case for "changed" files
-			FileState.WorkspaceState = StateFromStatusResult(InResults[IdxResult], bUsesCheckedOutChanged);
+			// File found in status results; only the case for "changed" (or checked-out) files
+			FileState.WorkspaceState = State->WorkspaceState;
 
 			// Extract the original name of a Moved/Renamed file
 			if (EWorkspaceState::Moved == FileState.WorkspaceState)
 			{
-				FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, RenamedFromStatusResult(InResults[IdxResult]));
+				FileState.MovedFrom = State->MovedFrom;
 			}
 		}
 		else
@@ -584,12 +504,12 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
  * from the global source control menu.
  * 
  * In this case, as there is no file list to iterate over,
- * just parse each line of the array of strings results from the 'status' command.
+ * just parse each line of the array of strings results from the "status" command.
  *
  * @param[in]	InResults	Lines of results from the "status" command
  * @param[out]	OutStates	States of files for witch the status has been gathered
  *
- * @see #ParseFileStatusResult() above for an example of a cm status results
+ * @see #ParseFileStatusResult() above for an example of a results from "cm status --machinereadable"
 */
 static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
@@ -600,23 +520,15 @@ static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<
 	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
 	// Iterate on each line of result of the status command
-	for (const FString& Result : InResults)
+	for (const FString& InResult : InResults)
 	{
-		const EWorkspaceState WorkspaceState = StateFromStatusResult(Result, bUsesCheckedOutChanged);
-		FString RelativeFilename = FilenameFromStatusResult(Result);
-		FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(WorkspaceRoot, MoveTemp(RelativeFilename));
-		FPlasticSourceControlState FileState(MoveTemp(AbsoluteFilename));
-		FileState.WorkspaceState = WorkspaceState;
-
-		// Extract the original name of a Moved/Renamed file
-		if (EWorkspaceState::Moved == FileState.WorkspaceState)
+		FPlasticSourceControlState FileState = StateFromStatusResult(InResult, bUsesCheckedOutChanged);
+		if (!FileState.LocalFilename.IsEmpty())
 		{
-			FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, RenamedFromStatusResult(Result));
+			UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.LocalFilename, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
+
+			OutStates.Add(MoveTemp(FileState));
 		}
-
-		UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.LocalFilename, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
-
-		OutStates.Add(MoveTemp(FileState));
 	}
 }
 
@@ -659,8 +571,8 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	check(InFiles.Num() > 0);
 
 	TArray<FString> Parameters;
-	Parameters.Add(TEXT("--compact"));
-	Parameters.Add(TEXT("--noheaders"));
+	Parameters.Add(TEXT("--machinereadable"));
+	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
 	if (InSearchType == EStatusSearchType::All)
 	{
 		// NOTE: don't use "--all" to avoid searching for --localmoved since it's the most time consuming (beside --changed)
@@ -705,11 +617,10 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	OutErrorMessages.Append(MoveTemp(ErrorMessages));
 	if (bResult)
 	{
-		// Parse the first line of status with the Changeset number and remove it
+		// Parse the first line of status with the Changeset number, then remove it to work on a plain list of files
 		if (Results.Num() > 0)
 		{
-			FString RepositoryName, ServerUrl;
-			ParseWorkspaceInformation(Results, OutChangeset, RepositoryName, ServerUrl, OutBranchName);
+			GetChangesetFromWorkspaceStatus(Results, OutChangeset);
 			Results.RemoveAt(0, 1, false);
 		}
 
@@ -746,8 +657,8 @@ public:
 	explicit FPlasticFileinfoParser(const FString& InResult)
 	{
 		TArray<FString> Fileinfos;
-		const int32 NbElmts = InResult.ParseIntoArray(Fileinfos, TEXT(";"), false); // Don't cull empty values in csv
-		if (NbElmts == 5)
+		InResult.ParseIntoArray(Fileinfos, TEXT(";"), false); // Don't cull empty values in csv
+		if (Fileinfos.Num() == 5)
 		{
 			RevisionChangeset = FCString::Atoi(*Fileinfos[0]);
 			RevisionHeadChangeset = FCString::Atoi(*Fileinfos[1]);

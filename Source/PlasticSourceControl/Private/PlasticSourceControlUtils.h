@@ -59,7 +59,7 @@ bool GetConfigSetFilesAsReadOnly();
 void GetUserName(FString& OutUserName);
 
 /**
- * Get Plastic workspace name
+ * Get workspace name
  * @param	InWorkspaceRoot		The workspace from where to run the command - usually the Game directory
  * @param	OutWorkspaceName	Name of the current workspace
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
@@ -67,26 +67,25 @@ void GetUserName(FString& OutUserName);
 bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName, TArray<FString>& OutErrorMessages);
 
 /**
- * Get Plastic repository name and server URL, branch name and current changeset number
- * @param	OutChangeset		The current Changeset Number
- * @param	OutRepositoryName	Name of the repository of the current workspace
- * @param	OutServerUrl		URL/Port of the server of the repository
- * @param	OutBranchName		Name of the current checked-out branch
- * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
- */
-bool GetWorkspaceInformation(int32& OutChangeset, FString& OutRepositoryName, FString& OutServerUrl, FString& OutBranchName, TArray<FString>& OutErrorMessages);
-
-/**
- * Get Plastic repository name, server URL, and branch name
- *
- * Note: this is a local fast variant, not making network call to the server.
+ * Get workspace info: the current branch, repository name, and server URL
  * 
- * @param	OutBranchName		Name of the current checked-out branch
+ * @param	OutBranchName		Name of the current branch
  * @param	OutRepositoryName	Name of the repository of the current workspace
  * @param	OutServerUrl		URL/Port of the server of the repository
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  */
 bool GetWorkspaceInfo(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages);
+
+/**
+ * Get workspace info and check the connection to the server
+ *
+ * @param	OutBranchName		Name of the current branch
+ * @param	OutRepositoryName	Name of the repository of the current workspace
+ * @param	OutServerUrl		URL/Port of the server of the repository
+ * @param	OutInfoMessages		Result of the connection test
+ * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+ */
+bool RunCheckConnection(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutInfoMessages, TArray<FString>& OutErrorMessages);
 
 /**
  * Use the Project Settings to replace Unity Version Control full username/e-mail by a shorter version for display.
