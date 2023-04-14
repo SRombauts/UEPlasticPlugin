@@ -27,6 +27,8 @@
 namespace PlasticSourceControlUtils
 {
 
+#define FILE_STATUS_SEPARATOR TEXT(";")
+
 // Run a command and return the result as raw strings
 bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
 {
@@ -272,7 +274,7 @@ static bool GetChangesetFromWorkspaceStatus(const TArray<FString>& InResults, in
 	{
 		const FString& WorkspaceStatus = InResults[0];
 		TArray<FString> WorkspaceInfos;
-		WorkspaceStatus.ParseIntoArray(WorkspaceInfos, TEXT(";"), false); // Don't cull empty values in csv
+		WorkspaceStatus.ParseIntoArray(WorkspaceInfos, FILE_STATUS_SEPARATOR, false); // Don't cull empty values in csv
 		if (WorkspaceInfos.Num() >= 4)
 		{
 			OutChangeset = FCString::Atoi(*WorkspaceInfos[1]);
@@ -386,7 +388,7 @@ MV;100%;c:\Workspace\UEPlasticPluginDev\Content\Blueprints\BP_ToRename.uasset;c:
 static FPlasticSourceControlState StateFromStatusResult(const FString& InResult, const bool bInUsesCheckedOutChanged)
 {
 	TArray<FString> ResultElements;
-	InResult.ParseIntoArray(ResultElements, TEXT(";"), false); // Don't cull empty values in csv
+	InResult.ParseIntoArray(ResultElements, FILE_STATUS_SEPARATOR, false); // Don't cull empty values in csv
 	if (ResultElements.Num() >= 4) // Note: should contain 4 or 6 elements (for moved files)
 	{
 		EWorkspaceState WorkspaceState = StateFromStatus(ResultElements[0], bInUsesCheckedOutChanged);
@@ -577,7 +579,7 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--machinereadable"));
-	Parameters.Add(TEXT("--fieldseparator=;"));
+	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
 	if (InSearchType == EStatusSearchType::All)
 	{
 		// NOTE: don't use "--all" to avoid searching for --localmoved since it's the most time consuming (beside --changed)
