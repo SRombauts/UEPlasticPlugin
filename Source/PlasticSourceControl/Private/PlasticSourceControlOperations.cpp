@@ -910,7 +910,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FUpdateStatus>(InCommand.Operation);
 
 	// Note: ShouldCheckAllFiles is never set to true (SetCheckingAllFiles)
-	UE_LOG(LogSourceControl, Log, TEXT("status (of %d files, ShouldUpdateHistory=%d, ShouldGetOpenedOnly=%d, ShouldUpdateModifiedState=%d)"),
+	UE_LOG(LogSourceControl, Log, TEXT("status of %d items (ShouldUpdateHistory=%d, ShouldGetOpenedOnly=%d, ShouldUpdateModifiedState=%d)"),
 		InCommand.Files.Num(), Operation->ShouldUpdateHistory(), Operation->ShouldGetOpenedOnly(), Operation->ShouldUpdateModifiedState());
 
 	const TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
@@ -980,7 +980,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 	}
 	else
 	{
-		// TODO: workaround for the case of submitting a changelist, calling UpdateStatus with no files nor the changelist.
+		// Note: workaround for the case of submitting a changelist, calling UpdateStatus with no files nor the changelist.
 		// No consequences, and no way to fix it, so let's not show an error.
 		InCommand.bCommandSuccessful = true;
 	}
