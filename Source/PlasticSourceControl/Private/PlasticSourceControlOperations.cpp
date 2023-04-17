@@ -1943,7 +1943,7 @@ bool FPlasticShelveWorker::UpdateStates()
 		for (FString ShelvedFile : ShelvedFiles)
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = GetProvider().GetStateInternal(ShelvedFile);
-			PlasticSourceControlUtils::AddShelvedFileToChangelist(DestinationChangelistState.Get(), MoveTemp(ShelvedFile), FileState->WorkspaceState);
+			PlasticSourceControlUtils::AddShelvedFileToChangelist(DestinationChangelistState.Get(), MoveTemp(ShelvedFile), FileState->WorkspaceState, FString(FileState->MovedFrom));
 		}
 
 		return bMovedFiles || ShelvedFiles.Num() > 0;

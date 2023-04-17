@@ -1737,9 +1737,10 @@ EWorkspaceState ParseShelveFileStatus(const TCHAR InFileStatus)
 	}
 }
 
-void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState InShelveStatus)
+void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState InShelveStatus, FString&& InMovedFrom)
 {
 	TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> ShelveState = MakeShared<FPlasticSourceControlState>(MoveTemp(InFilename), InShelveStatus);
+	ShelveState->MovedFrom = MoveTemp(InMovedFrom);
 
 	// Add one revision to be able to fetch the shelved file for diff, if it's not marked for deletion.
 	if (InShelveStatus != EWorkspaceState::Deleted)
@@ -1791,12 +1792,16 @@ bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InR
 		
 		// Remove outer double quotes
 		Result.MidInline(3, Result.Len() - 4, false);
+
+		FString MovedFrom;
 		if (ShelveState == EWorkspaceState::Moved)
 		{
 			// Search for the inner double quotes in the middle of "Content/Source.uasset" "Content/Destination.uasset" to keep only the destination filename
 			int32 RenameIndex;
 			if (Result.FindLastChar(TEXT('"'), RenameIndex))
 			{
+				MovedFrom = Result.Left(RenameIndex - 2);
+				MovedFrom = FPaths::ConvertRelativePathToFull(InWorkspaceRoot, MovedFrom);
 				Result.RightChopInline(RenameIndex + 1);
 			}
 		}
@@ -1804,7 +1809,7 @@ bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InR
 		if (ShelveState != EWorkspaceState::Unknown && !Result.IsEmpty())
 		{
 			FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(InWorkspaceRoot, MoveTemp(Result));
-			AddShelvedFileToChangelist(InOutChangelistsState, MoveTemp(AbsoluteFilename), ShelveState);
+			AddShelvedFileToChangelist(InOutChangelistsState, MoveTemp(AbsoluteFilename), ShelveState, MoveTemp(MovedFrom));
 		}
 		else
 		{

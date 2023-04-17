@@ -203,8 +203,9 @@ bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDat
  * @param	InOutChangelistsState	The changelist to add the file to
  * @param	InFilename				The file to add to the shelve
  * @param	InShelveStatus			The status of the file
- */
-void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState InShelveStatus);
+ * @param	InMovedFrom				If moved, the original filename
+*/
+void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState InShelveStatus, FString&& InMovedFrom);
 
 #endif
 
