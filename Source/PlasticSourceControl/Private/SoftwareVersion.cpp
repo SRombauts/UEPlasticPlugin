@@ -5,14 +5,14 @@
 FSoftwareVersion::FSoftwareVersion(FString&& InVersionString)
 {
 	String = MoveTemp(InVersionString);
-	TArray<FString> Parts;
-	const int32 N = String.ParseIntoArray(Parts, TEXT("."));
-	if (N == 4)
+	TArray<FString> VersionElements;
+	String.ParseIntoArray(VersionElements, TEXT("."));
+	if (VersionElements.Num() == 4)
 	{
-		Major = FCString::Atoi(*Parts[0]);
-		Minor = FCString::Atoi(*Parts[1]);
-		Patch = FCString::Atoi(*Parts[2]);
-		Changeset = FCString::Atoi(*Parts[3]);
+		Major = FCString::Atoi(*VersionElements[0]);
+		Minor = FCString::Atoi(*VersionElements[1]);
+		Patch = FCString::Atoi(*VersionElements[2]);
+		Changeset = FCString::Atoi(*VersionElements[3]);
 	}
 }
 
