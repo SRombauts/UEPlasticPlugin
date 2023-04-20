@@ -515,4 +515,32 @@ protected:
 	int32 ShelveId = ISourceControlState::INVALID_REVISION;
 };
 
+class FPlasticGetChangelistDetailsWorker final : public IPlasticSourceControlWorker
+{
+public:
+	FPlasticGetChangelistDetailsWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticGetChangelistDetailsWorker() = default;
+
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+};
+
+class FPlasticGetFileWorker final : public IPlasticSourceControlWorker
+{
+public:
+	FPlasticGetFileWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticGetFileWorker() = default;
+
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+};
+
 #endif
