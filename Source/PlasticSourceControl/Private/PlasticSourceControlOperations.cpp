@@ -1924,6 +1924,7 @@ bool FPlasticShelveWorker::UpdateStates()
 		}
 
 		DestinationChangelistState->ShelveId = ShelveId;
+		DestinationChangelistState->ShelveDate = FDateTime::Now();
 
 		// And finally, add the shelved files to the changelist state
 		DestinationChangelistState->ShelvedFiles.Reset(ShelvedFiles.Num());
