@@ -135,7 +135,7 @@ static TArray<UPackage*> ListPackagesToReload(const TArray<FString>& InFiles)
 // Note: Extracted from AssetViewUtils::SyncPathsFromSourceControl()
 void ReloadPackages(TArray<UPackage*>& InPackages)
 {
-	UE_LOG(LogSourceControl, Log, TEXT("Reloading %d Packages..."), InPackages.Num());
+	UE_LOG(LogSourceControl, Verbose, TEXT("Reloading %d Packages..."), InPackages.Num());
 
 	// Syncing may have deleted some packages, so we need to unload those rather than re-load them...
 	// Note: we will store the package using weak pointers here otherwise we might have garbage collection issues after the ReloadPackages call
@@ -175,6 +175,10 @@ void ReloadPackages(const TArray<FString>& InFiles)
 	if (PackagesToReload.Num() > 0)
 	{
 		ReloadPackages(PackagesToReload);
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Verbose, TEXT("No package to reload"));
 	}
 }
 

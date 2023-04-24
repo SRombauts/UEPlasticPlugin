@@ -135,7 +135,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 		const bool bSaved = SaveDirtyPackages();
 		if (bSaved)
 		{
-			// Find and Unlink all packages in Content directory to allow to update them
+			// Find and Unlink all loaded packages in Content directory to allow to update them
 			PackageUtils::UnlinkPackages(ListAllPackages());
 
 			// Launch a custom "SyncAll" operation
@@ -356,7 +356,7 @@ void FPlasticSourceControlMenu::DisplaySucessNotification(const FName& InOperati
 	Info.Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
 #endif
 	FSlateNotificationManager::Get().AddNotification(Info);
-	UE_LOG(LogSourceControl, Log, TEXT("%s"), *NotificationText.ToString());
+	UE_LOG(LogSourceControl, Verbose, TEXT("%s"), *NotificationText.ToString());
 }
 
 // Display a temporary failure notification at the end of the operation
