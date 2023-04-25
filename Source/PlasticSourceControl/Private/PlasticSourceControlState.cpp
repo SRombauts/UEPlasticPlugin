@@ -330,9 +330,9 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	case EWorkspaceState::Controlled:
 		return LOCTEXT("Controlled", "Controlled");
 	case EWorkspaceState::CheckedOutChanged:
-		return LOCTEXT("CheckedOutChanged", "Checked-out (Changed)");
+		return LOCTEXT("CheckedOutChanged", "Checked-out (changed)");
 	case EWorkspaceState::CheckedOutUnchanged:
-		return LOCTEXT("CheckedOutUnchanged", "Checked-out (Unchanged)");
+		return LOCTEXT("CheckedOutUnchanged", "Checked-out (unchanged)");
 	case EWorkspaceState::Added:
 		return LOCTEXT("Added", "Added");
 	case EWorkspaceState::Moved:
@@ -342,9 +342,9 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	case EWorkspaceState::Replaced:
 		return LOCTEXT("Replaced", "Replaced");
 	case EWorkspaceState::Deleted:
-		return LOCTEXT("Deleted", "Deleted");
+		return LOCTEXT("Deleted", "Removed");
 	case EWorkspaceState::LocallyDeleted:
-		return LOCTEXT("LocallyDeleted", "Missing");
+		return LOCTEXT("LocallyDeleted", "Deleted locally");
 	case EWorkspaceState::Changed:
 		return LOCTEXT("Changed", "Changed");
 	case EWorkspaceState::Conflicted:
@@ -391,9 +391,9 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 	case EWorkspaceState::Controlled:
 		return FText();
 	case EWorkspaceState::CheckedOutChanged:
-		return LOCTEXT("CheckedOut_Tooltip", "Checked-out (Changed)");
+		return LOCTEXT("CheckedOut_Tooltip", "Checked-out (changed)");
 	case EWorkspaceState::CheckedOutUnchanged:
-		return LOCTEXT("CheckedOut_Tooltip", "Checked-out (Unchanged)");
+		return LOCTEXT("CheckedOut_Tooltip", "Checked-out (unchanged)");
 	case EWorkspaceState::Added:
 		return LOCTEXT("Added_Tooltip", "Added");
 	case EWorkspaceState::Moved:
@@ -408,11 +408,11 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 	case EWorkspaceState::Replaced:
 		return LOCTEXT("Replaced_Tooltip", "Replaced (merged)");
 	case EWorkspaceState::Deleted:
-		return LOCTEXT("Deleted_Tooltip", "Deleted");
+		return LOCTEXT("Deleted_Tooltip", "Removed");
 	case EWorkspaceState::LocallyDeleted:
-		return LOCTEXT("LocallyDeleted_Tooltip", "Locally Deleted");
+		return LOCTEXT("LocallyDeleted_Tooltip", "Deleted locally");
 	case EWorkspaceState::Changed:
-		return LOCTEXT("Modified_Tooltip", "Locally modified");
+		return LOCTEXT("Modified_Tooltip", "Changed locally");
 	case EWorkspaceState::Conflicted:
 		return FText::Format(LOCTEXT("Conflicted_Tooltip", "Conflict merging from source/remote CS:{0} into target/local CS:{1})"),
 			FText::AsNumber(PendingMergeSourceChangeset, &NoCommas), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
