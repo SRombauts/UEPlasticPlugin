@@ -24,7 +24,9 @@
 #include "Misc/MessageDialog.h"
 #include "HAL/PlatformProcess.h"
 #include "Misc/QueuedThreadPool.h"
+#if ENGINE_MAJOR_VERSION == 5
 #include "UObject/ObjectSaveContext.h"
+#endif
 #include "UObject/SavePackage.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
@@ -34,13 +36,21 @@ static FName ProviderName("Plastic SCM");
 FPlasticSourceControlProvider::FPlasticSourceControlProvider()
 {
 	PlasticSourceControlSettings.LoadSettings();
-	
+
+#if ENGINE_MAJOR_VERSION == 4
+	UPackage::PackageSavedEvent.AddRaw(this, &FPlasticSourceControlProvider::HandlePackageSaved);
+#elif ENGINE_MAJOR_VERSION == 5
 	UPackage::PackageSavedWithContextEvent.AddRaw(this, &FPlasticSourceControlProvider::HandlePackageSaved);
+#endif
 }
 
 FPlasticSourceControlProvider::~FPlasticSourceControlProvider()
 {
+#if ENGINE_MAJOR_VERSION == 4
+	UPackage::PackageSavedEvent.RemoveAll(this);
+#elif ENGINE_MAJOR_VERSION == 5
 	UPackage::PackageSavedWithContextEvent.RemoveAll(this);
+#endif
 }
 
 void FPlasticSourceControlProvider::Init(bool bForceConnection)
@@ -195,7 +205,11 @@ TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> FPlasticSo
 #endif
 
 // Note: called once for each asset being saved, which can be hundreds in the case of a map using One File Per Actor (OFPA) in UE5
+#if ENGINE_MAJOR_VERSION == 4
+void FPlasticSourceControlProvider::HandlePackageSaved(const FString& InPackageFilename, UObject* Outer)
+#else
 void FPlasticSourceControlProvider::HandlePackageSaved(const FString& InPackageFilename, UPackage* InPackage, FObjectPostSaveContext InObjectSaveContext)
+#endif
 {
 	const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(InPackageFilename);
 	auto FileState = GetStateInternal(AbsoluteFilename);
