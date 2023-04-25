@@ -232,7 +232,11 @@ private:
 	void UpdateWorkspaceStatus(const class FPlasticSourceControlCommand& InCommand);
 
 	/** Called after a package has been saved to disk, to update the source control cache */
+#if ENGINE_MAJOR_VERSION == 4
+	void HandlePackageSaved(const FString& InPackageFilename, UObject* Outer);
+#else
 	void HandlePackageSaved(const FString& InPackageFilename, UPackage* InPackage, FObjectPostSaveContext InObjectSaveContext);
+#endif
 
 	/** Version of the Unity Version Control executable used */
 	FSoftwareVersion PlasticScmVersion;
