@@ -1210,7 +1210,6 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 #endif
 				SourceControlRevision->State = &InOutState;
 				SourceControlRevision->Filename = Filename;
-				SourceControlRevision->RevisionId = Index + 1;
 
 				if (const FXmlNode* RevisionTypeNode = RevisionNode->FindChildNode(RevisionType))
 				{
