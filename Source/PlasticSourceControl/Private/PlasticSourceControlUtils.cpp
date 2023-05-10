@@ -1936,6 +1936,9 @@ bool RunGetShelves(TArray<FPlasticSourceControlChangelistState>& InOutChangelist
  *
  * Results of the diff command looks like that:
 C;666;Content\NewFolder\BP_CheckedOut.uasset
+ * but for Moved assets there are two entires that we need to merge:
+C;266;"Content\ThirdPerson\Blueprints\BP_ThirdPersonCharacterRenamed.uasset"
+M;-1;"Content\ThirdPerson\Blueprints\BP_ThirdPersonCharacterRenamed.uasset"
 */
 bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
@@ -1955,6 +1958,22 @@ bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InR
 			FString File = MoveTemp(ResultElements[2]);
 			File.MidInline(1, File.Len() - 2, false);
 			FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(InWorkspaceRoot, File);
+
+			if (ShelveState == EWorkspaceState::Moved)
+			{
+				// In case of a Moved file, it appears twice in the list, so update the first entry (set as a "Changed" but has the Base Revision Id) and update it with the "Move" status
+				if (FPlasticSourceControlState* ExistingShelveState = OutStates.FindByPredicate(
+					[&AbsoluteFilename](const FPlasticSourceControlState& State)
+					{
+						return State.GetFilename().Equals(AbsoluteFilename);
+					}))
+				{
+					check(ExistingShelveState->History.Num() == 1);
+					ExistingShelveState->History[0]->Action = FileStateToAction(EWorkspaceState::Moved);
+					continue;
+				}
+			}
+
 			FPlasticSourceControlState State(MoveTemp(AbsoluteFilename), ShelveState);
 			// Add one revision to be able to fetch the shelved file for diff.
 			{
