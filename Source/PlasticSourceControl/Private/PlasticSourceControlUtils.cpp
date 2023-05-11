@@ -262,7 +262,6 @@ FString UserNameToDisplayName(const FString& InUserName)
 	return InUserName;
 }
 
-
 /**
 * Parse the current changeset from the header returned by "cm status --machinereadable --header --fieldseparator=;"
 *
@@ -2013,6 +2012,7 @@ bool RunGetShelveFiles(const int32 InShelveId, TArray<FPlasticSourceControlState
 		TArray<FString> Parameters;
 		Parameters.Add(FString::Printf(TEXT("sh:%d"), InShelveId));
 		Parameters.Add(TEXT("--format=\"{status};{baserevid};{path}\""));
+		Parameters.Add(TEXT("--encoding=\"utf-8\""));
 		const bool bDiffSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("diff"), Parameters, TArray<FString>(), Results, OutErrorMessages);
 		if (bDiffSuccessful)
 		{
