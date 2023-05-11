@@ -25,10 +25,6 @@
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
-//TODO REVIEW
-UE_DISABLE_OPTIMIZATION
-
-
 template<typename Type>
 static FPlasticSourceControlWorkerRef InstantiateWorker(FPlasticSourceControlProvider& PlasticSourceControlProvider)
 {
@@ -2272,9 +2268,5 @@ bool FPlasticGetFileWorker::UpdateStates()
 }
 
 #endif
-
-
-//TODO REVIEW
-UE_ENABLE_OPTIMIZATION
 
 #undef LOCTEXT_NAMESPACE
