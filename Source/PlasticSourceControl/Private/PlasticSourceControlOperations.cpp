@@ -59,6 +59,9 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("Shelve", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticShelveWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Unshelve", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticUnshelveWorker>));
 	PlasticSourceControlProvider.RegisterWorker("DeleteShelved", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteShelveWorker>));
+
+	PlasticSourceControlProvider.RegisterWorker("GetChangelistDetails", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetChangelistDetailsWorker>));
+	PlasticSourceControlProvider.RegisterWorker("GetFile", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetFileWorker>));
 #endif
 }
 
@@ -2128,6 +2131,136 @@ bool FPlasticDeleteShelveWorker::UpdateStates()
 	{
 		return false;
 	}
+}
+
+// Copied from SSourceControlReview.cpp of the ChangelistReview Editor plugin
+namespace ReviewHelpers
+{
+	const FString FileDepotKey = TEXT("depotFile");
+	const FString FileRevisionKey = TEXT("rev");
+	const FString FileActionKey = TEXT("action");
+	const FString TimeKey = TEXT("time");
+	const FString AuthorKey = TEXT("user");
+	const FString DescriptionKey = TEXT("desc");
+	const FString ChangelistStatusKey = TEXT("status");
+	const FString ChangelistPendingStatusKey = TEXT("pending");
+	constexpr int32 RecordIndex = 0;
+}
+
+FName FPlasticGetChangelistDetailsWorker::GetName() const
+{
+	return "GetChangelistDetails";
+}
+
+bool FPlasticGetChangelistDetailsWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetChangelistDetailsWorker::Execute);
+
+	TSharedRef<FGetChangelistDetails, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FGetChangelistDetails>(InCommand.Operation);
+
+	// Note: Changelists are local construct so we have to interpret this as a Shelve Id instead
+	const FString& ShelveId = Operation->GetChangelistNumber();
+	if (ShelveId.IsEmpty())
+	{
+		InCommand.bCommandSuccessful = false;
+		InCommand.ErrorMessages.Add((LOCTEXT("GetChangelistDetailsEmptyId", "GetChangelistDetails failed. Shelve Id is empty.").ToString()));
+		return false;
+	}
+
+	FString Comment;
+	FString Owner;
+	FDateTime Date;
+	TArray<FPlasticSourceControlRevision> BaseRevisions;
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetShelve(FCString::Atoi(*ShelveId), Comment, Date, Owner, BaseRevisions, InCommand.ErrorMessages);
+	if (!InCommand.bCommandSuccessful)
+	{
+		InCommand.bCommandSuccessful = false;
+		InCommand.ErrorMessages.Add((LOCTEXT("GetChangelistDetailsInvalidId", "GetChangelistDetails failed. Shelve Id is invalid.").ToString()));
+		return false;
+	}
+
+	UE_LOG(LogSourceControl, Log, TEXT("GetChangelistDetails: %d files in shelve %s"), BaseRevisions.Num(), *ShelveId);
+
+	TMap<FString, FString> Record;
+
+	Record.Add({ ReviewHelpers::ChangelistStatusKey, ReviewHelpers::ChangelistPendingStatusKey });
+	Record.Add({ ReviewHelpers::AuthorKey, Owner });
+	Record.Add({ ReviewHelpers::DescriptionKey, Comment });
+	Record.Add({ ReviewHelpers::TimeKey, LexToString(Date.ToUnixTimestamp()) });
+
+	uint32  RecordFileIndex = 0;
+	for (auto& Revision : BaseRevisions)
+	{
+		// String representation of the current file index
+		FString RecordFileIndexStr = LexToString(RecordFileIndex);
+		// The p4 records is the map a file key starts with "depotFile" and is followed by file index 
+		FString RecordFileMapKey = ReviewHelpers::FileDepotKey + RecordFileIndexStr;
+		// The p4 records is the map a revision key starts with "rev" and is followed by file index 
+		FString RecordRevisionMapKey = ReviewHelpers::FileRevisionKey + RecordFileIndexStr;
+		// The p4 records is the map a revision key starts with "action" and is followed by file index 
+		FString RecordActionMapKey = ReviewHelpers::FileActionKey + RecordFileIndexStr;
+
+		UE_LOG(LogSourceControl, Log, TEXT("GetChangelistDetails: %s baserevid:%d %s"), *Revision.Filename, Revision.RevisionId, *Revision.Action);
+
+		Record.Add({ MoveTemp(RecordFileMapKey), MoveTemp(Revision.Filename) });
+		Record.Add({ MoveTemp(RecordRevisionMapKey), LexToString(Revision.RevisionId) });
+		Record.Add({ MoveTemp(RecordActionMapKey), Revision.Action });
+
+		RecordFileIndex++;
+	}
+
+	TArray<TMap<FString, FString>> ChangelistRecord;
+	ChangelistRecord.Add(MoveTemp(Record));
+	Operation->SetChangelistDetails(MoveTemp(ChangelistRecord));
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticGetChangelistDetailsWorker::UpdateStates()
+{
+	return false;
+}
+
+FName FPlasticGetFileWorker::GetName() const
+{
+	return "GetFile";
+}
+
+bool FPlasticGetFileWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetChangelistDetailsWorker::FPlasticGetFileWorker);
+
+	TSharedRef<FGetFile, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FGetFile>(InCommand.Operation);
+
+	const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
+	SourceControlRevision->Filename = FPaths::ConvertRelativePathToFull(Operation->GetDepotFilePath());
+
+	if (Operation->IsShelve())
+	{
+		SourceControlRevision->ShelveId = FCString::Atoi(*Operation->GetChangelistNumber());
+		UE_LOG(LogSourceControl, Log, TEXT("GetFile(ShelveId:%d)"), SourceControlRevision->ShelveId);
+	}
+	else
+	{
+		SourceControlRevision->RevisionId = FCString::Atoi(*Operation->GetRevisionNumber());
+		UE_LOG(LogSourceControl, Log, TEXT("GetFile(revid:%d)"), SourceControlRevision->RevisionId);
+	}
+	
+	FString OutFilename;
+
+	InCommand.bCommandSuccessful = SourceControlRevision->Get(OutFilename, InCommand.Concurrency);
+
+	if (InCommand.bCommandSuccessful)
+	{
+		Operation->SetOutPackageFilename(OutFilename);
+	}
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticGetFileWorker::UpdateStates()
+{
+	return false;
 }
 
 #endif

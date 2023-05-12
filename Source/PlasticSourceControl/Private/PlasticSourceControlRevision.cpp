@@ -18,16 +18,8 @@ bool FPlasticSourceControlRevision::Get(FString& InOutFilename) const
 bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Type InConcurrency /* = EConcurrency::Synchronous */) const
 #endif
 {
-#if ENGINE_MAJOR_VERSION == 5
-	if (InConcurrency != EConcurrency::Synchronous)
-	{
-		UE_LOG(LogSourceControl, Warning, TEXT("Only EConcurrency::Synchronous is tested/supported for this operation."));
-	}
-#endif
-
-
 	// if a filename for the temp file wasn't supplied generate a unique-ish one
-	if (InOutFilename.Len() == 0)
+	if (InOutFilename.IsEmpty())
 	{
 		// create the diff dir if we don't already have it
 		IFileManager::Get().MakeDirectory(*FPaths::DiffDir(), true);
@@ -37,6 +29,10 @@ bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Ty
 		{
 			TempFileName = FString::Printf(TEXT("%stemp-sh%d-%s"), *FPaths::DiffDir(), ShelveId, *FPaths::GetCleanFilename(Filename));
 		}
+		else if (RevisionId != ISourceControlState::INVALID_REVISION)
+		{
+			TempFileName = FString::Printf(TEXT("%stemp-rev%d-%s"), *FPaths::DiffDir(), RevisionId, *FPaths::GetCleanFilename(Filename));
+		}
 		else
 		{
 			TempFileName = FString::Printf(TEXT("%stemp-cs%d-%s"), *FPaths::DiffDir(), ChangesetNumber, *FPaths::GetCleanFilename(Filename));
@@ -44,12 +40,12 @@ bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Ty
 		InOutFilename = FPaths::ConvertRelativePathToFull(TempFileName);
 	}
 
-	bool bCommandSuccessful;
+	bool bCommandSuccessful = false;
 	if (FPaths::FileExists(InOutFilename))
 	{
 		bCommandSuccessful = true; // if the temp file already exists, reuse it directly
 	}
-	else if (State)
+	else
 	{
 		FString RevisionSpecification;
 		if (ShelveId != ISourceControlState::INVALID_REVISION)
@@ -58,17 +54,30 @@ bool FPlasticSourceControlRevision::Get(FString& InOutFilename, EConcurrency::Ty
 			// Note: the plugin doesn't support shelves on Xlinks (no known RepSpec)
 			RevisionSpecification = FString::Printf(TEXT("rev:%s#sh:%d"), *Filename, ShelveId);
 		}
-		else
+		else if (RevisionId != ISourceControlState::INVALID_REVISION)
+		{
+			// Format the revision specification of the file, like rev:revid:920
+			RevisionSpecification = FString::Printf(TEXT("rev:revid:%d"), RevisionId);
+		}
+		else if (State)
 		{
 			// Format the revision specification of the checked-in file, like rev:Content/BP.uasset#cs:12@repo@server:8087
 			RevisionSpecification = FString::Printf(TEXT("rev:%s#cs:%d@%s"), *Filename, ChangesetNumber, *State->RepSpec);
 		}
-		bCommandSuccessful = PlasticSourceControlUtils::RunGetFile(RevisionSpecification, InOutFilename);
-	}
-	else
-	{
-		UE_LOG(LogSourceControl, Error, TEXT("Revision(%s %d): unknown state!"), *Filename, RevisionId);
-		bCommandSuccessful = false;
+		else
+		{
+			UE_LOG(LogSourceControl, Error, TEXT("Unknown revision for %s!"), *Filename);
+		}
+
+		if (!RevisionSpecification.IsEmpty())
+		{
+			bCommandSuccessful = PlasticSourceControlUtils::RunGetFile(RevisionSpecification, InOutFilename);
+		}
+		if (!bCommandSuccessful && FPaths::FileExists(InOutFilename))
+		{
+			// On error, delete the temp file if it was created
+			IFileManager::Get().Delete(*InOutFilename);
+		}
 	}
 	return bCommandSuccessful;
 }
