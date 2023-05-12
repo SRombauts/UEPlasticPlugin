@@ -2170,9 +2170,8 @@ bool FPlasticGetChangelistDetailsWorker::Execute(FPlasticSourceControlCommand& I
 	FString Comment;
 	FString Owner;
 	FDateTime Date;
-	TArray<FPlasticSourceControlState> States;
-
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetShelve(FCString::Atoi(*ShelveId), Comment, Date, Owner, States, InCommand.ErrorMessages);
+	TArray<FPlasticSourceControlRevision> BaseRevisions;
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetShelve(FCString::Atoi(*ShelveId), Comment, Date, Owner, BaseRevisions, InCommand.ErrorMessages);
 	if (!InCommand.bCommandSuccessful)
 	{
 		InCommand.bCommandSuccessful = false;
@@ -2180,7 +2179,7 @@ bool FPlasticGetChangelistDetailsWorker::Execute(FPlasticSourceControlCommand& I
 		return false;
 	}
 
-	UE_LOG(LogSourceControl, Log, TEXT("GetChangelistDetails: %d files in shelve %s"), States.Num(), *ShelveId);
+	UE_LOG(LogSourceControl, Log, TEXT("GetChangelistDetails: %d files in shelve %s"), BaseRevisions.Num(), *ShelveId);
 
 	TMap<FString, FString> Record;
 
@@ -2190,7 +2189,7 @@ bool FPlasticGetChangelistDetailsWorker::Execute(FPlasticSourceControlCommand& I
 	Record.Add({ ReviewHelpers::TimeKey, LexToString(Date.ToUnixTimestamp()) });
 
 	uint32  RecordFileIndex = 0;
-	for (auto& State : States)
+	for (auto& Revision : BaseRevisions)
 	{
 		// String representation of the current file index
 		FString RecordFileIndexStr = LexToString(RecordFileIndex);
@@ -2201,14 +2200,11 @@ bool FPlasticGetChangelistDetailsWorker::Execute(FPlasticSourceControlCommand& I
 		// The p4 records is the map a revision key starts with "action" and is followed by file index 
 		FString RecordActionMapKey = ReviewHelpers::FileActionKey + RecordFileIndexStr;
 
-		check(State.History.Num() == 1);
-		TSharedPtr<FPlasticSourceControlRevision, ESPMode::ThreadSafe> Revision = State.History[0];
+		UE_LOG(LogSourceControl, Log, TEXT("GetChangelistDetails: %s baserevid:%d %s"), *Revision.Filename, Revision.RevisionId, *Revision.Action);
 
-		UE_LOG(LogSourceControl, Log, TEXT("GetChangelistDetails: %s revid:%d action:%s"), *Revision->Filename, Revision->RevisionId, *Revision->Action);
-
-		Record.Add({ MoveTemp(RecordFileMapKey), MoveTemp(Revision->Filename) });
-		Record.Add({ MoveTemp(RecordRevisionMapKey), LexToString(Revision->RevisionId) });
-		Record.Add({ MoveTemp(RecordActionMapKey), Revision->Action });
+		Record.Add({ MoveTemp(RecordFileMapKey), MoveTemp(Revision.Filename) });
+		Record.Add({ MoveTemp(RecordRevisionMapKey), LexToString(Revision.RevisionId) });
+		Record.Add({ MoveTemp(RecordActionMapKey), Revision.Action });
 
 		RecordFileIndex++;
 	}

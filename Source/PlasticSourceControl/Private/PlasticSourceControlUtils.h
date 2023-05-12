@@ -193,10 +193,10 @@ bool RunGetShelves(TArray<FPlasticSourceControlChangelistState>& InOutChangelist
  * @param	OutComment			Shelve Comment
  * @param	OutDate				Shelve Date
  * @param	OutOwner			Shelve Owner
- * @param	OutStates			Files in the shelve and their state, including base revision id
+ * @param	OutStates			Files in the shelve and their base revision id
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  */
-bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDate, FString& OutOwner, TArray<FPlasticSourceControlState>& OutStates, TArray<FString>& OutErrorMessages);
+bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDate, FString& OutOwner, TArray<FPlasticSourceControlRevision>& OutBaseRevisions, TArray<FString>& OutErrorMessages);
 
 /**
  * Add a file to the shelve associated with a changelist.

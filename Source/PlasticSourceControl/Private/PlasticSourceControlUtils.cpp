@@ -1939,11 +1939,11 @@ C;666;Content\NewFolder\BP_CheckedOut.uasset
 C;266;"Content\ThirdPerson\Blueprints\BP_ThirdPersonCharacterRenamed.uasset"
 M;-1;"Content\ThirdPerson\Blueprints\BP_ThirdPersonCharacterRenamed.uasset"
 */
-bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InResults, TArray<FPlasticSourceControlState>& OutStates)
+bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InResults, TArray<FPlasticSourceControlRevision>& OutBaseRevisions)
 {
 	bool bCommandSuccessful = true;
 
-	OutStates.Reset(InResults.Num());
+	OutBaseRevisions.Reset(InResults.Num());
 	for (FString& InResult : InResults)
 	{
 		TArray<FString> ResultElements;
@@ -1961,30 +1961,22 @@ bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InR
 			if (ShelveState == EWorkspaceState::Moved)
 			{
 				// In case of a Moved file, it appears twice in the list, so update the first entry (set as a "Changed" but has the Base Revision Id) and update it with the "Move" status
-				if (FPlasticSourceControlState* ExistingShelveState = OutStates.FindByPredicate(
-					[&AbsoluteFilename](const FPlasticSourceControlState& State)
+				if (FPlasticSourceControlRevision* ExistingShelveRevision = OutBaseRevisions.FindByPredicate(
+					[&AbsoluteFilename](const FPlasticSourceControlRevision& State)
 					{
 						return State.GetFilename().Equals(AbsoluteFilename);
 					}))
 				{
-					check(ExistingShelveState->History.Num() == 1);
-					ExistingShelveState->History[0]->Action = FileStateToAction(EWorkspaceState::Moved);
+					ExistingShelveRevision->Action = FileStateToAction(EWorkspaceState::Moved);
 					continue;
 				}
 			}
 
-			FPlasticSourceControlState State(MoveTemp(AbsoluteFilename), ShelveState);
-			// Add one revision to be able to fetch the shelved file for diff.
-			{
-				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
-				SourceControlRevision->State = &State;
-				SourceControlRevision->Filename = State.GetFilename();
-				SourceControlRevision->Action = FileStateToAction(ShelveState);
-				SourceControlRevision->RevisionId = BaseRevisionId;
-				State.History.Add(SourceControlRevision);
-			}
-
-			OutStates.Add(MoveTemp(State));
+			FPlasticSourceControlRevision SourceControlRevision;
+			SourceControlRevision.Filename = MoveTemp(AbsoluteFilename);
+			SourceControlRevision.Action = FileStateToAction(ShelveState);
+			SourceControlRevision.RevisionId = BaseRevisionId;
+			OutBaseRevisions.Add(MoveTemp(SourceControlRevision));
 		}
 		else
 		{
@@ -2000,7 +1992,7 @@ bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InR
  * @param	InOutChangelistsStates	The list of changelists, filled with their shelved files
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
  */
-bool RunGetShelveFiles(const int32 InShelveId, TArray<FPlasticSourceControlState>& OutStates, TArray<FString>& OutErrorMessages)
+bool RunGetShelveFiles(const int32 InShelveId, TArray<FPlasticSourceControlRevision>& OutBaseRevisions, TArray<FString>& OutErrorMessages)
 {
 	bool bCommandSuccessful = true;
 
@@ -2016,7 +2008,7 @@ bool RunGetShelveFiles(const int32 InShelveId, TArray<FPlasticSourceControlState
 		const bool bDiffSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("diff"), Parameters, TArray<FString>(), Results, OutErrorMessages);
 		if (bDiffSuccessful)
 		{
-			bCommandSuccessful = ParseShelveDiffResults(WorkspaceRoot, MoveTemp(Results), OutStates);
+			bCommandSuccessful = ParseShelveDiffResults(WorkspaceRoot, MoveTemp(Results), OutBaseRevisions);
 		}
 	}
 
@@ -2084,7 +2076,7 @@ static bool ParseShelvesResult(const FXmlFile& InXmlResult, int32& OutShelveId, 
 	return true;
 }
 
-bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDate, FString& OutOwner, TArray<FPlasticSourceControlState>& OutStates, TArray<FString>& OutErrorMessages)
+bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDate, FString& OutOwner, TArray<FPlasticSourceControlRevision>& OutBaseRevisions, TArray<FString>& OutErrorMessages)
 {
 	bool bCommandSuccessful;
 
@@ -2105,7 +2097,7 @@ bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDat
 			bCommandSuccessful = ParseShelvesResult(XmlFile, ShelveId, OutComment, OutDate, OutOwner);
 			if (bCommandSuccessful)
 			{
-				bCommandSuccessful = RunGetShelveFiles(InShelveId, OutStates, OutErrorMessages);
+				bCommandSuccessful = RunGetShelveFiles(InShelveId, OutBaseRevisions, OutErrorMessages);
 			}
 		}
 	}
