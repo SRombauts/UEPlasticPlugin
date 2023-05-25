@@ -169,7 +169,7 @@ static bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchNam
 	}
 
 	// Get workspace information, in the form "Branch /main@UE5PlasticPluginDev@localhost:8087"
-	//                                     or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected directly to the cloud)
+	//                                     or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected to the cloud)
 	//                                     or "Branch /main@rep:UE5OpenWorldPerfTest@repserver:test@cloud"
 	//                                     or "Changeset 1234@UE5PlasticPluginDev@test@cloud" (when the workspace is switched on a changeset instead of a branch)
 	static const FString BranchPrefix(TEXT("Branch "));
@@ -208,7 +208,7 @@ static bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchNam
 			OutServerUrl.RightChopInline(RepserverPrefix.Len());
 		}
 
-		if (WorkspaceInfos.Num() >= 3)
+		if (WorkspaceInfos.Num() > 3) // (when connected to the cloud)
 		{
 			OutServerUrl.Append(TEXT("@"));
 			OutServerUrl.Append(MoveTemp(WorkspaceInfos[3]));
