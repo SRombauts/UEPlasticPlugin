@@ -76,7 +76,7 @@ If you want the latest features, performance improvements and bug fixes that are
      1. Unzip the content of the ZIP directly at the root of your project folder.
         This creates a "Plugins\UEPlasticPlugin\" subdirectory into your project.
         This is the way to go to use Plastic SCM on a specific project,
-		and to share the plugin with other team members by adding it to source control.
+        and to share the plugin with other team members by adding it to source control.
         Some users reported they also had to remove the integrated plugin from "Engine\Plugins\Developer\PlasticSourceControl" to avoid a collision.
         This is only needed for some specific use case I have not yet identified (eg. on CI/CD, or on Unix OSes).
      2. Unzip the content of the ZIP in the Engine\ directory of UEX.Y directly for all your projects
@@ -465,7 +465,7 @@ or for Unreal Engine 4:
 
 To configure a text diff for any uasset (not only Blueprints) use this command instead
 
-    "C:\Program Files\Epic Games\UE_5.0\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "C:\wkspaces\ProjectName\ProjectName.uproject" -NoShaderCompile -run="DiffAssets" %1 %2 DiffCmd="C:\Program Files\PlasticSCM5\client\mergetool.exe {1} {2}"
+    "C:\Program Files\Epic Games\UE_5.0\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "C:\wkspaces\ProjectName\ProjectName.uproject" -NoShaderCompile -run="DiffAssets" %1 %2 DiffCmd="C:\Program Files\PlasticSCM5\client\mergetool.exe -s={1} -d={2}"
 
 ## Status
 
