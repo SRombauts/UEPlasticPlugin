@@ -60,8 +60,10 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("Unshelve", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticUnshelveWorker>));
 	PlasticSourceControlProvider.RegisterWorker("DeleteShelved", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteShelveWorker>));
 
+#if ENGINE_MINOR_VERSION >= 1
 	PlasticSourceControlProvider.RegisterWorker("GetChangelistDetails", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetChangelistDetailsWorker>));
 	PlasticSourceControlProvider.RegisterWorker("GetFile", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetFileWorker>));
+#endif
 #endif
 }
 
@@ -2147,6 +2149,8 @@ namespace ReviewHelpers
 	constexpr int32 RecordIndex = 0;
 }
 
+#if ENGINE_MINOR_VERSION >= 1
+
 FName FPlasticGetChangelistDetailsWorker::GetName() const
 {
 	return "GetChangelistDetails";
@@ -2263,6 +2267,7 @@ bool FPlasticGetFileWorker::UpdateStates()
 	return false;
 }
 
+#endif
 #endif
 
 #undef LOCTEXT_NAMESPACE

@@ -515,6 +515,8 @@ protected:
 	int32 ShelveId = ISourceControlState::INVALID_REVISION;
 };
 
+#if ENGINE_MINOR_VERSION >= 1
+
 class FPlasticGetChangelistDetailsWorker final : public IPlasticSourceControlWorker
 {
 public:
@@ -542,5 +544,7 @@ public:
 	virtual bool Execute(FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() override;
 };
+
+#endif
 
 #endif
