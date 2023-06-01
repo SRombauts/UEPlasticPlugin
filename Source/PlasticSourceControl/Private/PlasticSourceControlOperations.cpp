@@ -938,6 +938,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 			// Get the history of the files (on all branches)
 			InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunGetHistory(Operation->ShouldUpdateHistory(), States, InCommand.ErrorMessages);
 
+#if ENGINE_MAJOR_VERSION == 4 || (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 3)
 			// Special case for conflicts
 			for (FPlasticSourceControlState& State : States)
 			{
@@ -962,6 +963,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 					}
 				}
 			}
+#endif
 		}
 		else
 		{
@@ -1222,10 +1224,15 @@ bool FPlasticResolveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		Parameters.Add(TEXT("--keepdestination"));
 
 		TArray<FString> OneFile;
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		OneFile.Add(State->PendingResolveInfo.BaseFile);
+
+		UE_LOG(LogSourceControl, Log, TEXT("resolve %s"), *State->PendingResolveInfo.BaseFile);
+#else
 		OneFile.Add(State->PendingMergeFilename);
 
 		UE_LOG(LogSourceControl, Log, TEXT("resolve %s"), *State->PendingMergeFilename);
-
+#endif
 		// Mark the conflicted file as resolved
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("merge"), Parameters, OneFile, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}

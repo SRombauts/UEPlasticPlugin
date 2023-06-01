@@ -65,9 +65,13 @@ public:
 		History = MoveTemp(InState.History);
 		LocalFilename = MoveTemp(InState.LocalFilename);
 		WorkspaceState = InState.WorkspaceState;
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		PendingResolveInfo = MoveTemp(InState.PendingResolveInfo);
+#else
 		PendingMergeFilename = MoveTemp(InState.PendingMergeFilename);
 		PendingMergeBaseChangeset = InState.PendingMergeBaseChangeset;
 		PendingMergeSourceChangeset = InState.PendingMergeSourceChangeset;
+#endif
 		PendingMergeParameters = MoveTemp(InState.PendingMergeParameters);
 		// Update "fileinfo" information only if the command was issued
 		// Don't override "fileinfo" information in case of an optimized/lightweight "whole folder status" triggered by a global Submit Content or Refresh
@@ -103,12 +107,17 @@ public:
 	virtual TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> GetHistoryItem(int32 HistoryIndex) const override;
 	virtual TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FindHistoryRevision(int32 RevisionNumber) const override;
 	virtual TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FindHistoryRevision(const FString& InRevision) const override;
+#if ENGINE_MAJOR_VERSION == 4 || (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 3)
 	virtual TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> GetBaseRevForMerge() const override;
+#endif
 	virtual TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> GetCurrentRevision() const; /* override	NOTE: added in UE5.2 */
 #if ENGINE_MAJOR_VERSION == 4
 	virtual FName GetIconName() const override;
 	virtual FName GetSmallIconName() const override;
 #elif ENGINE_MAJOR_VERSION == 5
+#if ENGINE_MINOR_VERSION >= 3
+	virtual FResolveInfo GetResolveInfo() const override;	/* NOTE: added in UE5.3 */
+#endif
 	virtual FSlateIcon GetIcon() const override;
 #endif
 	virtual FText GetDisplayName() const override;
@@ -151,6 +160,10 @@ public:
 	/** Depot and Server info (in the form repo@server:port) */
 	FString RepSpec;
 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+	/** Pending rev info with which a file must be resolved, invalid if no resolve pending */
+	FResolveInfo PendingResolveInfo;
+#else
 	/** Relative filename of the file in merge conflict */
 	FString PendingMergeFilename;
 
@@ -159,6 +172,7 @@ public:
 
 	/** Changeset of the source/remote revision of the merge in progress */
 	int32 PendingMergeSourceChangeset = INVALID_REVISION;
+#endif
 
 	/** Unity Version Control Parameters of the merge in progress */
 	TArray<FString> PendingMergeParameters;

@@ -74,6 +74,7 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 	return nullptr;
 }
 
+#if ENGINE_MAJOR_VERSION == 4 || (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 3)
 TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlState::GetBaseRevForMerge() const
 {
 	for (const auto& Revision : History)
@@ -87,6 +88,7 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 
 	return nullptr;
 }
+#endif
 
 TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlState::GetCurrentRevision() const
 {
@@ -101,6 +103,13 @@ TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceCont
 
 	return nullptr;
 }
+
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+ISourceControlState::FResolveInfo FPlasticSourceControlState::GetResolveInfo() const
+{
+	return PendingResolveInfo;
+}
+#endif
 
 #if ENGINE_MAJOR_VERSION == 4
 
@@ -467,8 +476,13 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 	case EWorkspaceState::Changed:
 		return LOCTEXT("Modified_Tooltip", "Changed locally");
 	case EWorkspaceState::Conflicted:
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		return FText::Format(LOCTEXT("Conflicted_Tooltip", "Conflict merging from source/remote CS:{0} into target/local CS:{1})"),
+			FText::FromString(PendingResolveInfo.RemoteRevision), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
+#else
 		return FText::Format(LOCTEXT("Conflicted_Tooltip", "Conflict merging from source/remote CS:{0} into target/local CS:{1})"),
 			FText::AsNumber(PendingMergeSourceChangeset, &NoCommas), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
+#endif
 	case EWorkspaceState::Private:
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
 		return LOCTEXT("NotControlled_Tooltip", "Private: not under revision control");

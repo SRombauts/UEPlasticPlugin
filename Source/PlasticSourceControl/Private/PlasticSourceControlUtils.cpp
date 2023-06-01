@@ -800,21 +800,19 @@ public:
 			Temp.RightChopInline(WhitespaceIndex + 1);
 			if (Temp.FindChar(TEXT(' '), WhitespaceIndex))
 			{
-				const FString Base = Temp.Left(WhitespaceIndex);
-				BaseChangeset = FCString::Atoi(*Base);
+				BaseChangeset = Temp.Left(WhitespaceIndex);
 			}
 			Temp.RightChopInline(WhitespaceIndex + 1);
 			if (Temp.FindChar(TEXT(' '), WhitespaceIndex))
 			{
-				const FString Source = Temp.Left(WhitespaceIndex);
-				SourceChangeset = FCString::Atoi(*Source);
+				SourceChangeset = Temp.Left(WhitespaceIndex);
 			}
 		}
 	}
 
 	FString Filename;
-	int32 BaseChangeset;
-	int32 SourceChangeset;
+	FString BaseChangeset;
+	FString SourceChangeset;
 };
 
 // Check if merging, and from which changelist, then execute a cm merge command to amend status for listed files
@@ -889,11 +887,20 @@ static bool RunCheckMergeStatus(const TArray<FString>& InFiles, TArray<FString>&
 							UE_LOG(LogSourceControl, Log, TEXT("State.LocalFilename: '%s'"), *State.LocalFilename);
 							if (State.LocalFilename.EndsWith(MergeConflict.Filename, ESearchCase::CaseSensitive))
 							{
-								UE_LOG(LogSourceControl, Verbose, TEXT("MergeConflict '%s' found Base cs:%d From cs:%d"), *MergeConflict.Filename, MergeConflict.BaseChangeset, MergeConflict.SourceChangeset);
+								UE_LOG(LogSourceControl, Verbose, TEXT("MergeConflict '%s' found Base cs:%s From cs:%s"), *MergeConflict.Filename, *MergeConflict.BaseChangeset, *MergeConflict.SourceChangeset);
 								State.WorkspaceState = EWorkspaceState::Conflicted;
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+								State.PendingResolveInfo = {
+									MergeConflict.Filename,
+									MergeConflict.Filename,
+									MergeConflict.SourceChangeset,
+									MergeConflict.BaseChangeset
+								};
+#else
 								State.PendingMergeFilename = MergeConflict.Filename;
-								State.PendingMergeBaseChangeset = MergeConflict.BaseChangeset;
-								State.PendingMergeSourceChangeset = MergeConflict.SourceChangeset;
+								State.PendingMergeBaseChangeset = FCString::Atoi(*MergeConflict.BaseChangeset);
+								State.PendingMergeSourceChangeset = FCString::Atoi(*MergeConflict.SourceChangeset);
+#endif
 								State.PendingMergeParameters = PendingMergeParameters;
 								break;
 							}
@@ -1305,7 +1312,11 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				// since we usually don't want to display changes from other branches in the History window...
 				// except in case of a merge conflict, where the Editor expects the tip of the "source (remote)" branch to be at the top of the history!
 				if (   (SourceControlRevision->ChangesetNumber > InOutState.DepotRevisionChangeset)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+					&& (SourceControlRevision->GetRevision() != InOutState.PendingResolveInfo.RemoteRevision))
+#else
 					&& (SourceControlRevision->ChangesetNumber != InOutState.PendingMergeSourceChangeset))
+#endif
 				{
 					InOutState.HeadBranch = SourceControlRevision->Branch;
 					InOutState.HeadAction = SourceControlRevision->Action;
