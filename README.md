@@ -150,6 +150,33 @@ If you have a project in Plastic SCM but without an ignore.conf file at the root
 you can use "Source Control" -> "Change Source Control Settings..." -> "Add a ignore.conf file" button to create a standard one:
 ![Source Control Login window - Add a ignore.conf file](Screenshots/UEPlasticPlugin-SourceControlSettings-AddIgnoreConfFile.png)
 
+###### ignore.conf
+
+Content of the generated ignore.conf, to use as a starting point but to adjust to the specific needs of the project:
+
+```
+Binaries
+Build
+DerivedDataCache
+Intermediate
+Saved
+Script
+enc_temp_folder
+.idea
+.vscode
+.vs
+.vsconfig
+*.VC.db
+*.opensdf
+*.opendb
+*.sdf
+*.sln
+*.suo
+*.code-workspace
+*.xcodeproj
+*.xcworkspace
+```
+
 ##### Sharing settings
 
 In order to share this with the team, copy and rename this file into `Config\DefaultSourceControlSettings.ini`,
@@ -457,6 +484,10 @@ The command line needs the quoted path to the UnrealEditor.exe, the quoted patch
 
     "C:\Program Files\Epic Games\UE_5.0\Engine\Binaries\Win64\UnrealEditor.exe" "C:\wkspaces\ProjectName\ProjectName.uproject" -diff "@sourcefile" "@destinationfile"
 
+eg: 
+
+    "C:\Program Files\Epic Games\UE_5.2\Engine\Binaries\Win64\UnrealEditor.exe" "C:\UnitySrc\UE5UnityVCSDevEnv\UE5UnityVCSDevEnv.uproject" -diff "@sourcefile" "@destinationfile"
+
 or for Unreal Engine 4:
 
     "C:\Program Files\Epic Games\UE_4.27\Engine\Binaries\Win64\UE4Editor.exe" "C:\wkspaces\ProjectName\ProjectName.uproject" -diff "@sourcefile" "@destinationfile"
@@ -466,6 +497,12 @@ or for Unreal Engine 4:
 To configure a text diff for any uasset (not only Blueprints) use this command instead
 
     "C:\Program Files\Epic Games\UE_5.0\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "C:\wkspaces\ProjectName\ProjectName.uproject" -NoShaderCompile -run="DiffAssets" %1 %2 DiffCmd="C:\Program Files\PlasticSCM5\client\mergetool.exe -s={1} -d={2}"
+
+eg:
+
+    DiffCmd="C:\Program Files\Perforce\p4merge.exe {1} {2}"
+
+    "C:\Program Files\Epic Games\UE_5.0\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "C:\UnitySrc\UE5UnityVCSDevEnv\UE5UnityVCSDevEnv.uproject" -NoShaderCompile -run="DiffAssets" %1 %2 DiffCmd="C:\Program Files\PlasticSCM5\client\mergetool.exe -s={1} -d={2}"
 
 ## Status
 
