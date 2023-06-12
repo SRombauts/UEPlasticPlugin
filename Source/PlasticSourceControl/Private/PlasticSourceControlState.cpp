@@ -110,7 +110,7 @@ FName FPlasticSourceControlState::GetIconName() const
 	{
 		return FName("Perforce.NotAtHeadRevision");
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged)
+	else if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
@@ -163,7 +163,7 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	{
 		return FName("Perforce.NotAtHeadRevision_Small");
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged)
+	else if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
@@ -220,7 +220,7 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	{
 		return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.NotAtHeadRevision");
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged && WorkspaceState != EWorkspaceState::Conflicted)
+	else if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
@@ -238,7 +238,7 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	{
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotAtHeadRevision");
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged && WorkspaceState != EWorkspaceState::Conflicted)
+	else if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
@@ -361,7 +361,7 @@ FText FPlasticSourceControlState::GetDisplayName() const
 		return FText::Format(LOCTEXT("NotCurrent", "Not at the head revision CS:{0} {1} (local revision is CS:{2})"),
 			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged && WorkspaceState != EWorkspaceState::Conflicted)
+	else if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
@@ -422,7 +422,7 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 		return FText::Format(LOCTEXT("NotCurrent_Tooltip", "Not at the head revision CS:{0} {1} (local revision is CS:{2})"),
 			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
-	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged && WorkspaceState != EWorkspaceState::Conflicted)
+	else if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
