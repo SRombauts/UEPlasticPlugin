@@ -5,6 +5,9 @@
 #include "ISourceControlModule.h"
 #if ENGINE_MAJOR_VERSION == 5
 #include "Styling/AppStyle.h"
+#if ENGINE_MINOR_VERSION >= 2
+#include "RevisionControlStyle/RevisionControlStyle.h"
+#endif
 #endif
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl.State"
@@ -211,6 +214,26 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 
 FSlateIcon FPlasticSourceControlState::GetIcon() const
 {
+#if ENGINE_MINOR_VERSION >= 2
+
+	if (!IsCurrent())
+	{
+		return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.NotAtHeadRevision");
+	}
+	else if (WorkspaceState != EWorkspaceState::CheckedOutChanged && WorkspaceState != EWorkspaceState::CheckedOutUnchanged && WorkspaceState != EWorkspaceState::Conflicted)
+	{
+		if (IsCheckedOutOther())
+		{
+			return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.CheckedOutByOtherUser", NAME_None, "RevisionControl.CheckedOutByOtherUserBadge");
+		}
+		else if (IsModifiedInOtherBranch())
+		{
+			return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.ModifiedOtherBranch", NAME_None, "RevisionControl.ModifiedBadge");
+		}
+	}
+
+#else
+
 	if (!IsCurrent())
 	{
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotAtHeadRevision");
@@ -227,7 +250,37 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 		}
 	}
 
-#if ENGINE_MINOR_VERSION >= 1 // UE5.1+
+#endif
+
+#if ENGINE_MINOR_VERSION >= 2 // UE5.2+
+
+	switch (WorkspaceState)
+	{
+	case EWorkspaceState::CheckedOutChanged:
+	case EWorkspaceState::CheckedOutUnchanged:
+	case EWorkspaceState::Replaced: // Merged (waiting for check-in)
+		return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.CheckedOut");
+	case EWorkspaceState::Added:
+	case EWorkspaceState::Copied:
+		return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.OpenForAdd");
+	case EWorkspaceState::Moved:
+		return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.Branched");
+	case EWorkspaceState::Deleted:
+	case EWorkspaceState::LocallyDeleted:
+		return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.MarkedForDelete");
+	case EWorkspaceState::Conflicted:
+		return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.Conflicted");
+	case EWorkspaceState::Private: // Not controlled
+	case EWorkspaceState::Changed: // Changed but unchecked-out is in a certain way not controlled
+		return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.NotInDepot");
+	case EWorkspaceState::Ignored:
+	case EWorkspaceState::Unknown:
+	case EWorkspaceState::Controlled: // Unchanged (not checked out) ie no icon
+	default:
+		return FSlateIcon();
+	}
+
+#elif ENGINE_MINOR_VERSION >= 1 // UE5.1+
 
 	switch (WorkspaceState)
 	{
