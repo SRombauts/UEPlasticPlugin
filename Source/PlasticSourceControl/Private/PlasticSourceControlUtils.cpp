@@ -323,11 +323,15 @@ static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool b
 	{
 		State = EWorkspaceState::CheckedOutChanged; // Recent version; here it's checkedout with changes
 	}
-	else if ((InFileStatus == "CP") || (InFileStatus == "CO+CP"))
+	else if (InFileStatus.Contains(TEXT("CP"))) // "CP", "CO+CP"
 	{
 		State = EWorkspaceState::Copied;
 	}
-	else if ((InFileStatus == "RP") || (InFileStatus == "CO+RP") || (InFileStatus == "CO+RP+CH"))
+	else if (InFileStatus.Contains(TEXT("MV"))) // "MV", "CO+MV", "CO+CH+MV", "CO+RP+MV"
+	{
+		State = EWorkspaceState::Moved; // Moved/Renamed
+	}
+	else if (InFileStatus.Contains(TEXT("RP"))) // "RP", "CO+RP", "CO+RP+CH", "CO+CH+RP"
 	{
 		State = EWorkspaceState::Replaced;
 	}
@@ -350,10 +354,6 @@ static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool b
 	else if (InFileStatus == "LD")
 	{
 		State = EWorkspaceState::LocallyDeleted; // Locally Deleted (ie. missing)
-	}
-	else if ((InFileStatus == "MV") || (InFileStatus == "CO+MV") || (InFileStatus == "CO+CH+MV") || (InFileStatus == "CO+RP+MV"))
-	{
-		State = EWorkspaceState::Moved; // Moved/Renamed
 	}
 	else
 	{
@@ -1290,6 +1290,15 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				if (const FXmlNode* SizeNode = RevisionNode->FindChildNode(Size))
 				{
 					SourceControlRevision->FileSize = FCString::Atoi(*SizeNode->GetContent());
+				}
+
+				// A negative RevisionHeadChangeset provided by fileinfo mean that the file has been unshelved;
+				// replace it by the changeset number of the first revision in the history (the more recent)
+				// Note: workaround to be able to show the history / the diff of a file that has been unshelved
+				// (but keeps the LocalRevisionChangeset to the negative changeset corresponding to the Shelve Id)
+				if (InOutState.DepotRevisionChangeset < 0)
+				{
+					InOutState.DepotRevisionChangeset = SourceControlRevision->ChangesetNumber;
 				}
 
 				// Detect and skip more recent changesets on other branches (ie above the RevisionHeadChangeset)
