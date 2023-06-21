@@ -23,8 +23,6 @@ public:
 	{
 	}
 
-	FPlasticSourceControlChangelist(const FPlasticSourceControlChangelist& InOther) = default;
-
 #if ENGINE_MINOR_VERSION >= 1
 	virtual bool CanDelete() const override
 	{
