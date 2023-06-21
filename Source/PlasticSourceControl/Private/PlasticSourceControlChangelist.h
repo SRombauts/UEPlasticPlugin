@@ -42,7 +42,7 @@ public:
 		return ChangelistName != InOther.ChangelistName;
 	}
 
-	bool IsDefault() const
+	virtual bool IsDefault() const /* override NOTE: added in UE5.3 */
 	{
 		return ChangelistName == DefaultChangelist.ChangelistName;
 	}
@@ -69,6 +69,11 @@ public:
 	}
 
 	FString GetName() const
+	{
+		return ChangelistName;
+	}
+
+	virtual FString GetIdentifier() const /* override NOTE: added in UE5.3 */
 	{
 		return ChangelistName;
 	}
