@@ -2,7 +2,6 @@ Unity Version Control (formerly Plastic SCM) plugin for Unreal Engine
 ---------------------------------------------------------------------
 
 [![release](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
-[![Join the chat at https://gitter.im/SRombauts/UE4PlasticPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/UE4PlasticPlugin)
 
 This is the **official [Unity Version Control (formerly Plastic SCM)](https://plasticscm.com/) plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0 to 5.2).
 An old version 1.4.6+ has been integrated in Unreal Engine 4.24 and has been shipping with it since then.
@@ -11,7 +10,7 @@ But in the meantime, if you have a project of a certain size, chances are you ne
 in order to benefit from all the performance improvements we have made since then.
 See the Status section below for more details.
 
-It is not intended to replace the desktop [Unity Version Control GUI](https://docs.plasticscm.com/gui/plastic-scm-version-control-gui-guide)
+It is not intended to replace the [Unity Version Control Desktop Client](https://docs.plasticscm.com/gui/plastic-scm-version-control-gui-guide)
 or [command line interface "cm"](https://docs.plasticscm.com/cli/plastic-scm-version-control-cli-guide).
 It is a complementary tool improving efficiency in your daily workflow with assets in Editor.
 
@@ -95,7 +94,7 @@ If your project is already a C++ project, you only have to re-generate Visual St
 Else, if you want to rebuild the plugin for a Blueprint project:
 
  0. You need Visual Studio 2015 or 2017 with C++ language support (free Community Edition is fine).
- 1. Launch the Unreal Engine Editor, create a new C++ **Basic Code** Project (No Starter Content), for instance UnrealPlasticSCM. This should launch Visual Studio, build the game project, and open it into the Editor.
+ 1. Launch the Unreal Engine Editor, create a new C++ **Basic Code** Project (No Starter Content), for instance ProjectName. This should launch Visual Studio, build the game project, and open it into the Editor.
  2. Close the Editor, then using the file explorer, create a new **Plugins** directory at the root of your project.
  3. Clone the source code of the plugin into this _Plugins_ directory (for instance _Plugins\UEPlasticPlugin_).
  4. Right-click on your project's **.uproject** file, **Generate Visual Studio project files**.
@@ -255,7 +254,7 @@ Unreal Engine allows you to configure Editor behaviors. In particular:
 
 Official documentation from Epic Games:
  - [Source Control Inside Unreal Editor](https://docs.unrealengine.com/5.0/en-US/using-source-control-in-the-unreal-editor/)
- - [Diffing Unreal Assets (blog post)](https://www.unrealengine.com/blog/diffing-unreal-assets)
+ - [Diffing Unreal Assets (blog post)](https://www.unrealengine.com/en-US/blog/diffing-unreal-assets)
 
 Plastic SCM forums:
  - [Unreal Engine section in Plastic SCM forums](https://forum.plasticscm.com/forum/42-unreal-engine/)
@@ -428,11 +427,11 @@ using them for code will enable you to leverage the built-in code review on thes
 
 Note that some studios also use task branches for assets, and include them in their code reviews.
 Unity Version Control locks extend to all branches, preventing two people from working at the same time on the same assets regardless of the branch they are one.
-The Plastic plugin also offers [some branch support to warn users if an asset has been changed in another branch](#branches-support).
+The plugin also offers [some branch support to warn users if an asset has been changed in another branch](#branches-support).
 
 To use branches, you would need to also close the Editor before switching from a branch to another, and before merging a branch into another:
 
-1. create a child branch from main using Plastic GUI
+1. create a child branch from main using the Desktop Client
 2. switch to it, updating the workspace, with the Unreal Editor closed
 3. start the Editor, make modifications and checkout assets
 4. then check-in the assets (remember to save everything, or close the Editor to make sure of it)
@@ -447,7 +446,7 @@ The plugin also leverages the [visual diff merge conflicts resolution tool from 
 #### Save connection credentials
 
 The plugin works with the command line interface "cm" that currently requires your credentials to be stored.
-Use the Unity Version Control or Gluon GUI to enter and save your credentials before enabling Unity Version Control in Unreal.
+Use the Desktop Client or Gluon GUI to enter and save your credentials before enabling Unity Version Control in Unreal.
 
 #### Configure Locks for Unreal Assets (exclusive checkout)
 
@@ -471,7 +470,7 @@ or to be more specific to one repository:
     *.uasset
     *.umap
 
-On Plastic Cloud, you can just set-up lock rules like that:
+On Unity Version Control Cloud, you can just set-up lock rules like that:
 
     /Content
 
@@ -508,7 +507,7 @@ eg:
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.8.0 2023/02/14 for UE 5.0/5.1/Github 5.2.x and UE 4.27.2:
+### Version 1.8.1 2023/06/27 for UE 5.0/5.1/5.2/Github 5.3.x and UE 4.27.2:
  - manage connection to the server
  - show current branch name and CL in status text
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
@@ -587,7 +586,7 @@ Unreal log files are in `<ProjectName>/Save/Logs/ProjectName.log`.
 #### Enable logging for Unity Version Control
 
 To help diagnose any issue related to the underlying Unity Version Control "cm" Command Line Interface,
-[enable logging for Unity Version Control](https://www.plasticscm.com/documentation/technical-articles/kb-enabling-logging-for-plastic-scm-part-i).
+[enable logging for Unity Version Control](https://docs.plasticscm.com/technical-articles/kb-enabling-logging-for-plastic-scm-part-i).
 
 cm log files are typically in `<LOCALAPPDATA>\plastic4\logs\cm.log.txt`.
 
