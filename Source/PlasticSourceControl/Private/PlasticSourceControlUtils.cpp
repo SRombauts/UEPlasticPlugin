@@ -185,7 +185,7 @@ static bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchNam
 	{
 		WorkspaceInfo.RightChopInline(ChangesetPrefix.Len());
 	}
-	else 
+	else
 	{
 		return false;
 	}
@@ -197,12 +197,12 @@ static bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchNam
 		OutBranchName = MoveTemp(WorkspaceInfos[0]);
 		OutRepositoryName = MoveTemp(WorkspaceInfos[1]);
 		OutServerUrl = MoveTemp(WorkspaceInfos[2]);
-		
+
 		if (OutRepositoryName.StartsWith(RepPrefix, ESearchCase::CaseSensitive))
 		{
 			OutRepositoryName.RightChopInline(RepPrefix.Len());
 		}
-		
+
 		if (OutServerUrl.StartsWith(RepserverPrefix, ESearchCase::CaseSensitive))
 		{
 			OutServerUrl.RightChopInline(RepserverPrefix.Len());
@@ -301,7 +301,7 @@ static bool GetChangesetFromWorkspaceStatus(const TArray<FString>& InResults, in
 static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool bInUsesCheckedOutChanged)
 {
 	EWorkspaceState State;
-	
+
 	if (InFileStatus == "CH") // Modified but not Checked-Out
 	{
 		State = EWorkspaceState::Changed;
@@ -317,7 +317,7 @@ static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool b
 		{
 			State = EWorkspaceState::CheckedOutChanged; // Older version; need to assume it is changed to retain behavior
 		}
-		
+
 	}
 	else if (InFileStatus == "CO+CH") // Checked-Out and changed from the new --iscochanged
 	{
@@ -501,22 +501,27 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
  *
  * This is a less common scenario, typically calling the Submit Content, Revert All or Refresh commands
  * from the global source control menu.
- * 
+ *
  * In this case, as there is no file list to iterate over,
  * just parse each line of the array of strings results from the "status" command.
  *
+ * @param[in]	InDir		The path to the directory (never empty).
  * @param[in]	InResults	Lines of results from the "status" command
  * @param[out]	OutStates	States of files for witch the status has been gathered
  *
  * @see #ParseFileStatusResult() above for an example of a results from "cm status --machinereadable"
 */
-static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
+static void ParseDirectoryStatusResult(const FString& InDir, const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& OutStates)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseDirectoryStatusResult);
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
 	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
+
+	// First, find in the cache any existing states corresponding to the directory
+	TArray<FSourceControlStateRef> CachedStates = Provider.GetCachedStateByPredicate([&InDir](const FSourceControlStateRef& InState) {
+		return InState->GetFilename().StartsWith(InDir);
+	});
 
 	// Iterate on each line of result of the status command
 	for (const FString& InResult : InResults)
@@ -527,7 +532,18 @@ static void ParseDirectoryStatusResult(const TArray<FString>& InResults, TArray<
 			UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.LocalFilename, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
 
 			OutStates.Add(MoveTemp(FileState));
+
+			// If a new state has been found in the directory status, we will update the cached state for the file
+			CachedStates.RemoveAll([&CachedStates, &FileState](FSourceControlStateRef& PreviousState) {
+				return PreviousState->GetFilename().Equals(FileState.GetFilename(), ESearchCase::IgnoreCase);
+			});
 		}
+	}
+
+	// Finally, clear the cache for the files that where not found in the status results (eg checked-in or reverted outside of the Editor)
+	for (const auto& PreviousState : CachedStates)
+	{
+		Provider.RemoveFileFromCache(PreviousState->GetFilename());
 	}
 }
 
@@ -555,7 +571,7 @@ public:
  *  It is either a command for a whole directory (ie. "Content/", in case of "Submit to Source Control"),
  * or for one or more files all on a same directory (by design, since we group files by directory in RunUpdateStatus())
  *
- * @param[in]	InDir				The path to the common directory of all the files listed after.
+ * @param[in]	InDir				The path to the common directory of all the files listed after (never empty).
  * @param[in]	InFiles				List of files in a directory, or the path to the directory itself (never empty).
  * @param[in]	InSearchType		Call "status" with "--all", or with just "--controlledchanged" when doing only a quick check following a source control operation
  * @param[out]	OutErrorMessages	Error messages from the "status" command
@@ -633,9 +649,9 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 		if (bWholeDirectory)
 		{
 			// 1) Special case for "status" of a directory: requires a specific parse logic.
-			//   (this is triggered by the "Submit to Source Control" top menu button)
+			//   (this is triggered by the "Submit to Source Control" top menu button, but also for the initial check, the global Revert etc)
 			UE_LOG(LogSourceControl, Verbose, TEXT("RunStatus(%s): 1) special case for status of a directory:"), *InDir);
-			ParseDirectoryStatusResult(Results, OutStates);
+			ParseDirectoryStatusResult(InDir, Results, OutStates);
 		}
 		else
 		{
