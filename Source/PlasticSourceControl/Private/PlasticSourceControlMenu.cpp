@@ -79,6 +79,7 @@ void FPlasticSourceControlMenu::Unregister()
 	if (FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor"))
 	{
 		LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders().RemoveAll([=](const FLevelEditorModule::FLevelEditorMenuExtender& Extender) { return Extender.GetHandle() == ViewMenuExtenderHandle; });
+		bHasRegistered = false;
 	}
 #elif ENGINE_MAJOR_VERSION == 5
 	if (UToolMenus* ToolMenus = UToolMenus::TryGet())
