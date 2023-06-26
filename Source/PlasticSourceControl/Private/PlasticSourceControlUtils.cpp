@@ -518,9 +518,10 @@ static void ParseDirectoryStatusResult(const FString& InDir, const TArray<FStrin
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
-	// First, find in the cache any existing states corresponding to the directory
+	// First, find in the cache any existing states for files within the considered directory, that are not the default "Controlled" state
 	TArray<FSourceControlStateRef> CachedStates = Provider.GetCachedStateByPredicate([&InDir](const FSourceControlStateRef& InState) {
-		return InState->GetFilename().StartsWith(InDir);
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = StaticCastSharedRef<FPlasticSourceControlState>(InState);
+		return (State->WorkspaceState != EWorkspaceState::Unknown) && (State->WorkspaceState != EWorkspaceState::Controlled) && InState->GetFilename().StartsWith(InDir);
 	});
 
 	// Iterate on each line of result of the status command
@@ -531,23 +532,33 @@ static void ParseDirectoryStatusResult(const FString& InDir, const TArray<FStrin
 		{
 			UE_LOG(LogSourceControl, Verbose, TEXT("%s = %d:%s"), *FileState.LocalFilename, static_cast<uint32>(FileState.WorkspaceState), FileState.ToString());
 
-			OutStates.Add(MoveTemp(FileState));
-
-			// If a new state has been found in the directory status, we will update the cached state for the file
+			// If a new state has been found in the directory status, we will update the cached state for the file later, let's remove it from the list
 			CachedStates.RemoveAll([&CachedStates, &FileState](FSourceControlStateRef& PreviousState) {
 				return PreviousState->GetFilename().Equals(FileState.GetFilename(), ESearchCase::IgnoreCase);
 			});
+
+			OutStates.Add(MoveTemp(FileState));
 		}
 	}
 
-	// Finally, clear the cache for the files that where not found in the status results (eg checked-in or reverted outside of the Editor)
-	for (const auto& PreviousState : CachedStates)
+	// Finally, update the cache for the files that where not found in the status results (eg checked-in or reverted outside of the Editor)
+	for (const auto& CachedState : CachedStates)
 	{
-		Provider.RemoveFileFromCache(PreviousState->GetFilename());
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = StaticCastSharedRef<FPlasticSourceControlState>(CachedState);
+		// Check if a file that was "deleted" or "locally deleted" has been reverted or checked-in by testing if it still exists on disk
+		if (State->IsDeleted() && !FPaths::FileExists(State->GetFilename()))
+		{
+			// Remove the file from the cache if it has been deleted from disk
+			Provider.RemoveFileFromCache(State->GetFilename());
+		}
+		else
+		{
+			// Switch back the file state to the default Controlled status (Unknown would prevent checkout)
+			State->WorkspaceState = EWorkspaceState::Controlled;
+		}
 
 #if ENGINE_MAJOR_VERSION == 5
 		// also remove the file from its changelist if any
-		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = StaticCastSharedRef<FPlasticSourceControlState>(PreviousState);
 		if (State->Changelist.IsInitialized())
 		{
 			// 1- Remove these files from their previous changelist
