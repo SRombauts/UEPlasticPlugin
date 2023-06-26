@@ -544,6 +544,19 @@ static void ParseDirectoryStatusResult(const FString& InDir, const TArray<FStrin
 	for (const auto& PreviousState : CachedStates)
 	{
 		Provider.RemoveFileFromCache(PreviousState->GetFilename());
+
+#if ENGINE_MAJOR_VERSION == 5
+		// also remove the file from its changelist if any
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = StaticCastSharedRef<FPlasticSourceControlState>(PreviousState);
+		if (State->Changelist.IsInitialized())
+		{
+			// 1- Remove these files from their previous changelist
+			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = Provider.GetStateInternal(State->Changelist);
+			ChangelistState->Files.Remove(State);
+			// 2- And reset the reference to their previous changelist
+			State->Changelist.Reset();
+		}
+#endif
 	}
 }
 
