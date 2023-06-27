@@ -476,7 +476,7 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 			}
 			else
 			{
-				// but also the case for newly created content: there is no file on disk until the content is saved for the first time
+				// but also the case for newly created content: there is no file on disk until the content is saved for the first time (but we cannot mark is as locally deleted)
 				FileState.WorkspaceState = EWorkspaceState::Private; // Not Controlled
 			}
 		}

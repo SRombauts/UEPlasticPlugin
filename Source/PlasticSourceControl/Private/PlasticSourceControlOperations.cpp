@@ -392,17 +392,6 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			}
 			if (InCommand.bCommandSuccessful)
 			{
-				// Remove any deleted files from status cache
-				TArray<TSharedRef<ISourceControlState, ESPMode::ThreadSafe>> LocalStates;
-				GetProvider().GetState(Files, LocalStates, EStateCacheUsage::Use);
-				for (const auto& State : LocalStates)
-				{
-					if (State->IsDeleted())
-					{
-						GetProvider().RemoveFileFromCache(State->GetFilename());
-					}
-				}
-
 				Operation->SetSuccessMessage(ParseCheckInResults(InCommand.InfoMessages));
 				UE_LOG(LogSourceControl, Log, TEXT("CheckIn successful"));
 			}
@@ -470,6 +459,16 @@ bool FPlasticCheckInWorker::UpdateStates()
 		}
 	}
 #endif
+
+	// Remove any deleted files from status cache
+	for (const auto& State : States)
+	{
+		// Note: a file that was deleted and submitted now appears as "Private", that is, not in Source Control anymore
+		if (!State.IsSourceControlled())
+		{
+			GetProvider().RemoveFileFromCache(State.GetFilename());
+		}
+	}
 
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
