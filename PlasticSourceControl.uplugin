@@ -18,11 +18,7 @@
 		{
 			"Name": "PlasticSourceControl",
 			"Type": "UncookedOnly",
-			"LoadingPhase": "EarliestPossible",
-			"PlatformAllowList": [
-				"Win64",
-				"Linux"
-			]
+			"LoadingPhase": "EarliestPossible"
 		}
 	]
 }
