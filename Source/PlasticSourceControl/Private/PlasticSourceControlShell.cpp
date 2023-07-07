@@ -101,9 +101,9 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 #endif
 
 
-#if !PLATFORM_LINUX
+#if PLATFORM_WINDOWS
 	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
-#else // PLATFORM_LINUX
+#else // PLATFORM_MAC or PLATFORM_LINUX 
 	// Update working directory
 	char OriginalWorkingDirectory[PATH_MAX];
 	getcwd(OriginalWorkingDirectory, PATH_MAX);
