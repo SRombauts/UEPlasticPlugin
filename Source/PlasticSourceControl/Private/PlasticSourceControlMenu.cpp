@@ -271,6 +271,33 @@ void FPlasticSourceControlMenu::RefreshClicked()
 	}
 }
 
+void FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked()
+{
+	if (!OperationInProgressNotification.IsValid())
+	{
+		// Launch a "SwitchToPartialWorkspace" Operation
+		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+		TSharedRef<FPlasticSwitchToPartialWorkspace, ESPMode::ThreadSafe> SwitchOperation = ISourceControlOperation::Create<FPlasticSwitchToPartialWorkspace>();
+		const ECommandResult::Type Result = Provider.Execute(SwitchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+		if (Result == ECommandResult::Succeeded)
+		{
+			// Display an ongoing notification during the whole operation
+			DisplayInProgressNotification(SwitchOperation->GetInProgressString());
+		}
+		else
+		{
+			// Report failure with a notification
+			DisplayFailureNotification(SwitchOperation->GetName());
+		}
+	}
+	else
+	{
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
+	}
+}
+
 bool FPlasticSourceControlMenu::CanSwitchToPartialWorkspace() const
 {
 	return !FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace();
