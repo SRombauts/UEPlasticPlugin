@@ -284,6 +284,24 @@ public:
 	virtual bool UpdateStates() override;
 };
 
+/** Switch to Partial Workspace. */
+class FPlasticSwitchToPartialWorkspaceWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticSwitchToPartialWorkspaceWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticSwitchToPartialWorkspaceWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+public:
+	/** Temporary states for results */
+	TArray<FPlasticSourceControlState> States;
+};
+
 /** Plastic update the workspace to latest changes */
 class FPlasticSyncWorker final : public IPlasticSourceControlWorker
 {
