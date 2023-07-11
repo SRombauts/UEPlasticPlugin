@@ -511,6 +511,24 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		)
 	);
 
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"SwitchToPartialWorkspace",
+#endif
+		LOCTEXT("SwitchToPartialWorkspace",			"Switch to Gluon Partial Workspace"),
+		LOCTEXT("SwitchToPartialWorkspaceTooltip",	"Update the workspace to a Gluon partial mode for a simplified workflow.\n"
+			"Allow to update and check in files individually as opposed to the whole workspace.\nDoesn't work with branches nor shelves."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "GenericCommands.Cut"),
+#else
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "GenericCommands.Cut"),
+#endif
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked),
+			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanSwitchToPartialWorkspace)
+		)
+	);
+
 #if ENGINE_MAJOR_VERSION == 5
 	Menu.AddMenuEntry(
 		"SourceControlEditorPreferences",
