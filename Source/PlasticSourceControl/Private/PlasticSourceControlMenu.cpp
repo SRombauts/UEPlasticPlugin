@@ -271,6 +271,11 @@ void FPlasticSourceControlMenu::RefreshClicked()
 	}
 }
 
+bool FPlasticSourceControlMenu::CanSwitchToPartialWorkspace() const
+{
+	return !FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace();
+}
+
 void FPlasticSourceControlMenu::ShowSourceControlEditorPreferences() const
 {
 	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
