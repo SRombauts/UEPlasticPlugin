@@ -103,7 +103,17 @@ FName FPlasticMakeWorkspace::GetName() const
 
 FText FPlasticMakeWorkspace::GetInProgressString() const
 {
-	return LOCTEXT("SourceControl_MakeWorkspace", "Create a new Repository and initialize the Workspace");
+	return LOCTEXT("SourceControl_MakeWorkspace", "Creating a new Repository and initializing the Workspace");
+}
+
+FName FPlasticSwitchToPartialWorkspace::GetName() const
+{
+	return "SwitchToPartialWorkspace";
+}
+
+FText FPlasticSwitchToPartialWorkspace::GetInProgressString() const
+{
+	return LOCTEXT("SourceControl_SwitchToPartialWorkspace", "Switching to a Partial/Gluon Workspace");
 }
 
 static bool AreAllFiles(const TArray<FString>& InFiles)
