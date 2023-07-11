@@ -275,19 +275,26 @@ void FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked()
 {
 	if (!OperationInProgressNotification.IsValid())
 	{
-		// Launch a "SwitchToPartialWorkspace" Operation
-		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-		TSharedRef<FPlasticSwitchToPartialWorkspace, ESPMode::ThreadSafe> SwitchOperation = ISourceControlOperation::Create<FPlasticSwitchToPartialWorkspace>();
-		const ECommandResult::Type Result = Provider.Execute(SwitchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
-		if (Result == ECommandResult::Succeeded)
+		// Ask the user before switching to Partial Workspace. It's not possible to switch back with local changes!
+		const FText DialogText(LOCTEXT("SourceControlMenu_AskSwitchToPartialWorkspace", "Switch to Gluon's partial workspace with?\n"
+			"Please note that, in order to switch back to a regular workspace you will need to undo all local changes."));
+		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::OkCancel, DialogText);
+		if (Choice == EAppReturnType::Ok)
 		{
-			// Display an ongoing notification during the whole operation
-			DisplayInProgressNotification(SwitchOperation->GetInProgressString());
-		}
-		else
-		{
-			// Report failure with a notification
-			DisplayFailureNotification(SwitchOperation->GetName());
+			// Launch a "SwitchToPartialWorkspace" Operation
+			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+			TSharedRef<FPlasticSwitchToPartialWorkspace, ESPMode::ThreadSafe> SwitchOperation = ISourceControlOperation::Create<FPlasticSwitchToPartialWorkspace>();
+			const ECommandResult::Type Result = Provider.Execute(SwitchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+			if (Result == ECommandResult::Succeeded)
+			{
+				// Display an ongoing notification during the whole operation
+				DisplayInProgressNotification(SwitchOperation->GetInProgressString());
+			}
+			else
+			{
+				// Report failure with a notification
+				DisplayFailureNotification(SwitchOperation->GetName());
+			}
 		}
 	}
 	else
