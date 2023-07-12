@@ -84,6 +84,19 @@ public:
 };
 
 
+/**
+ * Internal operation used to switch to a partial workspace
+*/
+class FPlasticSwitchToPartialWorkspace final : public ISourceControlOperation
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+};
+
+
 /** Called when first activated on a project, and then at project load time.
  *  Look for the root directory of the Plastic workspace (where the ".plastic/" subdirectory is located). */
 class FPlasticConnectWorker final : public IPlasticSourceControlWorker
@@ -269,6 +282,24 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() override;
+};
+
+/** Switch to Partial Workspace. */
+class FPlasticSwitchToPartialWorkspaceWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticSwitchToPartialWorkspaceWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticSwitchToPartialWorkspaceWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+public:
+	/** Temporary states for results */
+	TArray<FPlasticSourceControlState> States;
 };
 
 /** Plastic update the workspace to latest changes */

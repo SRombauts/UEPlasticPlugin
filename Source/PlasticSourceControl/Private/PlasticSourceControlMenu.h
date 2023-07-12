@@ -21,6 +21,8 @@ public:
 	void RevertUnchangedClicked();
 	void RevertAllClicked();
 	void RefreshClicked();
+	void SwitchToPartialWorkspaceClicked();
+	bool CanSwitchToPartialWorkspace() const;
 	void ShowSourceControlEditorPreferences() const;
 	void ShowSourceControlProjectSettings() const;
 	void ShowSourceControlPlasticScmProjectSettings() const;

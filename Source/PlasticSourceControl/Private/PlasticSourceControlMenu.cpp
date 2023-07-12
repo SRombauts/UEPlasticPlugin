@@ -271,6 +271,45 @@ void FPlasticSourceControlMenu::RefreshClicked()
 	}
 }
 
+void FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked()
+{
+	if (!OperationInProgressNotification.IsValid())
+	{
+		// Ask the user before switching to Partial Workspace. It's not possible to switch back with local changes!
+		const FText DialogText(LOCTEXT("SourceControlMenu_AskSwitchToPartialWorkspace", "Switch to Gluon partial workspace?\n"
+			"Please note that, in order to switch back to a regular workspace you will need to undo all local changes."));
+		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::OkCancel, DialogText);
+		if (Choice == EAppReturnType::Ok)
+		{
+			// Launch a "SwitchToPartialWorkspace" Operation
+			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+			TSharedRef<FPlasticSwitchToPartialWorkspace, ESPMode::ThreadSafe> SwitchOperation = ISourceControlOperation::Create<FPlasticSwitchToPartialWorkspace>();
+			const ECommandResult::Type Result = Provider.Execute(SwitchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+			if (Result == ECommandResult::Succeeded)
+			{
+				// Display an ongoing notification during the whole operation
+				DisplayInProgressNotification(SwitchOperation->GetInProgressString());
+			}
+			else
+			{
+				// Report failure with a notification
+				DisplayFailureNotification(SwitchOperation->GetName());
+			}
+		}
+	}
+	else
+	{
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
+	}
+}
+
+bool FPlasticSourceControlMenu::CanSwitchToPartialWorkspace() const
+{
+	return !FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace();
+}
+
 void FPlasticSourceControlMenu::ShowSourceControlEditorPreferences() const
 {
 	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
@@ -476,6 +515,24 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RefreshClicked),
 			FCanExecuteAction()
+		)
+	);
+
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"SwitchToPartialWorkspace",
+#endif
+		LOCTEXT("SwitchToPartialWorkspace",			"Switch to Gluon Partial Workspace"),
+		LOCTEXT("SwitchToPartialWorkspaceTooltip",	"Update the workspace to a Gluon partial mode for a simplified workflow.\n"
+			"Allows to update and check in files individually as opposed to the whole workspace.\nIt doesn't work with branches or shelves."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "GenericCommands.Cut"),
+#else
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "GenericCommands.Cut"),
+#endif
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked),
+			FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanSwitchToPartialWorkspace)
 		)
 	);
 
