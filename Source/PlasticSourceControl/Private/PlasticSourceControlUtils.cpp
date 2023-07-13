@@ -1108,7 +1108,7 @@ bool RunGetFile(const FString& InRevSpec, const FString& InDumpFileName)
 	FString Errors;
 
 	TArray<FString> Parameters;
-	Parameters.Add(InRevSpec);
+	Parameters.Add(FString::Printf(TEXT("\"%s\""), *InRevSpec));
 	Parameters.Add(TEXT("--raw"));
 	Parameters.Add(FString::Printf(TEXT("--file=\"%s\""), *InDumpFileName));
 	const bool bResult = PlasticSourceControlUtils::RunCommand(TEXT("getfile"), Parameters, TArray<FString>(), Results, Errors);
