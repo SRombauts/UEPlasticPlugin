@@ -81,6 +81,7 @@ public:
 	FString WorkspaceName;
 	FString RepositoryName;
 	FString ServerUrl;
+	bool bPartialWorkspace;
 };
 
 
