@@ -104,7 +104,7 @@ FName FPlasticMakeWorkspace::GetName() const
 
 FText FPlasticMakeWorkspace::GetInProgressString() const
 {
-	return LOCTEXT("SourceControl_MakeWorkspace", "Creating a new Repository and initializing the Workspace");
+	return LOCTEXT("SourceControl_MakeWorkspace", "Creating a new Repository and Workspace");
 }
 
 FName FPlasticSwitchToPartialWorkspace::GetName() const

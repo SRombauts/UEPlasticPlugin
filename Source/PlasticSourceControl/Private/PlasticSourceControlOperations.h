@@ -68,7 +68,7 @@ public:
 
 
 /**
-* Internal operation used to initialize a new Workspace and a new Repository
+* Internal operation used to create a new Workspace and a new Repository
 */
 class FPlasticMakeWorkspace final : public ISourceControlOperation
 {
@@ -270,7 +270,7 @@ public:
 	TArray<FPlasticSourceControlState> States;
 };
 
-/** Initialize a new Workspace and a new Repository */
+/** Create a new Workspace and a new Repository */
 class FPlasticMakeWorkspaceWorker final : public IPlasticSourceControlWorker
 {
 public:
