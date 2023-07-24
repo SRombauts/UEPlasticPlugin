@@ -48,6 +48,9 @@ private:
 	void OnServerUrlCommited(const FText& InText, ETextCommit::Type InCommitType);
 	FText GetServerUrl() const;
 	FText ServerUrl;
+	bool CreatePartialWorkspace() const;
+	void OnCheckedCreatePartialWorkspace(ECheckBoxState NewCheckedState);
+	bool bCreatePartialWorkspace;
 	bool CanAutoCreateIgnoreFile() const;
 	void OnCheckedCreateIgnoreFile(ECheckBoxState NewCheckedState);
 	bool bAutoCreateIgnoreFile;

@@ -249,6 +249,23 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.Font(Font)
 			]
 		]
+		// Option to create a Partial/Gluon Workspace designed
+		+SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2.0f)
+		.VAlign(VAlign_Center)
+		[
+			SNew(SCheckBox)
+			.Visibility(this, &SPlasticSourceControlSettings::CanCreatePlasticWorkspace)
+			.ToolTipText(LOCTEXT("CreatePartialWorkspace_Tooltip", "Create the new workspace in Gluon/partial mode, designed for artists."))
+			.IsChecked(bCreatePartialWorkspace)
+			.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedCreatePartialWorkspace)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("CreatePartialWorkspace", "Make the new workspace a Gluon partial workspace."))
+				.Font(Font)
+			]
+		]
 		// Option to add a 'ignore.conf' file at Workspace creation time
 		+SVerticalBox::Slot()
 		.AutoHeight()
@@ -485,6 +502,16 @@ FText SPlasticSourceControlSettings::GetServerUrl() const
 	return ServerUrl;
 }
 
+bool SPlasticSourceControlSettings::CreatePartialWorkspace() const
+{
+	return bCreatePartialWorkspace;
+}
+
+void SPlasticSourceControlSettings::OnCheckedCreatePartialWorkspace(ECheckBoxState NewCheckedState)
+{
+	bCreatePartialWorkspace = (NewCheckedState == ECheckBoxState::Checked);
+}
+
 bool SPlasticSourceControlSettings::CanAutoCreateIgnoreFile() const
 {
 	const bool bIgnoreFileFound = FPaths::FileExists(GetIgnoreFileName());
@@ -531,6 +558,7 @@ void SPlasticSourceControlSettings::LaunchMakeWorkspaceOperation()
 	MakeWorkspaceOperation->WorkspaceName = WorkspaceName.ToString();
 	MakeWorkspaceOperation->RepositoryName = RepositoryName.ToString();
 	MakeWorkspaceOperation->ServerUrl = ServerUrl.ToString();
+	MakeWorkspaceOperation->bPartialWorkspace = bCreatePartialWorkspace;
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	ECommandResult::Type Result = Provider.Execute(MakeWorkspaceOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
