@@ -174,6 +174,7 @@ static bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchNam
 	//                                     or "Changeset 1234@UE5PlasticPluginDev@test@cloud" (when the workspace is switched on a changeset instead of a branch)
 	static const FString BranchPrefix(TEXT("Branch "));
 	static const FString ChangesetPrefix(TEXT("Changeset "));
+	static const FString LabelPrefix(TEXT("Label "));
 	static const FString RepPrefix(TEXT("rep:"));
 	static const FString RepserverPrefix(TEXT("repserver:"));
 	FString& WorkspaceInfo = InResults[0];
@@ -184,6 +185,10 @@ static bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchNam
 	else if (WorkspaceInfo.StartsWith(ChangesetPrefix, ESearchCase::CaseSensitive))
 	{
 		WorkspaceInfo.RightChopInline(ChangesetPrefix.Len());
+	}
+	else if (WorkspaceInfo.StartsWith(LabelPrefix, ESearchCase::CaseSensitive))
+	{
+		WorkspaceInfo.RightChopInline(LabelPrefix.Len());
 	}
 	else
 	{
