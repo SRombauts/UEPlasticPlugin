@@ -104,7 +104,7 @@ FName FPlasticMakeWorkspace::GetName() const
 
 FText FPlasticMakeWorkspace::GetInProgressString() const
 {
-	return LOCTEXT("SourceControl_MakeWorkspace", "Creating a new Repository and initializing the Workspace");
+	return LOCTEXT("SourceControl_MakeWorkspace", "Creating a new Repository and Workspace");
 }
 
 FName FPlasticSwitchToPartialWorkspace::GetName() const
@@ -902,6 +902,12 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 		Parameters.Add(TEXT(".")); // current path, ie. ProjectDir
 		Parameters.Add(FString::Printf(TEXT("--repository=rep:%s@repserver:%s"), *Operation->RepositoryName, *Operation->ServerUrl));
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+	if (Operation->bPartialWorkspace)
+	{
+		TArray<FString> Parameters;
+		Parameters.Add(TEXT("update"));
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
 
 	return InCommand.bCommandSuccessful;

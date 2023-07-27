@@ -36,9 +36,9 @@ private:
 	FText GetPathToWorkspaceRoot() const;
 	FText GetUserName() const;
 
-	/** Delegate to initialize a new Plastic workspace and repository */
-	EVisibility CanInitializePlasticWorkspace() const;
-	bool IsReadyToInitializePlasticWorkspace() const;
+	/** Delegate to create a new Plastic workspace and repository */
+	EVisibility CanCreatePlasticWorkspace() const;
+	bool IsReadyToCreatePlasticWorkspace() const;
 	void OnWorkspaceNameCommited(const FText& InText, ETextCommit::Type InCommitType);
 	FText GetWorkspaceName() const;
 	FText WorkspaceName;
@@ -48,6 +48,9 @@ private:
 	void OnServerUrlCommited(const FText& InText, ETextCommit::Type InCommitType);
 	FText GetServerUrl() const;
 	FText ServerUrl;
+	bool CreatePartialWorkspace() const;
+	void OnCheckedCreatePartialWorkspace(ECheckBoxState NewCheckedState);
+	bool bCreatePartialWorkspace;
 	bool CanAutoCreateIgnoreFile() const;
 	void OnCheckedCreateIgnoreFile(ECheckBoxState NewCheckedState);
 	bool bAutoCreateIgnoreFile;
@@ -83,7 +86,7 @@ private:
 	void DisplaySuccessNotification(const FName& InOperationName);
 	void DisplayFailureNotification(const FName& InOperationName);
 
-	FReply OnClickedInitializePlasticWorkspace();
+	FReply OnClickedCreatePlasticWorkspace();
 
 	/** Delegate to add a Plastic ignore.conf file to an existing Plastic workspace */
 	EVisibility CanAddIgnoreFile() const;

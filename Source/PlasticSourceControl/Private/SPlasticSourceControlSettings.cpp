@@ -179,7 +179,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.Padding(2.0f, 5.0f)
 		[
 			SNew(STextBlock)
-			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
+			.Visibility(this, &SPlasticSourceControlSettings::CanCreatePlasticWorkspace)
 			.ToolTipText(LOCTEXT("WorkspaceNotFound_Tooltip", "No Workspace found at the level or above the current Project. Use the form to create a new one."))
 			.Text(LOCTEXT("WorkspaceNotFound", "Current Project is not in a Unity Version Control Workspace. Create a new one:"))
 			.Font(Font)
@@ -191,7 +191,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SHorizontalBox)
-			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
+			.Visibility(this, &SPlasticSourceControlSettings::CanCreatePlasticWorkspace)
 			+SHorizontalBox::Slot()
 			.FillWidth(1.0f)
 			[
@@ -230,7 +230,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SHorizontalBox)
-			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
+			.Visibility(this, &SPlasticSourceControlSettings::CanCreatePlasticWorkspace)
 			.ToolTipText(LOCTEXT("ServerUrl_Tooltip", "Enter the Server URL in the form address:port (eg. YourOrganization@cloud, local, or something like ip:port, eg localhost:8087)"))
 			+SHorizontalBox::Slot()
 			.FillWidth(1.0f)
@@ -249,6 +249,23 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.Font(Font)
 			]
 		]
+		// Option to create a Partial/Gluon Workspace designed
+		+SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2.0f)
+		.VAlign(VAlign_Center)
+		[
+			SNew(SCheckBox)
+			.Visibility(this, &SPlasticSourceControlSettings::CanCreatePlasticWorkspace)
+			.ToolTipText(LOCTEXT("CreatePartialWorkspace_Tooltip", "Create the new workspace in Gluon/partial mode, designed for artists."))
+			.IsChecked(bCreatePartialWorkspace)
+			.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedCreatePartialWorkspace)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("CreatePartialWorkspace", "Make the new workspace a Gluon partial workspace."))
+				.Font(Font)
+			]
+		]
 		// Option to add a 'ignore.conf' file at Workspace creation time
 		+SVerticalBox::Slot()
 		.AutoHeight()
@@ -256,7 +273,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SCheckBox)
-			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
+			.Visibility(this, &SPlasticSourceControlSettings::CanCreatePlasticWorkspace)
 			.ToolTipText(LOCTEXT("CreateIgnoreFile_Tooltip", "Create and add a standard 'ignore.conf' file"))
 			.IsEnabled(this, &SPlasticSourceControlSettings::CanAutoCreateIgnoreFile)
 			.IsChecked(bAutoCreateIgnoreFile)
@@ -274,7 +291,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SHorizontalBox)
-			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
+			.Visibility(this, &SPlasticSourceControlSettings::CanCreatePlasticWorkspace)
 			.ToolTipText(LOCTEXT("InitialCommit_Tooltip", "Make the initial Unity Version Control checkin"))
 			+SHorizontalBox::Slot()
 			.FillWidth(0.7f)
@@ -358,15 +375,15 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SHorizontalBox)
-			.Visibility(this, &SPlasticSourceControlSettings::CanInitializePlasticWorkspace)
+			.Visibility(this, &SPlasticSourceControlSettings::CanCreatePlasticWorkspace)
 			+SHorizontalBox::Slot()
 			.FillWidth(1.0f)
 			[
 				SNew(SButton)
-				.IsEnabled(this, &SPlasticSourceControlSettings::IsReadyToInitializePlasticWorkspace)
+				.IsEnabled(this, &SPlasticSourceControlSettings::IsReadyToCreatePlasticWorkspace)
 				.Text(LOCTEXT("PlasticInitWorkspace", "Create a new Unity Version Control workspace for the current project"))
-				.ToolTipText(LOCTEXT("PlasticInitWorkspace_Tooltip", "Create and initialize a new Unity Version Control workspace and repository for the current project"))
-				.OnClicked(this, &SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace)
+				.ToolTipText(LOCTEXT("PlasticInitWorkspace_Tooltip", "Create a new Unity Version Control repository and workspace and for the current project"))
+				.OnClicked(this, &SPlasticSourceControlSettings::OnClickedCreatePlasticWorkspace)
 				.HAlign(HAlign_Center)
 				.ContentPadding(6)
 			]
@@ -438,7 +455,7 @@ FText SPlasticSourceControlSettings::GetUserName() const
 }
 
 
-EVisibility SPlasticSourceControlSettings::CanInitializePlasticWorkspace() const
+EVisibility SPlasticSourceControlSettings::CanCreatePlasticWorkspace() const
 {
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const bool bPlasticAvailable = Provider.IsPlasticAvailable();
@@ -446,7 +463,7 @@ EVisibility SPlasticSourceControlSettings::CanInitializePlasticWorkspace() const
 	return (bPlasticAvailable && !bPlasticWorkspaceFound) ? EVisibility::Visible : EVisibility::Collapsed;
 }
 
-bool SPlasticSourceControlSettings::IsReadyToInitializePlasticWorkspace() const
+bool SPlasticSourceControlSettings::IsReadyToCreatePlasticWorkspace() const
 {
 	// Workspace Name cannot be left empty
 	const bool bWorkspaceNameOk = !WorkspaceName.IsEmpty();
@@ -485,6 +502,16 @@ FText SPlasticSourceControlSettings::GetServerUrl() const
 	return ServerUrl;
 }
 
+bool SPlasticSourceControlSettings::CreatePartialWorkspace() const
+{
+	return bCreatePartialWorkspace;
+}
+
+void SPlasticSourceControlSettings::OnCheckedCreatePartialWorkspace(ECheckBoxState NewCheckedState)
+{
+	bCreatePartialWorkspace = (NewCheckedState == ECheckBoxState::Checked);
+}
+
 bool SPlasticSourceControlSettings::CanAutoCreateIgnoreFile() const
 {
 	const bool bIgnoreFileFound = FPaths::FileExists(GetIgnoreFileName());
@@ -512,9 +539,9 @@ FText SPlasticSourceControlSettings::GetInitialCommitMessage() const
 }
 
 
-FReply SPlasticSourceControlSettings::OnClickedInitializePlasticWorkspace()
+FReply SPlasticSourceControlSettings::OnClickedCreatePlasticWorkspace()
 {
-	UE_LOG(LogSourceControl, Log, TEXT("InitializePlasticWorkspace(%s, %s, %s) CreateIgnore=%d Commit=%d"),
+	UE_LOG(LogSourceControl, Log, TEXT("CreatePlasticWorkspace(%s, %s, %s) CreateIgnore=%d Commit=%d"),
 		*WorkspaceName.ToString(), *RepositoryName.ToString(), *ServerUrl.ToString(), bAutoCreateIgnoreFile, bAutoInitialCommit);
 
 	// 1.a. Create a repository (if not already existing) and a workspace: launch an asynchronous MakeWorkspace operation
@@ -531,6 +558,7 @@ void SPlasticSourceControlSettings::LaunchMakeWorkspaceOperation()
 	MakeWorkspaceOperation->WorkspaceName = WorkspaceName.ToString();
 	MakeWorkspaceOperation->RepositoryName = RepositoryName.ToString();
 	MakeWorkspaceOperation->ServerUrl = ServerUrl.ToString();
+	MakeWorkspaceOperation->bPartialWorkspace = bCreatePartialWorkspace;
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	ECommandResult::Type Result = Provider.Execute(MakeWorkspaceOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
