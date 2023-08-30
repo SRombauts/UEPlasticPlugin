@@ -517,19 +517,10 @@ bool FPlasticSourceControlProvider::UsesCheckout() const
 
 bool FPlasticSourceControlProvider::UsesFileRevisions() const
 {
-// This API introduced in UE5.1 was broken (preventing the user to use the source control context menu for checkin,
-// as well as selecting what files to submit in the global Submit Content window)
-// but is going to be fixed for UE5.3 through the use of the new following UsesSnapshots() API
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
-
-	// Only a Partial/Gluon workspace can sync/update files individually, operating on revisions (can use the context menu)
-	// while a regular workspace can only update all the files as a whole, operating at the changeset level (requires the global menu)
-	return IsPartialWorkspace();
-
-#else
+	// This API introduced in UE5.1 is still broken as of UE5.3
+	// (preventing the user to use the source control context menu for checkin if returning false)
+	//	return IsPartialWorkspace();
 	return true;
-
-#endif
 }
 
 bool FPlasticSourceControlProvider::UsesSnapshots() const
