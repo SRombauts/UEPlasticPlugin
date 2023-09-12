@@ -3,12 +3,11 @@ Unity Version Control (formerly Plastic SCM) plugin for Unreal Engine
 
 [![release](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
 
-This is the **official [Unity Version Control (formerly Plastic SCM)](https://plasticscm.com/) plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0 to 5.2).
-An old version 1.4.6+ has been integrated in Unreal Engine 4.24 and has been shipping with it since then.
-The most recent version 1.6.2 has been integrated in Github for the upcoming Unreal Engine 5.1 so it is eventually going to ship to everyone.
+This is the **official [Unity Version Control (formerly Plastic SCM)](https://plasticscm.com/) plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0 to 5.3).
+An old version 1.4.6+ was integrated in Unreal Engine 4.24 and has been shipping with it up to UE5.
+More recent versions have been integrated in Unreal Engine 5.1 and above.
 But in the meantime, if you have a project of a certain size, chances are you need to upgrade manually to a version we provide from Github
-in order to benefit from all the performance improvements we have made since then.
-See the Status section below for more details.
+in order to benefit from all the performance improvements, bugfixes and changes we have made since then.
 
 It is not intended to replace the [Unity Version Control Desktop Client](https://docs.plasticscm.com/gui/plastic-scm-version-control-gui-guide)
 or [command line interface "cm"](https://docs.plasticscm.com/cli/plastic-scm-version-control-cli-guide).
@@ -56,8 +55,9 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
 
 - UE4.24 to 4.27 shipped with an old version 1.4.6 of this plugin
 - UE5.0 shipped with the same outdated version 1.4.6, not performing well overall with UE5, especially on OFPA
-- UE5.1 shipped with the version 1.6.2 of the plugin with support for the new View Changelists window
-- UE5.2 shipped with the version 1.8.0 of the plugin with support for the Shelves in the renamed View Changes window
+- UE5.1 shipped with the version 1.6.2 with support for the new View Changelists window
+- UE5.2 shipped with the version 1.8.0 with support for the Shelves in the renamed View Changes window
+- UE5.3 shipped with the same version 1.8.0
 
 **Why?**: Why is it integrated, as opposed to, eg. being shared through the Marketplace?
 
