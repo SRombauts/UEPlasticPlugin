@@ -354,6 +354,20 @@ void FPlasticSourceControlMenu::VisitSupportURLClicked() const
 	}
 }
 
+void FPlasticSourceControlMenu::VisitLockRulesURLClicked(const FString OrganizationName) const
+{
+	// Grab the URL from the uplugin file
+	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
+	if (Plugin.IsValid())
+	{
+		const FText organizationLockRulesURL = FText::Format(
+			FText::FromString("https://dashboard.unity3d.com/devops/organizations/default/plastic-scm/organizations/{0}/lock-rules"),
+			FText::FromString(OrganizationName)
+		);
+		FPlatformProcess::LaunchURL(*organizationLockRulesURL.ToString(), NULL, NULL);
+	}
+}
+
 // Display an ongoing notification during the whole operation
 void FPlasticSourceControlMenu::DisplayInProgressNotification(const FText& InOperationInProgressString)
 {
@@ -629,6 +643,33 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			FCanExecuteAction()
 		)
 	);
+
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString& serverUrl = Provider.GetServerUrl();
+
+	if (serverUrl.Contains("@cloud"))
+	{
+		const FString& organizationName = serverUrl.Left(serverUrl.Find("@cloud"));
+
+		Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+			"PlasticLockRulesURL",
+#endif
+			LOCTEXT("PlasticLockRulesURL", "Configure Lock Rules"),
+			LOCTEXT("PlasticLockRulesURLTooltip", "Navigate to lock rules configuration page in the Unity Dashboard."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked"),
+#elif ENGINE_MAJOR_VERSION == 5
+			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked"),
+#elif ENGINE_MAJOR_VERSION == 4
+			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked"),
+#endif
+			FUIAction(
+				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitLockRulesURLClicked, organizationName),
+				FCanExecuteAction()
+			)
+		);
+	}
 }
 
 #if ENGINE_MAJOR_VERSION == 4
