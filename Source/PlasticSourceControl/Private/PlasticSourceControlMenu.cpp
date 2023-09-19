@@ -354,18 +354,13 @@ void FPlasticSourceControlMenu::VisitSupportURLClicked() const
 	}
 }
 
-void FPlasticSourceControlMenu::VisitLockRulesURLClicked(const FString OrganizationName) const
+void FPlasticSourceControlMenu::VisitLockRulesURLClicked(const FString InOrganizationName) const
 {
-	// Grab the URL from the uplugin file
-	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
-	if (Plugin.IsValid())
-	{
-		const FText organizationLockRulesURL = FText::Format(
-			FText::FromString("https://dashboard.unity3d.com/devops/organizations/default/plastic-scm/organizations/{0}/lock-rules"),
-			FText::FromString(OrganizationName)
-		);
-		FPlatformProcess::LaunchURL(*organizationLockRulesURL.ToString(), NULL, NULL);
-	}
+	const FText organizationLockRulesURL = FText::Format(
+		FText::FromString("https://dashboard.unity3d.com/devops/organizations/default/plastic-scm/organizations/{0}/lock-rules"),
+		FText::FromString(InOrganizationName)
+	);
+	FPlatformProcess::LaunchURL(*organizationLockRulesURL.ToString(), NULL, NULL);
 }
 
 // Display an ongoing notification during the whole operation
@@ -647,9 +642,11 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString& serverUrl = Provider.GetServerUrl();
 
-	if (serverUrl.Contains("@cloud"))
+	int32 index = serverUrl.Find("@cloud");
+
+	if (index > -1)
 	{
-		const FString& organizationName = serverUrl.Left(serverUrl.Find("@cloud"));
+		const FString& organizationName = serverUrl.Left(index);
 
 		Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
@@ -657,13 +654,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 			LOCTEXT("PlasticLockRulesURL", "Configure Lock Rules"),
 			LOCTEXT("PlasticLockRulesURLTooltip", "Navigate to lock rules configuration page in the Unity Dashboard."),
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked"),
-#elif ENGINE_MAJOR_VERSION == 5
-			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked"),
-#elif ENGINE_MAJOR_VERSION == 4
-			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked"),
-#endif
 			FUIAction(
 				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitLockRulesURLClicked, organizationName),
 				FCanExecuteAction()
