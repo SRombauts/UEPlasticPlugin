@@ -640,13 +640,11 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 	);
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-	const FString& serverUrl = Provider.GetServerUrl();
-
-	int32 index = serverUrl.Find("@cloud");
-
-	if (index > INDEX_NONE)
+	const FString& ServerUrl = Provider.GetServerUrl();
+	const int32 CloudIndex = ServerUrl.Find(TEXT("@cloud"));
+	if (CloudIndex > INDEX_NONE)
 	{
-		const FString& organizationName = serverUrl.Left(index);
+		const FString& OrganizationName = ServerUrl.Left(CloudIndex);
 
 		Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
@@ -660,7 +658,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked"),
 #endif
 			FUIAction(
-				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitLockRulesURLClicked, organizationName),
+				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitLockRulesURLClicked, OrganizationName),
 				FCanExecuteAction()
 			)
 		);

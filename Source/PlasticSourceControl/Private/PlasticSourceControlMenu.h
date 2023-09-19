@@ -28,7 +28,7 @@ public:
 	void ShowSourceControlPlasticScmProjectSettings() const;
 	void VisitDocsURLClicked() const;
 	void VisitSupportURLClicked() const;
-	void VisitLockRulesURLClicked(const FString OrganizationName) const;
+	void VisitLockRulesURLClicked(const FString InOrganizationName) const;
 
 private:
 	bool IsSourceControlConnected() const;
