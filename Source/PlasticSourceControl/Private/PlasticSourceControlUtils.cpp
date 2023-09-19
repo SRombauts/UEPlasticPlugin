@@ -693,7 +693,69 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	return bResult;
 }
 
-// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"
+class FSmartLockInfoParser
+{
+public:
+	explicit FSmartLockInfoParser(const FString& InResult)
+	{
+		TArray<FString> SmartLockInfos;
+		const int32 NbElmts = InResult.ParseIntoArray(SmartLockInfos, FILE_STATUS_SEPARATOR, false);
+		if (NbElmts >= 12)
+		{
+			Repository = MoveTemp(SmartLockInfos[0]);
+			BranchName = MoveTemp(SmartLockInfos[6]);
+			RevisionHead = FCString::Atoi(*SmartLockInfos[7]);
+			Status = MoveTemp(SmartLockInfos[8]);
+			Owner = UserNameToDisplayName(MoveTemp(SmartLockInfos[9]));
+			Filename = MoveTemp(SmartLockInfos[11]);
+		}
+	}
+
+	FString Repository;
+	FString BranchName;
+	FString Status;
+	FString Owner;
+	FString Filename;
+	int RevisionHead;
+};
+
+
+static bool RunListSmartLocks(TMap<FString, FSmartLockInfoParser>& InOutSmartLocks)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListSmartLocks);
+
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString& Repository = Provider.GetRepositoryName();
+	const FString& ServerUrl = Provider.GetServerUrl();
+
+	TArray<FString> Results;
+	TArray<FString> ErrorMessages;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("list"));
+	Parameters.Add(TEXT("--machinereadable"));
+	Parameters.Add(TEXT("--smartlocks"));
+	Parameters.Add(TEXT("--anystatus"));
+	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
+	Parameters.Add(FString::Printf(TEXT("--server=%s"), *ServerUrl));
+	bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
+
+	if (bResult)
+	{
+		for (int32 IdxResult = 0; IdxResult < Results.Num(); IdxResult++)
+		{
+			const FString& SmartLock = Results[IdxResult];
+			FSmartLockInfoParser SmartLockInfoParser(SmartLock);
+			if (SmartLockInfoParser.Repository == Repository)
+			{
+				InOutSmartLocks.Add(SmartLockInfoParser.Filename, SmartLockInfoParser);
+			}
+		}
+	}
+
+	return bResult;
+}
+
+// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{ServerPath}"
 // for example "40;41;repo@server:port;srombauts;UEPlasticPluginDev"
 class FPlasticFileinfoParser
 {
