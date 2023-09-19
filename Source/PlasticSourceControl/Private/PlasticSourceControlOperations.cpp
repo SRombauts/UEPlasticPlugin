@@ -2202,7 +2202,7 @@ namespace ReviewHelpers
 	const FString ChangelistStatusKey = TEXT("status");
 	const FString ChangelistPendingStatusKey = TEXT("pending");
 	constexpr int32 RecordIndex = 0;
-}
+} // namespace ReviewHelpers
 
 #if ENGINE_MINOR_VERSION >= 1
 
