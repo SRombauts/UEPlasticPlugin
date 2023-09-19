@@ -650,15 +650,15 @@ bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
 	return bIsLockedByOther;
 }
 
-/** Get whether this file is checked out in a different branch, if no branch is specified defaults to FEngineVerion current branch */
+/** Get whether this file is checked out in a different branch */
 bool FPlasticSourceControlState::IsCheckedOutInOtherBranch(const FString& CurrentBranch /* = FString() */) const
 {
-	// Note: to my knowledge, it's not possible to detect that with Unity Version Control without the Locks,
-	// which are already detected by fileinfo LockedBy/LockedWhere and reported by IsCheckedOutOther() above
-	return false;
+	// NOTE: technically this scenario isn't currently possible with Unity Version Control,
+	//       but the plugin need to use an existing Engine hook, so it's using this one as a way to display "Retained" locks
+	return IsRetainedInOtherBranch();
 }
 
-/** Get whether this file is modified in a different branch, if no branch is specified defaults to FEngineVerion current branch */
+/** Get whether this file is modified in a different branch */
 bool FPlasticSourceControlState::IsModifiedInOtherBranch(const FString& CurrentBranch /* = FString() */) const
 {
 	return !HeadBranch.IsEmpty();
