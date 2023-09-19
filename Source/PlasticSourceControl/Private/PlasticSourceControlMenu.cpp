@@ -356,11 +356,11 @@ void FPlasticSourceControlMenu::VisitSupportURLClicked() const
 
 void FPlasticSourceControlMenu::VisitLockRulesURLClicked(const FString InOrganizationName) const
 {
-	const FText organizationLockRulesURL = FText::Format(
-		FText::FromString("https://dashboard.unity3d.com/devops/organizations/default/plastic-scm/organizations/{0}/lock-rules"),
-		FText::FromString(InOrganizationName)
+	const FString OrganizationLockRulesURL = FString::Printf(
+		TEXT("https://dashboard.unity3d.com/devops/organizations/default/plastic-scm/organizations/%s/lock-rules"),
+		*InOrganizationName
 	);
-	FPlatformProcess::LaunchURL(*organizationLockRulesURL.ToString(), NULL, NULL);
+	FPlatformProcess::LaunchURL(*OrganizationLockRulesURL, NULL, NULL);
 }
 
 // Display an ongoing notification during the whole operation
