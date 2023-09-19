@@ -545,9 +545,10 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		)
 	);
 
-#if ENGINE_MAJOR_VERSION == 5
 	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
 		"SourceControlEditorPreferences",
+#endif
 		LOCTEXT("SourceControlEditorPreferences", "Editor Preferences - Source Control"),
 		LOCTEXT("SourceControlEditorPreferencesTooltip", "Open the Load & Save section with Source Control in the Editor Preferences."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
@@ -560,9 +561,8 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			FCanExecuteAction()
 		)
 	);
-#endif
 
-#if ENGINE_MAJOR_VERSION == 5
+#if ENGINE_MAJOR_VERSION == 5 // Disable the "Source Control Project Settings" for UE4 since this section is new to UE5
 	Menu.AddMenuEntry(
 		"SourceControlProjectSettings",
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
