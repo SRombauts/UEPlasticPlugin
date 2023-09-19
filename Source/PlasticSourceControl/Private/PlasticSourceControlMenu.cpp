@@ -354,6 +354,15 @@ void FPlasticSourceControlMenu::VisitSupportURLClicked() const
 	}
 }
 
+void FPlasticSourceControlMenu::VisitLockRulesURLClicked(const FString InOrganizationName) const
+{
+	const FString OrganizationLockRulesURL = FString::Printf(
+		TEXT("https://dashboard.unity3d.com/devops/organizations/default/plastic-scm/organizations/%s/lock-rules"),
+		*InOrganizationName
+	);
+	FPlatformProcess::LaunchURL(*OrganizationLockRulesURL, NULL, NULL);
+}
+
 // Display an ongoing notification during the whole operation
 void FPlasticSourceControlMenu::DisplayInProgressNotification(const FText& InOperationInProgressString)
 {
@@ -536,9 +545,10 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		)
 	);
 
-#if ENGINE_MAJOR_VERSION == 5
 	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
 		"SourceControlEditorPreferences",
+#endif
 		LOCTEXT("SourceControlEditorPreferences", "Editor Preferences - Source Control"),
 		LOCTEXT("SourceControlEditorPreferencesTooltip", "Open the Load & Save section with Source Control in the Editor Preferences."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
@@ -551,9 +561,8 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			FCanExecuteAction()
 		)
 	);
-#endif
 
-#if ENGINE_MAJOR_VERSION == 5
+#if ENGINE_MAJOR_VERSION == 5 // Disable the "Source Control Project Settings" for UE4 since this section is new to UE5
 	Menu.AddMenuEntry(
 		"SourceControlProjectSettings",
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
@@ -629,6 +638,31 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			FCanExecuteAction()
 		)
 	);
+
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString& ServerUrl = Provider.GetServerUrl();
+	const int32 CloudIndex = ServerUrl.Find(TEXT("@cloud"));
+	if (CloudIndex > INDEX_NONE)
+	{
+		const FString& OrganizationName = ServerUrl.Left(CloudIndex);
+
+		Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+			"PlasticLockRulesURL",
+#endif
+			LOCTEXT("PlasticLockRulesURL", "Configure Lock Rules"),
+			LOCTEXT("PlasticLockRulesURLTooltip", "Navigate to lock rules configuration page in the Unity Dashboard."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked"),
+#else
+			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked"),
+#endif
+			FUIAction(
+				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitLockRulesURLClicked, OrganizationName),
+				FCanExecuteAction()
+			)
+		);
+	}
 }
 
 #if ENGINE_MAJOR_VERSION == 4
