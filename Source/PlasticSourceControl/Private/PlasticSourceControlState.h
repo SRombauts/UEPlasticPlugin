@@ -151,6 +151,7 @@ public:
 
 	bool IsCheckedOutImplementation() const;
 	bool IsLocked() const;
+	bool IsRetainedInOtherBranch() const;
 
 public:
 	/** History of the item, if any */

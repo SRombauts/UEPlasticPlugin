@@ -119,13 +119,20 @@ FName FPlasticSourceControlState::GetIconName() const
 	{
 		return FName("Perforce.NotAtHeadRevision");
 	}
-	else if (!IsCheckedOutImplementation())
+
+	if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
 			return FName("Perforce.CheckedOutByOtherUser");
 		}
-		else if (IsModifiedInOtherBranch())
+
+		if (IsRetainedInOtherBranch())
+		{
+			return FName("Perforce.CheckedOutByOtherUserOtherBranch");
+		}
+
+		if (IsModifiedInOtherBranch())
 		{
 			return FName("Perforce.ModifiedOtherBranch");
 		}
@@ -172,13 +179,19 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 	{
 		return FName("Perforce.NotAtHeadRevision_Small");
 	}
-	else if (!IsCheckedOutImplementation())
+	if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
 			return FName("Perforce.CheckedOutByOtherUser_Small");
 		}
-		else if (IsModifiedInOtherBranch())
+
+		if (IsRetainedInOtherBranch())
+		{
+			return FName("Perforce.CheckedOutByOtherUserOtherBranch_Small");
+		}
+
+		if (IsModifiedInOtherBranch())
 		{
 			return FName("Perforce.ModifiedOtherBranch_Small");
 		}
@@ -229,13 +242,20 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	{
 		return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.NotAtHeadRevision");
 	}
-	else if (!IsCheckedOutImplementation())
+
+	if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
 			return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.CheckedOutByOtherUser", NAME_None, "RevisionControl.CheckedOutByOtherUserBadge");
 		}
-		else if (IsModifiedInOtherBranch())
+
+		if (IsRetainedInOtherBranch())
+		{
+			return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.CheckedOutByOtherUserOtherBranch", NAME_None, "RevisionControl.CheckedOutByOtherUserOtherBranchBadge");
+		}
+
+		if (IsModifiedInOtherBranch())
 		{
 			return FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.ModifiedOtherBranch", NAME_None, "RevisionControl.ModifiedBadge");
 		}
@@ -247,13 +267,20 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 	{
 		return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.NotAtHeadRevision");
 	}
-	else if (!IsCheckedOutImplementation())
+
+	if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
 			return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.CheckedOutByOtherUser", NAME_None, "SourceControl.LockOverlay");
 		}
-		else if (IsModifiedInOtherBranch())
+
+		if (IsRetainedInOtherBranch())
+		{
+			return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.CheckedOutByOtherUserOtherBranch", NAME_None, "SourceControl.LockOverlay");
+		}
+
+		if (IsModifiedInOtherBranch())
 		{
 			return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Perforce.ModifiedOtherBranch");
 		}
@@ -370,13 +397,20 @@ FText FPlasticSourceControlState::GetDisplayName() const
 		return FText::Format(LOCTEXT("NotCurrent", "Not at the head revision CS:{0} {1} (local revision is CS:{2})"),
 			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
-	else if (!IsCheckedOutImplementation())
+
+	if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
-			return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
+			return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by {0} on {1} (in {2})"), FText::FromString(LockedBy), FText::FromString(LockedBranch), FText::FromString(LockedWhere));
 		}
-		else if (IsModifiedInOtherBranch())
+
+		if (IsRetainedInOtherBranch())
+		{
+			return FText::Format(LOCTEXT("RetainedLock", "Retained on {0} by {1} (in {2})"), FText::FromString(LockedBranch), FText::FromString(RetainedBy), FText::FromString(LockedWhere));
+		}
+
+		if (IsModifiedInOtherBranch())
 		{
 			return FText::Format(LOCTEXT("ModifiedOtherBranch", "Modified in {0} as CS:{1} by {2} (local revision is CS:{3})"),
 				FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
@@ -431,13 +465,20 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 		return FText::Format(LOCTEXT("NotCurrent_Tooltip", "Not at the head revision CS:{0} {1} (local revision is CS:{2})"),
 			FText::AsNumber(DepotRevisionChangeset), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
 	}
-	else if (!IsCheckedOutImplementation())
+
+	if (!IsCheckedOutImplementation())
 	{
 		if (IsCheckedOutOther())
 		{
-			return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by {0} in {1}"), FText::FromString(LockedBy), FText::FromString(LockedWhere));
+			return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by {0} on {1} (in {2})"), FText::FromString(LockedBy), FText::FromString(LockedBranch), FText::FromString(LockedWhere));
 		}
-		else if (IsModifiedInOtherBranch())
+
+		if (IsRetainedInOtherBranch())
+		{
+			return FText::Format(LOCTEXT("RetainedLock_Tooltip", "Retained on {0} by {1} (in {2})"), FText::FromString(LockedBranch), FText::FromString(RetainedBy), FText::FromString(LockedWhere));
+		}
+
+		if (IsModifiedInOtherBranch())
 		{
 			return FText::Format(LOCTEXT("ModifiedOtherBranch_Tooltip", "Modified in {0} as CS:{1} by {2} (local revision is CS:{3})"),
 				FText::FromString(HeadBranch), FText::AsNumber(HeadChangeList, &NoCommas), FText::FromString(HeadUserName), FText::AsNumber(LocalRevisionChangeset, &NoCommas));
@@ -584,6 +625,11 @@ bool FPlasticSourceControlState::IsCheckedOutImplementation() const
 bool FPlasticSourceControlState::IsLocked() const
 {
 	return !LockedBy.IsEmpty();
+}
+
+bool FPlasticSourceControlState::IsRetainedInOtherBranch() const
+{
+	return !RetainedBy.IsEmpty();
 }
 
 bool FPlasticSourceControlState::IsCheckedOutOther(FString* Who) const
