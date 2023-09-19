@@ -795,6 +795,17 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 
 	ensureMsgf(InResults.Num() == InOutStates.Num(), TEXT("The fileinfo command should gives the same number of infos as the status command"));
 
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+
+	FString BranchName = Provider.GetBranchName();
+	FString Repository = Provider.GetRepositoryName();
+
+	TMap<FString, FSmartLockInfoParser> SmartLocks;
+	if (Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::SmartLocks)
+	{
+		RunListSmartLocks(Provider, SmartLocks);
+	}
+
 	// Iterate on all files and all status of the result (assuming same number of line of results than number of file states)
 	for (int32 IdxResult = 0; IdxResult < InResults.Num(); IdxResult++)
 	{
@@ -808,6 +819,19 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 		FileState.RepSpec = FileinfoParser.RepSpec;
 		FileState.LockedBy = MoveTemp(FileinfoParser.LockedBy);
 		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
+
+		// Additional information coming from SmartLocks (branch name and "Retained" lock status)
+		auto SmartLock = SmartLocks.Find(FileinfoParser.ServerPath);
+		if (SmartLock)
+		{
+			// Considers a "Retained" lock as meaningful only if it is retained on another branch
+			if ((SmartLock->Status == "Retained") && (SmartLock->BranchName != BranchName))
+			{
+				FileState.RetainedBy = MoveTemp(SmartLock->Owner);
+			}
+
+			FileState.LockedBranch = MoveTemp(SmartLock->BranchName);
+		}
 
 		// debug log (only for the first few files)
 		if (IdxResult < 20)
