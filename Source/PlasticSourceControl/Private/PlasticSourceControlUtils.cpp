@@ -764,13 +764,14 @@ public:
 	{
 		TArray<FString> Fileinfos;
 		InResult.ParseIntoArray(Fileinfos, TEXT(";"), false); // Don't cull empty values in csv
-		if (Fileinfos.Num() == 5)
+		if (Fileinfos.Num() == 6)
 		{
 			RevisionChangeset = FCString::Atoi(*Fileinfos[0]);
 			RevisionHeadChangeset = FCString::Atoi(*Fileinfos[1]);
 			RepSpec = MoveTemp(Fileinfos[2]);
 			LockedBy = UserNameToDisplayName(MoveTemp(Fileinfos[3]));
 			LockedWhere = MoveTemp(Fileinfos[4]);
+			ServerPath = MoveTemp(Fileinfos[5]);
 		}
 	}
 
@@ -779,6 +780,7 @@ public:
 	FString RepSpec;
 	FString LockedBy;
 	FString LockedWhere;
+	FString ServerPath;
 };
 
 /** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"' command
@@ -875,7 +877,7 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 		TArray<FString> Results;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;
-		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
+		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{ServerPath}\""));
 		bResult = RunCommand(TEXT("fileinfo"), Parameters, SelectedFiles, Results, ErrorMessages);
 		OutErrorMessages.Append(MoveTemp(ErrorMessages));
 		if (bResult)
@@ -1151,7 +1153,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EStatusSearchType InS
 		else if (States.Num() > 0)
 		{
 			// Run a "fileinfo" command to update complementary status information of given files.
-			// (ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere)
+			// (ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere, ServerPath)
 			// In case of "whole directory status", there is no explicit file in the group (it contains only the directory)
 			// => work on the list of files discovered by RunStatus()
 			bResults &= RunFileinfo(bWholeDirectory, bInUpdateHistory, OutErrorMessages, States);
