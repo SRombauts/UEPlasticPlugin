@@ -644,7 +644,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 
 	int32 index = serverUrl.Find("@cloud");
 
-	if (index > -1)
+	if (index > INDEX_NONE)
 	{
 		const FString& organizationName = serverUrl.Left(index);
 
@@ -654,7 +654,11 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 			LOCTEXT("PlasticLockRulesURL", "Configure Lock Rules"),
 			LOCTEXT("PlasticLockRulesURLTooltip", "Navigate to lock rules configuration page in the Unity Dashboard."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked"),
+#else
+			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked"),
+#endif
 			FUIAction(
 				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitLockRulesURLClicked, organizationName),
 				FCanExecuteAction()
