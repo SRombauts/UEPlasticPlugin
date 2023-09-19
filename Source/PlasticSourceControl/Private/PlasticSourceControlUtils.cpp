@@ -720,13 +720,12 @@ public:
 };
 
 
-static bool RunListSmartLocks(TMap<FString, FSmartLockInfoParser>& InOutSmartLocks)
+static bool RunListSmartLocks(const FPlasticSourceControlProvider& InProvider, TMap<FString, FSmartLockInfoParser>& InOutSmartLocks)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListSmartLocks);
 
-	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-	const FString& Repository = Provider.GetRepositoryName();
-	const FString& ServerUrl = Provider.GetServerUrl();
+	const FString& Repository = InProvider.GetRepositoryName();
+	const FString& ServerUrl = InProvider.GetServerUrl();
 
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
