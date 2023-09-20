@@ -79,6 +79,8 @@ public:
 		{
 			LockedBy = MoveTemp(InState.LockedBy);
 			LockedWhere = MoveTemp(InState.LockedWhere);
+			LockedBranch = MoveTemp(InState.LockedBranch);
+			RetainedBy = MoveTemp(InState.RetainedBy);
 			RepSpec = MoveTemp(InState.RepSpec);
 			DepotRevisionChangeset = InState.DepotRevisionChangeset;
 			LocalRevisionChangeset = InState.LocalRevisionChangeset;
@@ -149,6 +151,7 @@ public:
 
 	bool IsCheckedOutImplementation() const;
 	bool IsLocked() const;
+	bool IsRetainedInOtherBranch() const;
 
 public:
 	/** History of the item, if any */
@@ -180,8 +183,14 @@ public:
 	/** If a user (another or ourself) has this file locked, this contains their name. */
 	FString LockedBy;
 
-	/** Location of the locked file. */
+	/** Location (Workspace) where the file was exclusively checked-out. */
 	FString LockedWhere;
+
+	/** Branch where the filed was Locked or is Retained. */
+	FString LockedBranch;
+
+	/** If a user (another or ourself) has this file Retained on another branch, this contains their name. */
+	FString RetainedBy;
 
 	/** State of the workspace */
 	EWorkspaceState WorkspaceState = EWorkspaceState::Unknown;

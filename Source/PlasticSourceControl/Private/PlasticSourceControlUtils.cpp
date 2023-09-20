@@ -693,7 +693,68 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	return bResult;
 }
 
-// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"
+class FSmartLockInfoParser
+{
+public:
+	explicit FSmartLockInfoParser(const FString& InResult)
+	{
+		TArray<FString> SmartLockInfos;
+		const int32 NbElmts = InResult.ParseIntoArray(SmartLockInfos, FILE_STATUS_SEPARATOR, false);
+		if (NbElmts >= 12)
+		{
+			Repository = MoveTemp(SmartLockInfos[0]);
+			BranchName = MoveTemp(SmartLockInfos[6]);
+			RevisionHead = FCString::Atoi(*SmartLockInfos[7]);
+			Status = MoveTemp(SmartLockInfos[8]);
+			Owner = UserNameToDisplayName(MoveTemp(SmartLockInfos[9]));
+			Filename = MoveTemp(SmartLockInfos[11]);
+		}
+	}
+
+	FString Repository;
+	FString BranchName;
+	FString Status;
+	FString Owner;
+	FString Filename;
+	int RevisionHead;
+};
+
+
+static bool RunListSmartLocks(const FPlasticSourceControlProvider& InProvider, TMap<FString, FSmartLockInfoParser>& InOutSmartLocks)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListSmartLocks);
+
+	const FString& Repository = InProvider.GetRepositoryName();
+	const FString& ServerUrl = InProvider.GetServerUrl();
+
+	TArray<FString> Results;
+	TArray<FString> ErrorMessages;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("list"));
+	Parameters.Add(TEXT("--machinereadable"));
+	Parameters.Add(TEXT("--smartlocks"));
+	Parameters.Add(TEXT("--anystatus"));
+	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
+	Parameters.Add(FString::Printf(TEXT("--server=%s"), *ServerUrl));
+	bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
+
+	if (bResult)
+	{
+		for (int32 IdxResult = 0; IdxResult < Results.Num(); IdxResult++)
+		{
+			const FString& SmartLock = Results[IdxResult];
+			FSmartLockInfoParser SmartLockInfoParser(SmartLock);
+			if (SmartLockInfoParser.Repository == Repository)
+			{
+				InOutSmartLocks.Add(SmartLockInfoParser.Filename, SmartLockInfoParser);
+			}
+		}
+	}
+
+	return bResult;
+}
+
+// Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{ServerPath}"
 // for example "40;41;repo@server:port;srombauts;UEPlasticPluginDev"
 class FPlasticFileinfoParser
 {
@@ -702,13 +763,14 @@ public:
 	{
 		TArray<FString> Fileinfos;
 		InResult.ParseIntoArray(Fileinfos, TEXT(";"), false); // Don't cull empty values in csv
-		if (Fileinfos.Num() == 5)
+		if (Fileinfos.Num() == 6)
 		{
 			RevisionChangeset = FCString::Atoi(*Fileinfos[0]);
 			RevisionHeadChangeset = FCString::Atoi(*Fileinfos[1]);
 			RepSpec = MoveTemp(Fileinfos[2]);
 			LockedBy = UserNameToDisplayName(MoveTemp(Fileinfos[3]));
 			LockedWhere = MoveTemp(Fileinfos[4]);
+			ServerPath = MoveTemp(Fileinfos[5]);
 		}
 	}
 
@@ -717,6 +779,7 @@ public:
 	FString RepSpec;
 	FString LockedBy;
 	FString LockedWhere;
+	FString ServerPath;
 };
 
 /** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"' command
@@ -732,6 +795,17 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 
 	ensureMsgf(InResults.Num() == InOutStates.Num(), TEXT("The fileinfo command should gives the same number of infos as the status command"));
 
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+
+	FString BranchName = Provider.GetBranchName();
+	FString Repository = Provider.GetRepositoryName();
+
+	TMap<FString, FSmartLockInfoParser> SmartLocks;
+	if (Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::SmartLocks)
+	{
+		RunListSmartLocks(Provider, SmartLocks);
+	}
+
 	// Iterate on all files and all status of the result (assuming same number of line of results than number of file states)
 	for (int32 IdxResult = 0; IdxResult < InResults.Num(); IdxResult++)
 	{
@@ -745,6 +819,19 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 		FileState.RepSpec = FileinfoParser.RepSpec;
 		FileState.LockedBy = MoveTemp(FileinfoParser.LockedBy);
 		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
+
+		// Additional information coming from SmartLocks (branch name and "Retained" lock status)
+		auto SmartLock = SmartLocks.Find(FileinfoParser.ServerPath);
+		if (SmartLock)
+		{
+			// Considers a "Retained" lock as meaningful only if it is retained on another branch
+			if ((SmartLock->Status == "Retained") && (SmartLock->BranchName != BranchName))
+			{
+				FileState.RetainedBy = MoveTemp(SmartLock->Owner);
+			}
+
+			FileState.LockedBranch = MoveTemp(SmartLock->BranchName);
+		}
 
 		// debug log (only for the first few files)
 		if (IdxResult < 20)
@@ -813,7 +900,7 @@ static bool RunFileinfo(const bool bInWholeDirectory, const bool bInUpdateHistor
 		TArray<FString> Results;
 		TArray<FString> ErrorMessages;
 		TArray<FString> Parameters;
-		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}\""));
+		Parameters.Add(TEXT("--format=\"{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{ServerPath}\""));
 		bResult = RunCommand(TEXT("fileinfo"), Parameters, SelectedFiles, Results, ErrorMessages);
 		OutErrorMessages.Append(MoveTemp(ErrorMessages));
 		if (bResult)
@@ -1089,7 +1176,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EStatusSearchType InS
 		else if (States.Num() > 0)
 		{
 			// Run a "fileinfo" command to update complementary status information of given files.
-			// (ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere)
+			// (ie RevisionChangeset, RevisionHeadChangeset, RepSpec, LockedBy, LockedWhere, ServerPath)
 			// In case of "whole directory status", there is no explicit file in the group (it contains only the directory)
 			// => work on the list of files discovered by RunStatus()
 			bResults &= RunFileinfo(bWholeDirectory, bInUpdateHistory, OutErrorMessages, States);

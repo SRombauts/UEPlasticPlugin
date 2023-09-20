@@ -38,4 +38,8 @@ namespace PlasticSourceControlVersions
 	// https://plasticscm.com/download/releasenotes/11.0.16.7709 (2023/01/12)
 	static const FSoftwareVersion StatusIsCheckedOutChanged(TEXT("11.0.16.7709"));
 
+	// 11.0.16.8101 Introducing Smart Locks (2023/07/06)
+	// https://www.plasticscm.com/download/releasenotes/11.0.16.8101
+	static const FSoftwareVersion SmartLocks(TEXT("11.0.16.8101"));
+
 } // namespace PlasticSourceControlVersions
