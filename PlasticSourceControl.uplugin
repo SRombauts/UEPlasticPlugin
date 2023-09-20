@@ -7,7 +7,7 @@
 	"Category": "Source Control",
 	"CreatedBy": "Unity Technologies",
 	"CreatedByURL": "https://unity.com/solutions/version-control",
-	"DocsURL": "https://github.com/PlasticSCM/UEPlasticPlugin",
+	"DocsURL": "https://docs.unity.com/ugs/en-us/manual/devops/manual/vcs-plugins/unreal-plugin",
 	"MarketplaceURL": "",
 	"SupportURL": "https://support.unity.com/hc/en-us/requests/new?ticket_form_id=360001051792",
 	"EnabledByDefault": true,
