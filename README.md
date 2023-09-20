@@ -4,13 +4,13 @@ Unity Version Control (formerly Plastic SCM) plugin for Unreal Engine
 [![release](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
 
 This is the **official [Unity Version Control (formerly Plastic SCM)](https://plasticscm.com/) plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0 to 5.3).
-An old version 1.4.6+ was integrated in Unreal Engine 4.24 and has been shipping with it up to UE5.
+An old version 1.4.6+ was integrated in Unreal Engine 4.24 and has been shipping with it up to UE 5.0.
 More recent versions have been integrated in Unreal Engine 5.1 and above.
-But in the meantime, if you have a project of a certain size, chances are you need to upgrade manually to a version we provide from Github
-in order to benefit from all the performance improvements, bugfixes and changes we have made since then.
+But if your project is of a certain size, chances are you can benefit from upgrading manually to a version we provide from Github
+in order to benefit from the performance improvements, bugfixes and changes we have made since then.
 
 It is not intended to replace the [Unity Version Control Desktop Client](https://docs.plasticscm.com/gui/plastic-scm-version-control-gui-guide)
-or [command line interface "cm"](https://docs.plasticscm.com/cli/plastic-scm-version-control-cli-guide).
+or [command line interface "cm"](https://docs.unity.com/ugs/en-us/manual/devops/manual/uvcs-cli/version-control-cli).
 It is a complementary tool improving efficiency in your daily workflow with assets in Editor.
 
 It automates tracking status of assets, brings common source control tasks inside the Editor, and provides visual diffing of Blueprints.
@@ -541,17 +541,14 @@ This version here is the development version, so it always contains additional f
  - Supported on Windows and Linux
 
 ### Feature Requests
- - Unreal Engine 5.1 full support
-   - Uncontrolled Changelists
- - Shelves on Xlinks sub-repositories
- - Solve a merge conflict on a blueprint (see Known issues below)
  - Mac OS X Support
- - add a menu entry to switch the workspace to Partial
  - add a setting to configure Unity Version Control to use "read-only flags" like Perforce
    - add a context menu entry to make it locally writable
  - add a menu entry to unlock a file
  - add a setting to pass the --update option to "check-in"
  - add a "clean directory"
+ - Solve a merge conflict on a blueprint (see Known issues below)
+ - Shelves on Xlinks sub-repositories
 
 ### Known issues
  - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
