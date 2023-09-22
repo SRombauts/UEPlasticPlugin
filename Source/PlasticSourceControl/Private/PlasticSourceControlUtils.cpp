@@ -702,6 +702,8 @@ public:
 		if (NbElmts >= 12)
 		{
 			Repository = MoveTemp(SmartLockInfos[0]);
+			ItemId = FCString::Atoi(*SmartLockInfos[1]);
+			FDateTime::ParseIso8601(*SmartLockInfos[3], Date);
 			BranchName = MoveTemp(SmartLockInfos[6]);
 			Status = MoveTemp(SmartLockInfos[8]);
 			Owner = UserNameToDisplayName(MoveTemp(SmartLockInfos[9]));
@@ -710,6 +712,8 @@ public:
 	}
 
 	FString Repository;
+	int32 ItemId;
+	FDateTime Date;
 	FString BranchName;
 	FString Status;
 	FString Owner;
@@ -729,6 +733,7 @@ static bool RunListSmartLocks(const FString& InRepository, TMap<FString, FSmartL
 	Parameters.Add(TEXT("--smartlocks"));
 	Parameters.Add(TEXT("--anystatus"));
 	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
+	Parameters.Add(TEXT("--dateformat=yyyy-MM-ddTHH:mm:ss"));
 	bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
 
 	if (bResult)
@@ -824,6 +829,8 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 			}
 
 			FileState.LockedBranch = MoveTemp(SmartLock->BranchName);
+			FileState.LockedId = SmartLock->ItemId;
+			FileState.LockedDate = SmartLock->Date;
 		}
 
 		// debug log (only for the first few files)

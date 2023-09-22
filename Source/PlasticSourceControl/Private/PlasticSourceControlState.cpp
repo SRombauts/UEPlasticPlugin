@@ -402,12 +402,12 @@ FText FPlasticSourceControlState::GetDisplayName() const
 	{
 		if (IsCheckedOutOther())
 		{
-			return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by {0} on {1} (in {2})"), FText::FromString(LockedBy), FText::FromString(LockedBranch), FText::FromString(LockedWhere));
+			return FText::Format(LOCTEXT("CheckedOutOther", "Checked out by {0} on {1} (in {2}) since {3}"), FText::FromString(LockedBy), FText::FromString(LockedBranch), FText::FromString(LockedWhere), FText::AsDateTime(LockedDate));
 		}
 
 		if (IsRetainedInOtherBranch())
 		{
-			return FText::Format(LOCTEXT("RetainedLock", "Retained on {0} by {1} (in {2})"), FText::FromString(LockedBranch), FText::FromString(RetainedBy), FText::FromString(LockedWhere));
+			return FText::Format(LOCTEXT("RetainedLock", "Retained on {0} by {1} since {2}"), FText::FromString(LockedBranch), FText::FromString(RetainedBy), FText::AsDateTime(LockedDate));
 		}
 
 		if (IsModifiedInOtherBranch())
@@ -470,12 +470,12 @@ FText FPlasticSourceControlState::GetDisplayTooltip() const
 	{
 		if (IsCheckedOutOther())
 		{
-			return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by {0} on {1} (in {2})"), FText::FromString(LockedBy), FText::FromString(LockedBranch), FText::FromString(LockedWhere));
+			return FText::Format(LOCTEXT("CheckedOutOther_Tooltip", "Checked out by {0} on {1} (in {2}) since {3}"), FText::FromString(LockedBy), FText::FromString(LockedBranch), FText::FromString(LockedWhere), FText::AsDateTime(LockedDate));
 		}
 
 		if (IsRetainedInOtherBranch())
 		{
-			return FText::Format(LOCTEXT("RetainedLock_Tooltip", "Retained on {0} by {1} (in {2})"), FText::FromString(LockedBranch), FText::FromString(RetainedBy), FText::FromString(LockedWhere));
+			return FText::Format(LOCTEXT("RetainedLock_Tooltip", "Retained on {0} by {1} since {2}"), FText::FromString(LockedBranch), FText::FromString(RetainedBy), FText::AsDateTime(LockedDate));
 		}
 
 		if (IsModifiedInOtherBranch())
