@@ -703,7 +703,6 @@ public:
 		{
 			Repository = MoveTemp(SmartLockInfos[0]);
 			BranchName = MoveTemp(SmartLockInfos[6]);
-			RevisionHead = FCString::Atoi(*SmartLockInfos[7]);
 			Status = MoveTemp(SmartLockInfos[8]);
 			Owner = UserNameToDisplayName(MoveTemp(SmartLockInfos[9]));
 			Filename = MoveTemp(SmartLockInfos[11]);
@@ -715,16 +714,12 @@ public:
 	FString Status;
 	FString Owner;
 	FString Filename;
-	int RevisionHead;
 };
 
 
-static bool RunListSmartLocks(const FPlasticSourceControlProvider& InProvider, TMap<FString, FSmartLockInfoParser>& InOutSmartLocks)
+static bool RunListSmartLocks(const FString& InRepository, TMap<FString, FSmartLockInfoParser>& InOutSmartLocks)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListSmartLocks);
-
-	const FString& Repository = InProvider.GetRepositoryName();
-	const FString& ServerUrl = InProvider.GetServerUrl();
 
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
@@ -734,16 +729,15 @@ static bool RunListSmartLocks(const FPlasticSourceControlProvider& InProvider, T
 	Parameters.Add(TEXT("--smartlocks"));
 	Parameters.Add(TEXT("--anystatus"));
 	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
-	Parameters.Add(FString::Printf(TEXT("--server=%s"), *ServerUrl));
 	bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
 
 	if (bResult)
 	{
 		for (int32 IdxResult = 0; IdxResult < Results.Num(); IdxResult++)
 		{
-			const FString& SmartLock = Results[IdxResult];
-			FSmartLockInfoParser SmartLockInfoParser(SmartLock);
-			if (SmartLockInfoParser.Repository == Repository)
+			const FString& Result = Results[IdxResult];
+			FSmartLockInfoParser SmartLockInfoParser(Result);
+			if (SmartLockInfoParser.Repository == InRepository)
 			{
 				InOutSmartLocks.Add(SmartLockInfoParser.Filename, SmartLockInfoParser);
 			}
@@ -796,13 +790,13 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 
-	FString BranchName = Provider.GetBranchName();
-	FString Repository = Provider.GetRepositoryName();
+	const FString& BranchName = Provider.GetBranchName();
+	const FString& Repository = Provider.GetRepositoryName();
 
 	TMap<FString, FSmartLockInfoParser> SmartLocks;
 	if (Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::SmartLocks)
 	{
-		RunListSmartLocks(Provider, SmartLocks);
+		RunListSmartLocks(Repository, SmartLocks);
 	}
 
 	// Iterate on all files and all status of the result (assuming same number of line of results than number of file states)
@@ -820,8 +814,8 @@ static void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlast
 		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
 
 		// Additional information coming from SmartLocks (branch name and "Retained" lock status)
-		auto SmartLock = SmartLocks.Find(FileinfoParser.ServerPath);
-		if (SmartLock)
+		FSmartLockInfoParser* SmartLock = SmartLocks.Find(FileinfoParser.ServerPath);
+		if (SmartLock != nullptr)
 		{
 			// Considers a "Retained" lock as meaningful only if it is retained on another branch
 			if ((SmartLock->Status == "Retained") && (SmartLock->BranchName != BranchName))
