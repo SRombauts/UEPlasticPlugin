@@ -43,6 +43,7 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("RevertUnchanged", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRevertUnchangedWorker>));
 	PlasticSourceControlProvider.RegisterWorker("RevertAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRevertAllWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SwitchToPartialWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSwitchToPartialWorkspaceWorker>));
+	PlasticSourceControlProvider.RegisterWorker("Unlock", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticUnlockWorker>));
 	PlasticSourceControlProvider.RegisterWorker("MakeWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticMakeWorkspaceWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Sync", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SyncAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
@@ -116,6 +117,20 @@ FText FPlasticSwitchToPartialWorkspace::GetInProgressString() const
 {
 	return LOCTEXT("SourceControl_SwitchToPartialWorkspace", "Switching to a Partial/Gluon Workspace");
 }
+
+FName FPlasticUnlock::GetName() const
+{
+	return "Unlock";
+}
+
+FText FPlasticUnlock::GetInProgressString() const
+{
+	if (bRemove)
+		return LOCTEXT("SourceControl_Unlock_Remove", "Removing Lock(s)");
+	else
+		return LOCTEXT("SourceControl_Unlock_Release", "Releasing Lock(s)");
+}
+
 
 static bool AreAllFiles(const TArray<FString>& InFiles)
 {
@@ -946,6 +961,50 @@ bool FPlasticSwitchToPartialWorkspaceWorker::Execute(FPlasticSourceControlComman
 }
 
 bool FPlasticSwitchToPartialWorkspaceWorker::UpdateStates()
+{
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
+}
+
+FName FPlasticUnlockWorker::GetName() const
+{
+	return "Unlock";
+}
+
+bool FPlasticUnlockWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticUnlockWorker::Execute);
+
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticUnlock, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticUnlock>(InCommand.Operation);
+
+	{
+		// retrieve the itemid of assets to unlock
+		FString ItemIds;
+		for (const FString& File : InCommand.Files)
+		{
+			const auto State = GetProvider().GetStateInternal(File);
+			if (State->LockedId != ISourceControlState::INVALID_REVISION)
+			{
+				ItemIds += FString::Printf(TEXT("itemid:%d "), State->LockedId);
+			}
+		}
+
+		TArray<FString> Parameters;
+		Parameters.Add(TEXT("unlock"));
+		if (Operation->bRemove)
+			Parameters.Add(TEXT("--remove"));
+		Parameters.Add(ItemIds);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("lock"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	}
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticUnlockWorker::UpdateStates()
 {
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
