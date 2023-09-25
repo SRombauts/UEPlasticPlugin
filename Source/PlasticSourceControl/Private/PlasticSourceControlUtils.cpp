@@ -322,7 +322,6 @@ static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool b
 		{
 			State = EWorkspaceState::CheckedOutChanged; // Older version; need to assume it is changed to retain behavior
 		}
-
 	}
 	else if (InFileStatus == "CO+CH") // Checked-Out and changed from the new --iscochanged
 	{
@@ -444,7 +443,7 @@ static void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FStrin
 	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
 	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
-	// Parse the list of status results in a map indexed by absolute filename	
+	// Parse the list of status results in a map indexed by absolute filename
 	TMap<FString, FPlasticSourceControlState> FileToStateMap;
 	FileToStateMap.Reserve(InResults.Num());
 	for (const FString& InResult : InResults)
@@ -1331,7 +1330,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 		const FString Filename = ItemNameNode->GetContent();
 		FPlasticSourceControlState* InOutStatePtr = InOutStates.FindByPredicate(
 			[&Filename](const FPlasticSourceControlState& State) { return State.LocalFilename == Filename; }
-		); // NOLINT(whitespace/parens) "Closing ) should be moved to the previous line" doesn't work well for lambda functions
+		);
 		if (InOutStatePtr == nullptr)
 		{
 			continue;
@@ -1921,7 +1920,7 @@ bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InR
 	for (FString& Result : InResults)
 	{
 		EWorkspaceState ShelveState = ParseShelveFileStatus(Result[0]);
-		
+
 		// Remove outer double quotes
 		Result.MidInline(3, Result.Len() - 4, false);
 
@@ -1937,7 +1936,7 @@ bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InR
 				Result.RightChopInline(RenameIndex + 1);
 			}
 		}
-		
+
 		if (ShelveState != EWorkspaceState::Unknown && !Result.IsEmpty())
 		{
 			FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(InWorkspaceRoot, MoveTemp(Result));

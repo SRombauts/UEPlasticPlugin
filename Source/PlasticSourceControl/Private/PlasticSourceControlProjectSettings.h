@@ -26,6 +26,6 @@ public:
 	bool bPromptForCheckoutOnChange = true;
 
 	/** If a non-null value is set, limit the maximum number of revisions requested to Unity Version Control to display in the "History" window. */
-	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control", meta=(ClampMin=0))
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control", meta = (ClampMin = 0))
 	int32 LimitNumberOfRevisionsInHistory = 50;
 };

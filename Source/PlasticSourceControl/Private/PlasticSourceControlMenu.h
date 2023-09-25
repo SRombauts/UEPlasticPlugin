@@ -50,10 +50,9 @@ private:
 	void DisplayFailureNotification(const FName& InOperationName);
 
 private:
-
 	/** Tracks if the menu extension has been registered with the editor or not */
 	bool bHasRegistered = false;
-	
+
 #if ENGINE_MAJOR_VERSION == 4
 	FDelegateHandle ViewMenuExtenderHandle;
 #endif

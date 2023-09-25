@@ -279,7 +279,7 @@ TMap<ISourceControlProvider::EStatus, FString> FPlasticSourceControlProvider::Ge
 	Result.Add(EStatus::Enabled, IsEnabled() ? TEXT("Yes") : TEXT("No") );
 	Result.Add(EStatus::Connected, (IsEnabled() && IsAvailable()) ? TEXT("Yes") : TEXT("No") );
 	Result.Add(EStatus::User, UserName);
-	
+
 	Result.Add(EStatus::ScmVersion, PlasticScmVersion.String);
 	Result.Add(EStatus::PluginVersion, PluginVersion);
 	Result.Add(EStatus::WorkspacePath, PathToWorkspaceRoot);
@@ -519,7 +519,7 @@ bool FPlasticSourceControlProvider::UsesFileRevisions() const
 {
 	// This API introduced in UE5.1 is still broken as of UE5.3
 	// (preventing the user to use the source control context menu for checkin if returning false)
-	//	return IsPartialWorkspace();
+	// return IsPartialWorkspace();
 	return true;
 }
 

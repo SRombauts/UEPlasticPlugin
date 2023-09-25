@@ -33,7 +33,7 @@ namespace PlasticSourceControlVersions
 	// 11.0.16.7665 add support for undocheckout --keepchanges. It allows undo checkout and preserve all local changes.
 	// https://plasticscm.com/download/releasenotes/11.0.16.7665 (2022/12/01)
 	static const FSoftwareVersion UndoCheckoutKeepChanges(TEXT("11.0.16.7665"));
-	
+
 	// 11.0.16.7709 add support for status --iscochanged. It uses "CO+CH" vs "CO" to distinguish CheckedOut with/without changes.
 	// https://plasticscm.com/download/releasenotes/11.0.16.7709 (2023/01/12)
 	static const FSoftwareVersion StatusIsCheckedOutChanged(TEXT("11.0.16.7709"));

@@ -613,7 +613,7 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			SourceControlLog.Error(FailureText);
 			SourceControlLog.Notify();
 		});
-		
+
 		return false;
 	}
 
@@ -2119,7 +2119,7 @@ bool FPlasticDeleteShelveWorker::Execute(FPlasticSourceControlCommand& InCommand
 			if (!InCommand.Files.Contains(ShelveState->GetFilename()))
 			{
 				FString File = ShelveState->GetFilename();
-				
+
 				// Check that all this files are is still in the corresponding changelist, else we won't be able to create the new shelve!
 				if (ChangelistState->Files.ContainsByPredicate([&File](FSourceControlStateRef& State) { return File == State->GetFilename(); }))
 				{
@@ -2127,7 +2127,6 @@ bool FPlasticDeleteShelveWorker::Execute(FPlasticSourceControlCommand& InCommand
 				}
 				else
 				{
-
 					FPaths::MakePathRelativeTo(File, *FPaths::ProjectDir());
 					UE_LOG(LogSourceControl, Error, TEXT("The file /%s is not in the changelist anymore, so the shelve cannot be updated. Unshelve the corresponding change and retry."), *File);
 					InCommand.bCommandSuccessful = false;
@@ -2141,7 +2140,7 @@ bool FPlasticDeleteShelveWorker::Execute(FPlasticSourceControlCommand& InCommand
 		ChangelistToUpdate = InCommand.Changelist;
 		FilesToRemove = InCommand.Files;
 	}
-	
+
 	if (InCommand.bCommandSuccessful && FilesToShelve.Num() > 0)
 	{
 		// Create a new shelve with the other files
@@ -2252,11 +2251,11 @@ bool FPlasticGetChangelistDetailsWorker::Execute(FPlasticSourceControlCommand& I
 	{
 		// String representation of the current file index
 		FString RecordFileIndexStr = LexToString(RecordFileIndex);
-		// The p4 records is the map a file key starts with "depotFile" and is followed by file index 
+		// The p4 records is the map a file key starts with "depotFile" and is followed by file index
 		FString RecordFileMapKey = ReviewHelpers::FileDepotKey + RecordFileIndexStr;
-		// The p4 records is the map a revision key starts with "rev" and is followed by file index 
+		// The p4 records is the map a revision key starts with "rev" and is followed by file index
 		FString RecordRevisionMapKey = ReviewHelpers::FileRevisionKey + RecordFileIndexStr;
-		// The p4 records is the map a revision key starts with "action" and is followed by file index 
+		// The p4 records is the map a revision key starts with "action" and is followed by file index
 		FString RecordActionMapKey = ReviewHelpers::FileActionKey + RecordFileIndexStr;
 
 		UE_LOG(LogSourceControl, Log, TEXT("GetChangelistDetails: %s baserevid:%d %s"), *Revision.Filename, Revision.RevisionId, *Revision.Action);
@@ -2304,11 +2303,9 @@ bool FPlasticGetFileWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		SourceControlRevision->RevisionId = FCString::Atoi(*Operation->GetRevisionNumber());
 		UE_LOG(LogSourceControl, Log, TEXT("GetFile(revid:%d)"), SourceControlRevision->RevisionId);
 	}
-	
+
 	FString OutFilename;
-
 	InCommand.bCommandSuccessful = SourceControlRevision->Get(OutFilename, InCommand.Concurrency);
-
 	if (InCommand.bCommandSuccessful)
 	{
 		Operation->SetOutPackageFilename(OutFilename);
