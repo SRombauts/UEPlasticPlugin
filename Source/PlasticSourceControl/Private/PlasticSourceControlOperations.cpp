@@ -1347,7 +1347,7 @@ bool FPlasticGetPendingChangelistsWorker::UpdateStates()
 	const FDateTime Now = FDateTime::Now();
 
 	// first update cached state from 'changes' call
-	for (int StatusIndex = 0; StatusIndex < OutChangelistsStates.Num(); StatusIndex++)
+	for (int32 StatusIndex = 0; StatusIndex < OutChangelistsStates.Num(); StatusIndex++)
 	{
 		const FPlasticSourceControlChangelistState& CLStatus = OutChangelistsStates[StatusIndex];
 		TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(CLStatus.Changelist);

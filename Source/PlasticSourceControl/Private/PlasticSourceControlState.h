@@ -196,10 +196,10 @@ public:
 	EWorkspaceState WorkspaceState = EWorkspaceState::Unknown;
 
 	/** Latest revision number of the file in the depot (on the current branch) */
-	int DepotRevisionChangeset = INVALID_REVISION;
+	int32 DepotRevisionChangeset = INVALID_REVISION;
 
 	/** Latest revision number at which a file was synced to before being edited */
-	int LocalRevisionChangeset = INVALID_REVISION;
+	int32 LocalRevisionChangeset = INVALID_REVISION;
 
 	/** Original name in case of a Moved/Renamed file */
 	FString MovedFrom;

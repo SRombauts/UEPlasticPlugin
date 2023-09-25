@@ -15,10 +15,10 @@ struct FSoftwareVersion
 
 	FString String;
 
-	int Major = 0;
-	int Minor = 0;
-	int Patch = 0;
-	int Changeset = 0;
+	int32 Major = 0;
+	int32 Minor = 0;
+	int32 Patch = 0;
+	int32 Changeset = 0;
 };
 
 bool operator==(const FSoftwareVersion& Rhs, const FSoftwareVersion& Lhs);
