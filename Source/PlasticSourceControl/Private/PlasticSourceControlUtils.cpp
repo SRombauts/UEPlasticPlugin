@@ -1411,14 +1411,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				}
 				if (const FXmlNode* DateNode = RevisionNode->FindChildNode(CreationDate))
 				{
-					FString DateIso = DateNode->GetContent();
-					const int len = DateIso.Len();
-					if (DateIso.Len() > 29)
-					{	//                           |--|
-						//    2016-04-18T10:44:49.0000000+02:00
-						// => 2016-04-18T10:44:49.000+02:00
-						DateIso = DateNode->GetContent().LeftChop(10) + DateNode->GetContent().RightChop(27);
-					}
+					const FString& DateIso = DateNode->GetContent();
 					FDateTime::ParseIso8601(*DateIso, SourceControlRevision->Date);
 				}
 				if (const FXmlNode* BranchNode = RevisionNode->FindChildNode(Branch))
