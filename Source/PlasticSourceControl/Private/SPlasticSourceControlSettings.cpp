@@ -90,9 +90,10 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		[
 			SNew(STextBlock)
 			.Visibility(this, &SPlasticSourceControlSettings::PlasticNotAvailable)
-			.ToolTipText(LOCTEXT("PlasticNotAvailable_Tooltip", "Failed to launch Unity Version Control 'cm' command line tool. You need to install it and make sure that 'cm' is on the Path and correctly configured."))
-			.Text(LOCTEXT("PlasticNotAvailable", "Unity Version Control Command Line tool 'cm' failed to start:"))
+			.ToolTipText(LOCTEXT("PlasticNotAvailable_Tooltip", "Failed to launch Unity Version Control 'cm' command line tool.\nYou need to install it and make sure it is correctly configured with your credentials."))
+			.Text(LOCTEXT("PlasticNotAvailable", "Unity Version Control Command Line tool 'cm' failed to start."))
 			.Font(Font)
+			.ColorAndOpacity(FLinearColor::Red)
 		]
 		// Path to the Unity Version Control binary
 		+SVerticalBox::Slot()
