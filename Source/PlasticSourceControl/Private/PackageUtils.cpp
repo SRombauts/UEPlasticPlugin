@@ -25,6 +25,23 @@ static UWorld* GetCurrentWorld()
 	return nullptr;
 }
 
+TArray<FString> AssetDateToFileNames(const TArray<FAssetData>& InAssetObjectPaths)
+{
+	TArray<FString> FileNames;
+	FileNames.Reserve(InAssetObjectPaths.Num());
+	for (const FAssetData& AssetObjectPath : InAssetObjectPaths)
+	{
+		//  Tries to find the package in memory if it is loaded, otherwise loads it
+		if (UPackage* Package = AssetObjectPath.GetPackage())
+		{
+			const FString PackageExtension = Package->ContainsMap() ? FPackageName::GetMapPackageExtension() : FPackageName::GetAssetPackageExtension();
+			FString PackageFilename = FPackageName::LongPackageNameToFilename(Package->GetName(), PackageExtension);
+			FileNames.Add(MoveTemp(PackageFilename));
+		}
+	}
+	return FileNames;
+}
+
 // Find the packages corresponding to the files, if they are loaded in memory (won't load them)
 // Note: Extracted from AssetViewUtils::SyncPathsFromSourceControl()
 static TArray<UPackage*> FileNamesToLoadedPackages(const TArray<FString>& InFiles)
