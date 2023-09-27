@@ -310,6 +310,17 @@ const FName& FPlasticSourceControlProvider::GetName(void) const
 	return ProviderName;
 }
 
+FString FPlasticSourceControlProvider::GetCloudOrganization() const
+{
+	const int32 CloudIndex = ServerUrl.Find(TEXT("@cloud"));
+	if (CloudIndex > INDEX_NONE)
+	{
+		return ServerUrl.Left(CloudIndex);
+	}
+
+	return FString();
+}
+
 void FPlasticSourceControlProvider::SetLastErrors(const TArray<FString>& InErrors)
 {
 	FScopeLock Lock(&LastErrorsCriticalSection);

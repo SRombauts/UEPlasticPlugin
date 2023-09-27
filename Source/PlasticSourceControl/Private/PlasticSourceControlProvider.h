@@ -115,7 +115,7 @@ public:
 		return RepositoryName;
 	}
 
-	/** Get the Plastic current server URL */
+	/** Get the Plastic current server URL. See also GetCloudOrganization() */
 	inline const FString& GetServerUrl() const
 	{
 		return ServerUrl;
@@ -150,6 +150,9 @@ public:
 	{
 		return PluginVersion;
 	}
+
+	/** Return the name of the cloud organization from the ServerUrl if applicable (MyOrganization@cloud) or an empty string */
+	FString GetCloudOrganization() const;
 
 	/** Set list of error messages that occurred after last Plastic command */
 	void SetLastErrors(const TArray<FString>& InErrors);
