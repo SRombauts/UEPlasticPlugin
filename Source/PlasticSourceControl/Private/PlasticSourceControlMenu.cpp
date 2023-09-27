@@ -28,11 +28,9 @@
 
 #include "Logging/MessageLog.h"
 
-#if ENGINE_MAJOR_VERSION == 5
 #include "ToolMenus.h"
 #include "ToolMenuContext.h"
 #include "ToolMenuMisc.h"
-#endif
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -58,18 +56,22 @@ void FPlasticSourceControlMenu::Unregister()
 		return;
 	}
 
-	// Unregister the menu extension from the level editor
+	// Unregister the menu extensions from the level editor
 #if ENGINE_MAJOR_VERSION == 4
 	if (FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor"))
 	{
 		LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders().RemoveAll([=](const FLevelEditorModule::FLevelEditorMenuExtender& Extender) { return Extender.GetHandle() == ViewMenuExtenderHandle; });
 		bHasRegistered = false;
 	}
+	if (UToolMenus* ToolMenus = UToolMenus::TryGet())
+	{
+		ToolMenus->UnregisterOwnerByName(UnityVersionControlAssetContextLocksMenuOwnerName);
+	}
 #elif ENGINE_MAJOR_VERSION == 5
 	if (UToolMenus* ToolMenus = UToolMenus::TryGet())
 	{
-		UToolMenus::Get()->UnregisterOwnerByName(UnityVersionControlMainMenuOwnerName);
-		UToolMenus::Get()->UnregisterOwnerByName(UnityVersionControlAssetContextLocksMenuOwnerName);
+		ToolMenus->UnregisterOwnerByName(UnityVersionControlMainMenuOwnerName);
+		ToolMenus->UnregisterOwnerByName(UnityVersionControlAssetContextLocksMenuOwnerName);
 		bHasRegistered = false;
 	}
 #endif
@@ -106,34 +108,56 @@ void FPlasticSourceControlMenu::ExtendRevisionControlMenu()
 
 void FPlasticSourceControlMenu::ExtendAssetContextMenu()
 {
-#if ENGINE_MAJOR_VERSION == 5
 	const FToolMenuOwnerScoped SourceControlMenuOwner(UnityVersionControlAssetContextLocksMenuOwnerName);
 	if (UToolMenu* const Menu = UToolMenus::Get()->ExtendMenu(TEXT("ContentBrowser.AssetContextMenu")))
 	{
-		FToolMenuSection& Section = Menu->AddSection(TEXT("UnityVersionControlAssetContextLocksMenuSection"), FText::GetEmpty(), FToolMenuInsert("AssetContextReferences", EToolMenuInsertType::After));
-		Section.AddDynamicEntry(TEXT("PlasticActions"), FNewToolMenuSectionDelegate::CreateLambda([this](FToolMenuSection& InSection)
-			{
-				UContentBrowserAssetContextMenuContext* Context = InSection.FindContext<UContentBrowserAssetContextMenuContext>();
-				if (!Context || !Context->bCanBeModified || Context->SelectedAssets.Num() == 0 || !ensure(FPlasticSourceControlModule::IsLoaded()))
-				{
-					return;
-				}
-
-				InSection.AddSubMenu(
-					TEXT("PlasticActionsSubMenu"),
-					LOCTEXT("Plastic_ContextMenu", "Revision Control Locks"),
-					FText::GetEmpty(),
-					FNewMenuDelegate::CreateRaw(this, &FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu, Context->SelectedAssets),
-					false,
-#if ENGINE_MINOR_VERSION >= 1
-					FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked")
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
+		FToolMenuSection& Section = Menu->AddSection(TEXT("PlasticAssetContextLocksMenuSection"), FText::GetEmpty(), FToolMenuInsert("AssetContextReferences", EToolMenuInsertType::After));
 #else
-					FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked")
+		FToolMenuSection& Section = Menu->AddSection(TEXT("PlasticAssetContextLocksMenuSection"), FText::GetEmpty(), FToolMenuInsert("AssetContextSourceControl", EToolMenuInsertType::Before));
 #endif
-				);
-			}));
+		Section.AddDynamicEntry(TEXT("PlasticActions"), FNewToolMenuSectionDelegate::CreateLambda([this](FToolMenuSection& InSection)
+		{
+			UContentBrowserAssetContextMenuContext* Context = InSection.FindContext<UContentBrowserAssetContextMenuContext>();
+
+#if ENGINE_MAJOR_VERSION < 5 || ENGINE_MINOR_VERSION < 1
+			TArray<UObject*> SelectedObjects = Context->GetSelectedObjects();
+			if (!Context || !Context->bCanBeModified || Context->SelectedObjects.Num() == 0 || !ensure(FPlasticSourceControlModule::IsLoaded()))
+			{
+				return;
+			}
+			TArray<FAssetData> AssetObjectPaths;
+			AssetObjectPaths.Reserve(Context->SelectedObjects.Num());
+			for (const auto SelectedObject : SelectedObjects)
+			{
+				AssetObjectPaths.Add(FAssetData(SelectedObject));
+			}
+#else
+			if (!Context || !Context->bCanBeModified || Context->SelectedAssets.Num() == 0 || !ensure(FPlasticSourceControlModule::IsLoaded()))
+			{
+				return;
+			}
+			TArray<FAssetData> AssetObjectPaths = Context->SelectedAssets;
+#endif
+
+			InSection.AddSubMenu(
+				TEXT("PlasticActionsSubMenu"),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
+				LOCTEXT("Plastic_ContextMenu", "Revision Control Locks"),
+#else
+				LOCTEXT("Plastic_ContextMenu", "Source Control Locks"),
+#endif
+				FText::GetEmpty(),
+				FNewMenuDelegate::CreateRaw(this, &FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu, MoveTemp(AssetObjectPaths)),
+				false,
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+				FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked")
+#else
+				FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked")
+#endif
+			);
+		}));
 	}
-#endif
 }
 
 void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& MenuBuilder, TArray<FAssetData> InAssetObjectPaths)
