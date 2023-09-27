@@ -24,6 +24,7 @@ public class PlasticSourceControl : ModuleRules
 				"Projects",
 				"AssetRegistry",
 				"DeveloperSettings",
+				"ContentBrowser",
 			}
 		);
 

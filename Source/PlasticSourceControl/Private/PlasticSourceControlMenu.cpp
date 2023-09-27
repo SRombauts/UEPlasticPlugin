@@ -10,6 +10,7 @@
 #include "ISourceControlOperation.h"
 #include "SourceControlOperations.h"
 
+#include "ContentBrowserMenuContexts.h"
 #include "Interfaces/IPluginManager.h"
 #include "LevelEditor.h"
 #include "Widgets/Notifications/SNotificationList.h"
@@ -35,6 +36,9 @@
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
+FName FPlasticSourceControlMenu::UnityVersionControlMainMenuOwnerName = TEXT("UnityVersionControlMenu");
+FName FPlasticSourceControlMenu::UnityVersionControlAssetContextLocksMenuOwnerName = TEXT("UnityVersionControlContextLocksMenu");
+
 void FPlasticSourceControlMenu::Register()
 {
 	if (bHasRegistered)
@@ -42,29 +46,9 @@ void FPlasticSourceControlMenu::Register()
 		return;
 	}
 
-	// Register the menu extension with the level editor
-#if ENGINE_MAJOR_VERSION == 4
-	if (FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor"))
-	{
-		FLevelEditorModule::FLevelEditorMenuExtender ViewMenuExtender = FLevelEditorModule::FLevelEditorMenuExtender::CreateRaw(this, &FPlasticSourceControlMenu::OnExtendLevelEditorViewMenu);
-		auto& MenuExtenders = LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders();
-		MenuExtenders.Add(ViewMenuExtender);
-		ViewMenuExtenderHandle = MenuExtenders.Last().GetHandle();
-
-		bHasRegistered = true;
-	}
-#elif ENGINE_MAJOR_VERSION == 5
-	FToolMenuOwnerScoped SourceControlMenuOwner("PlasticSourceControlMenu");
-	if (UToolMenus* ToolMenus = UToolMenus::Get())
-	{
-		UToolMenu* SourceControlMenu = ToolMenus->ExtendMenu("StatusBar.ToolBar.SourceControl");
-		FToolMenuSection& Section = SourceControlMenu->AddSection("PlasticSourceControlActions", LOCTEXT("PlasticSourceControlMenuHeadingActions", "Unity Version Control"), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
-
-		AddMenuExtension(Section);
-
-		bHasRegistered = true;
-	}
-#endif
+	// Register the menu extensions with the level editor
+	ExtendRevisionControlMenu();
+	ExtendAssetContextMenu();
 }
 
 void FPlasticSourceControlMenu::Unregister()
@@ -84,10 +68,203 @@ void FPlasticSourceControlMenu::Unregister()
 #elif ENGINE_MAJOR_VERSION == 5
 	if (UToolMenus* ToolMenus = UToolMenus::TryGet())
 	{
-		UToolMenus::Get()->UnregisterOwnerByName("PlasticSourceControlMenu");
+		UToolMenus::Get()->UnregisterOwnerByName(UnityVersionControlMainMenuOwnerName);
+		UToolMenus::Get()->UnregisterOwnerByName(UnityVersionControlAssetContextLocksMenuOwnerName);
 		bHasRegistered = false;
 	}
 #endif
+}
+
+
+void FPlasticSourceControlMenu::ExtendRevisionControlMenu()
+{
+#if ENGINE_MAJOR_VERSION == 4
+	if (FLevelEditorModule* LevelEditorModule = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor"))
+	{
+		FLevelEditorModule::FLevelEditorMenuExtender ViewMenuExtender = FLevelEditorModule::FLevelEditorMenuExtender::CreateRaw(this, &FPlasticSourceControlMenu::OnExtendLevelEditorViewMenu);
+		auto& MenuExtenders = LevelEditorModule->GetAllLevelEditorToolbarSourceControlMenuExtenders();
+		MenuExtenders.Add(ViewMenuExtender);
+		ViewMenuExtenderHandle = MenuExtenders.Last().GetHandle();
+
+		bHasRegistered = true;
+	}
+#elif ENGINE_MAJOR_VERSION == 5
+	const FToolMenuOwnerScoped SourceControlMenuOwner(UnityVersionControlMainMenuOwnerName);
+	if (UToolMenus* ToolMenus = UToolMenus::Get())
+	{
+		if (UToolMenu* SourceControlMenu = ToolMenus->ExtendMenu("StatusBar.ToolBar.SourceControl"))
+		{
+			FToolMenuSection& Section = SourceControlMenu->AddSection("PlasticSourceControlActions", LOCTEXT("PlasticSourceControlMenuHeadingActions", "Unity Version Control"), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
+
+			AddMenuExtension(Section);
+
+			bHasRegistered = true;
+		}
+	}
+#endif
+}
+
+void FPlasticSourceControlMenu::ExtendAssetContextMenu()
+{
+#if ENGINE_MAJOR_VERSION == 5
+	const FToolMenuOwnerScoped SourceControlMenuOwner(UnityVersionControlAssetContextLocksMenuOwnerName);
+	if (UToolMenu* const Menu = UToolMenus::Get()->ExtendMenu(TEXT("ContentBrowser.AssetContextMenu")))
+	{
+		FToolMenuSection& Section = Menu->AddSection(TEXT("UnityVersionControlAssetContextLocksMenuSection"), FText::GetEmpty(), FToolMenuInsert("AssetContextReferences", EToolMenuInsertType::After));
+		Section.AddDynamicEntry(TEXT("PlasticActions"), FNewToolMenuSectionDelegate::CreateLambda([this](FToolMenuSection& InSection)
+			{
+				UContentBrowserAssetContextMenuContext* Context = InSection.FindContext<UContentBrowserAssetContextMenuContext>();
+				if (!Context || !Context->bCanBeModified || Context->SelectedAssets.Num() == 0 || !ensure(FPlasticSourceControlModule::IsLoaded()))
+				{
+					return;
+				}
+
+				InSection.AddSubMenu(
+					TEXT("PlasticActionsSubMenu"),
+					LOCTEXT("Plastic_ContextMenu", "Revision Control Locks"),
+					FText::GetEmpty(),
+					FNewMenuDelegate::CreateRaw(this, &FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu, Context->SelectedAssets),
+					false,
+#if ENGINE_MINOR_VERSION >= 1
+					FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked")
+#else
+					FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked")
+#endif
+				);
+			}));
+	}
+#endif
+}
+
+void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& MenuBuilder, TArray<FAssetData> InAssetObjectPaths)
+{
+	MenuBuilder.BeginSection("AssetPlasticActions", LOCTEXT("UnityVersionControlAssetContextLocksMenuHeading", "Unity Version Control Locks"));
+
+	{
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT("PlasticReleaseLock", "Release Lock"),
+			LOCTEXT("PlasticReleaseLockTooltip", "Release Lock(s) on the selected assets. Requires administrator privileges on the server."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Unlocked"),
+#else
+			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Unlocked"),
+#endif
+			FUIAction(
+				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ExecuteReleaseLocks, InAssetObjectPaths),
+				FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanReleaseLocks, InAssetObjectPaths)
+			)
+		);
+	}
+
+	{
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT("PlasticRemoveLock", "Remove Lock"),
+			LOCTEXT("PlasticRemoveLockTooltip", "Remove/Delete Lock(s) on the selected assets. Requires administrator privileges on the server."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Unlocked"),
+#else
+			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Unlocked"),
+#endif
+			FUIAction(
+				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ExecuteRemoveLocks, InAssetObjectPaths),
+				FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanRemoveLocks, InAssetObjectPaths)
+			)
+		);
+	}
+
+	FString OrganizationName = FPlasticSourceControlModule::Get().GetProvider().GetCloudOrganization();
+	if (!OrganizationName.IsEmpty())
+	{
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT("PlasticLockRulesURL", "Configure Lock Rules"),
+			LOCTEXT("PlasticLockRulesURLTooltip", "Navigate to lock rules configuration page in the Unity Dashboard."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked"),
+#else
+			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked"),
+#endif
+			FUIAction(
+				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::VisitLockRulesURLClicked, MoveTemp(OrganizationName)),
+				FCanExecuteAction()
+			)
+		);
+	}
+
+	MenuBuilder.EndSection();
+}
+
+bool FPlasticSourceControlMenu::CanReleaseLocks(TArray<FAssetData> InAssetObjectPaths) const
+{
+	const TArray<FString> Files = PackageUtils::AssetDateToFileNames(InAssetObjectPaths);
+
+	for (const FString& File : Files)
+	{
+		const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(File);
+		const auto State = FPlasticSourceControlModule::Get().GetProvider().GetStateInternal(AbsoluteFilename);
+		if (!State->LockedBy.IsEmpty())
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool FPlasticSourceControlMenu::CanRemoveLocks(TArray<FAssetData> InAssetObjectPaths) const
+{
+	const TArray<FString> Files = PackageUtils::AssetDateToFileNames(InAssetObjectPaths);
+
+	for (const FString& File : Files)
+	{
+		const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(File);
+		const auto State = FPlasticSourceControlModule::Get().GetProvider().GetStateInternal(AbsoluteFilename);
+		if (State->LockedId != ISourceControlState::INVALID_REVISION)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void FPlasticSourceControlMenu::ExecuteReleaseLocks(TArray<FAssetData> InAssetObjectPaths)
+{
+	ExecuteUnlock(InAssetObjectPaths, false);
+}
+
+void FPlasticSourceControlMenu::ExecuteRemoveLocks(TArray<FAssetData> InAssetObjectPaths)
+{
+	ExecuteUnlock(InAssetObjectPaths, true);
+}
+
+void FPlasticSourceControlMenu::ExecuteUnlock(const TArray<FAssetData>& InAssetObjectPaths, const bool bInRemove)
+{
+	if (!OperationInProgressNotification.IsValid())
+	{
+		const TArray<FString> Files = PackageUtils::AssetDateToFileNames(InAssetObjectPaths);
+
+		// Launch a custom "Release/Remove Lock" operation
+		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+		TSharedRef<FPlasticUnlock, ESPMode::ThreadSafe> UnlockOperation = ISourceControlOperation::Create<FPlasticUnlock>();
+		const ECommandResult::Type Result = Provider.Execute(UnlockOperation, Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+		UnlockOperation->bRemove = bInRemove;
+		if (Result == ECommandResult::Succeeded)
+		{
+			// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+			DisplayInProgressNotification(UnlockOperation->GetInProgressString());
+		}
+		else
+		{
+			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+			DisplayFailureNotification(UnlockOperation->GetName());
+		}
+	}
+	else
+	{
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
+	}
 }
 
 bool FPlasticSourceControlMenu::IsSourceControlConnected() const
