@@ -225,7 +225,8 @@ bool FPlasticSourceControlMenu::CanReleaseLocks(TArray<FAssetData> InAssetObject
 	{
 		const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(File);
 		const auto State = FPlasticSourceControlModule::Get().GetProvider().GetStateInternal(AbsoluteFilename);
-		if (!State->LockedBy.IsEmpty())
+		// If exclusively Checked Out (Locked) the lock can be released coming back to it's potential underlying "Retained" status if changes where already checked in the branch
+		if (!State->LockedBy.IsEmpty() && State->LockedId != ISourceControlState::INVALID_REVISION)
 		{
 			return true;
 		}
@@ -242,6 +243,7 @@ bool FPlasticSourceControlMenu::CanRemoveLocks(TArray<FAssetData> InAssetObjectP
 	{
 		const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(File);
 		const auto State = FPlasticSourceControlModule::Get().GetProvider().GetStateInternal(AbsoluteFilename);
+		// If Locked or Retained, the lock can be removed, that is completely deleted in order to simply ignore the changes from the branch 
 		if (State->LockedId != ISourceControlState::INVALID_REVISION)
 		{
 			return true;
