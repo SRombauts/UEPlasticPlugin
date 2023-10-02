@@ -53,6 +53,12 @@ bool GetCmLocation(FString& OutCmLocation);
 bool GetConfigSetFilesAsReadOnly();
 
 /**
+ * Get from config the name of the default cloud organization or the url of the default on-prem server
+ * @returns Returns the location of the default repository server
+*/
+FString GetConfigDefaultRepServer();
+
+/**
  * Get Unity Version Control current user
  * @param	OutUserName			Name of the Unity Version Control user configured globally
  */

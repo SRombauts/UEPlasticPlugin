@@ -44,7 +44,8 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 	bAutoInitialCommit = true;
 
 	InitialCommitMessage = LOCTEXT("InitialCommitMessage", "Initial checkin");
-	ServerUrl = FText::FromString(TEXT("YourOrganization@cloud"));
+
+	ServerUrl = FText::FromString(FPlasticSourceControlModule::Get().GetProvider().GetServerUrl());
 	if (FApp::HasProjectName())
 	{
 		WorkspaceName = FText::FromString(FApp::GetProjectName());
@@ -317,6 +318,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.Font(Font)
 			]
 		]
+		/*
 		// Option to run an Update Status operation at Editor Startup
 		+SVerticalBox::Slot()
 		.AutoHeight()
@@ -369,6 +371,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.Font(Font)
 			]
 		]
+		*/
 		// Button to create a new Workspace
 		+SVerticalBox::Slot()
 		.FillHeight(2.5f)

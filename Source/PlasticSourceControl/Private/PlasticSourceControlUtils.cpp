@@ -129,6 +129,21 @@ bool GetConfigSetFilesAsReadOnly()
 	return false;
 }
 
+FString GetConfigDefaultRepServer()
+{
+	FString ServerUrl;
+	TArray<FString> Results;
+	TArray<FString> ErrorMessages;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("defaultrepserver"));
+	const bool bResult = RunCommand(TEXT("getconfig"), Parameters, TArray<FString>(), Results, ErrorMessages);
+	if (bResult && Results.Num() > 0)
+	{
+		ServerUrl = MoveTemp(Results[0]);
+	}
+	return ServerUrl;
+}
+
 void GetUserName(FString& OutUserName)
 {
 	TArray<FString> Results;

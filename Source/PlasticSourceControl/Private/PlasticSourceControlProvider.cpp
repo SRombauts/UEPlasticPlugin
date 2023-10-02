@@ -143,6 +143,8 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			FFormatNamedArguments Args;
 			Args.Add(TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot));
 			FMessageLog("SourceControl").Info(FText::Format(LOCTEXT("NotInAWorkspace", "{WorkspacePath} is not in a workspace."), Args));
+
+			ServerUrl = PlasticSourceControlUtils::GetConfigDefaultRepServer();
 		}
 	}
 }
