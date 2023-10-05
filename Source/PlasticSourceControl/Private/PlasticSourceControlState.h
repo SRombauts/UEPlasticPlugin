@@ -80,6 +80,8 @@ public:
 			LockedBy = MoveTemp(InState.LockedBy);
 			LockedWhere = MoveTemp(InState.LockedWhere);
 			LockedBranch = MoveTemp(InState.LockedBranch);
+			LockedId = MoveTemp(InState.LockedId);
+			LockedDate = MoveTemp(InState.LockedDate);
 			RetainedBy = MoveTemp(InState.RetainedBy);
 			RepSpec = MoveTemp(InState.RepSpec);
 			DepotRevisionChangeset = InState.DepotRevisionChangeset;
@@ -186,8 +188,14 @@ public:
 	/** Location (Workspace) where the file was exclusively checked-out. */
 	FString LockedWhere;
 
-	/** Branch where the filed was Locked or is Retained. */
+	/** Branch where the file was Locked or is Retained. */
 	FString LockedBranch;
+
+	/** Item id of the locked file (for an admin to unlock it). */
+	int32 LockedId = INVALID_REVISION;
+
+	/** Date when the file was Locked. */
+	FDateTime LockedDate = 0;
 
 	/** If a user (another or ourself) has this file Retained on another branch, this contains their name. */
 	FString RetainedBy;

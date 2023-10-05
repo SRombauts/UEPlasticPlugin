@@ -6,6 +6,7 @@
 
 namespace PackageUtils
 {
+	TArray<FString> AssetDateToFileNames(const TArray<FAssetData>& InAssetObjectPaths);
 	void UnlinkPackages(const TArray<FString>& InFiles);
 	void UnlinkPackagesInMainThread(const TArray<FString>& InFiles);
 

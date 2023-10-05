@@ -81,7 +81,7 @@ public:
 	FString WorkspaceName;
 	FString RepositoryName;
 	FString ServerUrl;
-	bool bPartialWorkspace;
+	bool bPartialWorkspace = false;
 };
 
 
@@ -95,6 +95,22 @@ public:
 	virtual FName GetName() const override;
 
 	virtual FText GetInProgressString() const override;
+};
+
+
+/**
+ * Internal operation used to release or remove Lock(s) on file(s)
+*/
+class FPlasticUnlock final : public ISourceControlOperation
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	// Release the Lock(s), and optionally remove (delete) them completely
+	bool bRemove = false;
 };
 
 
@@ -293,6 +309,24 @@ public:
 		: IPlasticSourceControlWorker(InSourceControlProvider)
 	{}
 	virtual ~FPlasticSwitchToPartialWorkspaceWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+public:
+	/** Temporary states for results */
+	TArray<FPlasticSourceControlState> States;
+};
+
+/** release or remove Lock(s) on file(s). */
+class FPlasticUnlockWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticUnlockWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticUnlockWorker() = default;
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
