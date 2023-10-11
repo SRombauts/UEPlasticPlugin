@@ -62,10 +62,13 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 		if (Plugin.IsValid())
 		{
 			PluginVersion = Plugin->GetDescriptor().VersionName;
-			UE_LOG(LogSourceControl, Log, TEXT("Unity Version Control (formerly Plastic SCM) plugin '%s'"), *PluginVersion);
+			UE_LOG(LogSourceControl, Log, TEXT("Unity Version Control (formerly Plastic SCM) plugin %s"), *PluginVersion);
 		}
 
 		CheckPlasticAvailability();
+
+		FMessageLog("SourceControl").Info(FText::Format(LOCTEXT("PluginVersion", "Unity Version Control (formerly Plastic SCM) {0} (plugin {1})"),
+			FText::FromString(PlasticScmVersion.String), FText::FromString(PluginVersion)));
 
 		// Override the source control logs verbosity level if needed based on settings
 		if (AccessSettings().GetEnableVerboseLogs())
