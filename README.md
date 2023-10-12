@@ -3,13 +3,16 @@ Unity Version Control (formerly Plastic SCM) plugin for Unreal Engine
 
 [![release](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
 
-This is the **official [Unity Version Control (formerly Plastic SCM)](https://plasticscm.com/) plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0 to 5.3).
-An old version 1.4.6+ was integrated in Unreal Engine 4.24 and has been shipping with it up to UE 5.0.
-More recent versions have been integrated in Unreal Engine 5.1 and above.
-But if your project is of a certain size, chances are you can benefit from upgrading manually to a version we provide from Github
-in order to benefit from the performance improvements, bugfixes and changes we have made since then.
+This is the **official [Unity Version Control (formerly Plastic SCM)](https://unity.com/solutions/version-control) plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0 to 5.3).
 
-It is not intended to replace the [Unity Version Control Desktop Client](https://docs.plasticscm.com/gui/plastic-scm-version-control-gui-guide)
+It is now [distributed in the Unreal Engine Marketplace as a Code Plugin, supporting Engine Versions 5.1 to 5.3 ![Unity Version Control in the Unreal Engine Marketplace](Screenshots/Marketplace_UnityVersionControl.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
+
+As a general rule, the Marketplace and GitHub versions of the plugin will always be the most up-to-date and recent versions.
+They're easier for us to patch by applying a hotfix, in case a bug is raised and something broken must be fixed quickly.
+
+However, you can of course still use the "Plastic SCM" in-engine integration in Unreal.
+
+This plugin is not intended to replace the [Desktop Client](https://docs.plasticscm.com/gui/plastic-scm-version-control-gui-guide)
 or [command line interface "cm"](https://docs.unity.com/ugs/en-us/manual/devops/manual/uvcs-cli/version-control-cli).
 It is a complementary tool improving efficiency in your daily workflow with assets in Editor.
 
@@ -18,6 +21,7 @@ It also helps import an existing Unreal Project into source control, with approp
 Since Unreal does not manage C++ source code, but only assets, the plugin is especially useful for GDs and artists.
 
 ## Table of Contents
+
  - [User Guide](#user-guide)
    - [Plugin Setup](#plugin-setup)
    - [Project Setup](#project-setup)
@@ -51,7 +55,10 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
 
 ### Plugin Setup
 
-#### Unreal default version of the plugin
+#### In-Engine version of the plugin
+
+Having a version of "Plastic SCM" integrated in-Engine helps with discoverability and it is the easiest way to get started with Unity Version Control.
+However the integrated version will always be lagging behind the latest release in Github and the Marketplace.
 
 - UE4.24 to 4.27 shipped with an old version 1.4.6 of this plugin
 - UE5.0 shipped with the same outdated version 1.4.6, not performing well overall with UE5, especially on OFPA
@@ -59,16 +66,27 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
 - UE5.2 shipped with the version 1.8.0 with support for the Shelves in the renamed View Changes window
 - UE5.3 shipped with the same version 1.8.0
 
-**Why?**: Why is it integrated, as opposed to, eg. being shared through the Marketplace?
+#### Install from Unreal Engine Marketplace
 
-It helps with discoverability of the plugin, and it is the easiest way to get started with Unity Version Control in Unreal Engine.
-But it will always be lagging somewhat behind the latest release in Github.
+As a general rule, the Marketplace and GitHub versions of the plugin will always be the most up-to-date and recent versions.
+They're easier for us to patch by applying a hotfix, in case a bug is raised and something broken must be fixed quickly.
 
-#### Manual update from the latest release in Github
+[In the Unreal Engine Marketplace, the Unity Version Control plugin supports Engine Versions 5.1 to 5.3](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
 
-**Why?**: Why would you update to latest version in Github?
+ 1. Click on the "Free" or "Add to cart" button in the Marketplace page and complete the checkout process.*
+[!["Free" and "Add to cart" buttons](Screenshots/Marketplace_FreeAddToCart.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
+ 2. Click the "Open in Launcher" button
+[!["Open in Launcher" button](Screenshots/Marketplace_OpenInLauncher.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
+ 3. Click the "Install to Engine" button, select the Unreal Editor version for your project, then download and install the files.
+[!["Install to Engine" button](Screenshots/Launcher_InstallToEngine.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
+ 4. In your project, navigate to "Edit -> Plugins" and in "Installed" plugins, tick to enable "Unity Version Control", and restart the Unreal Editor
+![Enable the plugin in the Plugins Manager](Screenshots/PluginsManager_InstalledPlugins.png)
+ 5. Navigate to "Revision Control -> Connect to Revision Control" and for the "Provider" select "UnityVersionControl"
+![Source Control Connect](Screenshots/UEPlasticPlugin-SourceControlDisabled.png)
 
-If you want the latest features, performance improvements and bug fixes that are missing from Unreal integrated plugin.
+#### Install from releases in Github
+
+[![release](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
 
  1. Download the [latest binary release UE5PlasticPlugin-x.x.x.zip](https://github.com/PlasticSCM/UEPlasticPlugin/releases) targeting your UE5 version (resp UE4).
  2. Either:
@@ -85,9 +103,9 @@ If you want the latest features, performance improvements and bug fixes that are
         This is the way to enable Unity Version Control for all Unreal Engine projects on the machine.
  3. Then, launch your Unreal project, click on the Source Control icon "Connect to Source", select "Plastic SCM".
 
-#### How to build from sources
+#### Build from sources
 
-**Why?**: Why would you build from sources? It enable you to test features before they are released, debug issues, and contribute. It's required if you have your own fork of Unreal Engine.
+Building from sources enable you to test features before they are released, debug issues, and contribute. It's required if you have your own fork of Unreal Engine.
 
 If your project is already a C++ project, you only have to re-generate Visual Studio project files (step 4 below) and the plugin will get rebuilt the next time you compile your project.
 
@@ -140,7 +158,7 @@ and are saved locally in `Saved\Config\WindowsEditor\SourceControlSettings.ini`.
 
 - BinaryPath: Path to the Unity Version Control Command Line tool 'cm' binary. Default is good if the cli is in the PATH. Can be changed to an absolute path to the cm executable if needed.
 - UpdateStatusAtStartup: Triggers an asynchronous "Update Status" operation at Editor startup. Can take quite some time on big projects, with no source control status available in the meantime.
-- UpdateStatusOtherBranches: Enable Update status to detect more recent changes on other branches in order to display the "Changed In Other Branch" warnings and icon. 
+- UpdateStatusOtherBranches: Enable Update status to detect more recent changes on other branches in order to display the "Changed In Other Branch" warnings and icon.
 - EnableVerboseLogs: Override LogSourceControl default verbosity level to Verbose (except if already set to VeryVerbose).
 
 ##### Add an ignore.conf file
@@ -276,7 +294,7 @@ Plastic SCM forums:
 ![Redirector added by a Move](Screenshots/Icons/UEPlasticPlugin-Redirector.png)
 ![Moved/Renamed](Screenshots/Icons/UEPlasticPlugin-Renamed.png)
 
- 5. Locally **Changed** without checkout, or **Private** ie not source controlled 
+ 5. Locally **Changed** without checkout, or **Private** ie not source controlled
  6. **Checked-out** exclusively to prevent others from making modifications (if Locks are enabled on the server)
  7. **Redirector** added by a Move
  8. **Moved** or Renamed
@@ -491,7 +509,7 @@ The command line needs the quoted path to the UnrealEditor.exe, the quoted patch
 
     "C:\Program Files\Epic Games\UE_5.0\Engine\Binaries\Win64\UnrealEditor.exe" "C:\wkspaces\ProjectName\ProjectName.uproject" -diff "@sourcefile" "@destinationfile"
 
-eg: 
+eg:
 
     "C:\Program Files\Epic Games\UE_5.2\Engine\Binaries\Win64\UnrealEditor.exe" "C:\UnitySrc\UE5UnityVCSDevEnv\UE5UnityVCSDevEnv.uproject" -diff "@sourcefile" "@destinationfile"
 
@@ -606,7 +624,7 @@ You can also use the [Github issue-tracker](https://github.com/SRombauts/UEPlast
  3. Describe precisely your issue
  4. Add reproduction steps, if possible on a basic template project
  5. Post log files whenever possible (see [enable debug logs](#enable-debug-logs) to get the most of it)
-    1. Unreal Log file **`<ProjectName>/Saved/Logs/ProjectName.log`** 
+    1. Unreal Log file **`<ProjectName>/Saved/Logs/ProjectName.log`**
     2. cm debug log file typically from **`<LOCALAPPDATA>\plastic4\logs\cm.log.txt`**
 
 ### Use merge requests
