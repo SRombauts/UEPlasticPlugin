@@ -364,17 +364,25 @@ you can enable an option to check for changes in all other branches.
 Enable "Update Status" to also checks the history to detect changes on other branches:
 ![Source Control Settings](Screenshots/UEPlasticPlugin-SourceControlSettings.png)
 
-Tooltip in the Content Browser when an asset is already checked-out somewhere else:
+Tooltip in the Content Browser when an asset is already checked-out and Locked somewhere else:
 ![Asset checked-out by someone else](Screenshots/UEPlasticPlugin-CheckedOutOther-Tooltip.png)
 
 Tooltip in the Content Browser when an asset has been modified in another branch:
 ![Asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-Tooltip.png)
 
+Tooltip in the Content Browser when an asset has a Retained Smart Lock in another branch:
+![Retained Lock in another branch](Screenshots/UEPlasticPlugin-SmartLocksRetained-Tooltip.png)
+
 Warning when trying to checkout an asset that has been modified in another branch:
 ![Warning on checkout for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnCheckout.png)
- 
+
 Warning when trying to modify an asset that has been modified in another branch:
 ![Warning on modification for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnModification.png)
+
+### SmartLocks
+
+Smart Locks administrator context menu to configure lock rules or unlock an asset:
+![Smart Locks admin context menu](Screenshots/UEPlasticPlugin-SmartLocks-Menu.png)
 
 #### Merge conflicts on Blueprints
 
@@ -509,10 +517,10 @@ This version here is the development version, so it always contains additional f
 
 ### Version 1.8.3 2023/10/11 for UE 5.0/5.1/5.2/5.3 and UE 4.27.2:
  - manage connection to the server
- - show current branch name and CL in status text
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
- - display locked files, and by who
+ - Smart Locks: display locked files, retained locks, on what branch and by who
  - Detect Changes on other Branches, to check outdated files vs. remote across multiple branches
+ - show current branch name and CL in status text
  - add, duplicate a file
  - move/rename a file or a folder
  - revert modifications of a file (works best with the "Content Hot-Reload" option since UE4.15)
