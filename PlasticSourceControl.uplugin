@@ -12,7 +12,6 @@
 	"SupportURL": "https://support.unity.com/hc/en-us/requests/new?ticket_form_id=360001051792",
 	"EnabledByDefault": true,
 	"CanContainContent": false,
-	"IsBetaVersion": false,
 	"Installed": false,
 	"Modules": [
 		{
