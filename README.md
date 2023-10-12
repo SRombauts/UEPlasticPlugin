@@ -515,7 +515,7 @@ eg:
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.8.3 2023/10/11 for UE 5.0/5.1/5.2/5.3 and UE 4.27
+### Version 1.8.3 2023/10/12 for UE 5.0/5.1/5.2/5.3 and UE 4.27
  - manage connection to the server
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
  - Smart Locks: display locked files, retained locks, on what branch and by who
