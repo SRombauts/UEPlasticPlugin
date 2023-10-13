@@ -75,7 +75,11 @@ private:
 	void LaunchMarkForAddOperation();
 	void LaunchCheckInOperation();
 
-	/** Delegate called when a source control operation has completed */
+	/** Delegates called when a source control operation has completed */
+	void OnMakeWorkspaceOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnMarkForAddOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnCheckInOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	/** Generic notification handler */
 	void OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 
 	/** Asynchronous operation progress notifications */

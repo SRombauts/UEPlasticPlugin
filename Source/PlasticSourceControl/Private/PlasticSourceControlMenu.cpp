@@ -243,7 +243,7 @@ bool FPlasticSourceControlMenu::CanRemoveLocks(TArray<FAssetData> InAssetObjectP
 	{
 		const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(File);
 		const auto State = FPlasticSourceControlModule::Get().GetProvider().GetStateInternal(AbsoluteFilename);
-		// If Locked or Retained, the lock can be removed, that is completely deleted in order to simply ignore the changes from the branch 
+		// If Locked or Retained, the lock can be removed, that is completely deleted in order to simply ignore the changes from the branch
 		if (State->LockedId != ISourceControlState::INVALID_REVISION)
 		{
 			return true;
@@ -345,7 +345,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 			// Launch a custom "SyncAll" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 			TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> SyncOperation = ISourceControlOperation::Create<FPlasticSyncAll>();
-			const ECommandResult::Type Result = Provider.Execute(SyncOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+			const ECommandResult::Type Result = Provider.Execute(SyncOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSyncAllOperationComplete));
 			if (Result == ECommandResult::Succeeded)
 			{
 				// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
@@ -417,7 +417,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 				// Launch a "RevertAll" Operation
 				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 				TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> RevertAllOperation = ISourceControlOperation::Create<FPlasticRevertAll>();
-				const ECommandResult::Type Result = Provider.Execute(RevertAllOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
+				const ECommandResult::Type Result = Provider.Execute(RevertAllOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnRevertAllOperationComplete));
 				if (Result == ECommandResult::Succeeded)
 				{
 					// Display an ongoing notification during the whole operation
@@ -624,22 +624,27 @@ void FPlasticSourceControlMenu::DisplayFailureNotification(const FName& InOperat
 	UE_LOG(LogSourceControl, Error, TEXT("%s"), *NotificationText.ToString());
 }
 
+void FPlasticSourceControlMenu::OnSyncAllOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	OnSourceControlOperationComplete(InOperation, InResult);
+
+	// Reload packages that where updated by the Sync operation (and the current map if needed)
+	TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
+	PackageUtils::ReloadPackages(Operation->UpdatedFiles);
+}
+
+void FPlasticSourceControlMenu::OnRevertAllOperationComplete(const FSourceControlOperationRef & InOperation, ECommandResult::Type InResult)
+{
+	OnSourceControlOperationComplete(InOperation, InResult);
+
+	// Reload packages that where updated by the Revert operation (and the current map if needed)
+	TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRevertAll>(InOperation);
+	PackageUtils::ReloadPackages(Operation->UpdatedFiles);
+}
+
 void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	RemoveInProgressNotification();
-
-	if (InOperation->GetName() == "SyncAll")
-	{
-		// Reload packages that where updated by the Sync operation (and the current map if needed)
-		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
-		PackageUtils::ReloadPackages(Operation->UpdatedFiles);
-	}
-	else if (InOperation->GetName() == "RevertAll")
-	{
-		// Reload packages that where updated by the Revert operation (and the current map if needed)
-		TSharedRef<FPlasticRevertAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRevertAll>(InOperation);
-		PackageUtils::ReloadPackages(Operation->UpdatedFiles);
-	}
 
 	// Report result with a notification
 	if (InResult == ECommandResult::Succeeded)

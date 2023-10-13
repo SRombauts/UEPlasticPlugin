@@ -45,7 +45,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 
 	InitialCommitMessage = LOCTEXT("InitialCommitMessage", "Initial checkin");
 	ServerUrl = FText::FromString(FPlasticSourceControlModule::Get().GetProvider().GetServerUrl());
-	
+
 	if (FApp::HasProjectName())
 	{
 		WorkspaceName = FText::FromString(FApp::GetProjectName());
@@ -563,7 +563,7 @@ void SPlasticSourceControlSettings::LaunchMakeWorkspaceOperation()
 	MakeWorkspaceOperation->bPartialWorkspace = bCreatePartialWorkspace;
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-	ECommandResult::Type Result = Provider.Execute(MakeWorkspaceOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
+	ECommandResult::Type Result = Provider.Execute(MakeWorkspaceOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnMakeWorkspaceOperationComplete));
 	if (Result == ECommandResult::Succeeded)
 	{
 		DisplayInProgressNotification(MakeWorkspaceOperation->GetInProgressString());
@@ -572,6 +572,14 @@ void SPlasticSourceControlSettings::LaunchMakeWorkspaceOperation()
 	{
 		DisplayFailureNotification(MakeWorkspaceOperation->GetName());
 	}
+}
+
+void SPlasticSourceControlSettings::OnMakeWorkspaceOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	OnSourceControlOperationComplete(InOperation, InResult);
+
+	// Launch the following asynchronous operation
+	LaunchMarkForAddOperation();
 }
 
 /// 2. Add all project files to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any)
@@ -592,7 +600,7 @@ void SPlasticSourceControlSettings::LaunchMarkForAddOperation()
 		}
 		// 2. Add all project files to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any)
 		const TArray<FString> ProjectFiles = GetProjectFiles();
-		ECommandResult::Type Result = Provider.Execute(MarkForAddOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
+		ECommandResult::Type Result = Provider.Execute(MarkForAddOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnMarkForAddOperationComplete));
 		if (Result == ECommandResult::Succeeded)
 		{
 			DisplayInProgressNotification(MarkForAddOperation->GetInProgressString());
@@ -608,6 +616,14 @@ void SPlasticSourceControlSettings::LaunchMarkForAddOperation()
 	}
 }
 
+void SPlasticSourceControlSettings::OnMarkForAddOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	OnSourceControlOperationComplete(InOperation, InResult);
+
+	// Launch the following asynchronous operation
+	LaunchCheckInOperation();
+}
+
 /// 3. Launch an asynchronous "CheckIn" operation and start another ongoing notification
 void SPlasticSourceControlSettings::LaunchCheckInOperation()
 {
@@ -615,7 +631,7 @@ void SPlasticSourceControlSettings::LaunchCheckInOperation()
 	CheckInOperation->SetDescription(InitialCommitMessage);
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const TArray<FString> ProjectFiles = GetProjectFiles(); // Note: listing files and folders is only needed for the update status operation following the checkin to know on what to operate
-	ECommandResult::Type Result = Provider.Execute(CheckInOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnSourceControlOperationComplete));
+	ECommandResult::Type Result = Provider.Execute(CheckInOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnCheckInOperationComplete));
 	if (Result == ECommandResult::Succeeded)
 	{
 		DisplayInProgressNotification(CheckInOperation->GetInProgressString());
@@ -626,7 +642,13 @@ void SPlasticSourceControlSettings::LaunchCheckInOperation()
 	}
 }
 
-/// Delegate called when a source control operation has completed: launch the next one and manage notifications
+void SPlasticSourceControlSettings::OnCheckInOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	OnSourceControlOperationComplete(InOperation, InResult);
+
+	// Note: no more operation to launch, the workspace is ready to use
+}
+
 void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	RemoveInProgressNotification();
@@ -639,18 +661,6 @@ void SPlasticSourceControlSettings::OnSourceControlOperationComplete(const FSour
 	else
 	{
 		DisplayFailureNotification(InOperation->GetName());
-	}
-
-	// Launch the following asynchronous operation
-	if ((InOperation->GetName() == "MakeWorkspace") && (InResult == ECommandResult::Succeeded) && bAutoInitialCommit)
-	{
-		// 2. Add .uproject, Config/, Content/ and Source/ files (and ignore.conf if any)
-		LaunchMarkForAddOperation();
-	}
-	else if ((InOperation->GetName() == "MarkForAdd") && (InResult == ECommandResult::Succeeded) && bAutoInitialCommit)
-	{
-		// 3. optional initial Asynchronous commit with custom message: launch a "CheckIn" Operation
-		LaunchCheckInOperation();
 	}
 }
 
