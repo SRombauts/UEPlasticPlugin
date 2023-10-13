@@ -399,6 +399,8 @@ Warning when trying to modify an asset that has been modified in another branch:
 
 ### SmartLocks
 
+[Meet Smart Locks, a new way to reduce merge conflicts with Unity Version Control](https://blog.unity.com/engine-platform/unity-version-control-smart-locks)
+
 Smart Locks administrator context menu to configure lock rules or unlock an asset:
 ![Smart Locks admin context menu](Screenshots/UEPlasticPlugin-SmartLocks-Menu.png)
 
