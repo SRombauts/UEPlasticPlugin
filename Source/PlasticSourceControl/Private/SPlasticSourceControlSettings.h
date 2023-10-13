@@ -41,16 +41,12 @@ private:
 	bool IsReadyToCreatePlasticWorkspace() const;
 	void OnWorkspaceNameCommited(const FText& InText, ETextCommit::Type InCommitType);
 	FText GetWorkspaceName() const;
-	FText WorkspaceName;
 	void OnRepositoryNameCommited(const FText& InText, ETextCommit::Type InCommitType);
 	FText GetRepositoryName() const;
-	FText RepositoryName;
 	void OnServerUrlCommited(const FText& InText, ETextCommit::Type InCommitType);
 	FText GetServerUrl() const;
-	FText ServerUrl;
 	bool CreatePartialWorkspace() const;
 	void OnCheckedCreatePartialWorkspace(ECheckBoxState NewCheckedState);
-	bool bCreatePartialWorkspace;
 	bool CanAutoCreateIgnoreFile() const;
 	void OnCheckedCreateIgnoreFile(ECheckBoxState NewCheckedState);
 	bool bAutoCreateIgnoreFile;
@@ -65,10 +61,20 @@ private:
 	ECheckBoxState IsEnableVerboseLogsChecked() const;
 
 	void OnCheckedInitialCommit(ECheckBoxState NewCheckedState);
-	bool bAutoInitialCommit;
 	void OnInitialCommitMessageCommited(const FText& InText, ETextCommit::Type InCommitType);
 	FText GetInitialCommitMessage() const;
-	FText InitialCommitMessage;
+
+	struct FPlasticWorkspaceCreationParameters
+	{
+		FText WorkspaceName;
+		FText RepositoryName;
+		FText ServerUrl;
+		bool bCreatePartialWorkspace = false;
+		bool bAutoInitialCommit = true;
+		FText InitialCommitMessage;
+	};
+
+	FPlasticWorkspaceCreationParameters WorkspaceParams;
 
 	/** Launch initial asynchronous add and commit operations */
 	void LaunchMakeWorkspaceOperation();

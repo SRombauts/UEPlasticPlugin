@@ -41,15 +41,15 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 #endif
 
 	bAutoCreateIgnoreFile = CanAutoCreateIgnoreFile();
-	bAutoInitialCommit = true;
+	WorkspaceParams.bAutoInitialCommit = true;
 
-	InitialCommitMessage = LOCTEXT("InitialCommitMessage", "Initial checkin");
-	ServerUrl = FText::FromString(FPlasticSourceControlModule::Get().GetProvider().GetServerUrl());
+	WorkspaceParams.InitialCommitMessage = LOCTEXT("InitialCommitMessage", "Initial checkin");
+	WorkspaceParams.ServerUrl = FText::FromString(FPlasticSourceControlModule::Get().GetProvider().GetServerUrl());
 
 	if (FApp::HasProjectName())
 	{
-		WorkspaceName = FText::FromString(FApp::GetProjectName());
-		RepositoryName = WorkspaceName;
+		WorkspaceParams.WorkspaceName = FText::FromString(FApp::GetProjectName());
+		WorkspaceParams.RepositoryName = WorkspaceParams.WorkspaceName;
 	}
 
 	ChildSlot
@@ -260,7 +260,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			SNew(SCheckBox)
 			.Visibility(this, &SPlasticSourceControlSettings::CanCreatePlasticWorkspace)
 			.ToolTipText(LOCTEXT("CreatePartialWorkspace_Tooltip", "Create the new workspace in Gluon/partial mode, designed for artists."))
-			.IsChecked(bCreatePartialWorkspace)
+			.IsChecked(WorkspaceParams.bCreatePartialWorkspace)
 			.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedCreatePartialWorkspace)
 			[
 				SNew(STextBlock)
@@ -468,50 +468,50 @@ EVisibility SPlasticSourceControlSettings::CanCreatePlasticWorkspace() const
 bool SPlasticSourceControlSettings::IsReadyToCreatePlasticWorkspace() const
 {
 	// Workspace Name cannot be left empty
-	const bool bWorkspaceNameOk = !WorkspaceName.IsEmpty();
+	const bool bWorkspaceNameOk = !WorkspaceParams.WorkspaceName.IsEmpty();
 	// RepositoryName and ServerUrl should also be filled
-	const bool bRepositoryNameOk = !RepositoryName.IsEmpty() && !ServerUrl.IsEmpty();
+	const bool bRepositoryNameOk = !WorkspaceParams.RepositoryName.IsEmpty() && !WorkspaceParams.ServerUrl.IsEmpty();
 	// If Initial Commit is requested, checkin message cannot be empty
-	const bool bInitialCommitOk = (!bAutoInitialCommit || !InitialCommitMessage.IsEmpty());
+	const bool bInitialCommitOk = (!WorkspaceParams.bAutoInitialCommit || !WorkspaceParams.InitialCommitMessage.IsEmpty());
 	return bWorkspaceNameOk && bRepositoryNameOk && bInitialCommitOk;
 }
 
 
 void SPlasticSourceControlSettings::OnWorkspaceNameCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
-	WorkspaceName = InText;
+	WorkspaceParams.WorkspaceName = InText;
 }
 FText SPlasticSourceControlSettings::GetWorkspaceName() const
 {
-	return WorkspaceName;
+	return WorkspaceParams.WorkspaceName;
 }
 
 void SPlasticSourceControlSettings::OnRepositoryNameCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
-	RepositoryName = InText;
+	WorkspaceParams.RepositoryName = InText;
 }
 FText SPlasticSourceControlSettings::GetRepositoryName() const
 {
-	return RepositoryName;
+	return WorkspaceParams.RepositoryName;
 }
 
 void SPlasticSourceControlSettings::OnServerUrlCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
-	ServerUrl = InText;
+	WorkspaceParams.ServerUrl = InText;
 }
 FText SPlasticSourceControlSettings::GetServerUrl() const
 {
-	return ServerUrl;
+	return WorkspaceParams.ServerUrl;
 }
 
 bool SPlasticSourceControlSettings::CreatePartialWorkspace() const
 {
-	return bCreatePartialWorkspace;
+	return WorkspaceParams.bCreatePartialWorkspace;
 }
 
 void SPlasticSourceControlSettings::OnCheckedCreatePartialWorkspace(ECheckBoxState NewCheckedState)
 {
-	bCreatePartialWorkspace = (NewCheckedState == ECheckBoxState::Checked);
+	WorkspaceParams.bCreatePartialWorkspace = (NewCheckedState == ECheckBoxState::Checked);
 }
 
 bool SPlasticSourceControlSettings::CanAutoCreateIgnoreFile() const
@@ -527,24 +527,25 @@ void SPlasticSourceControlSettings::OnCheckedCreateIgnoreFile(ECheckBoxState New
 
 void SPlasticSourceControlSettings::OnCheckedInitialCommit(ECheckBoxState NewCheckedState)
 {
-	bAutoInitialCommit = (NewCheckedState == ECheckBoxState::Checked);
+	WorkspaceParams.bAutoInitialCommit = (NewCheckedState == ECheckBoxState::Checked);
 }
 
 void SPlasticSourceControlSettings::OnInitialCommitMessageCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
-	InitialCommitMessage = InText;
+	WorkspaceParams.InitialCommitMessage = InText;
 }
 
 FText SPlasticSourceControlSettings::GetInitialCommitMessage() const
 {
-	return InitialCommitMessage;
+	return WorkspaceParams.InitialCommitMessage;
 }
 
 
 FReply SPlasticSourceControlSettings::OnClickedCreatePlasticWorkspace()
 {
-	UE_LOG(LogSourceControl, Log, TEXT("CreatePlasticWorkspace(%s, %s, %s) CreateIgnore=%d Commit=%d"),
-		*WorkspaceName.ToString(), *RepositoryName.ToString(), *ServerUrl.ToString(), bAutoCreateIgnoreFile, bAutoInitialCommit);
+	UE_LOG(LogSourceControl, Log, TEXT("CreatePlasticWorkspace(%s, %s, %s) PartialWorkspace=%d CreateIgnore=%d Commit=%d"),
+		*WorkspaceParams.WorkspaceName.ToString(), *WorkspaceParams.RepositoryName.ToString(), *WorkspaceParams.ServerUrl.ToString(),
+		WorkspaceParams.bCreatePartialWorkspace, bAutoCreateIgnoreFile, WorkspaceParams.bAutoInitialCommit);
 
 	// 1.a. Create a repository (if not already existing) and a workspace: launch an asynchronous MakeWorkspace operation
 	LaunchMakeWorkspaceOperation();
@@ -557,10 +558,10 @@ FReply SPlasticSourceControlSettings::OnClickedCreatePlasticWorkspace()
 void SPlasticSourceControlSettings::LaunchMakeWorkspaceOperation()
 {
 	TSharedRef<FPlasticMakeWorkspace, ESPMode::ThreadSafe> MakeWorkspaceOperation = ISourceControlOperation::Create<FPlasticMakeWorkspace>();
-	MakeWorkspaceOperation->WorkspaceName = WorkspaceName.ToString();
-	MakeWorkspaceOperation->RepositoryName = RepositoryName.ToString();
-	MakeWorkspaceOperation->ServerUrl = ServerUrl.ToString();
-	MakeWorkspaceOperation->bPartialWorkspace = bCreatePartialWorkspace;
+	MakeWorkspaceOperation->WorkspaceName = WorkspaceParams.WorkspaceName.ToString();
+	MakeWorkspaceOperation->RepositoryName = WorkspaceParams.RepositoryName.ToString();
+	MakeWorkspaceOperation->ServerUrl = WorkspaceParams.ServerUrl.ToString();
+	MakeWorkspaceOperation->bPartialWorkspace = WorkspaceParams.bCreatePartialWorkspace;
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	ECommandResult::Type Result = Provider.Execute(MakeWorkspaceOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnMakeWorkspaceOperationComplete));
@@ -628,7 +629,7 @@ void SPlasticSourceControlSettings::OnMarkForAddOperationComplete(const FSourceC
 void SPlasticSourceControlSettings::LaunchCheckInOperation()
 {
 	TSharedRef<FCheckIn, ESPMode::ThreadSafe> CheckInOperation = ISourceControlOperation::Create<FCheckIn>();
-	CheckInOperation->SetDescription(InitialCommitMessage);
+	CheckInOperation->SetDescription(WorkspaceParams.InitialCommitMessage);
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const TArray<FString> ProjectFiles = GetProjectFiles(); // Note: listing files and folders is only needed for the update status operation following the checkin to know on what to operate
 	ECommandResult::Type Result = Provider.Execute(CheckInOperation, ProjectFiles, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlSettings::OnCheckInOperationComplete));
