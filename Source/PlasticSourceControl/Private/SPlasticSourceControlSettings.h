@@ -9,8 +9,7 @@
 #include "Input/Reply.h"
 #include "Styling/SlateTypes.h"
 
-#include "ISourceControlProvider.h"
-#include "ISourceControlOperation.h"
+#include "PlasticSourceControlWorkspaceCreation.h"
 
 class SPlasticSourceControlSettings : public SCompoundWidget
 {
@@ -64,39 +63,10 @@ private:
 	void OnInitialCommitMessageCommited(const FText& InText, ETextCommit::Type InCommitType);
 	FText GetInitialCommitMessage() const;
 
-	struct FPlasticWorkspaceCreationParameters
-	{
-		FText WorkspaceName;
-		FText RepositoryName;
-		FText ServerUrl;
-		bool bCreatePartialWorkspace = false;
-		bool bAutoInitialCommit = true;
-		FText InitialCommitMessage;
-	};
-
-	FPlasticWorkspaceCreationParameters WorkspaceParams;
-
-	/** Launch initial asynchronous add and commit operations */
-	void LaunchMakeWorkspaceOperation();
-	void LaunchMarkForAddOperation();
-	void LaunchCheckInOperation();
-
-	/** Delegates called when a source control operation has completed */
-	void OnMakeWorkspaceOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
-	void OnMarkForAddOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
-	void OnCheckInOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
-	/** Generic notification handler */
-	void OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
-
-	/** Asynchronous operation progress notifications */
-	TWeakPtr<class SNotificationItem> OperationInProgressNotification;
-
-	void DisplayInProgressNotification(const FText& InOperationInProgressString);
-	void RemoveInProgressNotification();
-	void DisplaySuccessNotification(const FName& InOperationName);
-	void DisplayFailureNotification(const FName& InOperationName);
-
 	FReply OnClickedCreatePlasticWorkspace();
+
+	// Parameters for the workspace creation
+	FPlasticSourceControlWorkspaceCreation::FParameters WorkspaceParams;
 
 	/** Delegate to add a Plastic ignore.conf file to an existing Plastic workspace */
 	EVisibility CanAddIgnoreFile() const;
@@ -104,6 +74,4 @@ private:
 
 	const FString GetIgnoreFileName() const;
 	bool CreateIgnoreFile() const;
-
-	TArray<FString> GetProjectFiles() const;
 };

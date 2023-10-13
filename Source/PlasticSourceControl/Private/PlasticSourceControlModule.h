@@ -6,6 +6,7 @@
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
 #include "PlasticSourceControlProvider.h"
+#include "PlasticSourceControlWorkspaceCreation.h"
 
 /**
  * PlasticSourceControl is the official Unity Version Control Plugin for Unreal Engine
@@ -27,6 +28,12 @@ public:
 	const FPlasticSourceControlProvider& GetProvider() const
 	{
 		return PlasticSourceControlProvider;
+	}
+
+	/** Access the controller to create a new workspace */
+	FPlasticSourceControlWorkspaceCreation& GetWorkspaceCreation()
+	{
+		return PlasticSourceControlWorkspaceCreation;
 	}
 
 	/**
@@ -51,4 +58,7 @@ public:
 private:
 	/** The Plastic source control provider */
 	FPlasticSourceControlProvider PlasticSourceControlProvider;
+
+	/** Logic to create a new workspace */
+	FPlasticSourceControlWorkspaceCreation PlasticSourceControlWorkspaceCreation;
 };
