@@ -105,7 +105,7 @@ FName FPlasticMakeWorkspace::GetName() const
 
 FText FPlasticMakeWorkspace::GetInProgressString() const
 {
-	return LOCTEXT("SourceControl_MakeWorkspace", "Creating a new Repository and Workspace");
+	return LOCTEXT("SourceControl_MakeWorkspace", "Creating a new Repository and Workspace...");
 }
 
 FName FPlasticSwitchToPartialWorkspace::GetName() const
@@ -115,7 +115,7 @@ FName FPlasticSwitchToPartialWorkspace::GetName() const
 
 FText FPlasticSwitchToPartialWorkspace::GetInProgressString() const
 {
-	return LOCTEXT("SourceControl_SwitchToPartialWorkspace", "Switching to a Partial/Gluon Workspace");
+	return LOCTEXT("SourceControl_SwitchToPartialWorkspace", "Switching to a Partial/Gluon Workspace...");
 }
 
 FName FPlasticUnlock::GetName() const
@@ -126,9 +126,9 @@ FName FPlasticUnlock::GetName() const
 FText FPlasticUnlock::GetInProgressString() const
 {
 	if (bRemove)
-		return LOCTEXT("SourceControl_Unlock_Remove", "Removing Lock(s)");
+		return LOCTEXT("SourceControl_Unlock_Remove", "Removing Lock(s)...");
 	else
-		return LOCTEXT("SourceControl_Unlock_Release", "Releasing Lock(s)");
+		return LOCTEXT("SourceControl_Unlock_Release", "Releasing Lock(s)...");
 }
 
 
