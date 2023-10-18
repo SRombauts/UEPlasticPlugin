@@ -4,7 +4,6 @@
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
-#include "SPlasticSourceControlSettings.h"
 
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"

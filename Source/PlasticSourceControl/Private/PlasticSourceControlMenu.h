@@ -78,6 +78,9 @@ private:
 	/** Name of the asset context menu extension for admin actions over Locks */
 	static FName UnityVersionControlAssetContextLocksMenuOwnerName;
 
-	/** Delegate called when a source control operation has completed */
+	/** Delegates called when a source control operation has completed */
+	void OnSyncAllOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnRevertAllOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	/** Generic delegate and notification handler */
 	void OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 };
