@@ -541,7 +541,7 @@ void FPlasticSourceControlMenu::ShowSourceControlPlasticScmProjectSettings() con
 void FPlasticSourceControlMenu::VisitDocsURLClicked() const
 {
 	// Grab the URL from the uplugin file
-	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
+	const TSharedPtr<IPlugin> Plugin = FPlasticSourceControlModule::GetPlugin();
 	if (Plugin.IsValid())
 	{
 		FPlatformProcess::LaunchURL(*Plugin->GetDescriptor().DocsURL, NULL, NULL);
@@ -551,7 +551,7 @@ void FPlasticSourceControlMenu::VisitDocsURLClicked() const
 void FPlasticSourceControlMenu::VisitSupportURLClicked() const
 {
 	// Grab the URL from the uplugin file
-	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
+	const TSharedPtr<IPlugin> Plugin = FPlasticSourceControlModule::GetPlugin();
 	if (Plugin.IsValid())
 	{
 		FPlatformProcess::LaunchURL(*Plugin->GetDescriptor().SupportURL, NULL, NULL);

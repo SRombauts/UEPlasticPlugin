@@ -4,6 +4,7 @@
 
 #include "PlasticSourceControlChangelistState.h"
 #include "PlasticSourceControlCommand.h"
+#include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProjectSettings.h"
 #include "PlasticSourceControlSettings.h"
@@ -58,7 +59,7 @@ void FPlasticSourceControlProvider::Init(bool bForceConnection)
 	// Init() is called multiple times at startup: do not check Unity Version Control each time
 	if (!bPlasticAvailable)
 	{
-		const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));
+		const TSharedPtr<IPlugin> Plugin = FPlasticSourceControlModule::GetPlugin();
 		if (Plugin.IsValid())
 		{
 			PluginVersion = Plugin->GetDescriptor().VersionName;

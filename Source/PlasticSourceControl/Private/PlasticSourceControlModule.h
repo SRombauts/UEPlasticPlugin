@@ -49,6 +49,13 @@ public:
 	 */
 	static bool IsLoaded();
 
+	/**
+	 * Finds information of the plugin.
+	 *
+	 * @return	 Pointer to the plugin's information, or nullptr.
+	 */
+	static const TSharedPtr<class IPlugin> GetPlugin();
+
 private:
 	/** The Plastic source control provider */
 	FPlasticSourceControlProvider PlasticSourceControlProvider;

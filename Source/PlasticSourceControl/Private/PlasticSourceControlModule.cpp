@@ -39,6 +39,11 @@ bool FPlasticSourceControlModule::IsLoaded()
 	return FModuleManager::Get().IsModuleLoaded("PlasticSourceControl");
 }
 
+const TSharedPtr<IPlugin> FPlasticSourceControlModule::GetPlugin()
+{
+	return IPluginManager::Get().FindPlugin(TEXT("PlasticSourceControl"));;
+}
+
 IMPLEMENT_MODULE(FPlasticSourceControlModule, PlasticSourceControl);
 
 #undef LOCTEXT_NAMESPACE
