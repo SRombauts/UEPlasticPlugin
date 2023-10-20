@@ -12,6 +12,7 @@
 
 #include "ContentBrowserMenuContexts.h"
 #include "Interfaces/IPluginManager.h"
+#include "Modules/ModuleManager.h"
 #include "LevelEditor.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Framework/Notifications/NotificationManager.h"

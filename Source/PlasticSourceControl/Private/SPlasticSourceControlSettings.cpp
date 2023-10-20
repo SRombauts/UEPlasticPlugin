@@ -11,7 +11,6 @@
 #include "Misc/Paths.h"
 #include "Misc/App.h"
 #include "Misc/FileHelper.h"
-#include "Modules/ModuleManager.h"
 #include "Styling/SlateTypes.h"
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"

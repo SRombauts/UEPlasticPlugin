@@ -19,6 +19,7 @@
 #include "HAL/FileManager.h"
 #include "Logging/MessageLog.h"
 #include "Misc/Paths.h"
+#include "Modules/ModuleManager.h"
 
 #include "ISourceControlModule.h"
 #include "SourceControlOperations.h"

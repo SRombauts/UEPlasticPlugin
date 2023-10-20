@@ -2,9 +2,9 @@
 
 #include "PlasticSourceControlConsole.h"
 
-#include "ISourceControlModule.h"
-
 #include "PlasticSourceControlUtils.h"
+
+#include "ISourceControlModule.h"
 
 void FPlasticSourceControlConsole::Register()
 {

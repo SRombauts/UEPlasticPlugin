@@ -3,8 +3,11 @@
 #include "PlasticSourceControlModule.h"
 
 #include "IPlasticSourceControlWorker.h"
+
+#include "Interfaces/IPluginManager.h"
 #include "Features/IModularFeatures.h"
 #include "Misc/App.h"
+#include "Modules/ModuleManager.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -24,6 +27,16 @@ void FPlasticSourceControlModule::ShutdownModule()
 
 	// unbind provider from editor
 	IModularFeatures::Get().UnregisterModularFeature("SourceControl", &PlasticSourceControlProvider);
+}
+
+FPlasticSourceControlModule& FPlasticSourceControlModule::Get()
+{
+	return FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
+}
+
+bool FPlasticSourceControlModule::IsLoaded()
+{
+	return FModuleManager::Get().IsModuleLoaded("PlasticSourceControl");
 }
 
 IMPLEMENT_MODULE(FPlasticSourceControlModule, PlasticSourceControl);

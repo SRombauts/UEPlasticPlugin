@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleInterface.h"
-#include "Modules/ModuleManager.h"
+
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlWorkspaceCreation.h"
 
@@ -42,18 +42,12 @@ public:
 	 *
 	 * @return Returns singleton instance, asserts if the module is not loaded yet or unloaded already.
 	 */
-	static inline FPlasticSourceControlModule& Get()
-	{
-		return FModuleManager::GetModuleChecked<FPlasticSourceControlModule>("PlasticSourceControl");
-	}
+	static FPlasticSourceControlModule& Get();
 
 	/**
 	 * Checks whether the module is currently loaded.
 	 */
-	static inline bool IsLoaded()
-	{
-		return FModuleManager::Get().IsModuleLoaded("PlasticSourceControl");
-	}
+	static bool IsLoaded();
 
 private:
 	/** The Plastic source control provider */

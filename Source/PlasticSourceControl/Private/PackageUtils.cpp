@@ -6,7 +6,6 @@
 #include "PackageTools.h"
 #include "Editor.h"
 #include "UObject/Linker.h"
-
 #include "ISourceControlModule.h" // LogSourceControl
 
 namespace PackageUtils
