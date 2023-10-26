@@ -44,6 +44,9 @@ private:
 	void AddMenuExtension(FToolMenuSection& Menu);
 #endif
 
+	/** Extends the UE5 toolbar with a status bar widget to display the current branch and open the branch tab */
+	void ExtendToolbarWithStatusBarWidget();
+
 	/** Extends the main Revision Control menu from the toolbar at the bottom-right. */
 	void ExtendRevisionControlMenu();
 	/** Extends the content browser asset context menu with Admin revision control options. */
@@ -77,6 +80,8 @@ private:
 	static FName UnityVersionControlMainMenuOwnerName;
 	/** Name of the asset context menu extension for admin actions over Locks */
 	static FName UnityVersionControlAssetContextLocksMenuOwnerName;
+	/** Name of status bar extension to display the current branch  */
+	static FName UnityVersionControlStatusBarMenuOwnerName;
 
 	/** Delegates called when a source control operation has completed */
 	void OnSyncAllOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);

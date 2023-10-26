@@ -5,6 +5,7 @@
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlOperations.h"
+#include "SPlasticSourceControlStatusBar.h"
 
 #include "ISourceControlModule.h"
 #include "ISourceControlOperation.h"
@@ -37,6 +38,7 @@
 
 FName FPlasticSourceControlMenu::UnityVersionControlMainMenuOwnerName = TEXT("UnityVersionControlMenu");
 FName FPlasticSourceControlMenu::UnityVersionControlAssetContextLocksMenuOwnerName = TEXT("UnityVersionControlContextLocksMenu");
+FName FPlasticSourceControlMenu::UnityVersionControlStatusBarMenuOwnerName = TEXT("UnityVersionControlStatusBarMenu");
 
 void FPlasticSourceControlMenu::Register()
 {
@@ -48,6 +50,8 @@ void FPlasticSourceControlMenu::Register()
 	// Register the menu extensions with the level editor
 	ExtendRevisionControlMenu();
 	ExtendAssetContextMenu();
+
+	ExtendToolbarWithStatusBarWidget();
 }
 
 void FPlasticSourceControlMenu::Unregister()
@@ -73,11 +77,25 @@ void FPlasticSourceControlMenu::Unregister()
 	{
 		ToolMenus->UnregisterOwnerByName(UnityVersionControlMainMenuOwnerName);
 		ToolMenus->UnregisterOwnerByName(UnityVersionControlAssetContextLocksMenuOwnerName);
+		ToolMenus->UnregisterOwnerByName(UnityVersionControlStatusBarMenuOwnerName);
 		bHasRegistered = false;
 	}
 #endif
 }
 
+void FPlasticSourceControlMenu::ExtendToolbarWithStatusBarWidget()
+{
+#if ENGINE_MAJOR_VERSION == 5
+	const FToolMenuOwnerScoped SourceControlMenuOwner(UnityVersionControlStatusBarMenuOwnerName);
+
+	UToolMenu* ToolbarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.StatusBar.ToolBar");
+	FToolMenuSection& Section = ToolbarMenu->AddSection("Unity Version Control", FText::GetEmpty(), FToolMenuInsert("SourceControl", EToolMenuInsertType::Before));
+
+	Section.AddEntry(
+		FToolMenuEntry::InitWidget("UnityVersionControlStatusBar", SNew(SPlasticSourceControlStatusBar), FText::GetEmpty(), true, false)
+	);
+#endif
+}
 
 void FPlasticSourceControlMenu::ExtendRevisionControlMenu()
 {
