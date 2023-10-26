@@ -4,6 +4,13 @@
 
 #include "PlasticSourceControlModule.h"
 
+#include "Runtime/Launch/Resources/Version.h"
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+#include "Styling/AppStyle.h"
+#else
+#include "EditorStyleSet.h"
+#endif
+
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
 void SPlasticSourceControlStatusBar::Construct(const FArguments& InArgs)
@@ -22,8 +29,12 @@ void SPlasticSourceControlStatusBar::Construct(const FArguments& InArgs)
 			.VAlign(VAlign_Center)
 			.HAlign(HAlign_Center)
 			[
-				SNew(SImage)
+				SNew(SImage)	
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 				.Image(FAppStyle::GetBrush("SourceControl.Branch"))
+#else
+				.Image(FEditorStyle::GetBrush("SourceControl.Branch"))
+#endif
 			]
 			+ SHorizontalBox::Slot()
 			.AutoWidth()
