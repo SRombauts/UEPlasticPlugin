@@ -393,7 +393,7 @@ void SetShellIsWarmedUp()
 bool GetShellIsWarmedUp()
 {
 	FScopeLock Lock(&ShellCriticalSection);
-	
+
 	return _GetShellIsWarmedUp();
 }
 
