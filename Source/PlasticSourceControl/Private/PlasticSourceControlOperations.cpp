@@ -7,6 +7,7 @@
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlSettings.h"
+#include "PlasticSourceControlShell.h"
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
 #include "PlasticSourceControlVersions.h"
@@ -23,7 +24,6 @@
 
 #include "ISourceControlModule.h"
 #include "SourceControlOperations.h"
-#include <PlasticSourceControlShell.h>
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
