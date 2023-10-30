@@ -26,6 +26,16 @@ bool Launch(const FString& InPathToPlasticBinary, const FString& InWorkspaceRoot
 /** Terminate the background 'cm shell' process and associated pipes */
 void Terminate();
 
+/** Mark the current shell process as already warmed up - i.e. we already ran a preliminary 'status' command. */
+void SetShellIsWarmedUp();
+
+/**
+ * Retrieve whether the current shell process was already warmed up - i.e. we already ran a preliminary 'status' command.
+ *
+ * @returns true if the shell process was already warmed up
+ */
+bool GetShellIsWarmedUp();
+
 
 /**
  * Run a Plastic command - the result is the output of cm, as a multi-line string.

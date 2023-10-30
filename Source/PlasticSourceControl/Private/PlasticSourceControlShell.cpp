@@ -70,6 +70,9 @@ static FCriticalSection	ShellCriticalSection;
 static size_t			ShellCommandCounter = -1;
 static double			ShellCumulatedTime = 0.;
 
+// Whether we already ran a status command to warm up the current shell process
+static bool             bShellIsWarmedUp = false;
+
 // Internal function to cleanup (called under the critical section)
 static void _CleanupBackgroundCommandLineShell()
 {
@@ -77,6 +80,16 @@ static void _CleanupBackgroundCommandLineShell()
 	FPlatformProcess::ClosePipe(ShellInputPipeRead, ShellInputPipeWrite);
 	ShellOutputPipeRead = ShellOutputPipeWrite = nullptr;
 	ShellInputPipeRead = ShellInputPipeWrite = nullptr;
+}
+
+static bool _GetShellIsWarmedUp()
+{
+	return bShellIsWarmedUp;
+}
+
+static void _SetShellIsWarmedUp()
+{
+	bShellIsWarmedUp = true;
 }
 
 // Internal function to launch the Unity Version Control background 'cm' process in interactive shell mode (called under the critical section)
@@ -89,6 +102,8 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 	const bool bLaunchDetached = false;				// the new process will NOT have its own window
 	const bool bLaunchHidden = true;				// the new process will be minimized in the task bar
 	const bool bLaunchReallyHidden = bLaunchHidden; // the new process will not have a window or be in the task bar
+
+	bShellIsWarmedUp = false;
 
 	const double StartTimestamp = FPlatformTime::Seconds();
 
@@ -366,6 +381,20 @@ void Terminate()
 	FScopeLock Lock(&ShellCriticalSection);
 
 	_ExitBackgroundCommandLineShell();
+}
+
+void SetShellIsWarmedUp()
+{
+	FScopeLock Lock(&ShellCriticalSection);
+
+	_SetShellIsWarmedUp();
+}
+
+bool GetShellIsWarmedUp()
+{
+	FScopeLock Lock(&ShellCriticalSection);
+
+	return _GetShellIsWarmedUp();
 }
 
 // Run command and return the raw result
