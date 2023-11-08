@@ -4,6 +4,7 @@
 
 #include "PlasticSourceControlProjectSettings.h"
 
+#include "Misc/ComparisonUtility.h"
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Text/STextBlock.h"
 
@@ -215,9 +216,129 @@ void SPlasticSourceControlBranchesWidget::OnColumnSortModeChanged(const EColumnS
 
 	if (GetListView())
 	{
-		// TODO implement sorting branch per column
-		// SortBranchView();
+		SortBranchView();
 		GetListView()->RequestListRefresh();
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::SortBranchView()
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::SortBranchView);
+
+	if (PrimarySortedColumn.IsNone() || BranchRows.IsEmpty())
+	{
+		return; // No column selected for sorting or nothing to sort.
+	}
+
+	auto CompareNames = [](const FPlasticSourceControlBranch* Lhs, const FPlasticSourceControlBranch* Rhs)
+	{
+		return UE::ComparisonUtility::CompareNaturalOrder(*Lhs->Name, *Rhs->Name);
+	};
+
+	auto CompareRepository = [](const FPlasticSourceControlBranch* Lhs, const FPlasticSourceControlBranch* Rhs)
+	{
+		return FCString::Stricmp(*Lhs->Repository, *Rhs->Repository);
+	};
+
+	auto CompareCreatedBy = [](const FPlasticSourceControlBranch* Lhs, const FPlasticSourceControlBranch* Rhs)
+	{
+		return FCString::Stricmp(*Lhs->CreatedBy, *Rhs->CreatedBy);
+	};
+
+	auto CompareDate = [](const FPlasticSourceControlBranch* Lhs, const FPlasticSourceControlBranch* Rhs)
+	{
+		return Lhs->Date < Rhs->Date ? -1 : (Lhs->Date == Rhs->Date ? 0 : 1);
+	};
+
+	auto CompareComment = [](const FPlasticSourceControlBranch* Lhs, const FPlasticSourceControlBranch* Rhs)
+	{
+		return FCString::Stricmp(*Lhs->Comment, *Rhs->Comment);
+	};
+
+	auto GetCompareFunc = [&](const FName& ColumnId)
+	{
+		if (ColumnId == PlasticSourceControlBranchesListViewColumn::Name::Id())
+		{
+			return TFunction<int32(const FPlasticSourceControlBranch*, const FPlasticSourceControlBranch*)>(CompareNames);
+		}
+		else if (ColumnId == PlasticSourceControlBranchesListViewColumn::Repository::Id())
+		{
+			return TFunction<int32(const FPlasticSourceControlBranch*, const FPlasticSourceControlBranch*)>(CompareRepository);
+		}
+		else if (ColumnId == PlasticSourceControlBranchesListViewColumn::CreatedBy::Id())
+		{
+			return TFunction<int32(const FPlasticSourceControlBranch*, const FPlasticSourceControlBranch*)>(CompareCreatedBy);
+		}
+		else if (ColumnId == PlasticSourceControlBranchesListViewColumn::Date::Id())
+		{
+			return TFunction<int32(const FPlasticSourceControlBranch*, const FPlasticSourceControlBranch*)>(CompareDate);
+		}
+		else if (ColumnId == PlasticSourceControlBranchesListViewColumn::Comment::Id())
+		{
+			return TFunction<int32(const FPlasticSourceControlBranch*, const FPlasticSourceControlBranch*)>(CompareComment);
+		}
+		else
+		{
+			checkNoEntry();
+			return TFunction<int32(const FPlasticSourceControlBranch*, const FPlasticSourceControlBranch*)>();
+		};
+	};
+
+	TFunction<int32(const FPlasticSourceControlBranch*, const FPlasticSourceControlBranch*)> PrimaryCompare = GetCompareFunc(PrimarySortedColumn);
+	TFunction<int32(const FPlasticSourceControlBranch*, const FPlasticSourceControlBranch*)> SecondaryCompare;
+	if (!SecondarySortedColumn.IsNone())
+	{
+		SecondaryCompare = GetCompareFunc(SecondarySortedColumn);
+	}
+
+	if (PrimarySortMode == EColumnSortMode::Ascending)
+	{
+		// NOTE: StableSort() would give a better experience when the sorted columns(s) has the same values and new values gets added, but it is slower
+		//       with large changelists (7600 items was about 1.8x slower in average measured with Unreal Insight). Because this code runs in the main
+		//       thread and can be invoked a lot, the trade off went if favor of speed.
+		BranchRows.Sort([this, &PrimaryCompare, &SecondaryCompare](const TSharedPtr<FPlasticSourceControlBranch>& Lhs, const TSharedPtr<FPlasticSourceControlBranch>& Rhs)
+		{
+			int32 Result = PrimaryCompare(static_cast<FPlasticSourceControlBranch*>(Lhs.Get()), static_cast<FPlasticSourceControlBranch*>(Rhs.Get()));
+			if (Result < 0)
+			{
+				return true;
+			}
+			else if (Result > 0 || !SecondaryCompare)
+			{
+				return false;
+			}
+			else if (SecondarySortMode == EColumnSortMode::Ascending)
+			{
+				return SecondaryCompare(static_cast<FPlasticSourceControlBranch*>(Lhs.Get()), static_cast<FPlasticSourceControlBranch*>(Rhs.Get())) < 0;
+			}
+			else
+			{
+				return SecondaryCompare(static_cast<FPlasticSourceControlBranch*>(Lhs.Get()), static_cast<FPlasticSourceControlBranch*>(Rhs.Get())) > 0;
+			}
+		});
+	}
+	else
+	{
+		BranchRows.Sort([this, &PrimaryCompare, &SecondaryCompare](const TSharedPtr<FPlasticSourceControlBranch>& Lhs, const TSharedPtr<FPlasticSourceControlBranch>& Rhs)
+		{
+			int32 Result = PrimaryCompare(static_cast<FPlasticSourceControlBranch*>(Lhs.Get()), static_cast<FPlasticSourceControlBranch*>(Rhs.Get()));
+			if (Result > 0)
+			{
+				return true;
+			}
+			else if (Result < 0 || !SecondaryCompare)
+			{
+				return false;
+			}
+			else if (SecondarySortMode == EColumnSortMode::Ascending)
+			{
+				return SecondaryCompare(static_cast<FPlasticSourceControlBranch*>(Lhs.Get()), static_cast<FPlasticSourceControlBranch*>(Rhs.Get())) < 0;
+			}
+			else
+			{
+				return SecondaryCompare(static_cast<FPlasticSourceControlBranch*>(Lhs.Get()), static_cast<FPlasticSourceControlBranch*>(Rhs.Get())) > 0;
+			}
+		});
 	}
 }
 

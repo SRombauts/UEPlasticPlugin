@@ -56,6 +56,8 @@ private:
 	EColumnSortMode::Type GetColumnSortMode(const FName InColumnId) const;
 	void OnColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode);
 
+	void SortBranchView();
+
 	SListView<FPlasticSourceControlBranchRef>* GetListView() const
 	{
 		return BranchesListView.Get();
