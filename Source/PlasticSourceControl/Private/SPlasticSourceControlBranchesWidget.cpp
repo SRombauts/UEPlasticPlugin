@@ -12,6 +12,9 @@
 
 void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 {
+	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlBranch&>>(TTextFilter<const FPlasticSourceControlBranch&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings));
+	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlBranchesWidget::OnRefreshUI);
+
 	ChildSlot
 	[
 		SNew(SVerticalBox)
@@ -163,8 +166,35 @@ void SPlasticSourceControlBranchesWidget::OnHiddenColumnsListChanged()
 
 void SPlasticSourceControlBranchesWidget::OnSearchTextChanged(const FText& InFilterText)
 {
-	// TODO implement filtering with the SearchTextFilter
-	BranchRows = SourceControlBranches;
+	SearchTextFilter->SetRawFilterText(InFilterText);
+	FileSearchBox->SetError(SearchTextFilter->GetFilterErrorText());
+}
+
+void SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings(const FPlasticSourceControlBranch& InItem, TArray<FString>& OutStrings)
+{
+	InItem.PopulateSearchString(OutStrings);
+}
+
+void SPlasticSourceControlBranchesWidget::OnRefreshUI()
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::OnRefreshUI);
+
+	const int32 ItemCount = SourceControlBranches.Num();
+	BranchRows.Empty(ItemCount);
+	for (int32 ItemIndex = 0; ItemIndex < ItemCount; ++ItemIndex)
+	{
+		const FPlasticSourceControlBranchRef& Item = SourceControlBranches[ItemIndex];
+		if (SearchTextFilter->PassesFilter(Item.Get()))
+		{
+			BranchRows.Emplace(Item);
+		}
+	}
+
+	if (GetListView())
+	{
+		SortBranchView();
+		GetListView()->RequestListRefresh();
+	}
 }
 
 EColumnSortPriority::Type SPlasticSourceControlBranchesWidget::GetColumnSortPriority(const FName InColumnId) const

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Misc/TextFilter.h"
 #include "Widgets/SCompoundWidget.h"
 #include "Widgets/Views/SHeaderRow.h"
 #include "Widgets/Views/SListView.h"
@@ -27,6 +28,13 @@ public:
 	FString CreatedBy;
 	FDateTime Date;
 	FString Comment;
+
+	void PopulateSearchString(TArray<FString>& OutStrings) const
+	{
+		OutStrings.Emplace(Name);
+		OutStrings.Emplace(CreatedBy);
+		OutStrings.Emplace(Comment);
+	}
 };
 
 
@@ -51,6 +59,8 @@ private:
 	void OnHiddenColumnsListChanged();
 
 	void OnSearchTextChanged(const FText& InFilterText);
+	void PopulateItemSearchStrings(const FPlasticSourceControlBranch& InItem, TArray<FString>& OutStrings);
+	void OnRefreshUI();
 
 	EColumnSortPriority::Type GetColumnSortPriority(const FName InColumnId) const;
 	EColumnSortMode::Type GetColumnSortMode(const FName InColumnId) const;
@@ -74,6 +84,7 @@ private:
 	TArray<FName> HiddenColumnsList;
 
 	TSharedPtr<SListView<FPlasticSourceControlBranchRef>> BranchesListView;
+	TSharedPtr<TTextFilter<const FPlasticSourceControlBranch&>> SearchTextFilter;
 
 	TArray<FPlasticSourceControlBranchRef> SourceControlBranches; // Full list from source (filtered by date)
 	TArray<FPlasticSourceControlBranchRef> BranchRows; // Filtered list to display based on the search text filter
