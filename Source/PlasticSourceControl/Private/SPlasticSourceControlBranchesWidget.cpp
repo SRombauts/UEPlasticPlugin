@@ -2,8 +2,11 @@
 
 #include "SPlasticSourceControlBranchesWidget.h"
 
+#include "PlasticSourceControlModule.h"
+#include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProjectSettings.h"
 
+#include "ISourceControlModule.h"
 #include "Misc/ComparisonUtility.h"
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Text/STextBlock.h"
@@ -12,6 +15,8 @@
 
 void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 {
+	ISourceControlModule::Get().RegisterProviderChanged(FSourceControlProviderChanged::FDelegate::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged));
+
 	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlBranch&>>(TTextFilter<const FPlasticSourceControlBranch&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings));
 	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlBranchesWidget::OnRefreshUI);
 
@@ -21,21 +26,77 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 		+SVerticalBox::Slot() // For the toolbar (Search box and Refresh button)
 		.AutoHeight()
 		[
-			SNew(SHorizontalBox)
-			+SHorizontalBox::Slot()
-			.MaxWidth(300)
+			SNew(SBorder)
+			.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+			.Padding(4)
 			[
-				SAssignNew(FileSearchBox, SSearchBox)
-				.HintText(LOCTEXT("SearchBranches", "Search Branches"))
-				.ToolTipText(LOCTEXT("PlasticBranchesSearch_Tooltip", "Filter the list of branches by keyword."))
-				.OnTextChanged(this, &SPlasticSourceControlBranchesWidget::OnSearchTextChanged)
+				SNew(SHorizontalBox)
+				+SHorizontalBox::Slot()
+				.HAlign(HAlign_Left)
+				.VAlign(VAlign_Center)
+				.AutoWidth()
+				[
+					CreateToolBar()
+				]
+				+SHorizontalBox::Slot()
+				.MaxWidth(10)
+				[
+					SNew(SSpacer)
+				]
+				+SHorizontalBox::Slot()
+				.VAlign(VAlign_Center)
+				.MaxWidth(300)
+				[
+					SAssignNew(FileSearchBox, SSearchBox)
+					.HintText(LOCTEXT("SearchBranches", "Search Branches"))
+					.ToolTipText(LOCTEXT("PlasticBranchesSearch_Tooltip", "Filter the list of branches by keyword."))
+					.OnTextChanged(this, &SPlasticSourceControlBranchesWidget::OnSearchTextChanged)
+				]
 			]
 		]
 		+SVerticalBox::Slot() // The main content: the list of branches
 		[
 			CreateContentPanel()
 		]
+		+SVerticalBox::Slot() // Status bar (Always visible)
+		.AutoHeight()
+		[
+			SNew(SBox)
+			.Padding(0, 3)
+			[
+				SNew(SHorizontalBox)
+				+SHorizontalBox::Slot()
+				.HAlign(HAlign_Left)
+				.VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text_Lambda([this]() { return RefreshStatus; })
+				]
+				+SHorizontalBox::Slot()
+				.HAlign(HAlign_Right)
+				.VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text_Lambda([]() { return FText::FromString(FPlasticSourceControlModule::Get().GetProvider().GetBranchName()); })
+				]
+			]
+		]
 	];
+}
+
+TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateToolBar()
+{
+	FSlimHorizontalToolBarBuilder ToolBarBuilder(nullptr, FMultiBoxCustomization::None);
+
+	ToolBarBuilder.AddToolBarButton(
+		FUIAction(
+			FExecuteAction::CreateLambda([this]() { RequestBranchesRefresh(); })),
+		NAME_None,
+		LOCTEXT("SourceControl_RefreshButton", "Refresh"),
+		LOCTEXT("SourceControl_RefreshButton_Tooltip", "Refreshes branches from revision control provider."),
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Refresh"));
+
+	return ToolBarBuilder.MakeWidget();
 }
 
 TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateContentPanel()
@@ -372,6 +433,103 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 	}
 }
 
+void SPlasticSourceControlBranchesWidget::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
+{
+	if (!ISourceControlModule::Get().IsEnabled() && (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
+	{
+		return;
+	}
+
+	// Detect transitions of the source control being available/unavailable. Ex: When the user changes the source control in UI, the provider gets selected,
+	// but it is not connected/available until the user accepts the settings. The source control doesn't have callback for availability and we want to refresh everything
+	// once it gets available.
+	if (ISourceControlModule::Get().IsEnabled() && !bSourceControlAvailable && ISourceControlModule::Get().GetProvider().IsAvailable())
+	{
+		bSourceControlAvailable = true;
+		bShouldRefresh = true;
+	}
+
+	if (bShouldRefresh)
+	{
+		RequestBranchesRefresh();
+		bShouldRefresh = false;
+	}
+
+	if (bIsRefreshing)
+	{
+		TickRefreshStatus(InDeltaTime);
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::StartRefreshStatus()
+{
+	bIsRefreshing = true;
+	RefreshStatusStartSecs = FPlatformTime::Seconds();
+}
+
+void SPlasticSourceControlBranchesWidget::TickRefreshStatus(double InDeltaTime)
+{
+	const int32 RefreshStatusTimeElapsed = static_cast<int32>(FPlatformTime::Seconds() - RefreshStatusStartSecs);
+	RefreshStatus = FText::Format(LOCTEXT("PlasticSourceControl_RefreshBranches", "Refreshing branches... ({0} s)"), FText::AsNumber(RefreshStatusTimeElapsed));
+}
+
+void SPlasticSourceControlBranchesWidget::EndRefreshStatus()
+{
+	bIsRefreshing = false;
+}
+
+void SPlasticSourceControlBranchesWidget::RequestBranchesRefresh()
+{
+	if (!ISourceControlModule::Get().IsEnabled() && (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
+	{
+		return;
+	}
+
+	StartRefreshStatus();
+
+	// TODO POC FAKE:
+	TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> GetBranchesOperation = ISourceControlOperation::Create<FUpdateStatus>();
+	GetBranchesOperation->SetGetOpenedOnly(true);
+
+	ISourceControlProvider& SourceControlProvider = ISourceControlModule::Get().GetProvider();
+	SourceControlProvider.Execute(GetBranchesOperation, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnBranchesUpdated));
+	OnStartSourceControlOperation(GetBranchesOperation, LOCTEXT("SourceControl_UpdatingChangelist", "Updating branches..."));
+}
+
+void SPlasticSourceControlBranchesWidget::OnStartSourceControlOperation(const TSharedRef<ISourceControlOperation> InOperation, const FText& InMessage)
+{
+	RefreshStatus = InMessage;
+}
+
+void SPlasticSourceControlBranchesWidget::OnEndSourceControlOperation(const TSharedRef<ISourceControlOperation>& InOperation, ECommandResult::Type InType)
+{
+	RefreshStatus = FText::GetEmpty();
+}
+
+void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider)
+{
+	bSourceControlAvailable = NewProvider.IsAvailable(); // Check if it is connected.
+	bShouldRefresh = true;
+
+	if (&NewProvider != &OldProvider)
+	{
+		BranchRows.Reset();
+		if (GetListView())
+		{
+			GetListView()->RequestListRefresh();
+		}
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::OnBranchesUpdated(const TSharedRef<ISourceControlOperation>& InOperation, ECommandResult::Type InType)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SSourceControlChangelistsWidget::OnSourceControlStateChanged);
+
+	// NOTE: This is invoked when the 'FPlasticSourceControl' completes.
+	OnEndSourceControlOperation(InOperation, InType);
+	EndRefreshStatus();
+	OnRefreshUI();
+}
 
 FName PlasticSourceControlBranchesListViewColumn::Name::Id() { return TEXT("Name"); }
 FText PlasticSourceControlBranchesListViewColumn::Name::GetDisplayText() { return LOCTEXT("Name_Column", "Name"); }

@@ -10,6 +10,9 @@
 #include "Widgets/Views/STableRow.h"
 #include "Widgets/Views/STableViewBase.h"
 
+#include "ISourceControlOperation.h"
+#include "ISourceControlProvider.h"
+
 
 // TODO: move the following to their own file(s)
 // Inspired by class SFileTableRow : public SMultiColumnTableRow<FChangelistTreeItemPtr> in SSourceControlChangelistRows.h
@@ -52,7 +55,10 @@ class SPlasticSourceControlBranchesWidget : public SCompoundWidget
 
 	void Construct(const FArguments& InArgs);
 
+	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
+
 private:
+	TSharedRef<SWidget> CreateToolBar();
 	TSharedRef<SWidget> CreateContentPanel();
 
 	TSharedRef<ITableRow> OnGenerateRow(FPlasticSourceControlBranchRef InBranch, const TSharedRef<STableViewBase>& OwnerTable);
@@ -65,6 +71,18 @@ private:
 	EColumnSortPriority::Type GetColumnSortPriority(const FName InColumnId) const;
 	EColumnSortMode::Type GetColumnSortMode(const FName InColumnId) const;
 	void OnColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode);
+
+	void StartRefreshStatus();
+	void TickRefreshStatus(double InDeltaTime);
+	void EndRefreshStatus();
+
+	void RequestBranchesRefresh();
+	void OnBranchesUpdated(const TSharedRef<ISourceControlOperation>& InOperation, ECommandResult::Type InType);
+	void OnStartSourceControlOperation(const TSharedRef<ISourceControlOperation> InOperation, const FText& InMessage);
+	void OnEndSourceControlOperation(const TSharedRef<ISourceControlOperation>& InOperation, ECommandResult::Type InType);
+
+	/** Source control callbacks */
+	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
 
 	void SortBranchView();
 
@@ -82,6 +100,14 @@ private:
 	EColumnSortMode::Type SecondarySortMode = EColumnSortMode::None;
 
 	TArray<FName> HiddenColumnsList;
+
+	bool bShouldRefresh = false;
+	bool bSourceControlAvailable = false;
+
+	FText RefreshStatus;
+	bool bIsRefreshing = false;
+	double RefreshStatusStartSecs;
+
 
 	TSharedPtr<SListView<FPlasticSourceControlBranchRef>> BranchesListView;
 	TSharedPtr<TTextFilter<const FPlasticSourceControlBranch&>> SearchTextFilter;
