@@ -3,6 +3,7 @@
 #include "PlasticSourceControlOperations.h"
 
 #include "PackageUtils.h"
+#include "PlasticSourceControlBranch.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
@@ -46,6 +47,7 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("RevertAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRevertAllWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SwitchToPartialWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSwitchToPartialWorkspaceWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Unlock", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticUnlockWorker>));
+	PlasticSourceControlProvider.RegisterWorker("GetBranches", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetBranchesWorker>));
 	PlasticSourceControlProvider.RegisterWorker("MakeWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticMakeWorkspaceWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Sync", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SyncAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
@@ -131,6 +133,16 @@ FText FPlasticUnlock::GetInProgressString() const
 		return LOCTEXT("SourceControl_Unlock_Remove", "Removing Lock(s)...");
 	else
 		return LOCTEXT("SourceControl_Unlock_Release", "Releasing Lock(s)...");
+}
+
+FName FPlasticGetBranches::GetName() const
+{
+	return "GetBranches";
+}
+
+FText FPlasticGetBranches::GetInProgressString() const
+{
+	return LOCTEXT("SourceControl_GetBranches", "Getting the list of branches...");
 }
 
 
@@ -1010,6 +1022,39 @@ bool FPlasticUnlockWorker::Execute(FPlasticSourceControlCommand& InCommand)
 bool FPlasticUnlockWorker::UpdateStates()
 {
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
+}
+
+
+FName FPlasticGetBranchesWorker::GetName() const
+{
+	return "GetBranches";
+}
+
+bool FPlasticGetBranchesWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetPendingChangelistsWorker::Execute);
+
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetBranches>(InCommand.Operation);
+
+	{
+		const FDateTime& FromDate = Operation->FromDate;
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetBranches(FromDate, Operation->Branches, InCommand.ErrorMessages);
+	}
+
+	{
+		FString RepositoryName, ServerUrl;
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(CurrentBranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+	}
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticGetBranchesWorker::UpdateStates()
+{
+	GetProvider().SetBranchName(MoveTemp(CurrentBranchName));
+
+	return false;
 }
 
 FName FPlasticUpdateStatusWorker::GetName() const
