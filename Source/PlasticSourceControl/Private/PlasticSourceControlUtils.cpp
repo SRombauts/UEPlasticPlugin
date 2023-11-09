@@ -2,6 +2,7 @@
 
 #include "PlasticSourceControlUtils.h"
 
+#include "PlasticSourceControlBranch.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProjectSettings.h"
@@ -2275,6 +2276,125 @@ bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDat
 }
 
 #endif
+
+/**
+ * Parse results of the 'cm find "branches where date >= 'YYYY-MM-DD'" --xml --encoding="utf-8"' command.
+ *
+ * Results of the find command looks like the following:
+<?xml version="1.0" encoding="utf-8" ?>
+<PLASTICQUERY>
+  <BRANCH>
+	<ID>3</ID>
+	<COMMENT>main branch</COMMENT>
+	<DATE>2023-10-18T15:08:49+02:00</DATE>
+	<OWNER>sebastien.rombauts@unity3d.com</OWNER>
+	<NAME>/main</NAME>
+	<PARENT></PARENT>
+	<REPOSITORY>UE5PlasticPluginDev</REPOSITORY>
+	<REPNAME>UE5PlasticPluginDev</REPNAME>
+	<REPSERVER>SRombautsU@cloud</REPSERVER>
+	<TYPE>T</TYPE>
+	<CHANGESET>4</CHANGESET>
+	<GUID>5fc2d7c8-05e1-4987-9dd9-74eaec7c27eb</GUID>
+  </BRANCH>
+  [...]
+</PLASTICQUERY>
+*/
+static bool ParseBranchesResults(const FXmlFile& InXmlResult, TArray<FPlasticSourceControlBranchRef>& OutBranches)
+{
+	static const FString PlasticQuery(TEXT("PLASTICQUERY"));
+	static const FString Branch(TEXT("BRANCH"));
+	static const FString Comment(TEXT("COMMENT"));
+	static const FString Date(TEXT("DATE"));
+	static const FString Owner(TEXT("OWNER"));
+	static const FString Name(TEXT("NAME"));
+	static const FString RepName(TEXT("REPNAME"));
+	static const FString RepServer(TEXT("REPSERVER"));
+
+	const FXmlNode* PlasticQueryNode = InXmlResult.GetRootNode();
+	if (PlasticQueryNode == nullptr || PlasticQueryNode->GetTag() != PlasticQuery)
+	{
+		return false;
+	}
+
+	const TArray<FXmlNode*>& BranchsNodes = PlasticQueryNode->GetChildrenNodes();
+	for (const FXmlNode* BranchNode : BranchsNodes)
+	{
+		check(BranchNode);
+		const FXmlNode* NameNode = BranchNode->FindChildNode(Name);
+		if (NameNode == nullptr)
+		{
+			continue;
+		}
+
+		FPlasticSourceControlBranchRef BranchRef = MakeShareable(new FPlasticSourceControlBranch());
+
+		BranchRef->Name = DecodeXmlEntities(NameNode->GetContent());
+
+		if (const FXmlNode* CommentNode = BranchNode->FindChildNode(Comment))
+		{
+			BranchRef->Comment = DecodeXmlEntities(CommentNode->GetContent());
+		}
+
+		if (const FXmlNode* DateNode = BranchNode->FindChildNode(Date))
+		{
+			const FString& DateIso = DateNode->GetContent();
+			FDateTime::ParseIso8601(*DateIso, BranchRef->Date);
+		}
+
+		if (const FXmlNode* OwnerNode = BranchNode->FindChildNode(Owner))
+		{
+			BranchRef->CreatedBy = OwnerNode->GetContent();
+		}
+
+		if (const FXmlNode* RepNameNode = BranchNode->FindChildNode(RepName))
+		{
+			if (const FXmlNode* RepServerNode = BranchNode->FindChildNode(RepServer))
+			{
+				BranchRef->Repository = RepNameNode->GetContent() + TEXT("@") + RepServerNode->GetContent();
+			}
+		}
+
+		OutBranches.Add(BranchRef);
+	}
+
+	return true;
+}
+
+bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBranchRef>& OutBranches, TArray<FString>& OutErrorMessages)
+{
+	bool bCommandSuccessful;
+
+	FString Results;
+	FString Errors;
+	TArray<FString> Parameters;
+	if (InFromDate != FDateTime())
+	{
+		Parameters.Add(FString::Printf(TEXT("\"branches where date >= '%s'\""), *InFromDate.ToFormattedString(TEXT("%Y/%m/%d"))));
+	}
+	else
+	{
+		Parameters.Add(TEXT("\"branches\""));
+	}
+	Parameters.Add(TEXT("--xml"));
+	Parameters.Add(TEXT("--encoding=\"utf-8\""));
+	bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("find"), Parameters, TArray<FString>(), Results, Errors);
+	if (bCommandSuccessful)
+	{
+		FXmlFile XmlFile;
+		bCommandSuccessful = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+		if (bCommandSuccessful)
+		{
+			bCommandSuccessful = ParseBranchesResults(XmlFile, OutBranches);
+		}
+	}
+	if (!Errors.IsEmpty())
+	{
+		OutErrorMessages.Add(MoveTemp(Errors));
+	}
+
+	return bCommandSuccessful;
+}
 
 bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates)
 {
