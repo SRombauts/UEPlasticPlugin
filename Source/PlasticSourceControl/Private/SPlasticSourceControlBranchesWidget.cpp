@@ -5,6 +5,7 @@
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProjectSettings.h"
+#include "PlasticSourceControlBranch.h"
 
 #include "ISourceControlModule.h"
 #include "Misc/ComparisonUtility.h"

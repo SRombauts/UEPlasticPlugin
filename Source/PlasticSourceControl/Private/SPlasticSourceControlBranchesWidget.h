@@ -13,38 +13,10 @@
 #include "ISourceControlOperation.h"
 #include "ISourceControlProvider.h"
 
-
-// TODO: move the following to their own file(s)
-// Inspired by class SFileTableRow : public SMultiColumnTableRow<FChangelistTreeItemPtr> in SSourceControlChangelistRows.h
-class FPlasticSourceControlBranch
-{
-public:
-	FPlasticSourceControlBranch(const FString& InName, const FString& InRepository, const FString& InCreatedBy, const FDateTime& InDate, const FString& InComment)
-		: Name(InName)
-		, Repository(InRepository)
-		, CreatedBy(InCreatedBy)
-		, Date(InDate)
-		, Comment(InComment)
-	{}
-	FString Name;
-	FString Repository;
-	FString CreatedBy;
-	FDateTime Date;
-	FString Comment;
-
-	void PopulateSearchString(TArray<FString>& OutStrings) const
-	{
-		OutStrings.Emplace(Name);
-		OutStrings.Emplace(CreatedBy);
-		OutStrings.Emplace(Comment);
-	}
-};
-
-
-class SSearchBox;
-
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
 typedef TSharedPtr<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchPtr;
+
+class SSearchBox;
 
 
 // Widget displaying the list of branches in the tab window, see FPlasticSourceControlBranchesWindow
