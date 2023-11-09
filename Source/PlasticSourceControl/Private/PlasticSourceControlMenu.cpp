@@ -2,6 +2,7 @@
 
 #include "PlasticSourceControlMenu.h"
 
+#include "PlasticSourceControlBranchesWindow.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlOperations.h"
@@ -111,15 +112,21 @@ void FPlasticSourceControlMenu::ExtendRevisionControlMenu()
 	}
 #elif ENGINE_MAJOR_VERSION == 5
 	const FToolMenuOwnerScoped SourceControlMenuOwner(UnityVersionControlMainMenuOwnerName);
-	if (UToolMenus* ToolMenus = UToolMenus::Get())
+
+	if (UToolMenu* SourceControlMenu = UToolMenus::Get()->ExtendMenu("StatusBar.ToolBar.SourceControl"))
 	{
-		if (UToolMenu* SourceControlMenu = ToolMenus->ExtendMenu("StatusBar.ToolBar.SourceControl"))
+		FToolMenuSection& Section = SourceControlMenu->AddSection("PlasticSourceControlActions", LOCTEXT("PlasticSourceControlMenuHeadingActions", "Unity Version Control"), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
+
+		AddMenuExtension(Section);
+
+		bHasRegistered = true;
+	}
+
+	if (UToolMenu* ToolsMenu = UToolMenus::Get()->ExtendMenu("MainFrame.MainMenu.Tools"))
+	{
+		if (FToolMenuSection* Section = ToolsMenu->FindSection("Source Control"))
 		{
-			FToolMenuSection& Section = SourceControlMenu->AddSection("PlasticSourceControlActions", LOCTEXT("PlasticSourceControlMenuHeadingActions", "Unity Version Control"), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
-
-			AddMenuExtension(Section);
-
-			bHasRegistered = true;
+			AddViewBranches(*Section);
 		}
 	}
 #endif
@@ -556,6 +563,11 @@ void FPlasticSourceControlMenu::VisitLockRulesURLClicked(const FString InOrganiz
 	FPlatformProcess::LaunchURL(*OrganizationLockRulesURL, NULL, NULL);
 }
 
+void FPlasticSourceControlMenu::OpenBranchesWindow() const
+{
+	FPlasticSourceControlModule::Get().GetBranchesWindow().OpenTab();
+}
+
 // Display an ongoing notification during the whole operation
 void FPlasticSourceControlMenu::DisplayInProgressNotification(const FText& InOperationInProgressString)
 {
@@ -647,6 +659,7 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 	}
 }
 
+// TODO rework the menus with sub-menus like in the POC branch
 #if ENGINE_MAJOR_VERSION == 4
 void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Menu)
 #elif ENGINE_MAJOR_VERSION == 5
@@ -836,6 +849,34 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			)
 		);
 	}
+
+	AddViewBranches(Menu);
+}
+
+#if ENGINE_MAJOR_VERSION == 4
+void FPlasticSourceControlMenu::AddViewBranches(FMenuBuilder& Menu)
+#elif ENGINE_MAJOR_VERSION == 5
+void FPlasticSourceControlMenu::AddViewBranches(FToolMenuSection& Menu)
+#endif
+{
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		TEXT("PlasticBranchesWindow"),
+#endif
+		LOCTEXT("PlasticBranchesWindow", "View Branches"),
+		LOCTEXT("PlasticBranchesWindowTooltip", "Open the Branches window."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Branch"),
+#elif ENGINE_MAJOR_VERSION == 5
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Branch"),
+#elif ENGINE_MAJOR_VERSION == 4
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Branch"),
+#endif
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenBranchesWindow),
+			FCanExecuteAction()
+		)
+	);
 }
 
 #if ENGINE_MAJOR_VERSION == 4
