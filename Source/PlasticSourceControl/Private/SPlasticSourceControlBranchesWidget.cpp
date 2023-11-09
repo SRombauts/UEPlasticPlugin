@@ -488,9 +488,9 @@ void SPlasticSourceControlBranchesWidget::RequestBranchesRefresh()
 
 	StartRefreshStatus();
 
+	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> GetBranchesOperation = ISourceControlOperation::Create<FPlasticGetBranches>();
 	// TODO POC FAKE:
-	TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> GetBranchesOperation = ISourceControlOperation::Create<FUpdateStatus>();
-	GetBranchesOperation->SetGetOpenedOnly(true);
+	GetBranchesOperation->FromDate = FDateTime(2023, 10, 18);
 
 	ISourceControlProvider& SourceControlProvider = ISourceControlModule::Get().GetProvider();
 	SourceControlProvider.Execute(GetBranchesOperation, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnBranchesUpdated));
@@ -524,9 +524,11 @@ void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISource
 
 void SPlasticSourceControlBranchesWidget::OnBranchesUpdated(const TSharedRef<ISourceControlOperation>& InOperation, ECommandResult::Type InType)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(SSourceControlChangelistsWidget::OnSourceControlStateChanged);
+	TRACE_CPUPROFILER_EVENT_SCOPE(SSourceControlChangelistsWidget::OnBranchesUpdated);
 
-	// NOTE: This is invoked when the 'FPlasticSourceControl' completes.
+	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetBranches>(InOperation);
+	SourceControlBranches = MoveTemp(Operation->Branches);
+
 	OnEndSourceControlOperation(InOperation, InType);
 	EndRefreshStatus();
 	OnRefreshUI();
