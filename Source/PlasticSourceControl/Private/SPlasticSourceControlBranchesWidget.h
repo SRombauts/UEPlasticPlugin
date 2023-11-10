@@ -80,6 +80,7 @@ private:
 	bool bIsRefreshing = false;
 	double RefreshStatusStartSecs;
 
+	FString CurrentBranchName;
 
 	TSharedPtr<SListView<FPlasticSourceControlBranchRef>> BranchesListView;
 	TSharedPtr<TTextFilter<const FPlasticSourceControlBranch&>> SearchTextFilter;
@@ -142,10 +143,12 @@ class SBranchTableRow : public SMultiColumnTableRow<FPlasticSourceControlBranchR
 public:
 	SLATE_BEGIN_ARGS(SBranchTableRow)
 		: _BranchToVisualize(nullptr)
+		, _bIsCurrentBranch(false)
 		, _HighlightText()
 	{
 	}
 		SLATE_ARGUMENT(FPlasticSourceControlBranchPtr, BranchToVisualize)
+		SLATE_ATTRIBUTE(bool, bIsCurrentBranch)
 		SLATE_ATTRIBUTE(FText, HighlightText)
 	SLATE_END_ARGS()
 
@@ -164,6 +167,9 @@ public:
 private:
 	/** The branch that we are visualizing in this row. */
 	FPlasticSourceControlBranch* BranchToVisualize;
+
+	/** True if this is the current branch, to be highlighted on the list of branches. */
+	bool bIsCurrentBranch;
 
 	/** The search text to highlight if any */
 	TAttribute<FText> HighlightText;

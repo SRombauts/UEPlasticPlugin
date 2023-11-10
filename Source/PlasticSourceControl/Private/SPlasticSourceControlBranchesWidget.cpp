@@ -18,6 +18,8 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 {
 	ISourceControlModule::Get().RegisterProviderChanged(FSourceControlProviderChanged::FDelegate::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged));
 
+	CurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
+
 	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlBranch&>>(TTextFilter<const FPlasticSourceControlBranch&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings));
 	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlBranchesWidget::OnRefreshUI);
 
@@ -78,7 +80,8 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 				.VAlign(VAlign_Center)
 				[
 					SNew(STextBlock)
-					.Text_Lambda([]() { return FText::FromString(FPlasticSourceControlModule::Get().GetProvider().GetBranchName()); })
+					.Text_Lambda([this]() { return FText::FromString(CurrentBranchName); })
+					.ToolTipText(LOCTEXT("PlasticBranchCurrent_Tooltip", "Current branch."))
 				]
 			]
 		]
@@ -187,8 +190,10 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateContentPanel()
 
 TSharedRef<ITableRow> SPlasticSourceControlBranchesWidget::OnGenerateRow(FPlasticSourceControlBranchRef InBranch, const TSharedRef<STableViewBase>& OwnerTable)
 {
+	const bool bIsCurrentBranch = InBranch->Name == CurrentBranchName;
 	return SNew(SBranchTableRow, OwnerTable)
 		.BranchToVisualize(InBranch)
+		.bIsCurrentBranch(bIsCurrentBranch)
 		.HighlightText_Lambda([this]() { return FileSearchBox->GetText(); });
 }
 
@@ -529,6 +534,12 @@ void SPlasticSourceControlBranchesWidget::OnBranchesUpdated(const TSharedRef<ISo
 	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetBranches>(InOperation);
 	SourceControlBranches = MoveTemp(Operation->Branches);
 
+	FString NewCurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
+	if (NewCurrentBranchName != CurrentBranchName)
+	{
+		CurrentBranchName = MoveTemp(NewCurrentBranchName);
+	}
+
 	OnEndSourceControlOperation(InOperation, InType);
 	EndRefreshStatus();
 	OnRefreshUI();
@@ -557,7 +568,7 @@ FText PlasticSourceControlBranchesListViewColumn::Comment::GetToolTipText() { re
 void SBranchTableRow::Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwner)
 {
 	BranchToVisualize = static_cast<FPlasticSourceControlBranch*>(InArgs._BranchToVisualize.Get());
-
+	bIsCurrentBranch = InArgs._bIsCurrentBranch.Get();
 	HighlightText = InArgs._HighlightText;
 
 	FSuperRowType::FArguments Args = FSuperRowType::FArguments()
@@ -567,11 +578,14 @@ void SBranchTableRow::Construct(const FArguments& InArgs, const TSharedRef<STabl
 
 TSharedRef<SWidget> SBranchTableRow::GenerateWidgetForColumn(const FName& InColumnId)
 {
+	const FSlateFontInfo FontInfo = bIsCurrentBranch ? FAppStyle::GetFontStyle("BoldFont") : FAppStyle::GetFontStyle("NormalFont");
+
 	if (InColumnId == PlasticSourceControlBranchesListViewColumn::Name::Id())
 	{
 		return SNew(STextBlock)
 			.Text(FText::FromString(BranchToVisualize->Name))
 			.ToolTipText(FText::FromString(BranchToVisualize->Name))
+			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
 	else if (InColumnId == PlasticSourceControlBranchesListViewColumn::Repository::Id())
@@ -579,6 +593,7 @@ TSharedRef<SWidget> SBranchTableRow::GenerateWidgetForColumn(const FName& InColu
 		return SNew(STextBlock)
 			.Text(FText::FromString(BranchToVisualize->Repository))
 			.ToolTipText(FText::FromString(BranchToVisualize->Repository))
+			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
 	else if (InColumnId == PlasticSourceControlBranchesListViewColumn::CreatedBy::Id())
@@ -586,19 +601,22 @@ TSharedRef<SWidget> SBranchTableRow::GenerateWidgetForColumn(const FName& InColu
 		return SNew(STextBlock)
 			.Text(FText::FromString(BranchToVisualize->CreatedBy))
 			.ToolTipText(FText::FromString(BranchToVisualize->CreatedBy))
+			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
 	else if (InColumnId == PlasticSourceControlBranchesListViewColumn::Date::Id())
 	{
 		return SNew(STextBlock)
 			.Text(FText::AsDateTime(BranchToVisualize->Date))
-			.ToolTipText(FText::AsDateTime(BranchToVisualize->Date));
+			.ToolTipText(FText::AsDateTime(BranchToVisualize->Date))
+			.Font(FontInfo);
 	}
 	else if (InColumnId == PlasticSourceControlBranchesListViewColumn::Comment::Id())
 	{
 		return SNew(STextBlock)
 			.Text(FText::FromString(BranchToVisualize->Comment))
 			.ToolTipText(FText::FromString(BranchToVisualize->Comment))
+			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
 	else
