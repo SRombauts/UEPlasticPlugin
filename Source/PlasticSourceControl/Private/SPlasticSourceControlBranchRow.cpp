@@ -55,6 +55,8 @@ TSharedRef<SWidget> SPlasticSourceControlBranchRow::GenerateWidgetForColumn(cons
 		return SNew(STextBlock)
 			.Text(FText::FromString(BranchToVisualize->Name))
 			.ToolTipText(FText::FromString(BranchToVisualize->Name))
+			.Margin(FMargin(6.f, 1.f))
+			.OverflowPolicy(ETextOverflowPolicy::Ellipsis)
 			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
@@ -63,6 +65,7 @@ TSharedRef<SWidget> SPlasticSourceControlBranchRow::GenerateWidgetForColumn(cons
 		return SNew(STextBlock)
 			.Text(FText::FromString(BranchToVisualize->Repository))
 			.ToolTipText(FText::FromString(BranchToVisualize->Repository))
+			.Margin(FMargin(6.f, 1.f))
 			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
@@ -71,6 +74,7 @@ TSharedRef<SWidget> SPlasticSourceControlBranchRow::GenerateWidgetForColumn(cons
 		return SNew(STextBlock)
 			.Text(FText::FromString(BranchToVisualize->CreatedBy))
 			.ToolTipText(FText::FromString(BranchToVisualize->CreatedBy))
+			.Margin(FMargin(6.f, 1.f))
 			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
@@ -79,13 +83,19 @@ TSharedRef<SWidget> SPlasticSourceControlBranchRow::GenerateWidgetForColumn(cons
 		return SNew(STextBlock)
 			.Text(FText::AsDateTime(BranchToVisualize->Date))
 			.ToolTipText(FText::AsDateTime(BranchToVisualize->Date))
+			.Margin(FMargin(6.f, 1.f))
 			.Font(FontInfo);
 	}
 	else if (InColumnId == PlasticSourceControlBranchesListViewColumn::Comment::Id())
 	{
+		FString CommentOnOneLine = BranchToVisualize->Comment;
+		CommentOnOneLine.ReplaceCharInline(TEXT('\n'), TEXT(' '), ESearchCase::CaseSensitive);
+
 		return SNew(STextBlock)
-			.Text(FText::FromString(BranchToVisualize->Comment))
+			.Text(FText::FromString(MoveTemp(CommentOnOneLine)))
 			.ToolTipText(FText::FromString(BranchToVisualize->Comment))
+			.Margin(FMargin(6.f, 1.f))
+			.OverflowPolicy(ETextOverflowPolicy::Ellipsis)
 			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
