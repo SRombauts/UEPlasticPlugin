@@ -9,7 +9,11 @@
 #include "SPlasticSourceControlBranchRow.h"
 
 #include "ISourceControlModule.h"
+
+#include "Runtime/Launch/Resources/Version.h"
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
 #include "Misc/ComparisonUtility.h"
+#endif
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Views/SHeaderRow.h"
@@ -339,7 +343,11 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 
 	auto CompareNames = [](const FPlasticSourceControlBranch* Lhs, const FPlasticSourceControlBranch* Rhs)
 	{
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
 		return UE::ComparisonUtility::CompareNaturalOrder(*Lhs->Name, *Rhs->Name);
+#else
+		return FCString::Stricmp(*Lhs->Name, *Rhs->Name);
+#endif
 	};
 
 	auto CompareRepository = [](const FPlasticSourceControlBranch* Lhs, const FPlasticSourceControlBranch* Rhs)
