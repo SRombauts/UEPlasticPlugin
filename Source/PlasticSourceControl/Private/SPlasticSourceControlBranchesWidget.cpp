@@ -2,188 +2,297 @@
 
 #include "SPlasticSourceControlBranchesWidget.h"
 
-#include "Widgets/Images/SImage.h"
-#include "Widgets/Input/SEditableTextBox.h"
+#include "PlasticSourceControlProjectSettings.h"
+
+#include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Text/STextBlock.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControlWindow"
-
-// TODO: transition to a proper SMultiColumnTableRow
-// see Engine\Source\Editor\SourceControlWindows\Private\SSourceControlChangelistRows.h
-// class SFileTableRow : public SMultiColumnTableRow<FChangelistTreeItemPtr>
 
 void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 {
 	ChildSlot
 	[
 		SNew(SVerticalBox)
-		+SVerticalBox::Slot()
+		+SVerticalBox::Slot() // For the toolbar (Search box and Refresh button)
 		.AutoHeight()
 		[
 			SNew(SHorizontalBox)
 			+SHorizontalBox::Slot()
-			.VAlign(VAlign_Center)
-			.AutoWidth()
-			[
-				SNew(SImage)
-				.Image(FAppStyle::GetBrush("Icons.Search"))
-			]
-			+SHorizontalBox::Slot()
 			.MaxWidth(300)
 			[
-				SNew(SEditableTextBox)
-				.Justification(ETextJustify::Left)
-				.HintText(LOCTEXT("Search", "Search"))
+				SAssignNew(FileSearchBox, SSearchBox)
+				.HintText(LOCTEXT("SearchBranches", "Search Branches"))
+				.ToolTipText(LOCTEXT("PlasticBranchesSearch_Tooltip", "Filter the list of branches by keyword."))
 				.OnTextChanged(this, &SPlasticSourceControlBranchesWidget::OnSearchTextChanged)
 			]
 		]
-		+SVerticalBox::Slot()
-		.AutoHeight()
-		.Padding(0, 5, 0, 0)
-		.Expose(ContentSlot)
+		+SVerticalBox::Slot() // The main content: the list of branches
 		[
 			CreateContentPanel()
 		]
 	];
-
-	RegisterActiveTimer(60.f, FWidgetActiveTimerDelegate::CreateSP(this, &SPlasticSourceControlBranchesWidget::UpdateContentSlot));
 }
 
 TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateContentPanel()
 {
-	// TODO: transition to a proper ListView widget
-	TSharedRef<SGridPanel> Panel =
-		SNew(SGridPanel);
+	// Inspired by Engine\Source\Editor\SourceControlWindows\Private\SSourceControlChangelists.cpp
+	// TSharedRef<SListView<FChangelistTreeItemPtr>> SSourceControlChangelistsWidget::CreateChangelistFilesView()
 
-	const float RowMargin = 0.0f;
-	const float ColumnMargin = 10.0f;
-	const FSlateColor TitleColor = FStyleColors::AccentWhite;
-	const FSlateFontInfo TitleFont = FCoreStyle::GetDefaultFontStyle("Bold", 10);
-	const FMargin DefaultMarginFirstColumn(ColumnMargin, RowMargin);
-
-	int32 Row = 0;
-
-	const FMargin TitleMargin(0.0f, 10.0f, ColumnMargin, 10.0f);
-	const FMargin TitleMarginFirstColumn(ColumnMargin, 10.0f);
-	const FMargin DefaultMargin(0.0f, RowMargin, ColumnMargin, RowMargin);
-
-	Panel->AddSlot(0, Row)
-	[
-		SNew(STextBlock)
-	];
-
-	Panel->AddSlot(1, Row)
-	[
-		SNew(STextBlock)
-		.Margin(TitleMarginFirstColumn)
-		.Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
-		.ColorAndOpacity(TitleColor)
-		.Text(LOCTEXT("BranchName", "Name"))
-	];
-
-	Panel->AddSlot(2, Row)
-	[
-		SNew(STextBlock)
-		.Margin(TitleMargin)
-		.ColorAndOpacity(TitleColor)
-		.Font(TitleFont)
-		.Text(LOCTEXT("CreateBy", "Created By"))
-	];
-
-	Panel->AddSlot(3, Row)
-	[
-		SNew(STextBlock)
-		.Margin(TitleMargin)
-		.ColorAndOpacity(TitleColor)
-		.Font(TitleFont)
-		.Text(LOCTEXT("CreationDate", "Creation date"))
-	];
-
-	Panel->AddSlot(4, Row)
-	[
-		SNew(STextBlock)
-		.Margin(TitleMargin)
-		.ColorAndOpacity(TitleColor)
-		.Font(TitleFont)
-		.Text(LOCTEXT("Comment", "Comment"))
-	];
-
-
-	// POC
-	for (int32 i = 0; i < 10; i++)
+	UPlasticSourceControlProjectSettings* Settings = GetMutableDefault<UPlasticSourceControlProjectSettings>();
+	if (!Settings->bShowBranchRepositoryColumn)
 	{
-		// TODO: POC fake branch info
-		const FString BranchName = (i == 0) ? FString(TEXT("/main")) : FString::Printf(TEXT("/main/scm%d"), 100271 + (i * i));
-		const FString BranchCreatedBy = TEXT("sebastien.rombauts@unity3d.com");
-		const FString BranchCreationDate = TEXT("23/10/2023 14:24:14");
-		const FString BranchComment = FString::Printf(TEXT("Proof of Concept comment for branch %s"), *BranchName);
-
-		// Filter branches on name, author and comment
-		if ((BranchName.Find(FilterText) == INDEX_NONE) && (BranchCreatedBy.Find(FilterText) == INDEX_NONE) && (BranchComment.Find(FilterText) == INDEX_NONE))
-		{
-			continue;
-		}
-
-		Row++;
-
-		Panel->AddSlot(0, Row)
-		[
-			SNew(STextBlock)
-		];
-
-		Panel->AddSlot(1, Row)
-		.HAlign(HAlign_Left)
-		[
-			SNew(STextBlock)
-			.Margin(DefaultMargin)
-			.Text(FText::FromString(BranchName))
-		];
-
-		Panel->AddSlot(2, Row)
-		.HAlign(HAlign_Left)
-		[
-			SNew(STextBlock)
-			.Margin(DefaultMargin)
-			.Text(FText::FromString(BranchCreatedBy))
-		];
-
-		Panel->AddSlot(3, Row)
-		.HAlign(HAlign_Left)
-		[
-			SNew(STextBlock)
-			.Margin(DefaultMargin)
-			.Text(FText::FromString(BranchCreationDate))
-		];
-
-		Panel->AddSlot(4, Row)
-		.HAlign(HAlign_Left)
-		[
-			SNew(STextBlock)
-			.Margin(DefaultMargin)
-			.Text(FText::FromString(BranchComment))
-		];
+		HiddenColumnsList.Add(PlasticSourceControlBranchesListViewColumn::Repository::Id());
+	}
+	if (!Settings->bShowBranchCreatedByColumn)
+	{
+		HiddenColumnsList.Add(PlasticSourceControlBranchesListViewColumn::CreatedBy::Id());
+	}
+	if (!Settings->bShowBranchDateColumn)
+	{
+		HiddenColumnsList.Add(PlasticSourceControlBranchesListViewColumn::Date::Id());
+	}
+	if (!Settings->bShowBranchCommentColumn)
+	{
+		HiddenColumnsList.Add(PlasticSourceControlBranchesListViewColumn::Comment::Id());
 	}
 
-	return Panel;
+	TSharedRef<SListView<FPlasticSourceControlBranchRef>> BranchView = SNew(SListView<FPlasticSourceControlBranchRef>)
+		.ItemHeight(24.0f)
+		.ListItemsSource(&BranchRows)
+		.OnGenerateRow(this, &SPlasticSourceControlBranchesWidget::OnGenerateRow)
+		.SelectionMode(ESelectionMode::Single)
+		// TODO: context menu (to be implementer in a future task)
+		// .OnContextMenuOpening(this, &SPlasticSourceControlBranchesWidget::OnOpenContextMenu)
+		.OnItemToString_Debug_Lambda([this](FPlasticSourceControlBranchRef Branch) { return Branch->Name; })
+		.HeaderRow
+		(
+			SNew(SHeaderRow)
+			.CanSelectGeneratedColumn(true)
+			.HiddenColumnsList(HiddenColumnsList)
+			.OnHiddenColumnsListChanged(this, &SPlasticSourceControlBranchesWidget::OnHiddenColumnsListChanged)
+
+			+SHeaderRow::Column(PlasticSourceControlBranchesListViewColumn::Name::Id())
+			.DefaultLabel(PlasticSourceControlBranchesListViewColumn::Name::GetDisplayText())
+			.DefaultTooltip(PlasticSourceControlBranchesListViewColumn::Name::GetToolTipText())
+			.ShouldGenerateWidget(true) // Ensure the column cannot be hidden (grayed out in the show/hide drop down menu)
+			.FillWidth(2.0f)
+			.SortPriority(this, &SPlasticSourceControlBranchesWidget::GetColumnSortPriority, PlasticSourceControlBranchesListViewColumn::Name::Id())
+			.SortMode(this, &SPlasticSourceControlBranchesWidget::GetColumnSortMode, PlasticSourceControlBranchesListViewColumn::Name::Id())
+			.OnSort(this, &SPlasticSourceControlBranchesWidget::OnColumnSortModeChanged)
+
+			+SHeaderRow::Column(PlasticSourceControlBranchesListViewColumn::Repository::Id())
+			.DefaultLabel(PlasticSourceControlBranchesListViewColumn::Repository::GetDisplayText())
+			.DefaultTooltip(PlasticSourceControlBranchesListViewColumn::Repository::GetToolTipText())
+			.FillWidth(1.5f)
+			.SortPriority(this, &SPlasticSourceControlBranchesWidget::GetColumnSortPriority, PlasticSourceControlBranchesListViewColumn::Repository::Id())
+			.SortMode(this, &SPlasticSourceControlBranchesWidget::GetColumnSortMode, PlasticSourceControlBranchesListViewColumn::Repository::Id())
+			.OnSort(this, &SPlasticSourceControlBranchesWidget::OnColumnSortModeChanged)
+
+			+SHeaderRow::Column(PlasticSourceControlBranchesListViewColumn::CreatedBy::Id())
+			.DefaultLabel(PlasticSourceControlBranchesListViewColumn::CreatedBy::GetDisplayText())
+			.DefaultTooltip(PlasticSourceControlBranchesListViewColumn::CreatedBy::GetToolTipText())
+			.FillWidth(2.5f)
+			.SortPriority(this, &SPlasticSourceControlBranchesWidget::GetColumnSortPriority, PlasticSourceControlBranchesListViewColumn::CreatedBy::Id())
+			.SortMode(this, &SPlasticSourceControlBranchesWidget::GetColumnSortMode, PlasticSourceControlBranchesListViewColumn::CreatedBy::Id())
+			.OnSort(this, &SPlasticSourceControlBranchesWidget::OnColumnSortModeChanged)
+
+			+SHeaderRow::Column(PlasticSourceControlBranchesListViewColumn::Date::Id())
+			.DefaultLabel(PlasticSourceControlBranchesListViewColumn::Date::GetDisplayText())
+			.DefaultTooltip(PlasticSourceControlBranchesListViewColumn::Date::GetToolTipText())
+			.FillWidth(1.5f)
+			.SortPriority(this, &SPlasticSourceControlBranchesWidget::GetColumnSortPriority, PlasticSourceControlBranchesListViewColumn::Date::Id())
+			.SortMode(this, &SPlasticSourceControlBranchesWidget::GetColumnSortMode, PlasticSourceControlBranchesListViewColumn::Date::Id())
+			.OnSort(this, &SPlasticSourceControlBranchesWidget::OnColumnSortModeChanged)
+
+			+SHeaderRow::Column(PlasticSourceControlBranchesListViewColumn::Comment::Id())
+			.DefaultLabel(PlasticSourceControlBranchesListViewColumn::Comment::GetDisplayText())
+			.DefaultTooltip(PlasticSourceControlBranchesListViewColumn::Comment::GetToolTipText())
+			.FillWidth(5.0f)
+			.SortPriority(this, &SPlasticSourceControlBranchesWidget::GetColumnSortPriority, PlasticSourceControlBranchesListViewColumn::Comment::Id())
+			.SortMode(this, &SPlasticSourceControlBranchesWidget::GetColumnSortMode, PlasticSourceControlBranchesListViewColumn::Comment::Id())
+			.OnSort(this, &SPlasticSourceControlBranchesWidget::OnColumnSortModeChanged)
+		);
+
+	BranchesListView = BranchView;
+
+	return BranchView;
 }
 
-EActiveTimerReturnType SPlasticSourceControlBranchesWidget::UpdateContentSlot(double InCurrentTime, float InDeltaTime)
+TSharedRef<ITableRow> SPlasticSourceControlBranchesWidget::OnGenerateRow(FPlasticSourceControlBranchRef InBranch, const TSharedRef<STableViewBase>& OwnerTable)
 {
-	(*ContentSlot)
-		[
-			CreateContentPanel()
-		];
-
-	SlatePrepass(GetPrepassLayoutScaleMultiplier());
-
-	return EActiveTimerReturnType::Continue;
+	return SNew(SBranchTableRow, OwnerTable)
+		.BranchToVisualize(InBranch)
+		.HighlightText_Lambda([this]() { return FileSearchBox->GetText(); });
 }
 
-void SPlasticSourceControlBranchesWidget::OnSearchTextChanged(const FText& SearchText)
+void SPlasticSourceControlBranchesWidget::OnHiddenColumnsListChanged()
 {
-	FilterText = SearchText.ToString();
+	// Update and save config to reload it on the next Editor sessions
+	if (BranchesListView && BranchesListView->GetHeaderRow())
+	{
+		UPlasticSourceControlProjectSettings* Settings = GetMutableDefault<UPlasticSourceControlProjectSettings>();
+		Settings->bShowBranchRepositoryColumn = false;
+		Settings->bShowBranchCreatedByColumn = true;
+		Settings->bShowBranchDateColumn = true;
+		Settings->bShowBranchCommentColumn = true;
 
-	UpdateContentSlot(0.0, 0.0f);
+		for (const FName& ColumnId : BranchesListView->GetHeaderRow()->GetHiddenColumnIds())
+		{
+			if (ColumnId == PlasticSourceControlBranchesListViewColumn::Repository::Id())
+			{
+				Settings->bShowBranchRepositoryColumn = false;
+			}
+			else if (ColumnId == PlasticSourceControlBranchesListViewColumn::CreatedBy::Id())
+			{
+				Settings->bShowBranchCreatedByColumn = false;
+			}
+			else if (ColumnId == PlasticSourceControlBranchesListViewColumn::Date::Id())
+			{
+				Settings->bShowBranchDateColumn = false;
+			}
+			else if (ColumnId == PlasticSourceControlBranchesListViewColumn::Comment::Id())
+			{
+				Settings->bShowBranchCommentColumn = false;
+			}
+		}
+		Settings->SaveConfig();
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::OnSearchTextChanged(const FText& InFilterText)
+{
+	// TODO implement filtering with the SearchTextFilter
+	BranchRows = SourceControlBranches;
+}
+
+EColumnSortPriority::Type SPlasticSourceControlBranchesWidget::GetColumnSortPriority(const FName InColumnId) const
+{
+	if (InColumnId == PrimarySortedColumn)
+	{
+		return EColumnSortPriority::Primary;
+	}
+	else if (InColumnId == SecondarySortedColumn)
+	{
+		return EColumnSortPriority::Secondary;
+	}
+
+	return EColumnSortPriority::Max; // No specific priority.
+}
+
+EColumnSortMode::Type SPlasticSourceControlBranchesWidget::GetColumnSortMode(const FName InColumnId) const
+{
+	if (InColumnId == PrimarySortedColumn)
+	{
+		return PrimarySortMode;
+	}
+	else if (InColumnId == SecondarySortedColumn)
+	{
+		return SecondarySortMode;
+	}
+
+	return EColumnSortMode::None;
+}
+
+void SPlasticSourceControlBranchesWidget::OnColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode)
+{
+	if (InSortPriority == EColumnSortPriority::Primary)
+	{
+		PrimarySortedColumn = InColumnId;
+		PrimarySortMode = InSortMode;
+
+		if (InColumnId == SecondarySortedColumn) // Cannot be primary and secondary at the same time.
+		{
+			SecondarySortedColumn = FName();
+			SecondarySortMode = EColumnSortMode::None;
+		}
+	}
+	else if (InSortPriority == EColumnSortPriority::Secondary)
+	{
+		SecondarySortedColumn = InColumnId;
+		SecondarySortMode = InSortMode;
+	}
+
+	if (GetListView())
+	{
+		// TODO implement sorting branch per column
+		// SortBranchView();
+		GetListView()->RequestListRefresh();
+	}
+}
+
+
+FName PlasticSourceControlBranchesListViewColumn::Name::Id() { return TEXT("Name"); }
+FText PlasticSourceControlBranchesListViewColumn::Name::GetDisplayText() { return LOCTEXT("Name_Column", "Name"); }
+FText PlasticSourceControlBranchesListViewColumn::Name::GetToolTipText() { return LOCTEXT("Name_Column_Tooltip", "Displays the asset/file name"); }
+
+FName PlasticSourceControlBranchesListViewColumn::Repository::Id() { return TEXT("Repository"); }
+FText PlasticSourceControlBranchesListViewColumn::Repository::GetDisplayText() { return LOCTEXT("Repository_Column", "Repository"); }
+FText PlasticSourceControlBranchesListViewColumn::Repository::GetToolTipText() { return LOCTEXT("Repository_Column_Tooltip", "Displays the repository where the branch has been created"); }
+
+FName PlasticSourceControlBranchesListViewColumn::CreatedBy::Id() { return TEXT("CreatedBy"); }
+FText PlasticSourceControlBranchesListViewColumn::CreatedBy::GetDisplayText() { return LOCTEXT("CreatedBy_Column", "Created by"); }
+FText PlasticSourceControlBranchesListViewColumn::CreatedBy::GetToolTipText() { return LOCTEXT("CreatedBy_Column_Tooltip", "Displays the name of the creator of the branch"); }
+
+FName PlasticSourceControlBranchesListViewColumn::Date::Id() { return TEXT("Date"); }
+FText PlasticSourceControlBranchesListViewColumn::Date::GetDisplayText() { return LOCTEXT("Date_Column", "Creation date"); }
+FText PlasticSourceControlBranchesListViewColumn::Date::GetToolTipText() { return LOCTEXT("Date_Column_Tooltip", "Displays the branch creation date"); }
+
+FName PlasticSourceControlBranchesListViewColumn::Comment::Id() { return TEXT("Comment"); }
+FText PlasticSourceControlBranchesListViewColumn::Comment::GetDisplayText() { return LOCTEXT("Comment_Column", "Comment"); }
+FText PlasticSourceControlBranchesListViewColumn::Comment::GetToolTipText() { return LOCTEXT("Comment_Column_Tooltip", "Displays the branch comment"); }
+
+void SBranchTableRow::Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwner)
+{
+	BranchToVisualize = static_cast<FPlasticSourceControlBranch*>(InArgs._BranchToVisualize.Get());
+
+	HighlightText = InArgs._HighlightText;
+
+	FSuperRowType::FArguments Args = FSuperRowType::FArguments()
+		.ShowSelection(true);
+	FSuperRowType::Construct(Args, InOwner);
+}
+
+TSharedRef<SWidget> SBranchTableRow::GenerateWidgetForColumn(const FName& InColumnId)
+{
+	if (InColumnId == PlasticSourceControlBranchesListViewColumn::Name::Id())
+	{
+		return SNew(STextBlock)
+			.Text(FText::FromString(BranchToVisualize->Name))
+			.ToolTipText(FText::FromString(BranchToVisualize->Name))
+			.HighlightText(HighlightText);
+	}
+	else if (InColumnId == PlasticSourceControlBranchesListViewColumn::Repository::Id())
+	{
+		return SNew(STextBlock)
+			.Text(FText::FromString(BranchToVisualize->Repository))
+			.ToolTipText(FText::FromString(BranchToVisualize->Repository))
+			.HighlightText(HighlightText);
+	}
+	else if (InColumnId == PlasticSourceControlBranchesListViewColumn::CreatedBy::Id())
+	{
+		return SNew(STextBlock)
+			.Text(FText::FromString(BranchToVisualize->CreatedBy))
+			.ToolTipText(FText::FromString(BranchToVisualize->CreatedBy))
+			.HighlightText(HighlightText);
+	}
+	else if (InColumnId == PlasticSourceControlBranchesListViewColumn::Date::Id())
+	{
+		return SNew(STextBlock)
+			.Text(FText::AsDateTime(BranchToVisualize->Date))
+			.ToolTipText(FText::AsDateTime(BranchToVisualize->Date));
+	}
+	else if (InColumnId == PlasticSourceControlBranchesListViewColumn::Comment::Id())
+	{
+		return SNew(STextBlock)
+			.Text(FText::FromString(BranchToVisualize->Comment))
+			.ToolTipText(FText::FromString(BranchToVisualize->Comment))
+			.HighlightText(HighlightText);
+	}
+	else
+	{
+		return SNullWidget::NullWidget;
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

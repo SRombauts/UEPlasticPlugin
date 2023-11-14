@@ -28,4 +28,20 @@ public:
 	/** If a non-null value is set, limit the maximum number of revisions requested to Unity Version Control to display in the "History" window. */
 	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control", meta = (ClampMin = 0))
 	int32 LimitNumberOfRevisionsInHistory = 50;
+
+	/** Show the repository when the branch is created (hidden by default) */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	bool bShowBranchRepositoryColumn = false;
+
+	/* Show the name of the creator of the branch */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	bool bShowBranchCreatedByColumn = true;
+
+	/* Show the date of creation of the branch */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	bool bShowBranchDateColumn = true;
+
+	/* Show the comment of the branch */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	bool bShowBranchCommentColumn = true;
 };
