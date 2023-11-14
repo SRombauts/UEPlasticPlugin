@@ -14,6 +14,11 @@
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
 #include "Misc/ComparisonUtility.h"
 #endif
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+#include "Styling/AppStyle.h"
+#else
+#include "EditorStyleSet.h"
+#endif
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Views/SHeaderRow.h"
@@ -36,7 +41,11 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 		.AutoHeight()
 		[
 			SNew(SBorder)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+#else
+			.BorderImage(FEditorStyle::GetBrush("DetailsView.CategoryBottom"))
+#endif
 			.Padding(4)
 			[
 				SNew(SHorizontalBox)
@@ -71,7 +80,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 		.AutoHeight()
 		[
 			SNew(SBox)
-			.Padding(0, 3)
+			.Padding(FMargin(0.f, 3.f))
 			[
 				SNew(SHorizontalBox)
 				+SHorizontalBox::Slot()
@@ -104,7 +113,11 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 
 TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateToolBar()
 {
+#if ENGINE_MAJOR_VERSION >= 5
 	FSlimHorizontalToolBarBuilder ToolBarBuilder(nullptr, FMultiBoxCustomization::None);
+#else
+	FToolBarBuilder ToolBarBuilder(nullptr, FMultiBoxCustomization::None);
+#endif
 
 	ToolBarBuilder.AddToolBarButton(
 		FUIAction(
@@ -112,7 +125,11 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateToolBar()
 		NAME_None,
 		LOCTEXT("SourceControl_RefreshButton", "Refresh"),
 		LOCTEXT("SourceControl_RefreshButton_Tooltip", "Refreshes branches from revision control provider."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Refresh"));
+#else
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Refresh"));
+#endif
 
 	return ToolBarBuilder.MakeWidget();
 }
