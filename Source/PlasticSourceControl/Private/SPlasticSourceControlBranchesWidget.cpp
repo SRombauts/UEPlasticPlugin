@@ -332,7 +332,7 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::SortBranchView);
 
-	if (PrimarySortedColumn.IsNone() || BranchRows.IsEmpty())
+	if (PrimarySortedColumn.IsNone() || BranchRows.Num() == 0)
 	{
 		return; // No column selected for sorting or nothing to sort.
 	}
