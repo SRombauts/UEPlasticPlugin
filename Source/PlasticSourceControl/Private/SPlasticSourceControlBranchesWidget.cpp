@@ -403,7 +403,7 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 		// NOTE: StableSort() would give a better experience when the sorted columns(s) has the same values and new values gets added, but it is slower
 		//       with large changelists (7600 items was about 1.8x slower in average measured with Unreal Insight). Because this code runs in the main
 		//       thread and can be invoked a lot, the trade off went if favor of speed.
-		BranchRows.Sort([this, &PrimaryCompare, &SecondaryCompare](const TSharedPtr<FPlasticSourceControlBranch>& Lhs, const TSharedPtr<FPlasticSourceControlBranch>& Rhs)
+		BranchRows.Sort([this, &PrimaryCompare, &SecondaryCompare](const FPlasticSourceControlBranchPtr& Lhs, const FPlasticSourceControlBranchPtr& Rhs)
 		{
 			int32 Result = PrimaryCompare(static_cast<FPlasticSourceControlBranch*>(Lhs.Get()), static_cast<FPlasticSourceControlBranch*>(Rhs.Get()));
 			if (Result < 0)
@@ -426,7 +426,7 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 	}
 	else
 	{
-		BranchRows.Sort([this, &PrimaryCompare, &SecondaryCompare](const TSharedPtr<FPlasticSourceControlBranch>& Lhs, const TSharedPtr<FPlasticSourceControlBranch>& Rhs)
+		BranchRows.Sort([this, &PrimaryCompare, &SecondaryCompare](const FPlasticSourceControlBranchPtr& Lhs, const FPlasticSourceControlBranchPtr& Rhs)
 		{
 			int32 Result = PrimaryCompare(static_cast<FPlasticSourceControlBranch*>(Lhs.Get()), static_cast<FPlasticSourceControlBranch*>(Rhs.Get()));
 			if (Result > 0)
@@ -512,12 +512,12 @@ void SPlasticSourceControlBranchesWidget::RequestBranchesRefresh()
 	OnStartSourceControlOperation(GetBranchesOperation, LOCTEXT("SourceControl_UpdatingChangelist", "Updating branches..."));
 }
 
-void SPlasticSourceControlBranchesWidget::OnStartSourceControlOperation(const TSharedRef<ISourceControlOperation> InOperation, const FText& InMessage)
+void SPlasticSourceControlBranchesWidget::OnStartSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe> InOperation, const FText& InMessage)
 {
 	RefreshStatus = InMessage;
 }
 
-void SPlasticSourceControlBranchesWidget::OnEndSourceControlOperation(const TSharedRef<ISourceControlOperation>& InOperation, ECommandResult::Type InType)
+void SPlasticSourceControlBranchesWidget::OnEndSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType)
 {
 	RefreshStatus = FText::GetEmpty();
 }
@@ -537,7 +537,7 @@ void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISource
 	}
 }
 
-void SPlasticSourceControlBranchesWidget::OnBranchesUpdated(const TSharedRef<ISourceControlOperation>& InOperation, ECommandResult::Type InType)
+void SPlasticSourceControlBranchesWidget::OnBranchesUpdated(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(SSourceControlChangelistsWidget::OnBranchesUpdated);
 

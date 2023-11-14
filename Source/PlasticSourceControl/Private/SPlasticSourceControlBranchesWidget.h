@@ -45,9 +45,9 @@ private:
 	void EndRefreshStatus();
 
 	void RequestBranchesRefresh();
-	void OnBranchesUpdated(const TSharedRef<ISourceControlOperation>& InOperation, ECommandResult::Type InType);
-	void OnStartSourceControlOperation(const TSharedRef<ISourceControlOperation> InOperation, const FText& InMessage);
-	void OnEndSourceControlOperation(const TSharedRef<ISourceControlOperation>& InOperation, ECommandResult::Type InType);
+	void OnBranchesUpdated(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType);
+	void OnStartSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe> InOperation, const FText& InMessage);
+	void OnEndSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType);
 
 	/** Source control callbacks */
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
