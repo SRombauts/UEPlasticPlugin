@@ -72,14 +72,22 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 				SNew(SHorizontalBox)
 				+SHorizontalBox::Slot()
 				.HAlign(HAlign_Left)
-				.VAlign(VAlign_Center)
+				.AutoWidth()
 				[
 					SNew(STextBlock)
 					.Text_Lambda([this]() { return RefreshStatus; })
+					.Margin(FMargin(5.f, 0.f))
+				]
+				+SHorizontalBox::Slot()
+				.HAlign(HAlign_Left)
+				.AutoWidth()
+				[
+					SNew(STextBlock)
+					.Text_Lambda([this]() { return FText::AsNumber(BranchRows.Num()); })
+					.ToolTipText(LOCTEXT("PlasticBranchesNumber_Tooltip", "Number of branches displayed after filtering by date and by search keywords."))
 				]
 				+SHorizontalBox::Slot()
 				.HAlign(HAlign_Right)
-				.VAlign(VAlign_Center)
 				[
 					SNew(STextBlock)
 					.Text_Lambda([this]() { return FText::FromString(CurrentBranchName); })
