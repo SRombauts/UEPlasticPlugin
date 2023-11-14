@@ -2370,7 +2370,7 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 	TArray<FString> Parameters;
 	if (InFromDate != FDateTime())
 	{
-		Parameters.Add(FString::Printf(TEXT("\"branches where date >= '%s'\""), *InFromDate.ToFormattedString(TEXT("%Y/%m/%d"))));
+		Parameters.Add(FString::Printf(TEXT("\"branches where date >= '%d/%d/%d'\""), InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay()));
 	}
 	else
 	{
