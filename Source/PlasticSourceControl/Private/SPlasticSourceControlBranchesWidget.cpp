@@ -19,6 +19,7 @@
 #else
 #include "EditorStyleSet.h"
 #endif
+#include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Views/SHeaderRow.h"
@@ -33,6 +34,12 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 
 	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlBranch&>>(TTextFilter<const FPlasticSourceControlBranch&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings));
 	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlBranchesWidget::OnRefreshUI);
+
+	FromDateInDaysValues.Add({ 7, FText::FromString(TEXT("Last week")) });
+	FromDateInDaysValues.Add({ 30, FText::FromString(TEXT("Last month")) });
+	FromDateInDaysValues.Add({ 90, FText::FromString(TEXT("Last 3 months")) });
+	FromDateInDaysValues.Add({ 365, FText::FromString(TEXT("Last year")) });
+	FromDateInDaysValues.Add({ -1, FText::FromString(TEXT("All time")) });
 
 	ChildSlot
 	[
@@ -69,6 +76,20 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 					.HintText(LOCTEXT("SearchBranches", "Search Branches"))
 					.ToolTipText(LOCTEXT("PlasticBranchesSearch_Tooltip", "Filter the list of branches by keyword."))
 					.OnTextChanged(this, &SPlasticSourceControlBranchesWidget::OnSearchTextChanged)
+				]
+				+SHorizontalBox::Slot()
+				.VAlign(VAlign_Center)
+				.MaxWidth(125)
+				.Padding(FMargin(10.f, 0.f))
+				[
+					SNew(SComboButton)
+					.ToolTipText(LOCTEXT("PlasticBranchesDate_Tooltip", "Filter the list of branches by date of creation."))
+					.OnGetMenuContent(this, &SPlasticSourceControlBranchesWidget::BuildFromDateDropDownMenu)
+					.ButtonContent()
+					[
+						SNew(STextBlock)
+						.Text_Lambda([this]() { return FromDateInDaysValues[FromDateInDays]; })
+					]
 				]
 			]
 		]
@@ -271,6 +292,26 @@ void SPlasticSourceControlBranchesWidget::OnSearchTextChanged(const FText& InFil
 void SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings(const FPlasticSourceControlBranch& InItem, TArray<FString>& OutStrings)
 {
 	InItem.PopulateSearchString(OutStrings);
+}
+
+void SPlasticSourceControlBranchesWidget::OnFromDateChanged(int32 InFromDateInDays)
+{
+	FromDateInDays = InFromDateInDays;
+
+	RequestBranchesRefresh();
+}
+
+TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::BuildFromDateDropDownMenu()
+{
+	FMenuBuilder MenuBuilder(true, NULL);
+
+	for (const auto & FromDateInDaysValue : FromDateInDaysValues)
+	{
+		FUIAction MenuAction(FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnFromDateChanged, FromDateInDaysValue.Key));
+		MenuBuilder.AddMenuEntry(FromDateInDaysValue.Value, FromDateInDaysValue.Value, FSlateIcon(), MenuAction);
+	}
+
+	return MenuBuilder.MakeWidget();
 }
 
 void SPlasticSourceControlBranchesWidget::OnRefreshUI()
@@ -529,8 +570,10 @@ void SPlasticSourceControlBranchesWidget::RequestBranchesRefresh()
 	StartRefreshStatus();
 
 	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> GetBranchesOperation = ISourceControlOperation::Create<FPlasticGetBranches>();
-	// TODO POC FAKE:
-	GetBranchesOperation->FromDate = FDateTime(2023, 10, 18);
+	if (FromDateInDays > -1)
+	{
+		GetBranchesOperation->FromDate = FDateTime::Now() - FTimespan::FromDays(FromDateInDays);
+	}
 
 	ISourceControlProvider& SourceControlProvider = ISourceControlModule::Get().GetProvider();
 	SourceControlProvider.Execute(GetBranchesOperation, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnBranchesUpdated));

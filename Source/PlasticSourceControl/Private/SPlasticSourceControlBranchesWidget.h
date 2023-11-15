@@ -14,7 +14,6 @@ typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlas
 
 class SSearchBox;
 
-
 // Widget displaying the list of branches in the tab window, see FPlasticSourceControlBranchesWindow
 class SPlasticSourceControlBranchesWidget : public SCompoundWidget
 {
@@ -34,6 +33,10 @@ private:
 
 	void OnSearchTextChanged(const FText& InFilterText);
 	void PopulateItemSearchStrings(const FPlasticSourceControlBranch& InItem, TArray<FString>& OutStrings);
+
+	TSharedRef<SWidget> BuildFromDateDropDownMenu();
+	void OnFromDateChanged(int32 InFromDateInDays);
+
 	void OnRefreshUI();
 
 	EColumnSortPriority::Type GetColumnSortPriority(const FName InColumnId) const;
@@ -80,6 +83,9 @@ private:
 
 	TSharedPtr<SListView<FPlasticSourceControlBranchRef>> BranchesListView;
 	TSharedPtr<TTextFilter<const FPlasticSourceControlBranch&>> SearchTextFilter;
+
+	TMap<int32, FText> FromDateInDaysValues;
+	int32 FromDateInDays = 30;
 
 	TArray<FPlasticSourceControlBranchRef> SourceControlBranches; // Full list from source (filtered by date)
 	TArray<FPlasticSourceControlBranchRef> BranchRows; // Filtered list to display based on the search text filter
