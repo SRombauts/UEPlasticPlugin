@@ -464,35 +464,6 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 	}
 }
 
-void FPlasticSourceControlMenu::RefreshClicked()
-{
-	if (!OperationInProgressNotification.IsValid())
-	{
-		// Launch an "UpdateStatus" Operation
-		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-		TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> RefreshOperation = ISourceControlOperation::Create<FUpdateStatus>();
-		// This is the flag used by the Content Browser's "Checkout" filter to trigger a full status update
-		RefreshOperation->SetGetOpenedOnly(true);
-		const ECommandResult::Type Result = Provider.Execute(RefreshOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
-		if (Result == ECommandResult::Succeeded)
-		{
-			// Display an ongoing notification during the whole operation
-			DisplayInProgressNotification(RefreshOperation->GetInProgressString());
-		}
-		else
-		{
-			// Report failure with a notification
-			DisplayFailureNotification(RefreshOperation->GetName());
-		}
-	}
-	else
-	{
-		FMessageLog SourceControlLog("SourceControl");
-		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
-		SourceControlLog.Notify();
-	}
-}
-
 void FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked()
 {
 	if (!OperationInProgressNotification.IsValid())
@@ -729,27 +700,6 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RevertAllClicked),
-			FCanExecuteAction()
-		)
-	);
-
-	Menu.AddMenuEntry(
-#if ENGINE_MAJOR_VERSION == 5
-		"PlasticRefresh",
-#endif
-		LOCTEXT("PlasticRefresh",			"Refresh"),
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
-		LOCTEXT("PlasticRefreshTooltip",	"Update the local revision control status of all files in the workspace (no expensive checks for locks or changes on other branches)."),
-#else
-		LOCTEXT("PlasticRefreshTooltip",	"Update the local source control status of all files in the workspace (no expensive checks for locks or changes on other branches)."),
-#endif
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
-		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Refresh"),
-#else
-		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.Refresh"),
-#endif
-		FUIAction(
-			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::RefreshClicked),
 			FCanExecuteAction()
 		)
 	);
