@@ -175,8 +175,7 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateContentPanel()
 		.ListItemsSource(&BranchRows)
 		.OnGenerateRow(this, &SPlasticSourceControlBranchesWidget::OnGenerateRow)
 		.SelectionMode(ESelectionMode::Single)
-		// TODO: context menu (to be implementer in a future task)
-		// .OnContextMenuOpening(this, &SPlasticSourceControlBranchesWidget::OnOpenContextMenu)
+		.OnContextMenuOpening(this, &SPlasticSourceControlBranchesWidget::OnOpenContextMenu)
 		.OnItemToString_Debug_Lambda([this](FPlasticSourceControlBranchRef Branch) { return Branch->Name; })
 		.HeaderRow
 		(
@@ -505,6 +504,60 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 			}
 		});
 	}
+}
+
+FString SPlasticSourceControlBranchesWidget::GetSelectedBranch()
+{
+	for (const FPlasticSourceControlBranchPtr& BranchPtr : BranchesListView->GetSelectedItems())
+	{
+		return BranchPtr->Name;
+	}
+
+	return FString();
+}
+
+TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
+{
+	const FString SelectedBranch = GetSelectedBranch();
+	if (SelectedBranch.IsEmpty())
+	{
+		return nullptr;
+	}
+
+	UToolMenus* ToolMenus = UToolMenus::Get();
+	static const FName MenuName = "PlasticSourceControl.BranchesContextMenu";
+	if (!ToolMenus->IsMenuRegistered(MenuName))
+	{
+		UToolMenu* RegisteredMenu = ToolMenus->RegisterMenu(MenuName);
+		// Add section so it can be used as insert position for menu extensions
+		RegisteredMenu->AddSection("Source Control");
+	}
+
+	// Build up the menu
+	FToolMenuContext Context;
+	UToolMenu* Menu = ToolMenus->GenerateMenu(MenuName, Context);
+
+	FToolMenuSection& Section = *Menu->FindSection("Source Control");
+
+	Section.AddMenuEntry(
+		TEXT("SwitchToBranch"),
+		LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
+		LOCTEXT("SwitchToBranchTooltip", "Switch workspace to this branch."),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked, SelectedBranch),
+			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return SelectedBranch != CurrentBranchName; })
+		)
+	);
+
+
+	return ToolMenus->GenerateWidget(Menu);
+}
+
+void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBranchName)
+{
+	// TODO Switch:
+	UE_LOG(LogSourceControl, Log, TEXT("OnSwitchToBranchClicked(%s)"), *InBranchName);
 }
 
 void SPlasticSourceControlBranchesWidget::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
