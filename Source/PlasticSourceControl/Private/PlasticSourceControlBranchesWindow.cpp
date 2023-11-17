@@ -19,7 +19,7 @@ void FPlasticSourceControlBranchesWindow::Register()
 	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(PlasticSourceControlWindowTabName, FOnSpawnTab::CreateRaw(this, &FPlasticSourceControlBranchesWindow::OnSpawnTab))
 		.SetDisplayName(LOCTEXT("PlasticSourceControlWindowTabTitle", "View Branches"))
 		.SetMenuType(ETabSpawnerMenuType::Hidden)
-	.SetIcon(FSlateIcon(FPlasticSourceControlStyle::Get().GetStyleSetName(), "PlasticSourceControl.PluginIcon.Small"));
+		.SetIcon(FSlateIcon(FPlasticSourceControlStyle::Get().GetStyleSetName(), "PlasticSourceControl.PluginIcon.Small"));
 }
 
 void FPlasticSourceControlBranchesWindow::Unregister()
