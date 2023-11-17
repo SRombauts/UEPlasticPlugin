@@ -18,12 +18,17 @@ void FPlasticSourceControlModule::StartupModule()
 
 	// Bind our source control provider to the editor
 	IModularFeatures::Get().RegisterModularFeature("SourceControl", &PlasticSourceControlProvider);
+
+	/// Register our tab Window here as it needs to be ready for the editor to reload at startup
+	PlasticSourceControlBranchesWindow.Register();
 }
 
 void FPlasticSourceControlModule::ShutdownModule()
 {
 	// shut down the provider, as this module is going away
 	PlasticSourceControlProvider.Close();
+
+	PlasticSourceControlBranchesWindow.Unregister();
 
 	// unbind provider from editor
 	IModularFeatures::Get().UnregisterModularFeature("SourceControl", &PlasticSourceControlProvider);

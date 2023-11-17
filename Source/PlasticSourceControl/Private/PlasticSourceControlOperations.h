@@ -19,6 +19,8 @@
 #endif
 
 class FPlasticSourceControlProvider;
+typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
+
 
 /**
  * Internal operation used to revert checked-out unchanged files
@@ -111,6 +113,25 @@ public:
 
 	// Release the Lock(s), and optionally remove (delete) them completely
 	bool bRemove = false;
+};
+
+
+/**
+ * Internal operation to list branches, aka "cm find branch"
+*/
+class FPlasticGetBranches final : public ISourceControlOperation
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	// Limit the list of branches to ones created from this date
+	FDateTime FromDate;
+
+	// List of branches found
+	TArray<FPlasticSourceControlBranchRef> Branches;
 };
 
 
@@ -335,6 +356,23 @@ public:
 public:
 	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
+};
+
+/** list branches. */
+class FPlasticGetBranchesWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticGetBranchesWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticGetBranchesWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+	// Current branch the workspace is on
+	FString CurrentBranchName;
 };
 
 /** Plastic update the workspace to latest changes */

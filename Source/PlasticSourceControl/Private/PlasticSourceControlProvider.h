@@ -126,6 +126,10 @@ public:
 	{
 		return BranchName;
 	}
+	inline void SetBranchName(FString&& InBranchName)
+	{
+		BranchName = InBranchName;
+	}
 
 	/** Get the current Changeset Number */
 	inline int32 GetChangesetNumber() const

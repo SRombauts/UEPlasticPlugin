@@ -20,7 +20,7 @@ void SPlasticSourceControlStatusBar::Construct(const FArguments& InArgs)
 	[
 		SNew(SButton)
 		.ContentPadding(FMargin(6.0f, 0.0f))
-		.ToolTipText(LOCTEXT("PlasticBranches_Tooltip", "Current branch"))
+		.ToolTipText(LOCTEXT("PlasticBranchesWindowTooltip", "Open the Branches window."))
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		.ButtonStyle(FAppStyle::Get(), "SimpleButton")
 #else
@@ -65,6 +65,8 @@ FText SPlasticSourceControlStatusBar::GetStatusBarText() const
 
 FReply SPlasticSourceControlStatusBar::OnClicked()
 {
+	FPlasticSourceControlModule::Get().GetBranchesWindow().OpenTab();
+
 	return FReply::Handled();
 }
 

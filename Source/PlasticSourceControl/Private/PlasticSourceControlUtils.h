@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
 #include "PlasticSourceControlRevision.h"
 
 #include "Runtime/Launch/Resources/Version.h"
@@ -11,6 +12,7 @@ class FPlasticSourceControlChangelistState;
 class FPlasticSourceControlCommand;
 class FPlasticSourceControlState;
 struct FSoftwareVersion;
+typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
 
 enum class EWorkspaceState;
 
@@ -214,6 +216,14 @@ bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDat
 void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState InShelveStatus, FString&& InMovedFrom);
 
 #endif
+
+/**
+ * Run find "branches where date >= 'YYYY/MM/DD'" and parse the results.
+ * @param	InFromDate				The list of branches
+ * @param	OutBranches				The list of branches
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBranchRef>& OutBranches, TArray<FString>& OutErrorMessages);
 
 /**
  * Helper function for various commands to update cached states.
