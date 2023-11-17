@@ -3,6 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "Notification.h"
+
 #include "Misc/TextFilter.h"
 #include "Widgets/SCompoundWidget.h"
 #include "Widgets/Views/SListView.h"
@@ -57,6 +60,7 @@ private:
 
 	/** Source control callbacks */
 	void OnGetBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
 
 	SListView<FPlasticSourceControlBranchRef>* GetListView() const
@@ -82,6 +86,9 @@ private:
 	double RefreshStatusStartSecs;
 
 	FString CurrentBranchName;
+
+	/** Ongoing notification for a long-running asynchronous source control operation, if any */
+	FNotification Notification;
 
 	TSharedPtr<SListView<FPlasticSourceControlBranchRef>> BranchesListView;
 	TSharedPtr<TTextFilter<const FPlasticSourceControlBranch&>> SearchTextFilter;

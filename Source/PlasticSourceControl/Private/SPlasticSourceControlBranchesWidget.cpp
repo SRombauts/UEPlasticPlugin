@@ -8,6 +8,8 @@
 #include "PlasticSourceControlBranch.h"
 #include "SPlasticSourceControlBranchRow.h"
 
+#include "PackageUtils.h"
+
 #include "ISourceControlModule.h"
 
 #include "Runtime/Launch/Resources/Version.h"
@@ -556,8 +558,44 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 
 void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBranchName)
 {
-	// TODO Switch:
-	UE_LOG(LogSourceControl, Log, TEXT("OnSwitchToBranchClicked(%s)"), *InBranchName);
+	if (!Notification.IsInProgress())
+	{
+		const bool bSaved = PackageUtils::SaveDirtyPackages();
+		if (bSaved)
+		{
+			// Find and Unlink all loaded packages in Content directory to allow to update them
+			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+
+			// Launch a custom "SwitchToBranch" operation
+			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+			TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> SwitchToBranchOperation = ISourceControlOperation::Create<FPlasticSwitchToBranch>();
+			SwitchToBranchOperation->BranchName = InBranchName;
+			const ECommandResult::Type Result = Provider.Execute(SwitchToBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete));
+			if (Result == ECommandResult::Succeeded)
+			{
+				// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+				Notification.DisplayInProgress(SwitchToBranchOperation->GetInProgressString());
+				StartRefreshStatus();
+			}
+			else
+			{
+				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+				FNotification::DisplayFailure(SwitchToBranchOperation->GetName());
+			}
+		}
+		else
+		{
+			FMessageLog SourceControlLog("SourceControl");
+			SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Sync_Unsaved", "Save All Assets before attempting to Sync!"));
+			SourceControlLog.Notify();
+		}
+	}
+	else
+	{
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
+	}
 }
 
 void SPlasticSourceControlBranchesWidget::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
@@ -639,6 +677,26 @@ void SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete(const F
 
 	EndRefreshStatus();
 	OnRefreshUI();
+}
+
+void SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete);
+
+	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
+	bShouldRefresh = true;
+
+	Notification.RemoveInProgress();
+
+	// Report result with a notification
+	if (InResult == ECommandResult::Succeeded)
+	{
+		FNotification::DisplaySuccess(InOperation->GetName());
+	}
+	else
+	{
+		FNotification::DisplayFailure(InOperation->GetName());
+	}
 }
 
 void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider)
