@@ -34,9 +34,6 @@ public:
 private:
 	bool IsSourceControlConnected() const;
 
-	bool				SaveDirtyPackages();
-	TArray<FString>		ListAllPackages();
-
 #if ENGINE_MAJOR_VERSION == 4
 	void AddMenuExtension(FMenuBuilder& Menu);
 	void AddViewBranches(FMenuBuilder& Menu);

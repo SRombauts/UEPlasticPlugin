@@ -24,7 +24,6 @@
 #endif
 
 #include "PackageUtils.h"
-#include "FileHelpers.h"
 #include "ISettingsModule.h"
 
 #include "Logging/MessageLog.h"
@@ -323,48 +322,15 @@ bool FPlasticSourceControlMenu::IsSourceControlConnected() const
 	return Provider.IsEnabled() && Provider.IsAvailable();
 }
 
-/// Prompt to save or discard all packages
-bool FPlasticSourceControlMenu::SaveDirtyPackages()
-{
-	const bool bPromptUserToSave = true;
-	const bool bSaveMapPackages = true;
-	const bool bSaveContentPackages = true;
-	const bool bFastSave = false;
-	const bool bNotifyNoPackagesSaved = false;
-	const bool bCanBeDeclined = true; // If the user clicks "don't save" this will continue and lose their changes
-	bool bHadPackagesToSave = false;
-
-	bool bSaved = FEditorFileUtils::SaveDirtyPackages(bPromptUserToSave, bSaveMapPackages, bSaveContentPackages, bFastSave, bNotifyNoPackagesSaved, bCanBeDeclined, &bHadPackagesToSave);
-
-	// bSaved can be true if the user selects to not save an asset by un-checking it and clicking "save"
-	if (bSaved)
-	{
-		TArray<UPackage*> DirtyPackages;
-		FEditorFileUtils::GetDirtyWorldPackages(DirtyPackages);
-		FEditorFileUtils::GetDirtyContentPackages(DirtyPackages);
-		bSaved = DirtyPackages.Num() == 0;
-	}
-
-	return bSaved;
-}
-
-/// Find all packages in Content directory
-TArray<FString> FPlasticSourceControlMenu::ListAllPackages()
-{
-	TArray<FString> PackageFilePaths;
-	FPackageName::FindPackagesInDirectory(PackageFilePaths, FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-	return PackageFilePaths;
-}
-
 void FPlasticSourceControlMenu::SyncProjectClicked()
 {
 	if (!Notification.IsInProgress())
 	{
-		const bool bSaved = SaveDirtyPackages();
+		const bool bSaved = PackageUtils::SaveDirtyPackages();
 		if (bSaved)
 		{
 			// Find and Unlink all loaded packages in Content directory to allow to update them
-			PackageUtils::UnlinkPackages(ListAllPackages());
+			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
 
 			// Launch a custom "SyncAll" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -432,11 +398,11 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::OkCancel, DialogText);
 		if (Choice == EAppReturnType::Ok)
 		{
-			const bool bSaved = SaveDirtyPackages();
+			const bool bSaved = PackageUtils::SaveDirtyPackages();
 			if (bSaved)
 			{
 				// Find and Unlink all packages in Content directory to allow to update them
-				PackageUtils::UnlinkPackages(ListAllPackages());
+				PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
 
 				// Launch a "RevertAll" Operation
 				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
