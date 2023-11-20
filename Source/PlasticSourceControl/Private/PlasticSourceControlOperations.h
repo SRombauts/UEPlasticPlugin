@@ -43,10 +43,7 @@ class FPlasticSyncAll final : public FSync
 {
 public:
 	// ISourceControlOperation interface
-	virtual FName GetName() const override
-	{
-		return "SyncAll";
-	}
+	virtual FName GetName() const override;
 
 	/** List of files updated by the operation */
 	TArray<FString> UpdatedFiles;
@@ -132,6 +129,25 @@ public:
 
 	// List of branches found
 	TArray<FPlasticSourceControlBranchRef> Branches;
+};
+
+
+/**
+ * Internal operation used to switch the workspace to another branch
+*/
+class FPlasticSwitchToBranch final : public ISourceControlOperation
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	// Branch to switch the workspace to
+	FString BranchName;
+
+	/** List of files updated by the operation */
+	TArray<FString> UpdatedFiles;
 };
 
 
@@ -371,8 +387,22 @@ public:
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() override;
 
-	// Current branch the workspace is on
+	// Current branch the workspace is on (at the end of the operation)
 	FString CurrentBranchName;
+};
+
+/** Switch workspace to another branch. */
+class FPlasticSwitchToBranchWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticSwitchToBranchWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticSwitchToBranchWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
 };
 
 /** Plastic update the workspace to latest changes */
