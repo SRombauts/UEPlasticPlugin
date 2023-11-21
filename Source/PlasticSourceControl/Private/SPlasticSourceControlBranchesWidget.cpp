@@ -575,19 +575,37 @@ void SPlasticSourceControlBranchesWidget::RequestBranchesRefresh()
 		GetBranchesOperation->FromDate = FDateTime::Now() - FTimespan::FromDays(FromDateInDays);
 	}
 
-	ISourceControlProvider& SourceControlProvider = ISourceControlModule::Get().GetProvider();
-	SourceControlProvider.Execute(GetBranchesOperation, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnBranchesUpdated));
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	Provider.Execute(GetBranchesOperation, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete));
 	OnStartSourceControlOperation(GetBranchesOperation, LOCTEXT("SourceControl_UpdatingChangelist", "Updating branches..."));
 }
 
-void SPlasticSourceControlBranchesWidget::OnStartSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe> InOperation, const FText& InMessage)
+void SPlasticSourceControlBranchesWidget::OnStartSourceControlOperation(const FSourceControlOperationRef InOperation, const FText& InMessage)
 {
 	RefreshStatus = InMessage;
 }
 
-void SPlasticSourceControlBranchesWidget::OnEndSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType)
+void SPlasticSourceControlBranchesWidget::OnEndSourceControlOperation(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	RefreshStatus = FText::GetEmpty();
+}
+
+void SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete);
+
+	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> OperationGetBranches = StaticCastSharedRef<FPlasticGetBranches>(InOperation);
+	SourceControlBranches = MoveTemp(OperationGetBranches->Branches);
+
+	FString NewCurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
+	if (NewCurrentBranchName != CurrentBranchName)
+	{
+		CurrentBranchName = MoveTemp(NewCurrentBranchName);
+	}
+
+	OnEndSourceControlOperation(InOperation, InResult);
+	EndRefreshStatus();
+	OnRefreshUI();
 }
 
 void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider)
@@ -603,24 +621,6 @@ void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISource
 			GetListView()->RequestListRefresh();
 		}
 	}
-}
-
-void SPlasticSourceControlBranchesWidget::OnBranchesUpdated(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType)
-{
-	TRACE_CPUPROFILER_EVENT_SCOPE(SSourceControlChangelistsWidget::OnBranchesUpdated);
-
-	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetBranches>(InOperation);
-	SourceControlBranches = MoveTemp(Operation->Branches);
-
-	FString NewCurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
-	if (NewCurrentBranchName != CurrentBranchName)
-	{
-		CurrentBranchName = MoveTemp(NewCurrentBranchName);
-	}
-
-	OnEndSourceControlOperation(InOperation, InType);
-	EndRefreshStatus();
-	OnRefreshUI();
 }
 
 #undef LOCTEXT_NAMESPACE

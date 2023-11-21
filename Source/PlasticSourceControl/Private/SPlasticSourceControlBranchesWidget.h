@@ -43,19 +43,19 @@ private:
 	EColumnSortMode::Type GetColumnSortMode(const FName InColumnId) const;
 	void OnColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode);
 
+	void SortBranchView();
+
 	void StartRefreshStatus();
 	void TickRefreshStatus(double InDeltaTime);
 	void EndRefreshStatus();
 
 	void RequestBranchesRefresh();
-	void OnBranchesUpdated(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType);
-	void OnStartSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe> InOperation, const FText& InMessage);
-	void OnEndSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType);
+	void OnStartSourceControlOperation(const FSourceControlOperationRef InOperation, const FText& InMessage);
+	void OnEndSourceControlOperation(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 
 	/** Source control callbacks */
+	void OnGetBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
-
-	void SortBranchView();
 
 	SListView<FPlasticSourceControlBranchRef>* GetListView() const
 	{
