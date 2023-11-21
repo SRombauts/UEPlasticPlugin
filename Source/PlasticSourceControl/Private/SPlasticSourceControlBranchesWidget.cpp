@@ -683,6 +683,10 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete(cons
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete);
 
+	// Reload packages that where updated by the SwitchToBranch operation (and the current map if needed)
+	TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSwitchToBranch>(InOperation);
+	PackageUtils::ReloadPackages(Operation->UpdatedFiles);
+
 	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
 	bShouldRefresh = true;
 
