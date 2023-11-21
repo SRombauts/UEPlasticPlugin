@@ -590,11 +590,7 @@ void SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete(const F
 	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> OperationGetBranches = StaticCastSharedRef<FPlasticGetBranches>(InOperation);
 	SourceControlBranches = MoveTemp(OperationGetBranches->Branches);
 
-	FString NewCurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
-	if (NewCurrentBranchName != CurrentBranchName)
-	{
-		CurrentBranchName = MoveTemp(NewCurrentBranchName);
-	}
+	CurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
 
 	EndRefreshStatus();
 	OnRefreshUI();
