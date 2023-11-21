@@ -545,8 +545,11 @@ void SPlasticSourceControlBranchesWidget::Tick(const FGeometry& AllottedGeometry
 
 void SPlasticSourceControlBranchesWidget::StartRefreshStatus()
 {
-	bIsRefreshing = true;
-	RefreshStatusStartSecs = FPlatformTime::Seconds();
+	if (!bIsRefreshing)
+	{
+		bIsRefreshing = true;
+		RefreshStatusStartSecs = FPlatformTime::Seconds();
+	}
 }
 
 void SPlasticSourceControlBranchesWidget::TickRefreshStatus(double InDeltaTime)
@@ -558,6 +561,7 @@ void SPlasticSourceControlBranchesWidget::TickRefreshStatus(double InDeltaTime)
 void SPlasticSourceControlBranchesWidget::EndRefreshStatus()
 {
 	bIsRefreshing = false;
+	RefreshStatus = FText::GetEmpty();
 }
 
 void SPlasticSourceControlBranchesWidget::RequestBranchesRefresh()
@@ -577,17 +581,6 @@ void SPlasticSourceControlBranchesWidget::RequestBranchesRefresh()
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	Provider.Execute(GetBranchesOperation, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete));
-	OnStartSourceControlOperation(GetBranchesOperation, LOCTEXT("SourceControl_UpdatingChangelist", "Updating branches..."));
-}
-
-void SPlasticSourceControlBranchesWidget::OnStartSourceControlOperation(const FSourceControlOperationRef InOperation, const FText& InMessage)
-{
-	RefreshStatus = InMessage;
-}
-
-void SPlasticSourceControlBranchesWidget::OnEndSourceControlOperation(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
-{
-	RefreshStatus = FText::GetEmpty();
 }
 
 void SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
@@ -603,7 +596,6 @@ void SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete(const F
 		CurrentBranchName = MoveTemp(NewCurrentBranchName);
 	}
 
-	OnEndSourceControlOperation(InOperation, InResult);
 	EndRefreshStatus();
 	OnRefreshUI();
 }

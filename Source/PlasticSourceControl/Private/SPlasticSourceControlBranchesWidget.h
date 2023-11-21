@@ -50,8 +50,6 @@ private:
 	void EndRefreshStatus();
 
 	void RequestBranchesRefresh();
-	void OnStartSourceControlOperation(const FSourceControlOperationRef InOperation, const FText& InMessage);
-	void OnEndSourceControlOperation(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 
 	/** Source control callbacks */
 	void OnGetBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
