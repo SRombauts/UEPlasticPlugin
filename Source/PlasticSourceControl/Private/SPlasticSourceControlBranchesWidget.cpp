@@ -517,7 +517,7 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 
 void SPlasticSourceControlBranchesWidget::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
-	if (!ISourceControlModule::Get().IsEnabled() && (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
+	if (!ISourceControlModule::Get().IsEnabled() || (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
 	{
 		return;
 	}
@@ -562,7 +562,7 @@ void SPlasticSourceControlBranchesWidget::EndRefreshStatus()
 
 void SPlasticSourceControlBranchesWidget::RequestBranchesRefresh()
 {
-	if (!ISourceControlModule::Get().IsEnabled() && (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
+	if (!ISourceControlModule::Get().IsEnabled() || (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
 	{
 		return;
 	}
