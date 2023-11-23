@@ -11,7 +11,6 @@
 #include "Misc/ScopeLock.h"
 #include "HAL/PlatformProcess.h"
 #include "HAL/PlatformTime.h"
-#include "Logging/MessageLog.h"
 
 #if PLATFORM_LINUX
 #include <sys/ioctl.h>

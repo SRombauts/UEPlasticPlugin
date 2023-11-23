@@ -29,7 +29,6 @@
 #include "Logging/MessageLog.h"
 
 #include "ToolMenus.h"
-#include "ToolMenuContext.h"
 #include "ToolMenuMisc.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"

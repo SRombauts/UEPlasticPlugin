@@ -12,6 +12,10 @@
 
 #include "ISourceControlModule.h"
 
+#include "Logging/MessageLog.h"
+#include "ToolMenus.h"
+#include "ToolMenuContext.h"
+
 #include "Runtime/Launch/Resources/Version.h"
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
 #include "Misc/ComparisonUtility.h"
@@ -37,11 +41,11 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlBranch&>>(TTextFilter<const FPlasticSourceControlBranch&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings));
 	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlBranchesWidget::OnRefreshUI);
 
-	FromDateInDaysValues.Add({ 7, FText::FromString(TEXT("Last week")) });
-	FromDateInDaysValues.Add({ 30, FText::FromString(TEXT("Last month")) });
-	FromDateInDaysValues.Add({ 90, FText::FromString(TEXT("Last 3 months")) });
-	FromDateInDaysValues.Add({ 365, FText::FromString(TEXT("Last year")) });
-	FromDateInDaysValues.Add({ -1, FText::FromString(TEXT("All time")) });
+	FromDateInDaysValues.Add(TPair<int32, FText>( 7, FText::FromString(TEXT("Last week"))));
+	FromDateInDaysValues.Add(TPair<int32, FText>(30, FText::FromString(TEXT("Last month"))));
+	FromDateInDaysValues.Add(TPair<int32, FText>(90, FText::FromString(TEXT("Last 3 months"))));
+	FromDateInDaysValues.Add(TPair<int32, FText>(365, FText::FromString(TEXT("Last year"))));
+	FromDateInDaysValues.Add(TPair<int32, FText>(-1, FText::FromString(TEXT("All time"))));
 
 	ChildSlot
 	[
