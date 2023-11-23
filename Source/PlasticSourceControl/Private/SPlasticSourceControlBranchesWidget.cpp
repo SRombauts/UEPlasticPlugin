@@ -8,6 +8,8 @@
 #include "PlasticSourceControlBranch.h"
 #include "SPlasticSourceControlBranchRow.h"
 
+#include "PackageUtils.h"
+
 #include "ISourceControlModule.h"
 
 #include "Runtime/Launch/Resources/Version.h"
@@ -113,14 +115,6 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 					.Margin(FMargin(5.f, 0.f))
 				]
 				+SHorizontalBox::Slot()
-				.HAlign(HAlign_Left)
-				.AutoWidth()
-				[
-					SNew(STextBlock)
-					.Text_Lambda([this]() { return FText::AsNumber(BranchRows.Num()); })
-					.ToolTipText(LOCTEXT("PlasticBranchesNumber_Tooltip", "Number of branches displayed after filtering by date and by search keywords."))
-				]
-				+SHorizontalBox::Slot()
 				.HAlign(HAlign_Right)
 				[
 					SNew(STextBlock)
@@ -183,8 +177,7 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateContentPanel()
 		.ListItemsSource(&BranchRows)
 		.OnGenerateRow(this, &SPlasticSourceControlBranchesWidget::OnGenerateRow)
 		.SelectionMode(ESelectionMode::Single)
-		// TODO: context menu (to be implementer in a future task)
-		// .OnContextMenuOpening(this, &SPlasticSourceControlBranchesWidget::OnOpenContextMenu)
+		.OnContextMenuOpening(this, &SPlasticSourceControlBranchesWidget::OnOpenContextMenu)
 		.OnItemToString_Debug_Lambda([this](FPlasticSourceControlBranchRef Branch) { return Branch->Name; })
 		.HeaderRow
 		(
@@ -515,9 +508,99 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 	}
 }
 
+FString SPlasticSourceControlBranchesWidget::GetSelectedBranch()
+{
+	for (const FPlasticSourceControlBranchPtr& BranchPtr : BranchesListView->GetSelectedItems())
+	{
+		return BranchPtr->Name;
+	}
+
+	return FString();
+}
+
+TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
+{
+	const FString SelectedBranch = GetSelectedBranch();
+	if (SelectedBranch.IsEmpty())
+	{
+		return nullptr;
+	}
+
+	UToolMenus* ToolMenus = UToolMenus::Get();
+	static const FName MenuName = "PlasticSourceControl.BranchesContextMenu";
+	if (!ToolMenus->IsMenuRegistered(MenuName))
+	{
+		UToolMenu* RegisteredMenu = ToolMenus->RegisterMenu(MenuName);
+		// Add section so it can be used as insert position for menu extensions
+		RegisteredMenu->AddSection("Source Control");
+	}
+
+	// Build up the menu
+	FToolMenuContext Context;
+	UToolMenu* Menu = ToolMenus->GenerateMenu(MenuName, Context);
+
+	FToolMenuSection& Section = *Menu->FindSection("Source Control");
+
+	Section.AddMenuEntry(
+		TEXT("SwitchToBranch"),
+		LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
+		LOCTEXT("SwitchToBranchTooltip", "Switch workspace to this branch."),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked, SelectedBranch),
+			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return SelectedBranch != CurrentBranchName; })
+		)
+	);
+
+
+	return ToolMenus->GenerateWidget(Menu);
+}
+
+void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBranchName)
+{
+	if (!Notification.IsInProgress())
+	{
+		const bool bSaved = PackageUtils::SaveDirtyPackages();
+		if (bSaved)
+		{
+			// Find and Unlink all loaded packages in Content directory to allow to update them
+			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+
+			// Launch a custom "SwitchToBranch" operation
+			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+			TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> SwitchToBranchOperation = ISourceControlOperation::Create<FPlasticSwitchToBranch>();
+			SwitchToBranchOperation->BranchName = InBranchName;
+			const ECommandResult::Type Result = Provider.Execute(SwitchToBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete));
+			if (Result == ECommandResult::Succeeded)
+			{
+				// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+				Notification.DisplayInProgress(SwitchToBranchOperation->GetInProgressString());
+				StartRefreshStatus();
+			}
+			else
+			{
+				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+				FNotification::DisplayFailure(SwitchToBranchOperation->GetName());
+			}
+		}
+		else
+		{
+			FMessageLog SourceControlLog("SourceControl");
+			SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Sync_Unsaved", "Save All Assets before attempting to Sync!"));
+			SourceControlLog.Notify();
+		}
+	}
+	else
+	{
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
+	}
+}
+
 void SPlasticSourceControlBranchesWidget::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
-	if (!ISourceControlModule::Get().IsEnabled() && (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
+	if (!ISourceControlModule::Get().IsEnabled() || (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
 	{
 		return;
 	}
@@ -545,8 +628,11 @@ void SPlasticSourceControlBranchesWidget::Tick(const FGeometry& AllottedGeometry
 
 void SPlasticSourceControlBranchesWidget::StartRefreshStatus()
 {
-	bIsRefreshing = true;
-	RefreshStatusStartSecs = FPlatformTime::Seconds();
+	if (!bIsRefreshing)
+	{
+		bIsRefreshing = true;
+		RefreshStatusStartSecs = FPlatformTime::Seconds();
+	}
 }
 
 void SPlasticSourceControlBranchesWidget::TickRefreshStatus(double InDeltaTime)
@@ -558,11 +644,12 @@ void SPlasticSourceControlBranchesWidget::TickRefreshStatus(double InDeltaTime)
 void SPlasticSourceControlBranchesWidget::EndRefreshStatus()
 {
 	bIsRefreshing = false;
+	RefreshStatus = FText::GetEmpty();
 }
 
 void SPlasticSourceControlBranchesWidget::RequestBranchesRefresh()
 {
-	if (!ISourceControlModule::Get().IsEnabled() && (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
+	if (!ISourceControlModule::Get().IsEnabled() || (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
 	{
 		return;
 	}
@@ -575,19 +662,45 @@ void SPlasticSourceControlBranchesWidget::RequestBranchesRefresh()
 		GetBranchesOperation->FromDate = FDateTime::Now() - FTimespan::FromDays(FromDateInDays);
 	}
 
-	ISourceControlProvider& SourceControlProvider = ISourceControlModule::Get().GetProvider();
-	SourceControlProvider.Execute(GetBranchesOperation, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnBranchesUpdated));
-	OnStartSourceControlOperation(GetBranchesOperation, LOCTEXT("SourceControl_UpdatingChangelist", "Updating branches..."));
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	Provider.Execute(GetBranchesOperation, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete));
 }
 
-void SPlasticSourceControlBranchesWidget::OnStartSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe> InOperation, const FText& InMessage)
+void SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
-	RefreshStatus = InMessage;
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete);
+
+	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> OperationGetBranches = StaticCastSharedRef<FPlasticGetBranches>(InOperation);
+	SourceControlBranches = MoveTemp(OperationGetBranches->Branches);
+
+	CurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
+
+	EndRefreshStatus();
+	OnRefreshUI();
 }
 
-void SPlasticSourceControlBranchesWidget::OnEndSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType)
+void SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
-	RefreshStatus = FText::GetEmpty();
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete);
+
+	// Reload packages that where updated by the SwitchToBranch operation (and the current map if needed)
+	TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSwitchToBranch>(InOperation);
+	PackageUtils::ReloadPackages(Operation->UpdatedFiles);
+
+	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
+	bShouldRefresh = true;
+
+	Notification.RemoveInProgress();
+
+	// Report result with a notification
+	if (InResult == ECommandResult::Succeeded)
+	{
+		FNotification::DisplaySuccess(InOperation->GetName());
+	}
+	else
+	{
+		FNotification::DisplayFailure(InOperation->GetName());
+	}
 }
 
 void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider)
@@ -603,24 +716,6 @@ void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISource
 			GetListView()->RequestListRefresh();
 		}
 	}
-}
-
-void SPlasticSourceControlBranchesWidget::OnBranchesUpdated(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType)
-{
-	TRACE_CPUPROFILER_EVENT_SCOPE(SSourceControlChangelistsWidget::OnBranchesUpdated);
-
-	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetBranches>(InOperation);
-	SourceControlBranches = MoveTemp(Operation->Branches);
-
-	FString NewCurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
-	if (NewCurrentBranchName != CurrentBranchName)
-	{
-		CurrentBranchName = MoveTemp(NewCurrentBranchName);
-	}
-
-	OnEndSourceControlOperation(InOperation, InType);
-	EndRefreshStatus();
-	OnRefreshUI();
 }
 
 #undef LOCTEXT_NAMESPACE

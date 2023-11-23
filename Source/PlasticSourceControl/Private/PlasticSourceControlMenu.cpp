@@ -16,8 +16,6 @@
 #include "Interfaces/IPluginManager.h"
 #include "Modules/ModuleManager.h"
 #include "LevelEditor.h"
-#include "Widgets/Notifications/SNotificationList.h"
-#include "Framework/Notifications/NotificationManager.h"
 #include "Misc/MessageDialog.h"
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 #include "Styling/AppStyle.h"
@@ -26,7 +24,6 @@
 #endif
 
 #include "PackageUtils.h"
-#include "FileHelpers.h"
 #include "ISettingsModule.h"
 
 #include "Logging/MessageLog.h"
@@ -291,7 +288,7 @@ void FPlasticSourceControlMenu::ExecuteRemoveLocks(TArray<FAssetData> InAssetObj
 
 void FPlasticSourceControlMenu::ExecuteUnlock(const TArray<FAssetData>& InAssetObjectPaths, const bool bInRemove)
 {
-	if (!OperationInProgressNotification.IsValid())
+	if (!Notification.IsInProgress())
 	{
 		const TArray<FString> Files = PackageUtils::AssetDateToFileNames(InAssetObjectPaths);
 
@@ -303,12 +300,12 @@ void FPlasticSourceControlMenu::ExecuteUnlock(const TArray<FAssetData>& InAssetO
 		if (Result == ECommandResult::Succeeded)
 		{
 			// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
-			DisplayInProgressNotification(UnlockOperation->GetInProgressString());
+			Notification.DisplayInProgress(UnlockOperation->GetInProgressString());
 		}
 		else
 		{
 			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-			DisplayFailureNotification(UnlockOperation->GetName());
+			FNotification::DisplayFailure(UnlockOperation->GetName());
 		}
 	}
 	else
@@ -325,48 +322,15 @@ bool FPlasticSourceControlMenu::IsSourceControlConnected() const
 	return Provider.IsEnabled() && Provider.IsAvailable();
 }
 
-/// Prompt to save or discard all packages
-bool FPlasticSourceControlMenu::SaveDirtyPackages()
-{
-	const bool bPromptUserToSave = true;
-	const bool bSaveMapPackages = true;
-	const bool bSaveContentPackages = true;
-	const bool bFastSave = false;
-	const bool bNotifyNoPackagesSaved = false;
-	const bool bCanBeDeclined = true; // If the user clicks "don't save" this will continue and lose their changes
-	bool bHadPackagesToSave = false;
-
-	bool bSaved = FEditorFileUtils::SaveDirtyPackages(bPromptUserToSave, bSaveMapPackages, bSaveContentPackages, bFastSave, bNotifyNoPackagesSaved, bCanBeDeclined, &bHadPackagesToSave);
-
-	// bSaved can be true if the user selects to not save an asset by un-checking it and clicking "save"
-	if (bSaved)
-	{
-		TArray<UPackage*> DirtyPackages;
-		FEditorFileUtils::GetDirtyWorldPackages(DirtyPackages);
-		FEditorFileUtils::GetDirtyContentPackages(DirtyPackages);
-		bSaved = DirtyPackages.Num() == 0;
-	}
-
-	return bSaved;
-}
-
-/// Find all packages in Content directory
-TArray<FString> FPlasticSourceControlMenu::ListAllPackages()
-{
-	TArray<FString> PackageFilePaths;
-	FPackageName::FindPackagesInDirectory(PackageFilePaths, FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
-	return PackageFilePaths;
-}
-
 void FPlasticSourceControlMenu::SyncProjectClicked()
 {
-	if (!OperationInProgressNotification.IsValid())
+	if (!Notification.IsInProgress())
 	{
-		const bool bSaved = SaveDirtyPackages();
+		const bool bSaved = PackageUtils::SaveDirtyPackages();
 		if (bSaved)
 		{
 			// Find and Unlink all loaded packages in Content directory to allow to update them
-			PackageUtils::UnlinkPackages(ListAllPackages());
+			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
 
 			// Launch a custom "SyncAll" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -375,12 +339,12 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 			if (Result == ECommandResult::Succeeded)
 			{
 				// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
-				DisplayInProgressNotification(SyncOperation->GetInProgressString());
+				Notification.DisplayInProgress(SyncOperation->GetInProgressString());
 			}
 			else
 			{
 				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-				DisplayFailureNotification(SyncOperation->GetName());
+				FNotification::DisplayFailure(SyncOperation->GetName());
 			}
 		}
 		else
@@ -400,7 +364,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 
 void FPlasticSourceControlMenu::RevertUnchangedClicked()
 {
-	if (!OperationInProgressNotification.IsValid())
+	if (!Notification.IsInProgress())
 	{
 		// Launch a "RevertUnchanged" Operation
 		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -409,12 +373,12 @@ void FPlasticSourceControlMenu::RevertUnchangedClicked()
 		if (Result == ECommandResult::Succeeded)
 		{
 			// Display an ongoing notification during the whole operation
-			DisplayInProgressNotification(RevertUnchangedOperation->GetInProgressString());
+			Notification.DisplayInProgress(RevertUnchangedOperation->GetInProgressString());
 		}
 		else
 		{
 			// Report failure with a notification
-			DisplayFailureNotification(RevertUnchangedOperation->GetName());
+			FNotification::DisplayFailure(RevertUnchangedOperation->GetName());
 		}
 	}
 	else
@@ -427,18 +391,18 @@ void FPlasticSourceControlMenu::RevertUnchangedClicked()
 
 void FPlasticSourceControlMenu::RevertAllClicked()
 {
-	if (!OperationInProgressNotification.IsValid())
+	if (!Notification.IsInProgress())
 	{
 		// Ask the user before reverting all!
 		const FText DialogText(LOCTEXT("SourceControlMenu_AskRevertAll", "Revert all modifications into the workspace?"));
 		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::OkCancel, DialogText);
 		if (Choice == EAppReturnType::Ok)
 		{
-			const bool bSaved = SaveDirtyPackages();
+			const bool bSaved = PackageUtils::SaveDirtyPackages();
 			if (bSaved)
 			{
 				// Find and Unlink all packages in Content directory to allow to update them
-				PackageUtils::UnlinkPackages(ListAllPackages());
+				PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
 
 				// Launch a "RevertAll" Operation
 				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -447,12 +411,12 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 				if (Result == ECommandResult::Succeeded)
 				{
 					// Display an ongoing notification during the whole operation
-					DisplayInProgressNotification(RevertAllOperation->GetInProgressString());
+					Notification.DisplayInProgress(RevertAllOperation->GetInProgressString());
 				}
 				else
 				{
 					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-					DisplayFailureNotification(RevertAllOperation->GetName());
+					FNotification::DisplayFailure(RevertAllOperation->GetName());
 				}
 			}
 			else
@@ -473,7 +437,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 
 void FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked()
 {
-	if (!OperationInProgressNotification.IsValid())
+	if (!Notification.IsInProgress())
 	{
 		// Ask the user before switching to Partial Workspace. It's not possible to switch back with local changes!
 		const FText DialogText(LOCTEXT("SourceControlMenu_AskSwitchToPartialWorkspace", "Switch to Gluon partial workspace?\n"
@@ -488,12 +452,12 @@ void FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked()
 			if (Result == ECommandResult::Succeeded)
 			{
 				// Display an ongoing notification during the whole operation
-				DisplayInProgressNotification(SwitchOperation->GetInProgressString());
+				Notification.DisplayInProgress(SwitchOperation->GetInProgressString());
 			}
 			else
 			{
 				// Report failure with a notification
-				DisplayFailureNotification(SwitchOperation->GetName());
+				FNotification::DisplayFailure(SwitchOperation->GetName());
 			}
 		}
 	}
@@ -568,64 +532,6 @@ void FPlasticSourceControlMenu::OpenBranchesWindow() const
 	FPlasticSourceControlModule::Get().GetBranchesWindow().OpenTab();
 }
 
-// Display an ongoing notification during the whole operation
-void FPlasticSourceControlMenu::DisplayInProgressNotification(const FText& InOperationInProgressString)
-{
-	if (!OperationInProgressNotification.IsValid())
-	{
-		FNotificationInfo Info(InOperationInProgressString);
-		Info.bFireAndForget = false;
-		Info.ExpireDuration = 0.0f;
-		Info.FadeOutDuration = 1.0f;
-		OperationInProgressNotification = FSlateNotificationManager::Get().AddNotification(Info);
-		if (OperationInProgressNotification.IsValid())
-		{
-			OperationInProgressNotification.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
-		}
-	}
-}
-
-// Remove the ongoing notification at the end of the operation
-void FPlasticSourceControlMenu::RemoveInProgressNotification()
-{
-	if (OperationInProgressNotification.IsValid())
-	{
-		OperationInProgressNotification.Pin()->ExpireAndFadeout();
-		OperationInProgressNotification.Reset();
-	}
-}
-
-// Display a temporary success notification at the end of the operation
-void FPlasticSourceControlMenu::DisplaySucessNotification(const FName& InOperationName)
-{
-	const FText NotificationText = FText::Format(
-		LOCTEXT("SourceControlMenu_Success", "{0} operation was successful!"),
-		FText::FromName(InOperationName)
-	);
-	FNotificationInfo Info(NotificationText);
-	Info.bUseSuccessFailIcons = true;
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
-	Info.Image = FAppStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
-#else
-	Info.Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
-#endif
-	FSlateNotificationManager::Get().AddNotification(Info);
-	UE_LOG(LogSourceControl, Verbose, TEXT("%s"), *NotificationText.ToString());
-}
-
-// Display a temporary failure notification at the end of the operation
-void FPlasticSourceControlMenu::DisplayFailureNotification(const FName& InOperationName)
-{
-	const FText NotificationText = FText::Format(
-		LOCTEXT("SourceControlMenu_Failure", "Error: {0} operation failed!"),
-		FText::FromName(InOperationName)
-	);
-	FNotificationInfo Info(NotificationText);
-	Info.ExpireDuration = 8.0f;
-	FSlateNotificationManager::Get().AddNotification(Info);
-	UE_LOG(LogSourceControl, Error, TEXT("%s"), *NotificationText.ToString());
-}
-
 void FPlasticSourceControlMenu::OnSyncAllOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	OnSourceControlOperationComplete(InOperation, InResult);
@@ -646,16 +552,16 @@ void FPlasticSourceControlMenu::OnRevertAllOperationComplete(const FSourceContro
 
 void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
-	RemoveInProgressNotification();
+	Notification.RemoveInProgress();
 
 	// Report result with a notification
 	if (InResult == ECommandResult::Succeeded)
 	{
-		DisplaySucessNotification(InOperation->GetName());
+		FNotification::DisplaySuccess(InOperation->GetName());
 	}
 	else
 	{
-		DisplayFailureNotification(InOperation->GetName());
+		FNotification::DisplayFailure(InOperation->GetName());
 	}
 }
 

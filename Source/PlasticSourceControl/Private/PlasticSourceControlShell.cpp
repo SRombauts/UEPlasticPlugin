@@ -2,6 +2,7 @@
 
 #include "PlasticSourceControlShell.h"
 
+#include "Notification.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
 
@@ -11,9 +12,6 @@
 #include "HAL/PlatformProcess.h"
 #include "HAL/PlatformTime.h"
 #include "Logging/MessageLog.h"
-
-#include "Framework/Notifications/NotificationManager.h"
-#include "Widgets/Notifications/SNotificationList.h"
 
 #if PLATFORM_LINUX
 #include <sys/ioctl.h>
@@ -196,18 +194,6 @@ static void _RestartBackgroundCommandLineShell(const bool bInForceExit = false)
 	_StartBackgroundPlasticShell(PathToPlasticBinary, WorkingDirectory);
 }
 
-
-// Display a temporary failure notification in case of an error in the shell
-void DisplayFailureNotification(const FText& InNotificationText)
-{
-	FNotificationInfo* Info = new FNotificationInfo(InNotificationText);
-	Info->ExpireDuration = 10.0f;
-	FSlateNotificationManager::Get().QueueNotification(Info);
-	// TODO: all source control operations run in a thread, so we cannot use MessageLog designed for the Main/UI thread. We could use an AsyncTask though!
-	// FMessageLog("SourceControl").Error(InNotificationText);
-	UE_LOG(LogSourceControl, Error, TEXT("%s"), *InNotificationText.ToString());
-}
-
 // Internal function (called under the critical section)
 static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors)
 {
@@ -285,7 +271,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			if (INDEX_NONE != IndexPrompt)
 			{
 				const FText ShellRequiresInteractionError(LOCTEXT("SourceControlShell_AskAuthenticate", "Unity Version Control command line requires user interaction.\nSign in using the Unity Version Control client."));
-				DisplayFailureNotification(ShellRequiresInteractionError);
+				FNotification::DisplayFailure(ShellRequiresInteractionError);
 
 				// Restart the shell without waiting, it is forever blocked waiting for user input
 				_RestartBackgroundCommandLineShell(true);

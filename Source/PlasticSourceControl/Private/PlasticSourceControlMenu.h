@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "ISourceControlProvider.h"
+#include "Notification.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 class FMenuBuilder;
@@ -33,9 +34,6 @@ public:
 private:
 	bool IsSourceControlConnected() const;
 
-	bool				SaveDirtyPackages();
-	TArray<FString>		ListAllPackages();
-
 #if ENGINE_MAJOR_VERSION == 4
 	void AddMenuExtension(FMenuBuilder& Menu);
 	void AddViewBranches(FMenuBuilder& Menu);
@@ -62,11 +60,6 @@ private:
 	void ExecuteReleaseLocks(TArray<FAssetData> InAssetObjectPaths);
 	void ExecuteUnlock(const TArray<FAssetData>& InAssetObjectPaths, const bool bInRemove);
 
-	void DisplayInProgressNotification(const FText& InOperationInProgressString);
-	void RemoveInProgressNotification();
-	void DisplaySucessNotification(const FName& InOperationName);
-	void DisplayFailureNotification(const FName& InOperationName);
-
 private:
 	/** Tracks if the menu extension has been registered with the editor or not */
 	bool bHasRegistered = false;
@@ -75,8 +68,8 @@ private:
 	FDelegateHandle ViewMenuExtenderHandle;
 #endif
 
-	/** Current source control operation from extended menu if any */
-	TWeakPtr<class SNotificationItem> OperationInProgressNotification;
+	/** Ongoing notification for a long-running asynchronous source control operation, if any */
+	FNotification Notification;
 
 	/** Name of the menu extension going into the global Revision Control (on the toolbar at the bottom-right) */
 	static FName UnityVersionControlMainMenuOwnerName;

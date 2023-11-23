@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+#include "Notification.h"
+
 #include "ISourceControlProvider.h"
 #include "ISourceControlOperation.h"
 
@@ -37,13 +39,8 @@ private:
 	/** Generic notification handler */
 	void OnSourceControlOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 
-	/** Asynchronous operation progress notifications */
-	TWeakPtr<class SNotificationItem> OperationInProgressNotification;
-
-	void DisplayInProgressNotification(const FText& InOperationInProgressString);
-	void RemoveInProgressNotification();
-	void DisplaySuccessNotification(const FName& InOperationName);
-	void DisplayFailureNotification(const FName& InOperationName);
+	/** Ongoing notification for a long-running asynchronous source control operation, if any */
+	FNotification Notification;
 
 	const FString GetIgnoreFileName() const;
 	TArray<FString> GetProjectFiles() const;

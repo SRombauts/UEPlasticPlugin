@@ -3,6 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "Notification.h"
+
 #include "Misc/TextFilter.h"
 #include "Widgets/SCompoundWidget.h"
 #include "Widgets/Views/SListView.h"
@@ -43,19 +46,22 @@ private:
 	EColumnSortMode::Type GetColumnSortMode(const FName InColumnId) const;
 	void OnColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode);
 
+	void SortBranchView();
+	FString GetSelectedBranch();
+
+	TSharedPtr<SWidget> OnOpenContextMenu();
+	void OnSwitchToBranchClicked(FString InBranchName);
+
 	void StartRefreshStatus();
 	void TickRefreshStatus(double InDeltaTime);
 	void EndRefreshStatus();
 
 	void RequestBranchesRefresh();
-	void OnBranchesUpdated(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType);
-	void OnStartSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe> InOperation, const FText& InMessage);
-	void OnEndSourceControlOperation(const TSharedRef<ISourceControlOperation, ESPMode::ThreadSafe>& InOperation, ECommandResult::Type InType);
 
 	/** Source control callbacks */
+	void OnGetBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
-
-	void SortBranchView();
 
 	SListView<FPlasticSourceControlBranchRef>* GetListView() const
 	{
@@ -80,6 +86,9 @@ private:
 	double RefreshStatusStartSecs;
 
 	FString CurrentBranchName;
+
+	/** Ongoing notification for a long-running asynchronous source control operation, if any */
+	FNotification Notification;
 
 	TSharedPtr<SListView<FPlasticSourceControlBranchRef>> BranchesListView;
 	TSharedPtr<TTextFilter<const FPlasticSourceControlBranch&>> SearchTextFilter;

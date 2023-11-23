@@ -3,10 +3,11 @@
 #include "PackageUtils.h"
 
 #include "Async/Async.h"
-#include "PackageTools.h"
 #include "Editor.h"
-#include "UObject/Linker.h"
 #include "ISourceControlModule.h" // LogSourceControl
+#include "FileHelpers.h"
+#include "PackageTools.h"
+#include "UObject/Linker.h"
 
 namespace PackageUtils
 {
@@ -39,6 +40,39 @@ TArray<FString> AssetDateToFileNames(const TArray<FAssetData>& InAssetObjectPath
 		}
 	}
 	return FileNames;
+}
+
+/// Prompt to save or discard all packages
+bool SaveDirtyPackages()
+{
+	const bool bPromptUserToSave = true;
+	const bool bSaveMapPackages = true;
+	const bool bSaveContentPackages = true;
+	const bool bFastSave = false;
+	const bool bNotifyNoPackagesSaved = false;
+	const bool bCanBeDeclined = true; // If the user clicks "don't save" this will continue and lose their changes
+	bool bHadPackagesToSave = false;
+
+	bool bSaved = FEditorFileUtils::SaveDirtyPackages(bPromptUserToSave, bSaveMapPackages, bSaveContentPackages, bFastSave, bNotifyNoPackagesSaved, bCanBeDeclined, &bHadPackagesToSave);
+
+	// bSaved can be true if the user selects to not save an asset by un-checking it and clicking "save"
+	if (bSaved)
+	{
+		TArray<UPackage*> DirtyPackages;
+		FEditorFileUtils::GetDirtyWorldPackages(DirtyPackages);
+		FEditorFileUtils::GetDirtyContentPackages(DirtyPackages);
+		bSaved = DirtyPackages.Num() == 0;
+	}
+
+	return bSaved;
+}
+
+/// Find all packages in Content directory
+TArray<FString> ListAllPackages()
+{
+	TArray<FString> PackageFilePaths;
+	FPackageName::FindPackagesInDirectory(PackageFilePaths, FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()));
+	return PackageFilePaths;
 }
 
 // Find the packages corresponding to the files, if they are loaded in memory (won't load them)
