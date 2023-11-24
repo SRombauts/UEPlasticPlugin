@@ -37,8 +37,8 @@ FText PlasticSourceControlBranchesListViewColumn::Comment::GetToolTipText() { re
 
 void SPlasticSourceControlBranchRow::Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwner)
 {
-	BranchToVisualize = static_cast<FPlasticSourceControlBranch*>(InArgs._BranchToVisualize.Get());
-	bIsCurrentBranch = InArgs._bIsCurrentBranch.Get();
+	BranchToVisualize = InArgs._BranchToVisualize.Get();
+	bIsCurrentBranch = InArgs._bIsCurrentBranch;
 	HighlightText = InArgs._HighlightText;
 
 	FSuperRowType::FArguments Args = FSuperRowType::FArguments()
