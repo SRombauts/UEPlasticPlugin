@@ -2432,6 +2432,23 @@ bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedF
 	return bResult;
 }
 
+bool RunCreateBranch(const FString& InBranchName, const FString& InComment, TArray<FString>& OutErrorMessages)
+{
+	// make a temp file to place our comment message in
+	const FScopedTempFile BranchCommentFile(InComment);
+	if (!BranchCommentFile.GetFilename().IsEmpty())
+	{
+		TArray<FString> Parameters;
+		TArray<FString> InfoMessages;
+		Parameters.Add(TEXT("create"));
+		Parameters.Add(FString::Printf(TEXT("\"%s\""), *InBranchName));
+		Parameters.Add(FString::Printf(TEXT("--commentsfile=\"%s\""), *FPaths::ConvertRelativePathToFull(BranchCommentFile.GetFilename())));
+		return PlasticSourceControlUtils::RunCommand(TEXT("branch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
+	}
+
+	return false;
+}
+
 bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates)
 {
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();

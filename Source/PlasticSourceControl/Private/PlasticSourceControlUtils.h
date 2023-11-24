@@ -234,6 +234,14 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
 
 /**
+ * Run branch create <name> --commentsfile
+ * @param	InBranchName			The name of the branch to create
+ * @param	InComment				The comment for the new branch to create
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunCreateBranch(const FString& InBranchName, const FString& InComment, TArray<FString>& OutErrorMessages);
+
+/**
  * Helper function for various commands to update cached states.
  * @returns true if any states were updated
  */
