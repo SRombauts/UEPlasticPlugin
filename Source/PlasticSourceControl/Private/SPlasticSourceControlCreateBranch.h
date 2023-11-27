@@ -33,6 +33,9 @@ private:
 		bSwitchWorkspace = (InState == ECheckBoxState::Checked);
 	}
 
+	bool IsNewBranchNameValid() const;
+	FText CreateButtonTooltip() const;
+
 	FReply CreateClicked();
 	FReply CancelClicked();
 

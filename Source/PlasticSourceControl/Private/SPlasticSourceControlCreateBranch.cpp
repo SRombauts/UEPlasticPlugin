@@ -128,9 +128,9 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 #else
 				.ContentPadding(FEditorStyle::GetMargin("StandardDialog.ContentPadding"))
 #endif
-				.Text(NSLOCTEXT("CreateBranch", "Create", "Create"))
-				.IsEnabled_Lambda([this]() { return !NewBranchName.IsEmpty(); })
-				.ToolTipText(NSLOCTEXT("SourceControl.SubmitPanel", "Save_Tooltip", "Create the branch."))
+				.Text(LOCTEXT("Create", "Create"))
+				.IsEnabled(this, &SPlasticSourceControlCreateBranch::IsNewBranchNameValid)
+				.ToolTipText(this, &SPlasticSourceControlCreateBranch::CreateButtonTooltip)
 				.OnClicked(this, &SPlasticSourceControlCreateBranch::CreateClicked)
 			]
 			+SHorizontalBox::Slot()
@@ -143,11 +143,50 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 #else
 				.ContentPadding(FEditorStyle::GetMargin("StandardDialog.ContentPadding"))
 #endif
-				.Text(NSLOCTEXT("CreateBranch", "Cancel", "Cancel"))
+				.Text(LOCTEXT("Cancel", "Cancel"))
 				.OnClicked(this, &SPlasticSourceControlCreateBranch::CancelClicked)
 			]
 		]
 	];
+}
+
+bool SPlasticSourceControlCreateBranch::IsNewBranchNameValid() const
+{
+	// Branch name cannot contain any of the following characters:
+	// Note: tabs are technically not forbidden in branch names, but having one at the end doesn't work as expected
+	// (it is trimmed at creation, so the switch to the new branch fails)
+	static const FString BranchNameInvalidChars(TEXT("@#/:\"?'\n\r\t"));
+
+	if (NewBranchName.IsEmpty())
+	{
+		return false;
+	}
+
+	for (TCHAR Char : NewBranchName)
+	{
+		if (BranchNameInvalidChars.Contains(&Char, ESearchCase::CaseSensitive))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+FText SPlasticSourceControlCreateBranch::CreateButtonTooltip() const
+{
+	if (NewBranchName.IsEmpty())
+	{
+		return LOCTEXT("CreateEmpty_Tooltip", "Enter a name for the new branch.");
+	}
+
+	if (!IsNewBranchNameValid())
+	{
+		return LOCTEXT("CreateInvalid_Tooltip", "Branch name cannot contain any of the following characters: @#/:\"?'\\n\\r\\t");
+	}
+
+	return FText::Format(LOCTEXT("CreateBranch_Tooltip", "Create branch {0}."),
+		FText::FromString(ParentBranchName + TEXT("/") + NewBranchName));
 }
 
 FReply SPlasticSourceControlCreateBranch::CreateClicked()
