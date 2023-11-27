@@ -39,11 +39,16 @@ private:
 	FReply CreateClicked();
 	FReply CancelClicked();
 
+	/** Interpret Escape as Cancel */
+	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
+
 private:
 	FString ParentBranchName;
 	FString NewBranchName;
 	FString NewBranchComment;
 	bool bSwitchWorkspace = true;
+
+	TSharedPtr<SEditableTextBox> BranchNameTextBox;
 
 	TWeakPtr<SPlasticSourceControlBranchesWidget> BranchesWidget;
 	TWeakPtr<SWindow> ParentWindow;

@@ -54,7 +54,7 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 			+SHorizontalBox::Slot()
 			.FillWidth(6.0f)
 			[
-				SNew(SEditableTextBox)
+				SAssignNew(BranchNameTextBox, SEditableTextBox)
 				.HintText(LOCTEXT("PlasticCreateBrancheNameHint", "Name of the new branch"))
 				.OnTextChanged_Lambda([this](const FText& InExpressionText)
 				{
@@ -148,6 +148,8 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 			]
 		]
 	];
+
+	ParentWindow.Pin()->SetWidgetToFocusOnActivate(BranchNameTextBox);
 }
 
 bool SPlasticSourceControlCreateBranch::IsNewBranchNameValid() const
@@ -212,6 +214,17 @@ FReply SPlasticSourceControlCreateBranch::CancelClicked()
 	}
 
 	return FReply::Handled();
+}
+
+FReply SPlasticSourceControlCreateBranch::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
+{
+	if (InKeyEvent.GetKey() == EKeys::Escape)
+	{
+		// Pressing Escape returns as if the user clicked Cancel
+		return CancelClicked();
+	}
+
+	return FReply::Unhandled();
 }
 
 #undef LOCTEXT_NAMESPACE
