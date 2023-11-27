@@ -1245,11 +1245,15 @@ FString FileStateToAction(const EWorkspaceState InState)
 FString DecodeXmlEntities(const FString& InString)
 {
 	FString String = InString;
-	String.ReplaceInline(TEXT("&amp;"), TEXT("&"));
-	String.ReplaceInline(TEXT("&quot;"), TEXT("\""));
-	String.ReplaceInline(TEXT("&apos;"), TEXT("'"));
-	String.ReplaceInline(TEXT("&lt;"), TEXT("<"));
-	String.ReplaceInline(TEXT("&gt;"), TEXT(">"));
+	int32 AmpIdx;
+	if (String.FindChar(TEXT('&'), AmpIdx))
+	{
+		String.ReplaceInline(TEXT("&amp;"), TEXT("&"), ESearchCase::CaseSensitive);
+		String.ReplaceInline(TEXT("&quot;"), TEXT("\""), ESearchCase::CaseSensitive);
+		String.ReplaceInline(TEXT("&apos;"), TEXT("'"), ESearchCase::CaseSensitive);
+		String.ReplaceInline(TEXT("&lt;"), TEXT("<"), ESearchCase::CaseSensitive);
+		String.ReplaceInline(TEXT("&gt;"), TEXT(">"), ESearchCase::CaseSensitive);
+	}
 	return String;
 }
 
@@ -1433,7 +1437,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				}
 				if (const FXmlNode* BranchNode = RevisionNode->FindChildNode(Branch))
 				{
-					SourceControlRevision->Branch = BranchNode->GetContent();
+					SourceControlRevision->Branch = DecodeXmlEntities(BranchNode->GetContent());
 				}
 				if (const FXmlNode* SizeNode = RevisionNode->FindChildNode(Size))
 				{
@@ -2040,7 +2044,7 @@ static bool ParseShelvesResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 		}
 
 		const FString& ShelveIdString = ShelveIdNode->GetContent();
-		const FString& CommentString = CommentNode->GetContent();
+		const FString& CommentString = DecodeXmlEntities(CommentNode->GetContent());
 
 		// Search if there is a changelist matching the shelve (that is, a shelve with a comment starting with "ChangelistXXX: ")
 		for (FPlasticSourceControlChangelistState& ChangelistState : InOutChangelistsStates)
