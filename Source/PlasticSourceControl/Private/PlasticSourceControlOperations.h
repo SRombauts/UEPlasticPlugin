@@ -167,6 +167,22 @@ public:
 };
 
 
+/**
+ * Internal operation used to rename a branch
+*/
+class FPlasticRenameBranch final : public ISourceControlOperation
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	FString OldName;
+	FString NewName;
+};
+
+
 /** Called when first activated on a project, and then at project load time.
  *  Look for the root directory of the Plastic workspace (where the ".plastic/" subdirectory is located). */
 class FPlasticConnectWorker final : public IPlasticSourceControlWorker
@@ -429,6 +445,34 @@ public:
 		: IPlasticSourceControlWorker(InSourceControlProvider)
 	{}
 	virtual ~FPlasticCreateBranchWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+};
+
+/** Rename a branch. */
+class FPlasticRenameBranchWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticRenameBranchWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticRenameBranchWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+};
+
+/** Delete branches. */
+class FPlasticDeleteBranchesWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticDeleteBranchesWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticDeleteBranchesWorker() = default;
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
