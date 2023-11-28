@@ -182,7 +182,7 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateContentPanel()
 		.ItemHeight(24.0f)
 		.ListItemsSource(&BranchRows)
 		.OnGenerateRow(this, &SPlasticSourceControlBranchesWidget::OnGenerateRow)
-		.SelectionMode(ESelectionMode::Single)
+		.SelectionMode(ESelectionMode::Multi)
 		.OnContextMenuOpening(this, &SPlasticSourceControlBranchesWidget::OnOpenContextMenu)
 		.OnItemToString_Debug_Lambda([this](FPlasticSourceControlBranchRef Branch) { return Branch->Name; })
 		.HeaderRow
@@ -514,20 +514,23 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 	}
 }
 
-FString SPlasticSourceControlBranchesWidget::GetSelectedBranch()
+TArray<FString> SPlasticSourceControlBranchesWidget::GetSelectedBranches()
 {
+	TArray<FString> SelectedBranches;
+
 	for (const FPlasticSourceControlBranchPtr& BranchPtr : BranchesListView->GetSelectedItems())
 	{
-		return BranchPtr->Name;
+		SelectedBranches.Add(BranchPtr->Name);
 	}
 
-	return FString();
+	return SelectedBranches;
 }
 
 TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 {
-	const FString SelectedBranch = GetSelectedBranch();
-	if (SelectedBranch.IsEmpty())
+	const TArray<FString> SelectedBranches = GetSelectedBranches();
+	const FString SelectedBranch = SelectedBranches.Num() == 1 ? SelectedBranches[0] : FString();
+	if (SelectedBranches.Num() == 0)
 	{
 		return nullptr;
 	}
@@ -553,7 +556,8 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		LOCTEXT("CreateChildBranchTooltip", "Create child branch from the selected branch."),
 		FSlateIcon(),
 		FUIAction(
-			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnCreateBranchClicked, SelectedBranch)
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnCreateBranchClicked, SelectedBranch),
+			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()); })
 		)
 	);
 
@@ -564,7 +568,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked, SelectedBranch),
-			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return SelectedBranch != CurrentBranchName; })
+			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()) && (SelectedBranch != CurrentBranchName); })
 		)
 	);
 
