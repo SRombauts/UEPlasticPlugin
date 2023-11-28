@@ -2282,7 +2282,7 @@ bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDat
 #endif
 
 /**
- * Parse results of the 'cm find "branches where date >= 'YYYY-MM-DD'" --xml --encoding="utf-8"' command.
+ * Parse results of the 'cm find "branches where date >= 'YYYY-MM-DD' or changesets >= 'YYYY-MM-DD'" --xml --encoding="utf-8"' command.
  *
  * Results of the find command looks like the following:
 <?xml version="1.0" encoding="utf-8" ?>
@@ -2374,7 +2374,11 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 	TArray<FString> Parameters;
 	if (InFromDate != FDateTime())
 	{
-		Parameters.Add(FString::Printf(TEXT("\"branches where date >= '%d/%d/%d'\""), InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay()));
+		// Find branches created since this date or containing changes dating from or after this date
+		Parameters.Add(FString::Printf(TEXT("\"branches where date >= '%d/%d/%d'\" or changesets >= '%d/%d/%d'"),
+			InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay(),
+			InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay()
+		));
 	}
 	else
 	{

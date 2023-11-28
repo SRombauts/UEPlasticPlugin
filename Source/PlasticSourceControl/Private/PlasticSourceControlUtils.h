@@ -218,7 +218,7 @@ void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChang
 #endif
 
 /**
- * Run find "branches where date >= 'YYYY/MM/DD'" and parse the results.
+ * Run find "branches where date >= 'YYYY-MM-DD' or changesets >= 'YYYY-MM-DD'" and parse the results.
  * @param	InFromDate				The date to search from
  * @param	OutBranches				The list of branches
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
