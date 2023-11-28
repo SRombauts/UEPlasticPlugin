@@ -183,6 +183,21 @@ public:
 };
 
 
+/**
+ * Internal operation used to deletes branches
+*/
+class FPlasticDeleteBranches final : public ISourceControlOperation
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	TArray<FString> BranchNames;
+};
+
+
 /** Called when first activated on a project, and then at project load time.
  *  Look for the root directory of the Plastic workspace (where the ".plastic/" subdirectory is located). */
 class FPlasticConnectWorker final : public IPlasticSourceControlWorker
