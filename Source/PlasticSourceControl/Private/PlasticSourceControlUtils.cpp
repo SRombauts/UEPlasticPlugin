@@ -1051,6 +1051,18 @@ bool RunRenameBranch(const FString& InOldName, const FString& InNewName, TArray<
 	return PlasticSourceControlUtils::RunCommand(TEXT("branch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
 }
 
+bool RunDeleteBranches(const TArray<FString>& InBranchNames, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Parameters;
+	TArray<FString> InfoMessages;
+	Parameters.Add(TEXT("delete"));
+	for (const FString& BranchName : InBranchNames)
+	{
+		Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *BranchName));
+	}
+	return PlasticSourceControlUtils::RunCommand(TEXT("branch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
+}
+
 bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates)
 {
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();

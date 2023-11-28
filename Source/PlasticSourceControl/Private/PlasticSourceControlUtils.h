@@ -261,6 +261,13 @@ bool RunCreateBranch(const FString& InBranchName, const FString& InComment, TArr
 bool RunRenameBranch(const FString& InOldName, const FString& InNewName, TArray<FString>& OutErrorMessages);
 
 /**
+ * Run branch delete <name1> <name2 ...>
+ * @param	InBranchNames			The name of the branch(es) to delete
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunDeleteBranches(const TArray<FString>& InBranchNames, TArray<FString>& OutErrorMessages);
+
+/**
  * Helper function for various commands to update cached states.
  * @returns true if any states were updated
  */
