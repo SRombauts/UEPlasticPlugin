@@ -30,6 +30,7 @@ class SPlasticSourceControlBranchesWidget : public SCompoundWidget
 
 	void CreateBranch(const FString& InParentBranchName, const FString& InNewBranchName, const FString& InNewBranchComment, const bool bInSwitchWorkspace);
 	void RenameBranch(const FString& InOldBranchName, const FString& InNewBranchName);
+	void DeleteBranches(const TArray<FString>& InBranchNames);
 
 private:
 	TSharedRef<SWidget> CreateToolBar();
@@ -62,6 +63,7 @@ private:
 	void OnCreateBranchClicked(FString InParentBranchName);
 	void OnSwitchToBranchClicked(FString InBranchName);
 	void OnRenameBranchClicked(FString InBranchName);
+	void OnDeleteBranchesClicked(TArray<FString> InBranchNames);
 
 	void StartRefreshStatus();
 	void TickRefreshStatus(double InDeltaTime);
@@ -74,6 +76,7 @@ private:
 	void OnCreateBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult, const bool bInSwitchWorkspace);
 	void OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnRenameBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnDeleteBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
 
 	SListView<FPlasticSourceControlBranchRef>* GetListView() const

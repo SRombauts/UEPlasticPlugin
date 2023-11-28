@@ -584,6 +584,15 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()); })
 		)
 	);
+	Section.AddMenuEntry(
+		TEXT("DeleteBranch"),
+		LOCTEXT("DeleteBranch", "Delete"),
+		LOCTEXT("DeleteBranchTooltip", "Delete branch the selected branch(es)."),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnDeleteBranchesClicked, SelectedBranches)
+		)
+	);
 
 	return ToolMenus->GenerateWidget(Menu);
 }
@@ -746,6 +755,40 @@ void SPlasticSourceControlBranchesWidget::RenameBranch(const FString& InOldBranc
 	}
 }
 
+void SPlasticSourceControlBranchesWidget::OnDeleteBranchesClicked(TArray<FString> InBranchNames)
+{
+	// TODO POC Create branch modal dialog window, to ask the user for confirmation before calling DeleteBranches
+}
+
+void SPlasticSourceControlBranchesWidget::DeleteBranches(const TArray<FString>& InBranchNames)
+{
+	if (!Notification.IsInProgress())
+	{
+		// Launch a custom "DeleteBranches" operation
+		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+		TSharedRef<FPlasticDeleteBranches, ESPMode::ThreadSafe> DeleteBranchesOperation = ISourceControlOperation::Create<FPlasticDeleteBranches>();
+		DeleteBranchesOperation->BranchNames = InBranchNames;
+		const ECommandResult::Type Result = Provider.Execute(DeleteBranchesOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnDeleteBranchesOperationComplete));
+		if (Result == ECommandResult::Succeeded)
+		{
+			// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+			Notification.DisplayInProgress(DeleteBranchesOperation->GetInProgressString());
+			StartRefreshStatus();
+		}
+		else
+		{
+			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+			FNotification::DisplayFailure(DeleteBranchesOperation->GetName());
+		}
+	}
+	else
+	{
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
+	}
+}
+
 void SPlasticSourceControlBranchesWidget::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
 	if (!ISourceControlModule::Get().IsEnabled() || (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
@@ -881,6 +924,24 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete(cons
 }
 
 void SPlasticSourceControlBranchesWidget::OnRenameBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
+	bShouldRefresh = true;
+
+	Notification.RemoveInProgress();
+
+	// Report result with a notification
+	if (InResult == ECommandResult::Succeeded)
+	{
+		FNotification::DisplaySuccess(InOperation->GetName());
+	}
+	else
+	{
+		FNotification::DisplayFailure(InOperation->GetName());
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::OnDeleteBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
 	bShouldRefresh = true;
