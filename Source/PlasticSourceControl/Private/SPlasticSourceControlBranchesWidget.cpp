@@ -8,6 +8,7 @@
 #include "PlasticSourceControlBranch.h"
 #include "SPlasticSourceControlBranchRow.h"
 #include "SPlasticSourceControlCreateBranch.h"
+#include "SPlasticSourceControlRenameBranch.h"
 
 #include "PackageUtils.h"
 
@@ -722,7 +723,16 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 
 void SPlasticSourceControlBranchesWidget::OnRenameBranchClicked(FString InBranchName)
 {
-	// TODO POC Create branch modal dialog window to ask the user for the new branch name
+	// Create the branch modal dialog window (the frame for the content)
+	DialogWindowPtr = CreateDialogWindow(LOCTEXT("PlasticRenameBranchTitle", "Rename Branch"));
+
+	// Setup its content widget, specific to the RenameBranch operation
+	DialogWindowPtr->SetContent(SNew(SPlasticSourceControlRenameBranch)
+		.BranchesWidget(SharedThis(this))
+		.ParentWindow(DialogWindowPtr)
+		.OldBranchName(InBranchName));
+
+	OpenDialogWindow(DialogWindowPtr);
 }
 
 void SPlasticSourceControlBranchesWidget::RenameBranch(const FString& InOldBranchName, const FString& InNewBranchName)
