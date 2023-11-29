@@ -8,6 +8,7 @@
 #include "PlasticSourceControlBranch.h"
 #include "SPlasticSourceControlBranchRow.h"
 #include "SPlasticSourceControlCreateBranch.h"
+#include "SPlasticSourceControlDeleteBranches.h"
 #include "SPlasticSourceControlRenameBranch.h"
 
 #include "PackageUtils.h"
@@ -767,7 +768,16 @@ void SPlasticSourceControlBranchesWidget::RenameBranch(const FString& InOldBranc
 
 void SPlasticSourceControlBranchesWidget::OnDeleteBranchesClicked(TArray<FString> InBranchNames)
 {
-	// TODO POC Create branch modal dialog window, to ask the user for confirmation before calling DeleteBranches
+	// Create the branch modal dialog window (the frame for the content)
+	DialogWindowPtr = CreateDialogWindow(LOCTEXT("PlasticDeleteBranchesTitle", "Delete Branches"));
+
+	// Setup its content widget, specific to the DeleteBranches operation
+	DialogWindowPtr->SetContent(SNew(SPlasticSourceControlDeleteBranches)
+		.BranchesWidget(SharedThis(this))
+		.ParentWindow(DialogWindowPtr)
+		.BranchNames(InBranchNames));
+
+	OpenDialogWindow(DialogWindowPtr);
 }
 
 void SPlasticSourceControlBranchesWidget::DeleteBranches(const TArray<FString>& InBranchNames)
