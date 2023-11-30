@@ -552,7 +552,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 
 	Section.AddMenuEntry(
 		TEXT("CreateChildBranch"),
-		LOCTEXT("CreateChildBranch", "Create child branch"),
+		LOCTEXT("CreateChildBranch", "Create child branch..."),
 		LOCTEXT("CreateChildBranchTooltip", "Create child branch from the selected branch."),
 		FSlateIcon(),
 		FUIAction(
@@ -569,6 +569,19 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked, SelectedBranch),
 			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()) && (SelectedBranch != CurrentBranchName); })
+		)
+	);
+
+	Section.AddSeparator("PlasticSeparator");
+
+	Section.AddMenuEntry(
+		TEXT("RenameBranch"),
+		LOCTEXT("RenameBranch", "Rename..."),
+		LOCTEXT("RenameBranchTooltip", "Rename the selected child branch."),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnRenameBranchClicked, SelectedBranch),
+			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()); })
 		)
 	);
 
@@ -698,6 +711,41 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 	}
 }
 
+void SPlasticSourceControlBranchesWidget::OnRenameBranchClicked(FString InBranchName)
+{
+	// TODO POC Create branch modal dialog window to ask the user for the new branch name
+}
+
+void SPlasticSourceControlBranchesWidget::RenameBranch(const FString& InOldBranchName, const FString& InNewBranchName)
+{
+	if (!Notification.IsInProgress())
+	{
+		// Launch a custom "RenameBranch" operation
+		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+		TSharedRef<FPlasticRenameBranch, ESPMode::ThreadSafe> RenameBranchOperation = ISourceControlOperation::Create<FPlasticRenameBranch>();
+		RenameBranchOperation->OldName = InOldBranchName;
+		RenameBranchOperation->NewName = InNewBranchName;
+		const ECommandResult::Type Result = Provider.Execute(RenameBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnRenameBranchOperationComplete));
+		if (Result == ECommandResult::Succeeded)
+		{
+			// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+			Notification.DisplayInProgress(RenameBranchOperation->GetInProgressString());
+			StartRefreshStatus();
+		}
+		else
+		{
+			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+			FNotification::DisplayFailure(RenameBranchOperation->GetName());
+		}
+	}
+	else
+	{
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
+	}
+}
+
 void SPlasticSourceControlBranchesWidget::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
 	if (!ISourceControlModule::Get().IsEnabled() || (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
@@ -816,6 +864,24 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete(cons
 	TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> SwitchToBranchOperation = StaticCastSharedRef<FPlasticSwitchToBranch>(InOperation);
 	PackageUtils::ReloadPackages(SwitchToBranchOperation->UpdatedFiles);
 
+	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
+	bShouldRefresh = true;
+
+	Notification.RemoveInProgress();
+
+	// Report result with a notification
+	if (InResult == ECommandResult::Succeeded)
+	{
+		FNotification::DisplaySuccess(InOperation->GetName());
+	}
+	else
+	{
+		FNotification::DisplayFailure(InOperation->GetName());
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::OnRenameBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
 	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
 	bShouldRefresh = true;
 
