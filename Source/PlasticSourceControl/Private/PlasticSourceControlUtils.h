@@ -218,7 +218,7 @@ void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChang
 #endif
 
 /**
- * Run find "branches where date >= 'YYYY/MM/DD'" and parse the results.
+ * Run find "branches where date >= 'YYYY-MM-DD' or changesets >= 'YYYY-MM-DD'" and parse the results.
  * @param	InFromDate				The date to search from
  * @param	OutBranches				The list of branches
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
@@ -232,6 +232,14 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
  */
 bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
+
+/**
+ * Run branch create <name> --commentsfile
+ * @param	InBranchName			The name of the branch to create
+ * @param	InComment				The comment for the new branch to create
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunCreateBranch(const FString& InBranchName, const FString& InComment, TArray<FString>& OutErrorMessages);
 
 /**
  * Helper function for various commands to update cached states.

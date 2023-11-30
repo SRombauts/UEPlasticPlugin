@@ -7,6 +7,7 @@
 #include "PlasticSourceControlProjectSettings.h"
 #include "PlasticSourceControlBranch.h"
 #include "SPlasticSourceControlBranchRow.h"
+#include "SPlasticSourceControlCreateBranch.h"
 
 #include "PackageUtils.h"
 
@@ -29,6 +30,7 @@
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Views/SHeaderRow.h"
+#include "Widgets/SWindow.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControlWindow"
 
@@ -41,7 +43,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlBranch&>>(TTextFilter<const FPlasticSourceControlBranch&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings));
 	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlBranchesWidget::OnRefreshUI);
 
-	FromDateInDaysValues.Add(TPair<int32, FText>( 7, FText::FromString(TEXT("Last week"))));
+	FromDateInDaysValues.Add(TPair<int32, FText>(7, FText::FromString(TEXT("Last week"))));
 	FromDateInDaysValues.Add(TPair<int32, FText>(30, FText::FromString(TEXT("Last month"))));
 	FromDateInDaysValues.Add(TPair<int32, FText>(90, FText::FromString(TEXT("Last 3 months"))));
 	FromDateInDaysValues.Add(TPair<int32, FText>(365, FText::FromString(TEXT("Last year"))));
@@ -546,6 +548,16 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 	FToolMenuSection& Section = *Menu->FindSection("Source Control");
 
 	Section.AddMenuEntry(
+		TEXT("CreateChildBranch"),
+		LOCTEXT("CreateChildBranch", "Create child branch"),
+		LOCTEXT("CreateChildBranchTooltip", "Create child branch from the selected branch."),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnCreateBranchClicked, SelectedBranch)
+		)
+	);
+
+	Section.AddMenuEntry(
 		TEXT("SwitchToBranch"),
 		LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
 		LOCTEXT("SwitchToBranchTooltip", "Switch workspace to this branch."),
@@ -556,8 +568,88 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		)
 	);
 
-
 	return ToolMenus->GenerateWidget(Menu);
+}
+
+
+TSharedPtr<SWindow> SPlasticSourceControlBranchesWidget::CreateDialogWindow(FText&& InTitle)
+{
+	return SNew(SWindow)
+		.Title(InTitle)
+		.HasCloseButton(true)
+		.SupportsMaximize(false)
+		.SupportsMinimize(false)
+		.SizingRule(ESizingRule::Autosized);
+}
+
+void SPlasticSourceControlBranchesWidget::OpenDialogWindow(TSharedPtr<SWindow>& InDialogWindowPtr)
+{
+	InDialogWindowPtr->SetOnWindowClosed(FOnWindowClosed::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnDialogClosed));
+
+	TSharedPtr<SWindow> RootWindow = FGlobalTabmanager::Get()->GetRootWindow();
+	FSlateApplication::Get().AddModalWindow(InDialogWindowPtr.ToSharedRef(), RootWindow);
+}
+
+void SPlasticSourceControlBranchesWidget::OnDialogClosed(const TSharedRef<SWindow>& InWindow)
+{
+	DialogWindowPtr = nullptr;
+}
+
+void SPlasticSourceControlBranchesWidget::OnCreateBranchClicked(FString InParentBranchName)
+{
+	// Create the branch modal dialog window (the frame for the content)
+	DialogWindowPtr = CreateDialogWindow(LOCTEXT("PlasticCreateBranchTitle", "Create Branch"));
+
+	// Setup its content widget, specific to the CreateBranch operation
+	DialogWindowPtr->SetContent(SNew(SPlasticSourceControlCreateBranch)
+		.BranchesWidget(SharedThis(this))
+		.ParentWindow(DialogWindowPtr)
+		.ParentBranchName(InParentBranchName));
+
+	OpenDialogWindow(DialogWindowPtr);
+}
+
+void SPlasticSourceControlBranchesWidget::CreateBranch(const FString& InParentBranchName, const FString& InNewBranchName, const FString& InNewBranchComment, const bool bInSwitchWorkspace)
+{
+	if (!Notification.IsInProgress())
+	{
+		const bool bSaved = PackageUtils::SaveDirtyPackages();
+		if (bSaved || bInSwitchWorkspace)
+		{
+			// Find and Unlink all loaded packages in Content directory to allow to update them
+			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+
+			// Launch a custom "CreateBranch" operation
+			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+			TSharedRef<FPlasticCreateBranch, ESPMode::ThreadSafe> CreateBranchOperation = ISourceControlOperation::Create<FPlasticCreateBranch>();
+			CreateBranchOperation->BranchName = InParentBranchName + TEXT("/") + InNewBranchName;
+			CreateBranchOperation->Comment = InNewBranchComment;
+			const ECommandResult::Type Result = Provider.Execute(CreateBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnCreateBranchOperationComplete, bInSwitchWorkspace));
+			if (Result == ECommandResult::Succeeded)
+			{
+				// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+				Notification.DisplayInProgress(CreateBranchOperation->GetInProgressString());
+				StartRefreshStatus();
+			}
+			else
+			{
+				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+				FNotification::DisplayFailure(CreateBranchOperation->GetName());
+			}
+		}
+		else
+		{
+			FMessageLog SourceControlLog("SourceControl");
+			SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Switch_Unsaved", "Save All Assets before attempting to Switch workspace to a branch!"));
+			SourceControlLog.Notify();
+		}
+	}
+	else
+	{
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
+	}
 }
 
 void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBranchName)
@@ -590,7 +682,7 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 		else
 		{
 			FMessageLog SourceControlLog("SourceControl");
-			SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Sync_Unsaved", "Save All Assets before attempting to Sync!"));
+			SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Switch_Unsaved", "Save All Assets before attempting to Switch workspace to a branch!"));
 			SourceControlLog.Notify();
 		}
 	}
@@ -683,13 +775,42 @@ void SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete(const F
 	OnRefreshUI();
 }
 
+void SPlasticSourceControlBranchesWidget::OnCreateBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult, const bool bInSwitchWorkspace)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::OnCreateBranchOperationComplete);
+
+	Notification.RemoveInProgress();
+
+	if (InResult == ECommandResult::Succeeded)
+	{
+		FNotification::DisplaySuccess(InOperation->GetName());
+
+		if (bInSwitchWorkspace)
+		{
+			TSharedRef<FPlasticCreateBranch, ESPMode::ThreadSafe> CreateBranchOperation = StaticCastSharedRef<FPlasticCreateBranch>(InOperation);
+			OnSwitchToBranchClicked(CreateBranchOperation->BranchName);
+		}
+		else
+		{
+			// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
+			bShouldRefresh = true;
+		}
+	}
+	else
+	{
+		FNotification::DisplayFailure(InOperation->GetName());
+
+		EndRefreshStatus();
+	}
+}
+
 void SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete);
 
 	// Reload packages that where updated by the SwitchToBranch operation (and the current map if needed)
-	TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSwitchToBranch>(InOperation);
-	PackageUtils::ReloadPackages(Operation->UpdatedFiles);
+	TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> SwitchToBranchOperation = StaticCastSharedRef<FPlasticSwitchToBranch>(InOperation);
+	PackageUtils::ReloadPackages(SwitchToBranchOperation->UpdatedFiles);
 
 	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
 	bShouldRefresh = true;

@@ -49,6 +49,7 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("Unlock", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticUnlockWorker>));
 	PlasticSourceControlProvider.RegisterWorker("GetBranches", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetBranchesWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SwitchToBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSwitchToBranchWorker>));
+	PlasticSourceControlProvider.RegisterWorker("CreateBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticCreateBranchWorker>));
 	PlasticSourceControlProvider.RegisterWorker("MakeWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticMakeWorkspaceWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Sync", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SyncAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
@@ -159,6 +160,16 @@ FName FPlasticSwitchToBranch::GetName() const
 FText FPlasticSwitchToBranch::GetInProgressString() const
 {
 	return LOCTEXT("SourceControl_SwitchToBranch", "Switching the workspace to another branch...");
+}
+
+FName FPlasticCreateBranch::GetName() const
+{
+	return "CreateBranch";
+}
+
+FText FPlasticCreateBranch::GetInProgressString() const
+{
+	return LOCTEXT("SourceControl_Branch", "Creating new child branch...");
 }
 
 
@@ -1047,7 +1058,7 @@ FName FPlasticGetBranchesWorker::GetName() const
 
 bool FPlasticGetBranchesWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetPendingChangelistsWorker::Execute);
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetBranchesWorker::Execute);
 
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetBranches>(InCommand.Operation);
@@ -1080,7 +1091,7 @@ FName FPlasticSwitchToBranchWorker::GetName() const
 
 bool FPlasticSwitchToBranchWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetPendingChangelistsWorker::Execute);
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSwitchToBranchWorker::Execute);
 
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSwitchToBranch>(InCommand.Operation);
@@ -1092,6 +1103,28 @@ bool FPlasticSwitchToBranchWorker::UpdateStates()
 {
 	return false;
 }
+
+
+FName FPlasticCreateBranchWorker::GetName() const
+{
+	return "CreateBranch";
+}
+
+bool FPlasticCreateBranchWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticCreateBranchWorker::Execute);
+
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticCreateBranch, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticCreateBranch>(InCommand.Operation);
+
+	return PlasticSourceControlUtils::RunCreateBranch(Operation->BranchName, Operation->Comment, InCommand.ErrorMessages);
+}
+
+bool FPlasticCreateBranchWorker::UpdateStates()
+{
+	return false;
+}
+
 
 FName FPlasticUpdateStatusWorker::GetName() const
 {

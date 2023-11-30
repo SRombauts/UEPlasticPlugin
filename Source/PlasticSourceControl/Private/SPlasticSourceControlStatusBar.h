@@ -6,6 +6,8 @@
 
 #include "Widgets/SCompoundWidget.h"
 
+class FReply;
+
 /**
  * Status bar displaying the name of the current branch
  */

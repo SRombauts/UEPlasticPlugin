@@ -1245,11 +1245,15 @@ FString FileStateToAction(const EWorkspaceState InState)
 FString DecodeXmlEntities(const FString& InString)
 {
 	FString String = InString;
-	String.ReplaceInline(TEXT("&amp;"), TEXT("&"));
-	String.ReplaceInline(TEXT("&quot;"), TEXT("\""));
-	String.ReplaceInline(TEXT("&apos;"), TEXT("'"));
-	String.ReplaceInline(TEXT("&lt;"), TEXT("<"));
-	String.ReplaceInline(TEXT("&gt;"), TEXT(">"));
+	int32 AmpIdx;
+	if (String.FindChar(TEXT('&'), AmpIdx))
+	{
+		String.ReplaceInline(TEXT("&amp;"), TEXT("&"), ESearchCase::CaseSensitive);
+		String.ReplaceInline(TEXT("&quot;"), TEXT("\""), ESearchCase::CaseSensitive);
+		String.ReplaceInline(TEXT("&apos;"), TEXT("'"), ESearchCase::CaseSensitive);
+		String.ReplaceInline(TEXT("&lt;"), TEXT("<"), ESearchCase::CaseSensitive);
+		String.ReplaceInline(TEXT("&gt;"), TEXT(">"), ESearchCase::CaseSensitive);
+	}
 	return String;
 }
 
@@ -1433,7 +1437,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				}
 				if (const FXmlNode* BranchNode = RevisionNode->FindChildNode(Branch))
 				{
-					SourceControlRevision->Branch = BranchNode->GetContent();
+					SourceControlRevision->Branch = DecodeXmlEntities(BranchNode->GetContent());
 				}
 				if (const FXmlNode* SizeNode = RevisionNode->FindChildNode(Size))
 				{
@@ -2040,7 +2044,7 @@ static bool ParseShelvesResults(const FXmlFile& InXmlResult, TArray<FPlasticSour
 		}
 
 		const FString& ShelveIdString = ShelveIdNode->GetContent();
-		const FString& CommentString = CommentNode->GetContent();
+		const FString& CommentString = DecodeXmlEntities(CommentNode->GetContent());
 
 		// Search if there is a changelist matching the shelve (that is, a shelve with a comment starting with "ChangelistXXX: ")
 		for (FPlasticSourceControlChangelistState& ChangelistState : InOutChangelistsStates)
@@ -2278,7 +2282,7 @@ bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDat
 #endif
 
 /**
- * Parse results of the 'cm find "branches where date >= 'YYYY-MM-DD'" --xml --encoding="utf-8"' command.
+ * Parse results of the 'cm find "branches where date >= 'YYYY-MM-DD' or changesets >= 'YYYY-MM-DD'" --xml --encoding="utf-8"' command.
  *
  * Results of the find command looks like the following:
 <?xml version="1.0" encoding="utf-8" ?>
@@ -2370,7 +2374,11 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 	TArray<FString> Parameters;
 	if (InFromDate != FDateTime())
 	{
-		Parameters.Add(FString::Printf(TEXT("\"branches where date >= '%d/%d/%d'\""), InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay()));
+		// Find branches created since this date or containing changes dating from or after this date
+		Parameters.Add(FString::Printf(TEXT("\"branches where date >= '%d/%d/%d'\" or changesets >= '%d/%d/%d'"),
+			InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay(),
+			InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay()
+		));
 	}
 	else
 	{
@@ -2430,6 +2438,23 @@ bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedF
 	}
 
 	return bResult;
+}
+
+bool RunCreateBranch(const FString& InBranchName, const FString& InComment, TArray<FString>& OutErrorMessages)
+{
+	// make a temp file to place our comment message in
+	const FScopedTempFile BranchCommentFile(InComment);
+	if (!BranchCommentFile.GetFilename().IsEmpty())
+	{
+		TArray<FString> Parameters;
+		TArray<FString> InfoMessages;
+		Parameters.Add(TEXT("create"));
+		Parameters.Add(FString::Printf(TEXT("\"%s\""), *InBranchName));
+		Parameters.Add(FString::Printf(TEXT("--commentsfile=\"%s\""), *FPaths::ConvertRelativePathToFull(BranchCommentFile.GetFilename())));
+		return PlasticSourceControlUtils::RunCommand(TEXT("branch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
+	}
+
+	return false;
 }
 
 bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates)

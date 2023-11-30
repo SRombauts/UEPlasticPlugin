@@ -65,7 +65,7 @@ public:
 	{
 	}
 		SLATE_ARGUMENT(FPlasticSourceControlBranchPtr, BranchToVisualize)
-		SLATE_ATTRIBUTE(bool, bIsCurrentBranch)
+		SLATE_ARGUMENT(bool, bIsCurrentBranch)
 		SLATE_ATTRIBUTE(FText, HighlightText)
 	SLATE_END_ARGS()
 

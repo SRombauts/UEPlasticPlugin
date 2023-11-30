@@ -10,7 +10,8 @@
 #else
 #include "EditorStyleSet.h"
 #endif
-#include "Styling\SlateTypes.h"
+#include "Input/Reply.h"
+#include "Styling/SlateTypes.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 

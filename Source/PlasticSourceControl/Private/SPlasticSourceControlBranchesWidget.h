@@ -16,6 +16,7 @@
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
 
 class SSearchBox;
+class SWindow;
 
 // Widget displaying the list of branches in the tab window, see FPlasticSourceControlBranchesWindow
 class SPlasticSourceControlBranchesWidget : public SCompoundWidget
@@ -26,6 +27,8 @@ class SPlasticSourceControlBranchesWidget : public SCompoundWidget
 	void Construct(const FArguments& InArgs);
 
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
+
+	void CreateBranch(const FString& InParentBranchName, const FString& InNewBranchName, const FString& InNewBranchComment, const bool bInSwitchWorkspace);
 
 private:
 	TSharedRef<SWidget> CreateToolBar();
@@ -50,6 +53,12 @@ private:
 	FString GetSelectedBranch();
 
 	TSharedPtr<SWidget> OnOpenContextMenu();
+
+	TSharedPtr<SWindow> CreateDialogWindow(FText&& InTitle);
+	void OpenDialogWindow(TSharedPtr<SWindow>& InDialogWindowPtr);
+	void OnDialogClosed(const TSharedRef<SWindow>& InWindow);
+
+	void OnCreateBranchClicked(FString InParentBranchName);
 	void OnSwitchToBranchClicked(FString InBranchName);
 
 	void StartRefreshStatus();
@@ -60,6 +69,7 @@ private:
 
 	/** Source control callbacks */
 	void OnGetBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnCreateBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult, const bool bInSwitchWorkspace);
 	void OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
 
@@ -98,4 +108,7 @@ private:
 
 	TArray<FPlasticSourceControlBranchRef> SourceControlBranches; // Full list from source (filtered by date)
 	TArray<FPlasticSourceControlBranchRef> BranchRows; // Filtered list to display based on the search text filter
+
+	/** The dialog Window that opens when the user click on any context menu entry */
+	TSharedPtr<SWindow> DialogWindowPtr;
 };
