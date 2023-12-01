@@ -20,6 +20,30 @@ namespace PlasticSourceControlUtils
 {
 
 /**
+ * Run a Plastic command - the result is the output of cm, as a multi-line string.
+ *
+ * @param	InCommand			The Plastic command - e.g. commit
+ * @param	InParameters		The parameters to the Plastic command
+ * @param	InFiles				The files to be operated on
+ * @param	OutResults			The results (from StdOut) as a multi-line string.
+ * @param	OutErrors			Any errors (from StdErr) as a multi-line string.
+ * @returns true if the command succeeded and returned no errors
+ */
+bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors);
+
+/**
+ * Run a Plastic command - the result is parsed in an array of strings.
+ *
+ * @param	InCommand			The Plastic command - e.g. commit
+ * @param	InParameters		The parameters to the Plastic command
+ * @param	InFiles				The files to be operated on
+ * @param	OutResults			The results (from StdOut) as an array per-line
+ * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+ * @returns true if the command succeeded and returned no errors
+ */
+bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages);
+
+/**
  * Find the path to the Plastic binary: for now relying on the Path to access the "cm" command.
  */
 FString FindPlasticBinaryPath();
@@ -101,30 +125,6 @@ bool RunCheckConnection(FString& OutBranchName, FString& OutRepositoryName, FStr
  * @param	InUserName			The Unity Version Control username to shorten for display.
  */
 FString UserNameToDisplayName(const FString& InUserName);
-
-/**
- * Run a Plastic command - the result is the output of cm, as a multi-line string.
- *
- * @param	InCommand			The Plastic command - e.g. commit
- * @param	InParameters		The parameters to the Plastic command
- * @param	InFiles				The files to be operated on
- * @param	OutResults			The results (from StdOut) as a multi-line string.
- * @param	OutErrors			Any errors (from StdErr) as a multi-line string.
- * @returns true if the command succeeded and returned no errors
- */
-bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, FString& OutResults, FString& OutErrors);
-
-/**
- * Run a Plastic command - the result is parsed in an array of strings.
- *
- * @param	InCommand			The Plastic command - e.g. commit
- * @param	InParameters		The parameters to the Plastic command
- * @param	InFiles				The files to be operated on
- * @param	OutResults			The results (from StdOut) as an array per-line
- * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
- * @returns true if the command succeeded and returned no errors
- */
-bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages);
 
 
 // Specify the "search type" for the "status" command
