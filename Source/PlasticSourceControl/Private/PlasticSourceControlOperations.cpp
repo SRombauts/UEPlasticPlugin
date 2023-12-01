@@ -6,6 +6,7 @@
 #include "PlasticSourceControlBranch.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlModule.h"
+#include "PlasticSourceControlParsers.h"
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlSettings.h"
 #include "PlasticSourceControlShell.h"
@@ -363,32 +364,6 @@ TArray<FString> FileNamesFromFileStates(const TArray<FSourceControlStateRef>& In
 
 #endif
 
-/// Parse checkin result, usually looking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
-static FText ParseCheckInResults(const TArray<FString>& InResults)
-{
-	if (InResults.Num() > 0)
-	{
-		static const FString ChangesetPrefix(TEXT("Created changeset "));
-		if (InResults.Last().StartsWith(ChangesetPrefix))
-		{
-			FString ChangesetString;
-			static const FString BranchPrefix(TEXT("@br:"));
-			const int32 BranchIndex = InResults.Last().Find(BranchPrefix, ESearchCase::CaseSensitive);
-			if (BranchIndex > INDEX_NONE)
-			{
-				ChangesetString = InResults.Last().Mid(ChangesetPrefix.Len(), BranchIndex - ChangesetPrefix.Len());
-			}
-			return FText::Format(LOCTEXT("SubmitMessage", "Submitted changeset {0}"), FText::FromString(ChangesetString));
-		}
-		else
-		{
-			return FText::FromString(InResults.Last());
-		}
-	}
-	return FText();
-}
-
-
 TArray<FString> GetFilesFromCommand(FPlasticSourceControlProvider& PlasticSourceControlProvider, FPlasticSourceControlCommand& InCommand)
 {
 	TArray<FString> Files;
@@ -460,7 +435,7 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			}
 			if (InCommand.bCommandSuccessful)
 			{
-				Operation->SetSuccessMessage(ParseCheckInResults(InCommand.InfoMessages));
+				Operation->SetSuccessMessage(PlasticSourceControlParsers::ParseCheckInResults(InCommand.InfoMessages));
 				UE_LOG(LogSourceControl, Log, TEXT("CheckIn successful"));
 			}
 

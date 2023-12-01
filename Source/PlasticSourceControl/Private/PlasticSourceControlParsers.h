@@ -77,6 +77,8 @@ bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InResults, 
 bool ParseUpdateResults(const FString& InResults, TArray<FString>& OutFiles);
 bool ParseUpdateResults(const TArray<FString>& InResults, TArray<FString>& OutFiles);
 
+FText ParseCheckInResults(const TArray<FString>& InResults);
+
 #if ENGINE_MAJOR_VERSION == 5
 
 bool ParseChangelistsResults(const FString& Results, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates);

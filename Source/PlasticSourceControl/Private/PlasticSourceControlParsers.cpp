@@ -569,7 +569,7 @@ FString FileStateToAction(const EWorkspaceState InState)
 }
 
 // TODO PR to move this in Engine
-FString DecodeXmlEntities(const FString& InString)
+static FString DecodeXmlEntities(const FString& InString)
 {
 	FString String = InString;
 	int32 AmpIdx;
@@ -936,6 +936,32 @@ bool ParseUpdateResults(const TArray<FString>& InResults, TArray<FString>& OutFi
 	}
 
 	return true;
+}
+
+
+/// Parse checkin result, usually looking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
+FText ParseCheckInResults(const TArray<FString>& InResults)
+{
+	if (InResults.Num() > 0)
+	{
+		static const FString ChangesetPrefix(TEXT("Created changeset "));
+		if (InResults.Last().StartsWith(ChangesetPrefix))
+		{
+			FString ChangesetString;
+			static const FString BranchPrefix(TEXT("@br:"));
+			const int32 BranchIndex = InResults.Last().Find(BranchPrefix, ESearchCase::CaseSensitive);
+			if (BranchIndex > INDEX_NONE)
+			{
+				ChangesetString = InResults.Last().Mid(ChangesetPrefix.Len(), BranchIndex - ChangesetPrefix.Len());
+			}
+			return FText::Format(NSLOCTEXT("PlasticSourceControl", "SubmitMessage", "Submitted changeset {0}"), FText::FromString(ChangesetString));
+		}
+		else
+		{
+			return FText::FromString(InResults.Last());
+		}
+	}
+	return FText();
 }
 
 #if ENGINE_MAJOR_VERSION == 5
