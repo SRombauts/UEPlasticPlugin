@@ -19,8 +19,6 @@ enum class EWorkspaceState;
 namespace PlasticSourceControlUtils
 {
 
-const struct FSoftwareVersion& GetOldestSupportedPlasticScmVersion();
-
 /**
  * Find the path to the Plastic binary: for now relying on the Path to access the "cm" command.
  */

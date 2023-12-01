@@ -50,11 +50,6 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 	return bResult;
 }
 
-const FSoftwareVersion& GetOldestSupportedPlasticScmVersion()
-{
-	return PlasticSourceControlVersions::OldestSupported;
-}
-
 FString FindPlasticBinaryPath()
 {
 #if PLATFORM_WINDOWS
