@@ -137,8 +137,8 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 				.OnClicked(this, &SPlasticSourceControlCreateBranch::CreateClicked)
 			]
 			+SHorizontalBox::Slot()
-				.AutoWidth()
-				[
+			.AutoWidth()
+			[
 				SNew(SButton)
 				.HAlign(HAlign_Center)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
@@ -174,7 +174,8 @@ bool SPlasticSourceControlCreateBranch::IsNewBranchNameValid() const
 
 	for (TCHAR Char : NewBranchName)
 	{
-		if (BranchNameInvalidChars.Contains(&Char, ESearchCase::CaseSensitive))
+		int32 Index;
+		if (BranchNameInvalidChars.FindChar(Char, Index))
 		{
 			return false;
 		}
