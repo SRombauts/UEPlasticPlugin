@@ -119,7 +119,7 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 		[
 			SNew(SHorizontalBox)
 			+SHorizontalBox::Slot()
-			.FillWidth(1.0f)
+			.AutoWidth()
 			[
 				SNew(SButton)
 				.HAlign(HAlign_Center)
@@ -134,8 +134,8 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 				.OnClicked(this, &SPlasticSourceControlCreateBranch::CreateClicked)
 			]
 			+SHorizontalBox::Slot()
-			.FillWidth(1.0f)
-			[
+				.AutoWidth()
+				[
 				SNew(SButton)
 				.HAlign(HAlign_Center)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
