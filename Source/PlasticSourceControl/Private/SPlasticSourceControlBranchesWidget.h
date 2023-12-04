@@ -7,6 +7,7 @@
 #include "Notification.h"
 
 #include "Misc/TextFilter.h"
+#include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/SCompoundWidget.h"
 #include "Widgets/Views/SListView.h"
 

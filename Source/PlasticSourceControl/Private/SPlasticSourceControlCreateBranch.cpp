@@ -11,8 +11,11 @@
 #include "EditorStyleSet.h"
 #endif
 #include "Input/Reply.h"
+#include "Styling/SlateTypes.h"
+#include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
+#include "Widgets/SBoxPanel.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControlWindow"
 
@@ -150,6 +153,11 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 	];
 
 	ParentWindow.Pin()->SetWidgetToFocusOnActivate(BranchNameTextBox);
+}
+
+inline void SPlasticSourceControlCreateBranch::OnCheckedSwitchWorkspace(ECheckBoxState InState)
+{
+	bSwitchWorkspace = (InState == ECheckBoxState::Checked);
 }
 
 bool SPlasticSourceControlCreateBranch::IsNewBranchNameValid() const

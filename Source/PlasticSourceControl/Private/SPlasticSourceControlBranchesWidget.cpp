@@ -30,9 +30,10 @@
 #endif
 #include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SSearchBox.h"
+#include "Widgets/SBoxPanel.h"
+#include "Widgets/SWindow.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Views/SHeaderRow.h"
-#include "Widgets/SWindow.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControlWindow"
 
@@ -607,7 +608,8 @@ TSharedPtr<SWindow> SPlasticSourceControlBranchesWidget::CreateDialogWindow(FTex
 		.HasCloseButton(true)
 		.SupportsMaximize(false)
 		.SupportsMinimize(false)
-		.SizingRule(ESizingRule::Autosized);
+		.SizingRule(ESizingRule::Autosized)
+		.AutoCenter(EAutoCenter::PreferredWorkArea);
 }
 
 void SPlasticSourceControlBranchesWidget::OpenDialogWindow(TSharedPtr<SWindow>& InDialogWindowPtr)

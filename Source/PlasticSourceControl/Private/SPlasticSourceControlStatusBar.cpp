@@ -12,6 +12,7 @@
 #endif
 #include "Input/Reply.h"
 #include "Styling/SlateTypes.h"
+#include "Widgets/Input/SButton.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 

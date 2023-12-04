@@ -3,12 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Styling/SlateTypes.h"
+
+#include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/SCompoundWidget.h"
 
 class FReply;
+class SEditableTextBox;
 class SPlasticSourceControlBranchesWidget;
 class SWindow;
+enum class ECheckBoxState : uint8;
 
 class SPlasticSourceControlCreateBranch : public SCompoundWidget
 {
@@ -28,10 +31,7 @@ public:
 	void Construct(const FArguments& InArgs);
 
 private:
-	void OnCheckedSwitchWorkspace(ECheckBoxState InState)
-	{
-		bSwitchWorkspace = (InState == ECheckBoxState::Checked);
-	}
+	void OnCheckedSwitchWorkspace(ECheckBoxState InState);
 
 	bool IsNewBranchNameValid() const;
 	FText CreateButtonTooltip() const;
