@@ -122,7 +122,9 @@ public:
 #if ENGINE_MINOR_VERSION >= 3
 	virtual FResolveInfo GetResolveInfo() const override;	/* NOTE: added in UE5.3 */
 #endif
+#if SOURCE_CONTROL_WITH_SLATE
 	virtual FSlateIcon GetIcon() const override;
+#endif // SOURCE_CONTROL_WITH_SLATE
 #endif
 	virtual FText GetDisplayName() const override;
 	virtual FText GetDisplayTooltip() const override;

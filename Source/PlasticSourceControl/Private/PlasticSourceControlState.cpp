@@ -7,7 +7,7 @@
 #include "Styling/AppStyle.h"
 #if ENGINE_MINOR_VERSION >= 2
 #include "RevisionControlStyle/RevisionControlStyle.h"
-#endif
+#endif // ENGINE_MAJOR_VERSION
 #endif
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl.State"
@@ -234,6 +234,8 @@ FName FPlasticSourceControlState::GetSmallIconName() const
 
 #elif ENGINE_MAJOR_VERSION == 5
 
+#if SOURCE_CONTROL_WITH_SLATE
+
 FSlateIcon FPlasticSourceControlState::GetIcon() const
 {
 #if ENGINE_MINOR_VERSION >= 2
@@ -261,7 +263,7 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 		}
 	}
 
-#else
+#else // ENGINE_MINOR_VERSION < 2
 
 	if (!IsCurrent())
 	{
@@ -286,7 +288,7 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 		}
 	}
 
-#endif
+#endif // ENGINE_MINOR_VERSION
 
 #if ENGINE_MINOR_VERSION >= 2 // UE5.2+
 
@@ -347,7 +349,7 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 		return FSlateIcon();
 	}
 
-#else // UE5.0
+#else // ENGINE_MINOR_VERSION UE5.0
 
 	switch (WorkspaceState)
 	{
@@ -383,10 +385,12 @@ FSlateIcon FPlasticSourceControlState::GetIcon() const
 		return FSlateIcon();
 	}
 
-#endif
+#endif // ENGINE_MINOR_VERSION
 }
 
-#endif
+#endif // SOURCE_CONTROL_WITH_SLATE
+
+#endif // ENGINE_MAJOR_VERSION
 
 FText FPlasticSourceControlState::GetDisplayName() const
 {
