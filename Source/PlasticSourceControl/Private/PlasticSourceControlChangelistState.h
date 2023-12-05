@@ -65,9 +65,19 @@ public:
 	 */
 	virtual const FDateTime& GetTimeStamp() const override;
 
+#if ENGINE_MINOR_VERSION >= 4
+	virtual const TArray<FSourceControlStateRef> GetFilesStates() const override;
+	virtual int32 GetFilesStatesNum() const override;
+#else
 	virtual const TArray<FSourceControlStateRef>& GetFilesStates() const override;
+#endif
 
+#if ENGINE_MINOR_VERSION >= 4
+	virtual const TArray<FSourceControlStateRef> GetShelvedFilesStates() const override;
+	virtual int32 GetShelvedFilesStatesNum() const override;
+#else
 	virtual const TArray<FSourceControlStateRef>& GetShelvedFilesStates() const override;
+#endif
 
 	virtual FSourceControlChangelistRef GetChangelist() const override;
 

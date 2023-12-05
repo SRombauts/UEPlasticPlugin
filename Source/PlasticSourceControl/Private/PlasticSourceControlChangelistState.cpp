@@ -37,15 +37,39 @@ const FDateTime& FPlasticSourceControlChangelistState::GetTimeStamp() const
 	return TimeStamp;
 }
 
-const TArray<FSourceControlStateRef>& FPlasticSourceControlChangelistState::GetFilesStates() const
+#if ENGINE_MINOR_VERSION >= 4
+const TArray<FSourceControlStateRef> FPlasticSourceControlChangelistState::GetFilesStates() const
 {
 	return Files;
 }
 
+int32 FPlasticSourceControlChangelistState::GetFilesStatesNum() const
+{
+	return Files.Num();
+}
+#else
+const TArray<FSourceControlStateRef>& FPlasticSourceControlChangelistState::GetFilesStates() const
+{
+	return Files;
+}
+#endif
+
+#if ENGINE_MINOR_VERSION >= 4
+const TArray<FSourceControlStateRef> FPlasticSourceControlChangelistState::GetShelvedFilesStates() const
+{
+	return ShelvedFiles;
+}
+
+int32 FPlasticSourceControlChangelistState::GetShelvedFilesStatesNum() const
+{
+	return ShelvedFiles.Num();
+}
+#else
 const TArray<FSourceControlStateRef>& FPlasticSourceControlChangelistState::GetShelvedFilesStates() const
 {
 	return ShelvedFiles;
 }
+#endif
 
 FSourceControlChangelistRef FPlasticSourceControlChangelistState::GetChangelist() const
 {
