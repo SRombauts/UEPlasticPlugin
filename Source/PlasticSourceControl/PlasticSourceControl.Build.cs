@@ -31,5 +31,8 @@ public class PlasticSourceControl : ModuleRules
 				"ContentBrowser",
 			}
 		);
+
+		// NOTE: this produce warnings in SListView Engine code in UE4.27
+		UnsafeTypeCastWarningLevel = WarningLevel.Warning;
 	}
 }

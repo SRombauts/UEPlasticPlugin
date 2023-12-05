@@ -384,7 +384,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.ToolTipText(LOCTEXT("PlasticInitWorkspace_Tooltip", "Create a new Unity Version Control repository and workspace and for the current project"))
 				.OnClicked(this, &SPlasticSourceControlSettings::OnClickedCreatePlasticWorkspace)
 				.HAlign(HAlign_Center)
-				.ContentPadding(6)
+				.ContentPadding(6.0f)
 			]
 		]
 		// Button to add a 'ignore.conf' file on an existing Workspace
