@@ -61,7 +61,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 #else
 			.BorderImage(FEditorStyle::GetBrush("DetailsView.CategoryBottom"))
 #endif
-			.Padding(4)
+			.Padding(4.0f)
 			[
 				SNew(SHorizontalBox)
 				+SHorizontalBox::Slot()
@@ -72,13 +72,13 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 					CreateToolBar()
 				]
 				+SHorizontalBox::Slot()
-				.MaxWidth(10)
+				.MaxWidth(10.0f)
 				[
 					SNew(SSpacer)
 				]
 				+SHorizontalBox::Slot()
 				.VAlign(VAlign_Center)
-				.MaxWidth(300)
+				.MaxWidth(300.0f)
 				[
 					SAssignNew(FileSearchBox, SSearchBox)
 					.HintText(LOCTEXT("SearchBranches", "Search Branches"))
@@ -87,8 +87,8 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 				]
 				+SHorizontalBox::Slot()
 				.VAlign(VAlign_Center)
-				.MaxWidth(125)
-				.Padding(FMargin(10.f, 0.f))
+				.MaxWidth(125.0f)
+				.Padding(10.f, 0.f)
 				[
 					SNew(SComboButton)
 					.ToolTipText(LOCTEXT("PlasticBranchesDate_Tooltip", "Filter the list of branches by date of creation."))

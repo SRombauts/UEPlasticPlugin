@@ -40,7 +40,7 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 		]
 		+SVerticalBox::Slot()
 		.AutoHeight()
-		.Padding(FMargin(5.0f))
+		.Padding(5.0f)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SHorizontalBox)
@@ -79,8 +79,8 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 			.FillWidth(6.0f)
 			[
 				SNew(SBox)
-				.MinDesiredHeight(120)
-				.WidthOverride(520)
+				.MinDesiredHeight(120.0f)
+				.WidthOverride(520.0f)
 				[
 					SNew(SMultiLineEditableTextBox)
 					.AutoWrapText(true)

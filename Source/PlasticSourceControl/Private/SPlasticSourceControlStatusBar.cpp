@@ -30,7 +30,7 @@ void SPlasticSourceControlStatusBar::Construct(const FArguments& InArgs)
 		.OnClicked(this, &SPlasticSourceControlStatusBar::OnClicked)
 		[
 			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
+			+SHorizontalBox::Slot()
 			.AutoWidth()
 			.VAlign(VAlign_Center)
 			.HAlign(HAlign_Center)
@@ -42,10 +42,10 @@ void SPlasticSourceControlStatusBar::Construct(const FArguments& InArgs)
 				.Image(FEditorStyle::GetBrush("SourceControl.Branch"))
 #endif
 			]
-			+ SHorizontalBox::Slot()
+			+SHorizontalBox::Slot()
 			.AutoWidth()
 			.VAlign(VAlign_Center)
-			.Padding(FMargin(5, 0, 0, 0))
+			.Padding(5.0f, 0.0f, 0.0f, 0.0f)
 			[
 				SNew(STextBlock)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
