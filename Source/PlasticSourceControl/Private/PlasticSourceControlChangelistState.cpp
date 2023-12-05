@@ -38,6 +38,7 @@ const FDateTime& FPlasticSourceControlChangelistState::GetTimeStamp() const
 }
 
 #if ENGINE_MINOR_VERSION >= 4
+
 const TArray<FSourceControlStateRef> FPlasticSourceControlChangelistState::GetFilesStates() const
 {
 	return Files;
@@ -47,14 +48,7 @@ int32 FPlasticSourceControlChangelistState::GetFilesStatesNum() const
 {
 	return Files.Num();
 }
-#else
-const TArray<FSourceControlStateRef>& FPlasticSourceControlChangelistState::GetFilesStates() const
-{
-	return Files;
-}
-#endif
 
-#if ENGINE_MINOR_VERSION >= 4
 const TArray<FSourceControlStateRef> FPlasticSourceControlChangelistState::GetShelvedFilesStates() const
 {
 	return ShelvedFiles;
@@ -64,12 +58,20 @@ int32 FPlasticSourceControlChangelistState::GetShelvedFilesStatesNum() const
 {
 	return ShelvedFiles.Num();
 }
-#else
+
+#else // ENGINE_MINOR_VERSION < 4
+
+const TArray<FSourceControlStateRef>& FPlasticSourceControlChangelistState::GetFilesStates() const
+{
+	return Files;
+}
+
 const TArray<FSourceControlStateRef>& FPlasticSourceControlChangelistState::GetShelvedFilesStates() const
 {
 	return ShelvedFiles;
 }
-#endif
+
+#endif // ENGINE_MINOR_VERSION
 
 FSourceControlChangelistRef FPlasticSourceControlChangelistState::GetChangelist() const
 {
