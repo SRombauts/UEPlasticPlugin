@@ -692,7 +692,7 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 			// Find and Unlink all loaded packages in Content directory to allow to update them
 			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
 
-			// Launch a custom "SwitchToBranch" operation
+			// Launch a custom "Switch" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 			TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> SwitchToBranchOperation = ISourceControlOperation::Create<FPlasticSwitchToBranch>();
 			SwitchToBranchOperation->BranchName = InBranchName;
