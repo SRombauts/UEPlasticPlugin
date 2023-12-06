@@ -532,7 +532,7 @@ TArray<FString> SPlasticSourceControlBranchesWidget::GetSelectedBranches()
 TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 {
 	const TArray<FString> SelectedBranches = GetSelectedBranches();
-	const FString SelectedBranch = SelectedBranches.Num() == 1 ? SelectedBranches[0] : FString();
+	const FString& SelectedBranch = SelectedBranches.Num() == 1 ? SelectedBranches[0] : FString();
 	if (SelectedBranches.Num() == 0)
 	{
 		return nullptr;
@@ -575,7 +575,20 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		)
 	);
 
-	Section.AddSeparator("PlasticSeparator");
+	Section.AddSeparator("PlasticSeparator1");
+
+	Section.AddMenuEntry(
+		TEXT("MergeBranch"),
+		LOCTEXT("MergeBranch", "Merge from this branch..."),
+		LOCTEXT("MergeBranchTooltip", "Merge this branch into the current workspace."),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnMergeBranchClicked, SelectedBranch),
+			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()) && (SelectedBranch != CurrentBranchName); })
+		)
+	);
+
+	Section.AddSeparator("PlasticSeparator2");
 
 	Section.AddMenuEntry(
 		TEXT("RenameBranch"),
@@ -721,6 +734,53 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 		FMessageLog SourceControlLog("SourceControl");
 		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
 		SourceControlLog.Notify();
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::OnMergeBranchClicked(FString InBranchName)
+{
+	const FText Message = FText::Format(LOCTEXT("MergeBranch", "Merge branch {0} into the current branch {1}?"), FText::FromString(InBranchName), FText::FromString(CurrentBranchName));
+	const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Info, EAppMsgType::YesNo, Message);
+	if (Choice == EAppReturnType::Yes)
+	{
+		if (!Notification.IsInProgress())
+		{
+			const bool bSaved = PackageUtils::SaveDirtyPackages();
+			if (bSaved)
+			{
+				// Find and Unlink all loaded packages in Content directory to allow to update them
+				PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+
+				// Launch a custom "Merge" operation
+				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+				TSharedRef<FPlasticMergeBranch, ESPMode::ThreadSafe> MergeBranchOperation = ISourceControlOperation::Create<FPlasticMergeBranch>();
+				MergeBranchOperation->BranchName = InBranchName;
+				const ECommandResult::Type Result = Provider.Execute(MergeBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnMergeBranchOperationComplete));
+				if (Result == ECommandResult::Succeeded)
+				{
+					// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+					Notification.DisplayInProgress(MergeBranchOperation->GetInProgressString());
+					StartRefreshStatus();
+				}
+				else
+				{
+					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+					FNotification::DisplayFailure(MergeBranchOperation->GetName());
+				}
+			}
+			else
+			{
+				FMessageLog SourceControlLog("SourceControl");
+				SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Merge_Unsaved", "Save All Assets before attempting to Merge a branch into the workspace!"));
+				SourceControlLog.Notify();
+			}
+		}
+		else
+		{
+			FMessageLog SourceControlLog("SourceControl");
+			SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+			SourceControlLog.Notify();
+		}
 	}
 }
 
@@ -943,6 +1003,29 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete(cons
 	{
 		FNotification::DisplayFailure(InOperation->GetName());
 	}
+}
+
+void SPlasticSourceControlBranchesWidget::OnMergeBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::OnMergeBranchOperationComplete);
+
+	// Reload packages that where updated by the MergeBranch operation (and the current map if needed)
+	TSharedRef<FPlasticMergeBranch, ESPMode::ThreadSafe> MergeBranchOperation = StaticCastSharedRef<FPlasticMergeBranch>(InOperation);
+	PackageUtils::ReloadPackages(MergeBranchOperation->UpdatedFiles);
+
+	Notification.RemoveInProgress();
+
+	// Report result with a notification
+	if (InResult == ECommandResult::Succeeded)
+	{
+		FNotification::DisplaySuccess(InOperation->GetName());
+	}
+	else
+	{
+		FNotification::DisplayFailure(InOperation->GetName());
+	}
+
+	EndRefreshStatus();
 }
 
 void SPlasticSourceControlBranchesWidget::OnRenameBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
