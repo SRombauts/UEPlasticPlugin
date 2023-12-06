@@ -85,6 +85,9 @@ private:
 		return BranchesListView.Get();
 	}
 
+	/** Interpret F5, Enter and Delete keys */
+	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
+
 private:
 	TSharedPtr<SSearchBox> FileSearchBox;
 

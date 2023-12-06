@@ -996,4 +996,43 @@ void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISource
 	}
 }
 
+FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
+{
+	if (InKeyEvent.GetKey() == EKeys::F5)
+	{
+		// Pressing F5 refresh the list of branches
+		RequestBranchesRefresh();
+		return FReply::Handled();
+	}
+	else if (InKeyEvent.GetKey() == EKeys::Enter)
+	{
+		// Pressing Enter switch to the selected branch.
+		const TArray<FString> SelectedBranches = GetSelectedBranches();
+		if (SelectedBranches.Num() == 1)
+		{
+			const FString& SelectedBranch = SelectedBranches[0];
+			// Note: this action require a confirmation dialog (while the Delete below already have one in OnDeleteBranchesClicked()).
+			const FText Message = FText::Format(LOCTEXT("SwitchToBranchDialog", "Switch workspace to branch {0}?"), FText::FromString(SelectedBranch));
+			const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::YesNo, Message);
+			if (Choice == EAppReturnType::Yes)
+			{
+				OnSwitchToBranchClicked(SelectedBranch);
+			}
+		}
+		return FReply::Handled();
+	}
+	else if (InKeyEvent.GetKey() == EKeys::Delete)
+	{
+		// Pressing Delete delete the selected branches
+		const TArray<FString> SelectedBranches = GetSelectedBranches();
+		if (SelectedBranches.Num() > 0)
+		{
+			OnDeleteBranchesClicked(SelectedBranches);
+		}
+		return FReply::Handled();
+	}
+
+	return FReply::Unhandled();
+}
+
 #undef LOCTEXT_NAMESPACE
