@@ -894,12 +894,12 @@ bool ParseUpdateResults(const FString& InResults, TArray<FString>& OutFiles)
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::RunUpdate::FXmlFile::LoadFile);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseUpdateResults::FXmlFile::LoadFile);
 		bResult = XmlFile.LoadFile(InResults, EConstructMethod::ConstructFromBuffer);
 	}
 	if (bResult)
 	{
-		bResult = PlasticSourceControlParsers::ParseUpdateResults(XmlFile, OutFiles);
+		bResult = ParseUpdateResults(XmlFile, OutFiles);
 	}
 	else
 	{
@@ -1042,9 +1042,9 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 				continue;
 			}
 
-			FString NameTemp = PlasticSourceControlParsers::DecodeXmlEntities(NameNode->GetContent());
+			FString NameTemp = DecodeXmlEntities(NameNode->GetContent());
 			FPlasticSourceControlChangelist ChangelistTemp(MoveTemp(NameTemp), true);
-			FString DescriptionTemp = ChangelistTemp.IsDefault() ? FString() : PlasticSourceControlParsers::DecodeXmlEntities(DescriptionNode->GetContent());
+			FString DescriptionTemp = ChangelistTemp.IsDefault() ? FString() : DecodeXmlEntities(DescriptionNode->GetContent());
 			FPlasticSourceControlChangelistState ChangelistState(MoveTemp(ChangelistTemp), MoveTemp(DescriptionTemp));
 
 			const TArray<FXmlNode*>& ChangeNodes = ChangesNode->GetChildrenNodes();
@@ -1091,7 +1091,7 @@ bool ParseChangelistsResults(const FString& Results, TArray<FPlasticSourceContro
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::RunGetChangelists::FXmlFile::LoadFile);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults::FXmlFile::LoadFile);
 		bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
 	}
 	if (bResult)
@@ -1395,7 +1395,7 @@ bool ParseShelvesResult(const FString& InResults, FString& OutComment, FDateTime
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResults);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResult);
 		bResult = XmlFile.LoadFile(InResults, EConstructMethod::ConstructFromBuffer);
 	}
 	if (bResult)
