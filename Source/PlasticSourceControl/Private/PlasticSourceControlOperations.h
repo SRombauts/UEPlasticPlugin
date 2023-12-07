@@ -8,7 +8,7 @@
 #include "IPlasticSourceControlWorker.h"
 #include "PlasticSourceControlRevision.h"
 #include "PlasticSourceControlState.h"
-#include "ISourceControlOperation.h"
+#include "SourceControlOperationBase.h"
 #include "SourceControlOperations.h"
 
 #include "Runtime/Launch/Resources/Version.h"
@@ -26,7 +26,7 @@ typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlas
  * Internal operation used to revert checked-out unchanged files
 */
 // NOTE: added to Engine in Unreal Engine 5 for changelists
-class FPlasticRevertUnchanged final : public ISourceControlOperation
+class FPlasticRevertUnchanged final : public FSourceControlOperationBase
 {
 public:
 	// ISourceControlOperation interface
@@ -69,7 +69,7 @@ public:
 /**
 * Internal operation used to create a new Workspace and a new Repository
 */
-class FPlasticMakeWorkspace final : public ISourceControlOperation
+class FPlasticMakeWorkspace final : public FSourceControlOperationBase
 {
 public:
 	// ISourceControlOperation interface
@@ -87,7 +87,7 @@ public:
 /**
  * Internal operation used to switch to a partial workspace
 */
-class FPlasticSwitchToPartialWorkspace final : public ISourceControlOperation
+class FPlasticSwitchToPartialWorkspace final : public FSourceControlOperationBase
 {
 public:
 	// ISourceControlOperation interface
@@ -100,7 +100,7 @@ public:
 /**
  * Internal operation used to release or remove Lock(s) on file(s)
 */
-class FPlasticUnlock final : public ISourceControlOperation
+class FPlasticUnlock final : public FSourceControlOperationBase
 {
 public:
 	// ISourceControlOperation interface
@@ -116,7 +116,7 @@ public:
 /**
  * Internal operation to list branches, aka "cm find branch"
 */
-class FPlasticGetBranches final : public ISourceControlOperation
+class FPlasticGetBranches final : public FSourceControlOperationBase
 {
 public:
 	// ISourceControlOperation interface
@@ -135,7 +135,7 @@ public:
 /**
  * Internal operation used to switch the workspace to another branch
 */
-class FPlasticSwitchToBranch final : public ISourceControlOperation
+class FPlasticSwitchToBranch final : public FSourceControlOperationBase
 {
 public:
 	// ISourceControlOperation interface
@@ -154,7 +154,7 @@ public:
 /**
  * Internal operation used to create a branch
 */
-class FPlasticCreateBranch final : public ISourceControlOperation
+class FPlasticCreateBranch final : public FSourceControlOperationBase
 {
 public:
 	// ISourceControlOperation interface
@@ -170,7 +170,7 @@ public:
 /**
  * Internal operation used to rename a branch
 */
-class FPlasticRenameBranch final : public ISourceControlOperation
+class FPlasticRenameBranch final : public FSourceControlOperationBase
 {
 public:
 	// ISourceControlOperation interface
@@ -186,7 +186,7 @@ public:
 /**
  * Internal operation used to deletes branches
 */
-class FPlasticDeleteBranches final : public ISourceControlOperation
+class FPlasticDeleteBranches final : public FSourceControlOperationBase
 {
 public:
 	// ISourceControlOperation interface

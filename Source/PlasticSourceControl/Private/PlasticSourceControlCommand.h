@@ -41,6 +41,9 @@ public:
 	 */ 
 	virtual void DoThreadedWork() override;
 
+	/** Save any results and call any registered callbacks. */
+	ECommandResult::Type ReturnResults();
+
 public:
 	/** Path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */
 	FString PathToWorkspaceRoot;

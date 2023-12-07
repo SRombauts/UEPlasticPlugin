@@ -697,8 +697,7 @@ void FPlasticSourceControlProvider::Tick()
 			}
 
 			// run the completion delegate callback if we have one bound
-			ECommandResult::Type Result = Command.bCommandSuccessful ? ECommandResult::Succeeded : ECommandResult::Failed;
-			Command.OperationCompleteDelegate.ExecuteIfBound(Command.Operation, Result);
+			Command.ReturnResults();
 
 			// commands that are left in the array during a tick need to be deleted
 			if (Command.bAutoDelete)
