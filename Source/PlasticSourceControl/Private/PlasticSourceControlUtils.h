@@ -14,6 +14,11 @@ class FPlasticSourceControlState;
 struct FSoftwareVersion;
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
 
+namespace PlasticSourceControlParsers
+{
+class FSmartLockInfoParser;
+} // namespace PlasticSourceControlParsers
+
 enum class EWorkspaceState;
 
 namespace PlasticSourceControlUtils
@@ -126,6 +131,14 @@ bool RunCheckConnection(FString& OutBranchName, FString& OutRepositoryName, FStr
  */
 FString UserNameToDisplayName(const FString& InUserName);
 
+/**
+ * Run a Plastic "lock list" command and parse it.
+ *
+ * @param	InRepository		The repository to ask for the locks
+ * @param	OutSmartLocks		The list of smart locks
+ * @returns true if the command succeeded and returned no errors
+ */
+bool RunListSmartLocks(const FString& InRepository, TMap<FString, PlasticSourceControlParsers::FSmartLockInfoParser>& OutSmartLocks);
 
 // Specify the "search type" for the "status" command
 enum class EStatusSearchType
