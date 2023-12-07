@@ -11,8 +11,11 @@
 #include "EditorStyleSet.h"
 #endif
 #include "Input/Reply.h"
+#include "Styling/SlateTypes.h"
+#include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
+#include "Widgets/SBoxPanel.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControlWindow"
 
@@ -119,7 +122,7 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 		[
 			SNew(SHorizontalBox)
 			+SHorizontalBox::Slot()
-			.FillWidth(1.0f)
+			.AutoWidth()
 			[
 				SNew(SButton)
 				.HAlign(HAlign_Center)
@@ -134,7 +137,7 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 				.OnClicked(this, &SPlasticSourceControlCreateBranch::CreateClicked)
 			]
 			+SHorizontalBox::Slot()
-			.FillWidth(1.0f)
+			.AutoWidth()
 			[
 				SNew(SButton)
 				.HAlign(HAlign_Center)
@@ -152,6 +155,11 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 	ParentWindow.Pin()->SetWidgetToFocusOnActivate(BranchNameTextBox);
 }
 
+inline void SPlasticSourceControlCreateBranch::OnCheckedSwitchWorkspace(ECheckBoxState InState)
+{
+	bSwitchWorkspace = (InState == ECheckBoxState::Checked);
+}
+
 bool SPlasticSourceControlCreateBranch::IsNewBranchNameValid() const
 {
 	// Branch name cannot contain any of the following characters:
@@ -166,7 +174,8 @@ bool SPlasticSourceControlCreateBranch::IsNewBranchNameValid() const
 
 	for (TCHAR Char : NewBranchName)
 	{
-		if (BranchNameInvalidChars.Contains(&Char, ESearchCase::CaseSensitive))
+		int32 Index;
+		if (BranchNameInvalidChars.FindChar(Char, Index))
 		{
 			return false;
 		}

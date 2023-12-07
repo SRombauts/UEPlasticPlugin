@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Styling/SlateStyle.h"
+
+class FSlateStyleSet;
+class ISlateStyle;
 
 class FPlasticSourceControlStyle
 {
@@ -21,7 +23,7 @@ public:
 	static FName GetStyleSetName();
 
 private:
-	static TSharedRef<class FSlateStyleSet> Create();
+	static TSharedRef<FSlateStyleSet> Create();
 
 private:
 	static FString InContent(const FString& RelativePath, const ANSICHAR* Extension);

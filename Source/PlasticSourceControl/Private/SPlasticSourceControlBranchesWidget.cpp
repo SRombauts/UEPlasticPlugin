@@ -8,6 +8,8 @@
 #include "PlasticSourceControlBranch.h"
 #include "SPlasticSourceControlBranchRow.h"
 #include "SPlasticSourceControlCreateBranch.h"
+#include "SPlasticSourceControlDeleteBranches.h"
+#include "SPlasticSourceControlRenameBranch.h"
 
 #include "PackageUtils.h"
 
@@ -28,9 +30,10 @@
 #endif
 #include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SSearchBox.h"
+#include "Widgets/SBoxPanel.h"
+#include "Widgets/SWindow.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Views/SHeaderRow.h"
-#include "Widgets/SWindow.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControlWindow"
 
@@ -182,7 +185,7 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateContentPanel()
 		.ItemHeight(24.0f)
 		.ListItemsSource(&BranchRows)
 		.OnGenerateRow(this, &SPlasticSourceControlBranchesWidget::OnGenerateRow)
-		.SelectionMode(ESelectionMode::Single)
+		.SelectionMode(ESelectionMode::Multi)
 		.OnContextMenuOpening(this, &SPlasticSourceControlBranchesWidget::OnOpenContextMenu)
 		.OnItemToString_Debug_Lambda([this](FPlasticSourceControlBranchRef Branch) { return Branch->Name; })
 		.HeaderRow
@@ -514,20 +517,23 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 	}
 }
 
-FString SPlasticSourceControlBranchesWidget::GetSelectedBranch()
+TArray<FString> SPlasticSourceControlBranchesWidget::GetSelectedBranches()
 {
+	TArray<FString> SelectedBranches;
+
 	for (const FPlasticSourceControlBranchPtr& BranchPtr : BranchesListView->GetSelectedItems())
 	{
-		return BranchPtr->Name;
+		SelectedBranches.Add(BranchPtr->Name);
 	}
 
-	return FString();
+	return SelectedBranches;
 }
 
 TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 {
-	const FString SelectedBranch = GetSelectedBranch();
-	if (SelectedBranch.IsEmpty())
+	const TArray<FString> SelectedBranches = GetSelectedBranches();
+	const FString SelectedBranch = SelectedBranches.Num() == 1 ? SelectedBranches[0] : FString();
+	if (SelectedBranches.Num() == 0)
 	{
 		return nullptr;
 	}
@@ -549,11 +555,12 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 
 	Section.AddMenuEntry(
 		TEXT("CreateChildBranch"),
-		LOCTEXT("CreateChildBranch", "Create child branch"),
+		LOCTEXT("CreateChildBranch", "Create child branch..."),
 		LOCTEXT("CreateChildBranchTooltip", "Create child branch from the selected branch."),
 		FSlateIcon(),
 		FUIAction(
-			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnCreateBranchClicked, SelectedBranch)
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnCreateBranchClicked, SelectedBranch),
+			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()); })
 		)
 	);
 
@@ -564,7 +571,29 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked, SelectedBranch),
-			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return SelectedBranch != CurrentBranchName; })
+			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()) && (SelectedBranch != CurrentBranchName); })
+		)
+	);
+
+	Section.AddSeparator("PlasticSeparator");
+
+	Section.AddMenuEntry(
+		TEXT("RenameBranch"),
+		LOCTEXT("RenameBranch", "Rename..."),
+		LOCTEXT("RenameBranchTooltip", "Rename the selected child branch."),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnRenameBranchClicked, SelectedBranch),
+			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()); })
+		)
+	);
+	Section.AddMenuEntry(
+		TEXT("DeleteBranch"),
+		LOCTEXT("DeleteBranch", "Delete"),
+		LOCTEXT("DeleteBranchTooltip", "Delete branch the selected branch(es)."),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnDeleteBranchesClicked, SelectedBranches)
 		)
 	);
 
@@ -579,7 +608,8 @@ TSharedPtr<SWindow> SPlasticSourceControlBranchesWidget::CreateDialogWindow(FTex
 		.HasCloseButton(true)
 		.SupportsMaximize(false)
 		.SupportsMinimize(false)
-		.SizingRule(ESizingRule::Autosized);
+		.SizingRule(ESizingRule::Autosized)
+		.AutoCenter(EAutoCenter::PreferredWorkArea);
 }
 
 void SPlasticSourceControlBranchesWidget::OpenDialogWindow(TSharedPtr<SWindow>& InDialogWindowPtr)
@@ -684,6 +714,93 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 			FMessageLog SourceControlLog("SourceControl");
 			SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Switch_Unsaved", "Save All Assets before attempting to Switch workspace to a branch!"));
 			SourceControlLog.Notify();
+		}
+	}
+	else
+	{
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::OnRenameBranchClicked(FString InBranchName)
+{
+	// Create the branch modal dialog window (the frame for the content)
+	DialogWindowPtr = CreateDialogWindow(LOCTEXT("PlasticRenameBranchTitle", "Rename Branch"));
+
+	// Setup its content widget, specific to the RenameBranch operation
+	DialogWindowPtr->SetContent(SNew(SPlasticSourceControlRenameBranch)
+		.BranchesWidget(SharedThis(this))
+		.ParentWindow(DialogWindowPtr)
+		.OldBranchName(InBranchName));
+
+	OpenDialogWindow(DialogWindowPtr);
+}
+
+void SPlasticSourceControlBranchesWidget::RenameBranch(const FString& InOldBranchName, const FString& InNewBranchName)
+{
+	if (!Notification.IsInProgress())
+	{
+		// Launch a custom "RenameBranch" operation
+		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+		TSharedRef<FPlasticRenameBranch, ESPMode::ThreadSafe> RenameBranchOperation = ISourceControlOperation::Create<FPlasticRenameBranch>();
+		RenameBranchOperation->OldName = InOldBranchName;
+		RenameBranchOperation->NewName = InNewBranchName;
+		const ECommandResult::Type Result = Provider.Execute(RenameBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnRenameBranchOperationComplete));
+		if (Result == ECommandResult::Succeeded)
+		{
+			// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+			Notification.DisplayInProgress(RenameBranchOperation->GetInProgressString());
+			StartRefreshStatus();
+		}
+		else
+		{
+			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+			FNotification::DisplayFailure(RenameBranchOperation->GetName());
+		}
+	}
+	else
+	{
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::OnDeleteBranchesClicked(TArray<FString> InBranchNames)
+{
+	// Create the branch modal dialog window (the frame for the content)
+	DialogWindowPtr = CreateDialogWindow(LOCTEXT("PlasticDeleteBranchesTitle", "Delete Branches"));
+
+	// Setup its content widget, specific to the DeleteBranches operation
+	DialogWindowPtr->SetContent(SNew(SPlasticSourceControlDeleteBranches)
+		.BranchesWidget(SharedThis(this))
+		.ParentWindow(DialogWindowPtr)
+		.BranchNames(InBranchNames));
+
+	OpenDialogWindow(DialogWindowPtr);
+}
+
+void SPlasticSourceControlBranchesWidget::DeleteBranches(const TArray<FString>& InBranchNames)
+{
+	if (!Notification.IsInProgress())
+	{
+		// Launch a custom "DeleteBranches" operation
+		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+		TSharedRef<FPlasticDeleteBranches, ESPMode::ThreadSafe> DeleteBranchesOperation = ISourceControlOperation::Create<FPlasticDeleteBranches>();
+		DeleteBranchesOperation->BranchNames = InBranchNames;
+		const ECommandResult::Type Result = Provider.Execute(DeleteBranchesOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnDeleteBranchesOperationComplete));
+		if (Result == ECommandResult::Succeeded)
+		{
+			// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+			Notification.DisplayInProgress(DeleteBranchesOperation->GetInProgressString());
+			StartRefreshStatus();
+		}
+		else
+		{
+			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+			FNotification::DisplayFailure(DeleteBranchesOperation->GetName());
 		}
 	}
 	else
@@ -828,6 +945,42 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete(cons
 	}
 }
 
+void SPlasticSourceControlBranchesWidget::OnRenameBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
+	bShouldRefresh = true;
+
+	Notification.RemoveInProgress();
+
+	// Report result with a notification
+	if (InResult == ECommandResult::Succeeded)
+	{
+		FNotification::DisplaySuccess(InOperation->GetName());
+	}
+	else
+	{
+		FNotification::DisplayFailure(InOperation->GetName());
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::OnDeleteBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
+	bShouldRefresh = true;
+
+	Notification.RemoveInProgress();
+
+	// Report result with a notification
+	if (InResult == ECommandResult::Succeeded)
+	{
+		FNotification::DisplaySuccess(InOperation->GetName());
+	}
+	else
+	{
+		FNotification::DisplayFailure(InOperation->GetName());
+	}
+}
+
 void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider)
 {
 	bSourceControlAvailable = NewProvider.IsAvailable(); // Check if it is connected.
@@ -841,6 +994,45 @@ void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISource
 			GetListView()->RequestListRefresh();
 		}
 	}
+}
+
+FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
+{
+	if (InKeyEvent.GetKey() == EKeys::F5)
+	{
+		// Pressing F5 refresh the list of branches
+		RequestBranchesRefresh();
+		return FReply::Handled();
+	}
+	else if (InKeyEvent.GetKey() == EKeys::Enter)
+	{
+		// Pressing Enter switch to the selected branch.
+		const TArray<FString> SelectedBranches = GetSelectedBranches();
+		if (SelectedBranches.Num() == 1)
+		{
+			const FString& SelectedBranch = SelectedBranches[0];
+			// Note: this action require a confirmation dialog (while the Delete below already have one in OnDeleteBranchesClicked()).
+			const FText Message = FText::Format(LOCTEXT("SwitchToBranchDialog", "Switch workspace to branch {0}?"), FText::FromString(SelectedBranch));
+			const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::YesNo, Message);
+			if (Choice == EAppReturnType::Yes)
+			{
+				OnSwitchToBranchClicked(SelectedBranch);
+			}
+		}
+		return FReply::Handled();
+	}
+	else if (InKeyEvent.GetKey() == EKeys::Delete)
+	{
+		// Pressing Delete delete the selected branches
+		const TArray<FString> SelectedBranches = GetSelectedBranches();
+		if (SelectedBranches.Num() > 0)
+		{
+			OnDeleteBranchesClicked(SelectedBranches);
+		}
+		return FReply::Handled();
+	}
+
+	return FReply::Unhandled();
 }
 
 #undef LOCTEXT_NAMESPACE

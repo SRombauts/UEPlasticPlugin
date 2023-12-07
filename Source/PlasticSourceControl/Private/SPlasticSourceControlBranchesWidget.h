@@ -7,6 +7,7 @@
 #include "Notification.h"
 
 #include "Misc/TextFilter.h"
+#include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/SCompoundWidget.h"
 #include "Widgets/Views/SListView.h"
 
@@ -29,6 +30,8 @@ class SPlasticSourceControlBranchesWidget : public SCompoundWidget
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
 	void CreateBranch(const FString& InParentBranchName, const FString& InNewBranchName, const FString& InNewBranchComment, const bool bInSwitchWorkspace);
+	void RenameBranch(const FString& InOldBranchName, const FString& InNewBranchName);
+	void DeleteBranches(const TArray<FString>& InBranchNames);
 
 private:
 	TSharedRef<SWidget> CreateToolBar();
@@ -50,7 +53,7 @@ private:
 	void OnColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode);
 
 	void SortBranchView();
-	FString GetSelectedBranch();
+	TArray<FString> GetSelectedBranches();
 
 	TSharedPtr<SWidget> OnOpenContextMenu();
 
@@ -60,6 +63,8 @@ private:
 
 	void OnCreateBranchClicked(FString InParentBranchName);
 	void OnSwitchToBranchClicked(FString InBranchName);
+	void OnRenameBranchClicked(FString InBranchName);
+	void OnDeleteBranchesClicked(TArray<FString> InBranchNames);
 
 	void StartRefreshStatus();
 	void TickRefreshStatus(double InDeltaTime);
@@ -71,12 +76,17 @@ private:
 	void OnGetBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnCreateBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult, const bool bInSwitchWorkspace);
 	void OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnRenameBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnDeleteBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
 
 	SListView<FPlasticSourceControlBranchRef>* GetListView() const
 	{
 		return BranchesListView.Get();
 	}
+
+	/** Interpret F5, Enter and Delete keys */
+	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
 private:
 	TSharedPtr<SSearchBox> FileSearchBox;

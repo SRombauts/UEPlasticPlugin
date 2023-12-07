@@ -51,6 +51,8 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("GetBranches", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetBranchesWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SwitchToBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSwitchToBranchWorker>));
 	PlasticSourceControlProvider.RegisterWorker("CreateBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticCreateBranchWorker>));
+	PlasticSourceControlProvider.RegisterWorker("RenameBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRenameBranchWorker>));
+	PlasticSourceControlProvider.RegisterWorker("DeleteBranches", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteBranchesWorker>));
 	PlasticSourceControlProvider.RegisterWorker("MakeWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticMakeWorkspaceWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Sync", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SyncAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
@@ -170,7 +172,28 @@ FName FPlasticCreateBranch::GetName() const
 
 FText FPlasticCreateBranch::GetInProgressString() const
 {
-	return LOCTEXT("SourceControl_Branch", "Creating new child branch...");
+	return LOCTEXT("SourceControl_CreateBranch", "Creating new child branch...");
+}
+
+
+FName FPlasticRenameBranch::GetName() const
+{
+	return "RenameBranch";
+}
+
+FText FPlasticRenameBranch::GetInProgressString() const
+{
+	return LOCTEXT("SourceControl_RenameBranch", "Renaming a branch...");
+}
+
+FName FPlasticDeleteBranches::GetName() const
+{
+	return "DeleteBranches";
+}
+
+FText FPlasticDeleteBranches::GetInProgressString() const
+{
+	return LOCTEXT("SourceControl_DeleteBranches", "Deleting branch(es)...");
 }
 
 
@@ -1096,6 +1119,48 @@ bool FPlasticCreateBranchWorker::Execute(FPlasticSourceControlCommand& InCommand
 }
 
 bool FPlasticCreateBranchWorker::UpdateStates()
+{
+	return false;
+}
+
+
+FName FPlasticRenameBranchWorker::GetName() const
+{
+	return "RenameBranch";
+}
+
+bool FPlasticRenameBranchWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRenameBranchWorker::Execute);
+
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticRenameBranch, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRenameBranch>(InCommand.Operation);
+
+	return PlasticSourceControlUtils::RunRenameBranch(Operation->OldName, Operation->NewName, InCommand.ErrorMessages);
+}
+
+bool FPlasticRenameBranchWorker::UpdateStates()
+{
+	return false;
+}
+
+
+FName FPlasticDeleteBranchesWorker::GetName() const
+{
+	return "DeleteBranches";
+}
+
+bool FPlasticDeleteBranchesWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticDeleteBranchesWorker::Execute);
+
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticDeleteBranches, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticDeleteBranches>(InCommand.Operation);
+
+	return PlasticSourceControlUtils::RunDeleteBranches(Operation->BranchNames, InCommand.ErrorMessages);
+}
+
+bool FPlasticDeleteBranchesWorker::UpdateStates()
 {
 	return false;
 }

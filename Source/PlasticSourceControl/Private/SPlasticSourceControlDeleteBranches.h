@@ -8,48 +8,39 @@
 #include "Widgets/SCompoundWidget.h"
 
 class FReply;
-class SEditableTextBox;
+class SButton;
 class SPlasticSourceControlBranchesWidget;
 class SWindow;
-enum class ECheckBoxState : uint8;
 
-class SPlasticSourceControlCreateBranch : public SCompoundWidget
+class SPlasticSourceControlDeleteBranches : public SCompoundWidget
 {
 public:
-	SLATE_BEGIN_ARGS(SPlasticSourceControlCreateBranch)
+	SLATE_BEGIN_ARGS(SPlasticSourceControlDeleteBranches)
 		: _BranchesWidget()
 		, _ParentWindow()
-		, _ParentBranchName()
+		, _BranchNames()
 	{}
 
 		SLATE_ARGUMENT(TSharedPtr<SPlasticSourceControlBranchesWidget>, BranchesWidget)
 		SLATE_ARGUMENT(TSharedPtr<SWindow>, ParentWindow)
-		SLATE_ARGUMENT(FString, ParentBranchName)
+		SLATE_ARGUMENT(TArray<FString>, BranchNames)
 
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
 
 private:
-	void OnCheckedSwitchWorkspace(ECheckBoxState InState);
-
-	bool IsNewBranchNameValid() const;
-	FText CreateButtonTooltip() const;
-
-	FReply CreateClicked();
+	FReply DeleteClicked();
 	FReply CancelClicked();
 
 	/** Interpret Escape as Cancel */
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
 private:
-	FString ParentBranchName;
-	FString NewBranchName;
-	FString NewBranchComment;
-	bool bSwitchWorkspace = true;
-
-	TSharedPtr<SEditableTextBox> BranchNameTextBox;
+	TArray<FString> BranchNames;
 
 	TWeakPtr<SPlasticSourceControlBranchesWidget> BranchesWidget;
 	TWeakPtr<SWindow> ParentWindow;
+
+	TSharedPtr<SButton> DeleteButtonPtr;
 };

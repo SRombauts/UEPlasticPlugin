@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ISourceControlProvider.h" // for EConcurrency
 
 namespace PlasticSourceControlShell
 {

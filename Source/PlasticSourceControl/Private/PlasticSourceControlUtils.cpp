@@ -1009,7 +1009,7 @@ bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedF
 	TArray<FString> Parameters;
 	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFile.GetFilename()));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
-	Parameters.Add(FString::Printf(TEXT("br:%s"), *InBranchName));
+	Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InBranchName));
 	bResult = PlasticSourceControlUtils::RunCommand(TEXT("switch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
 	if (bResult)
 	{
@@ -1039,6 +1039,28 @@ bool RunCreateBranch(const FString& InBranchName, const FString& InComment, TArr
 	}
 
 	return false;
+}
+
+bool RunRenameBranch(const FString& InOldName, const FString& InNewName, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Parameters;
+	TArray<FString> InfoMessages;
+	Parameters.Add(TEXT("rename"));
+	Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InOldName));
+	Parameters.Add(FString::Printf(TEXT("\"%s\""), *InNewName));
+	return PlasticSourceControlUtils::RunCommand(TEXT("branch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
+}
+
+bool RunDeleteBranches(const TArray<FString>& InBranchNames, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Parameters;
+	TArray<FString> InfoMessages;
+	Parameters.Add(TEXT("delete"));
+	for (const FString& BranchName : InBranchNames)
+	{
+		Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *BranchName));
+	}
+	return PlasticSourceControlUtils::RunCommand(TEXT("branch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
 }
 
 bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates)

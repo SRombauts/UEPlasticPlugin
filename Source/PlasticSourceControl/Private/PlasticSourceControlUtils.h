@@ -253,6 +253,21 @@ bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedF
 bool RunCreateBranch(const FString& InBranchName, const FString& InComment, TArray<FString>& OutErrorMessages);
 
 /**
+ * Run branch rename <old name> <new name>
+ * @param	InOldName				The old name of the branch to rename
+ * @param	InNewName				The new name to rename the branch to
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunRenameBranch(const FString& InOldName, const FString& InNewName, TArray<FString>& OutErrorMessages);
+
+/**
+ * Run branch delete <name1> <name2 ...>
+ * @param	InBranchNames			The name of the branch(es) to delete
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunDeleteBranches(const TArray<FString>& InBranchNames, TArray<FString>& OutErrorMessages);
+
+/**
  * Helper function for various commands to update cached states.
  * @returns true if any states were updated
  */

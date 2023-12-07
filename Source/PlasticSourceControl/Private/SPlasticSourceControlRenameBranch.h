@@ -7,46 +7,41 @@
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/SCompoundWidget.h"
 
-class FReply;
 class SEditableTextBox;
+class FReply;
 class SPlasticSourceControlBranchesWidget;
 class SWindow;
-enum class ECheckBoxState : uint8;
 
-class SPlasticSourceControlCreateBranch : public SCompoundWidget
+class SPlasticSourceControlRenameBranch : public SCompoundWidget
 {
 public:
-	SLATE_BEGIN_ARGS(SPlasticSourceControlCreateBranch)
+	SLATE_BEGIN_ARGS(SPlasticSourceControlRenameBranch)
 		: _BranchesWidget()
 		, _ParentWindow()
-		, _ParentBranchName()
+		, _OldBranchName()
 	{}
 
 		SLATE_ARGUMENT(TSharedPtr<SPlasticSourceControlBranchesWidget>, BranchesWidget)
 		SLATE_ARGUMENT(TSharedPtr<SWindow>, ParentWindow)
-		SLATE_ARGUMENT(FString, ParentBranchName)
+		SLATE_ARGUMENT(FString, OldBranchName)
 
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
 
 private:
-	void OnCheckedSwitchWorkspace(ECheckBoxState InState);
-
 	bool IsNewBranchNameValid() const;
-	FText CreateButtonTooltip() const;
+	FText RenameButtonTooltip() const;
 
-	FReply CreateClicked();
+	FReply RenamedClicked();
 	FReply CancelClicked();
 
 	/** Interpret Escape as Cancel */
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
 private:
-	FString ParentBranchName;
+	FString OldBranchName;
 	FString NewBranchName;
-	FString NewBranchComment;
-	bool bSwitchWorkspace = true;
 
 	TSharedPtr<SEditableTextBox> BranchNameTextBox;
 
