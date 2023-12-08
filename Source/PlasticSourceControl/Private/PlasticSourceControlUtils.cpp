@@ -1042,19 +1042,7 @@ bool RunMergeBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFile
 		FString Results;
 		if (FFileHelper::LoadFileToString(Results, *TempFile.GetFilename()))
 		{
-			FXmlFile XmlFile;
-			{
-				TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunUpdate::FXmlFile::LoadFile);
-				bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
-			}
-			if (bResult)
-			{
-				bResult = ParseUpdateResults(XmlFile, OutUpdatedFiles);
-			}
-			else
-			{
-				UE_LOG(LogSourceControl, Error, TEXT("RunUpdate: XML parse error '%s'"), *XmlFile.GetLastError())
-			}
+			PlasticSourceControlParsers::ParseMergeResults(Results, OutUpdatedFiles);
 		}
 	}
 

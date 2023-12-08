@@ -833,7 +833,7 @@ bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InResults, 
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Error, TEXT("RunGetHistory: XML parse error '%s'"), *XmlFile.GetLastError())
+		UE_LOG(LogSourceControl, Error, TEXT("ParseHistoryResults: XML parse error '%s'"), *XmlFile.GetLastError())
 	}
 
 	return bResult;
@@ -906,7 +906,7 @@ bool ParseUpdateResults(const FString& InResults, TArray<FString>& OutFiles)
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Error, TEXT("RunUpdate: XML parse error '%s'"), *XmlFile.GetLastError())
+		UE_LOG(LogSourceControl, Error, TEXT("ParseUpdateResults: XML parse error '%s'"), *XmlFile.GetLastError())
 	}
 
 	return bResult;
@@ -1106,7 +1106,7 @@ bool ParseChangelistsResults(const FString& Results, TArray<FPlasticSourceContro
 	}
 	else
 	{
-		UE_LOG(LogSourceControl, Error, TEXT("RunGetChangelists: XML parse error '%s'"), *XmlFile.GetLastError())
+		UE_LOG(LogSourceControl, Error, TEXT("ParseChangelistsResults: XML parse error '%s'"), *XmlFile.GetLastError())
 	}
 
 	return bResult;
@@ -1273,6 +1273,10 @@ bool ParseShelvesResults(const FString& InResults, TArray<FPlasticSourceControlC
 	{
 		bResult = ParseShelvesResults(XmlFile, InOutChangelistsStates);
 	}
+	else
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("ParseShelvesResults: XML parse error '%s'"), *XmlFile.GetLastError())
+	}
 
 	return bResult;
 }
@@ -1409,6 +1413,10 @@ bool ParseShelvesResult(const FString& InResults, FString& OutComment, FDateTime
 		int32 ShelveId;
 		bResult = PlasticSourceControlParsers::ParseShelvesResult(XmlFile, ShelveId, OutComment, OutDate, OutOwner);
 	}
+	else
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("ParseShelvesResult: XML parse error '%s'"), *XmlFile.GetLastError())
+	}
 
 	return bResult;
 }
@@ -1511,6 +1519,97 @@ bool ParseBranchesResults(const FString& InResults, TArray<FPlasticSourceControl
 	if (bResult)
 	{
 		bResult = ParseBranchesResults(XmlFile, OutBranches);
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("ParseBranchesResults: XML parse error '%s'"), *XmlFile.GetLastError())
+	}
+
+	return bResult;
+}
+
+/* Parse results of the 'cm merge --xml=tempfile.xml --encoding="utf-8" --merge <branch-name>' command.
+ *
+ * Results of the merge command looks like that:
+<Merge>
+  <Added />
+  <Deleted />
+  <Changed>
+	<MergeItem>
+	  <ItemType>File</ItemType>
+	  <Path>/Content/ThirdPerson/Blueprints/BP_Cube.uasset</Path>
+	  <Size>19730</Size>
+	  <User>sebastien.rombauts@unity3d.com</User>
+	  <Date>2023-11-21T13:35:04+01:00</Date>
+	</MergeItem>
+  </Changed>
+  <Moved />
+  <PermissionsChanged />
+  <Warnings />
+  <DirConflicts />
+  <FileConflicts />
+</Merge>
+*/
+static bool ParseMergeResults(const FXmlFile& InXmlResult, TArray<FString>& OutFiles)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseMergeResults);
+
+	static const FString Merge(TEXT("Merge"));
+	static const FString Added(TEXT("Added"));
+	static const FString Deleted(TEXT("Deleted"));
+	static const FString Changed(TEXT("Changed"));
+	static const FString Moved(TEXT("Moved"));
+	static const TArray<FString> MergeTypes({ Added, Deleted, Changed, Moved });
+	static const FString MergedItem(TEXT("MergeItem"));
+	static const FString Path(TEXT("Path"));
+	static const FString DstPath(TEXT("DstPath"));
+
+	const FXmlNode* MergeNode = InXmlResult.GetRootNode();
+	if (MergeNode == nullptr || MergeNode->GetTag() != Merge)
+	{
+		return false;
+	}
+
+	for (const FString& MergeType : MergeTypes)
+	{
+		if (const FXmlNode* MergeTypeNode = MergeNode->FindChildNode(MergeType))
+		{
+			const TArray<FXmlNode*>& MergeItemNodes = MergeTypeNode->GetChildrenNodes();
+			for (const FXmlNode* MergeItemNode : MergeItemNodes)
+			{
+				const FString PathName = MergeType == Moved ? DstPath : Path;
+				if (const FXmlNode* PathNode = MergeItemNode->FindChildNode(PathName))
+				{
+					FString Filename = PathNode->GetContent();
+					FPaths::NormalizeFilename(Filename);
+					if (!OutFiles.Contains(Filename))
+					{
+						OutFiles.Add(Filename);
+					}
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
+bool ParseMergeResults(const FString& InResult, TArray<FString>& OutFiles)
+{
+	bool bResult = false;
+
+	FXmlFile XmlFile;
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseMergeResults::FXmlFile::LoadFile);
+		bResult = XmlFile.LoadFile(InResult, EConstructMethod::ConstructFromBuffer);
+	}
+	if (bResult)
+	{
+		bResult = ParseMergeResults(XmlFile, OutFiles);
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("ParseMergeResults: XML parse error '%s'"), *XmlFile.GetLastError())
 	}
 
 	return bResult;
