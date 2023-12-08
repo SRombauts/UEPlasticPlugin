@@ -844,7 +844,15 @@ ECommandResult::Type FPlasticSourceControlProvider::IssueCommand(FPlasticSourceC
 	}
 	else
 	{
-		return ECommandResult::Failed;
+		// NOTE: the Perforce & Subversion providers implement this, but looking at Git history of the code I think it has never been used in UE4
+		// If we need to support this, we will need to know the use cases in order to test it
+		FText Message(LOCTEXT("NoSCCThreads", "There are no threads available to process the revision control command."));
+
+		FMessageLog("SourceControl").Error(Message);
+		InCommand.bCommandSuccessful = false;
+		InCommand.Operation->AddErrorMessge(Message);
+
+		return InCommand.ReturnResults();
 	}
 }
 
