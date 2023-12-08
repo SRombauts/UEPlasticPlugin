@@ -5,6 +5,10 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
+#include "ISourceControlModule.h"
+#include "ISourceControlOperation.h"
+#include "SourceControlOperationBase.h"
+
 #include "Runtime/Launch/Resources/Version.h"
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 #include "Styling/AppStyle.h"
@@ -41,7 +45,36 @@ void FNotification::RemoveInProgress()
 	}
 }
 
+void FNotification::DisplayResult(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	DisplayResult(StaticCastSharedRef<FSourceControlOperationBase>(InOperation).Get(), InResult);
+}
+
+void FNotification::DisplayResult(const FSourceControlOperationBase& InOperation, ECommandResult::Type InResult)
+{
+	if (InResult == ECommandResult::Succeeded)
+	{
+		FNotification::DisplaySuccess(InOperation);
+	}
+	else
+	{
+		FNotification::DisplayFailure(InOperation);
+	}
+}
+
 // Display a temporary success notification at the end of the operation
+void FNotification::DisplaySuccess(const FSourceControlOperationBase& InOperation)
+{
+	if (InOperation.GetResultInfo().InfoMessages.Num() > 0)
+	{
+		DisplayFailure(InOperation.GetResultInfo().InfoMessages[0]);
+	}
+	else
+	{
+		DisplaySuccess(InOperation.GetName());
+	}
+}
+
 void FNotification::DisplaySuccess(const FName& InOperationName)
 {
 	const FText NotificationText = FText::Format(
@@ -68,6 +101,18 @@ void FNotification::DisplaySuccess(const FText& InNotificationText)
 }
 
 // Display a temporary failure notification at the end of the operation
+void FNotification::DisplayFailure(const FSourceControlOperationBase& InOperation)
+{
+	if (InOperation.GetResultInfo().ErrorMessages.Num() > 0)
+	{
+		DisplayFailure(InOperation.GetResultInfo().ErrorMessages[0]);
+	}
+	else
+	{
+		DisplayFailure(InOperation.GetName());
+	}
+}
+
 void FNotification::DisplayFailure(const FName& InOperationName)
 {
 	const FText NotificationText = FText::Format(

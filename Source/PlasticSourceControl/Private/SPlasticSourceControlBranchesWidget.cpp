@@ -680,7 +680,7 @@ void SPlasticSourceControlBranchesWidget::CreateBranch(const FString& InParentBr
 			else
 			{
 				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-				FNotification::DisplayFailure(CreateBranchOperation->GetName());
+				FNotification::DisplayFailure(CreateBranchOperation.Get());
 			}
 		}
 		else
@@ -722,7 +722,7 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 			else
 			{
 				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-				FNotification::DisplayFailure(SwitchToBranchOperation->GetName());
+				FNotification::DisplayFailure(SwitchToBranchOperation.Get());
 			}
 		}
 		else
@@ -768,7 +768,7 @@ void SPlasticSourceControlBranchesWidget::OnMergeBranchClicked(FString InBranchN
 				else
 				{
 					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-					FNotification::DisplayFailure(MergeBranchOperation->GetName());
+					FNotification::DisplayFailure(MergeBranchOperation.Get());
 				}
 			}
 			else
@@ -820,7 +820,7 @@ void SPlasticSourceControlBranchesWidget::RenameBranch(const FString& InOldBranc
 		else
 		{
 			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-			FNotification::DisplayFailure(RenameBranchOperation->GetName());
+			FNotification::DisplayFailure(RenameBranchOperation.Get());
 		}
 	}
 	else
@@ -863,7 +863,7 @@ void SPlasticSourceControlBranchesWidget::DeleteBranches(const TArray<FString>& 
 		else
 		{
 			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-			FNotification::DisplayFailure(DeleteBranchesOperation->GetName());
+			FNotification::DisplayFailure(DeleteBranchesOperation.Get());
 		}
 	}
 	else
@@ -961,10 +961,10 @@ void SPlasticSourceControlBranchesWidget::OnCreateBranchOperationComplete(const 
 
 	Notification.RemoveInProgress();
 
+	FNotification::DisplayResult(InOperation, InResult);
+
 	if (InResult == ECommandResult::Succeeded)
 	{
-		FNotification::DisplaySuccess(InOperation->GetName());
-
 		if (bInSwitchWorkspace)
 		{
 			TSharedRef<FPlasticCreateBranch, ESPMode::ThreadSafe> CreateBranchOperation = StaticCastSharedRef<FPlasticCreateBranch>(InOperation);
@@ -978,8 +978,6 @@ void SPlasticSourceControlBranchesWidget::OnCreateBranchOperationComplete(const 
 	}
 	else
 	{
-		FNotification::DisplayFailure(InOperation->GetName());
-
 		EndRefreshStatus();
 	}
 }
@@ -997,15 +995,7 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete(cons
 
 	Notification.RemoveInProgress();
 
-	// Report result with a notification
-	if (InResult == ECommandResult::Succeeded)
-	{
-		FNotification::DisplaySuccess(InOperation->GetName());
-	}
-	else
-	{
-		FNotification::DisplayFailure(InOperation->GetName());
-	}
+	FNotification::DisplayResult(InOperation, InResult);
 }
 
 void SPlasticSourceControlBranchesWidget::OnMergeBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
@@ -1018,15 +1008,7 @@ void SPlasticSourceControlBranchesWidget::OnMergeBranchOperationComplete(const F
 
 	Notification.RemoveInProgress();
 
-	// Report result with a notification
-	if (InResult == ECommandResult::Succeeded)
-	{
-		FNotification::DisplaySuccess(InOperation->GetName());
-	}
-	else
-	{
-		FNotification::DisplayFailure(InOperation->GetName());
-	}
+	FNotification::DisplayResult(InOperation, InResult);
 
 	EndRefreshStatus();
 }
@@ -1038,15 +1020,7 @@ void SPlasticSourceControlBranchesWidget::OnRenameBranchOperationComplete(const 
 
 	Notification.RemoveInProgress();
 
-	// Report result with a notification
-	if (InResult == ECommandResult::Succeeded)
-	{
-		FNotification::DisplaySuccess(InOperation->GetName());
-	}
-	else
-	{
-		FNotification::DisplayFailure(InOperation->GetName());
-	}
+	FNotification::DisplayResult(InOperation, InResult);
 }
 
 void SPlasticSourceControlBranchesWidget::OnDeleteBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
@@ -1056,15 +1030,7 @@ void SPlasticSourceControlBranchesWidget::OnDeleteBranchesOperationComplete(cons
 
 	Notification.RemoveInProgress();
 
-	// Report result with a notification
-	if (InResult == ECommandResult::Succeeded)
-	{
-		FNotification::DisplaySuccess(InOperation->GetName());
-	}
-	else
-	{
-		FNotification::DisplayFailure(InOperation->GetName());
-	}
+	FNotification::DisplayResult(InOperation, InResult);
 }
 
 void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider)
