@@ -881,7 +881,10 @@ static bool ParseUpdateResults(const FXmlFile& InXmlResult, TArray<FString>& Out
 		{
 			FString Filename = PathNode->GetContent();
 			FPaths::NormalizeFilename(Filename);
-			OutFiles.Add(Filename);
+			if (!OutFiles.Contains(Filename))
+			{
+				OutFiles.Add(Filename);
+			}
 		}
 	}
 
@@ -932,7 +935,10 @@ bool ParseUpdateResults(const TArray<FString>& InResults, TArray<FString>& OutFi
 
 		FString Filename = Result.RightChop(PrefixLen);
 		FPaths::NormalizeFilename(Filename);
-		OutFiles.Add(Filename);
+		if (!OutFiles.Contains(Filename))
+		{
+			OutFiles.Add(Filename);
+		}
 	}
 
 	return true;
@@ -1144,7 +1150,7 @@ M "Content\NewFolder\BP_ControlledUnchanged.uasset" "Content\NewFolder\BP_Rename
 */
 bool ParseShelveDiffResult(const FString InWorkspaceRoot, TArray<FString>&& InResults, FPlasticSourceControlChangelistState& InOutChangelistsState)
 {
-	bool bCommandSuccessful = true;
+	bool bResult = true;
 
 	InOutChangelistsState.ShelvedFiles.Reset(InResults.Num());
 	for (FString& Result : InResults)
@@ -1174,11 +1180,11 @@ bool ParseShelveDiffResult(const FString InWorkspaceRoot, TArray<FString>&& InRe
 		}
 		else
 		{
-			bCommandSuccessful = false;
+			bResult = false;
 		}
 	}
 
-	return bCommandSuccessful;
+	return bResult;
 }
 
 /**
@@ -1282,7 +1288,7 @@ M;-1;"Content\ThirdPerson\Blueprints\BP_ThirdPersonCharacterRenamed.uasset"
 */
 bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InResults, TArray<FPlasticSourceControlRevision>& OutBaseRevisions)
 {
-	bool bCommandSuccessful = true;
+	bool bResult = true;
 
 	OutBaseRevisions.Reset(InResults.Num());
 	for (FString& InResult : InResults)
@@ -1321,11 +1327,11 @@ bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InR
 		}
 		else
 		{
-			bCommandSuccessful = false;
+			bResult = false;
 		}
 	}
 
-	return bCommandSuccessful;
+	return bResult;
 }
 
 /**
