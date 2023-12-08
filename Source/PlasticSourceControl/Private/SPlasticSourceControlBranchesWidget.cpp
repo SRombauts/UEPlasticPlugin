@@ -6,6 +6,7 @@
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProjectSettings.h"
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlVersions.h"
 #include "SPlasticSourceControlBranchRow.h"
 #include "SPlasticSourceControlCreateBranch.h"
 #include "SPlasticSourceControlDeleteBranches.h"
@@ -538,6 +539,8 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		return nullptr;
 	}
 
+	const bool bMergeXml = FPlasticSourceControlModule::Get().GetProvider().GetPlasticScmVersion() >= PlasticSourceControlVersions::MergeXml;
+
 	UToolMenus* ToolMenus = UToolMenus::Get();
 	static const FName MenuName = "PlasticSourceControl.BranchesContextMenu";
 	if (!ToolMenus->IsMenuRegistered(MenuName))
@@ -584,7 +587,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnMergeBranchClicked, SelectedBranch),
-			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()) && (SelectedBranch != CurrentBranchName); })
+			FCanExecuteAction::CreateLambda([this, bMergeXml, SelectedBranch]() { return bMergeXml && (!SelectedBranch.IsEmpty()) && (SelectedBranch != CurrentBranchName); })
 		)
 	);
 
