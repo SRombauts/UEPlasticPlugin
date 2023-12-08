@@ -2,8 +2,8 @@
 
 #include "Notification.h"
 
-#include "Widgets/Notifications/SNotificationList.h"
 #include "Framework/Notifications/NotificationManager.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 #include "Runtime/Launch/Resources/Version.h"
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
@@ -55,13 +55,13 @@ void FNotification::DisplaySuccess(const FName& InOperationName)
 void FNotification::DisplaySuccess(const FText& InNotificationText)
 {
 	FNotificationInfo* Info = new FNotificationInfo(InNotificationText);
-	Info->ExpireDuration = 1.0f;
+	Info->ExpireDuration = 3.0f;
 	Info->bFireAndForget = true;
 	Info->bUseSuccessFailIcons = true;
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
-	Info->Image = FAppStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
+	Info->Image = FAppStyle::GetBrush(TEXT("Icons.SuccessWithColor.Large"));
 #else
-	Info->Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
+	Info->Image = FEditorStyle::GetBrush(TEXT("NotificationList.FailImage"));
 #endif
 	FSlateNotificationManager::Get().QueueNotification(Info);
 	UE_LOG(LogSourceControl, Verbose, TEXT("%s"), *InNotificationText.ToString());
@@ -81,8 +81,18 @@ void FNotification::DisplayFailure(const FName& InOperationName)
 void FNotification::DisplayFailure(const FText& InNotificationText)
 {
 	FNotificationInfo* Info = new FNotificationInfo(InNotificationText);
-	Info->ExpireDuration = 8.0f;
+	Info->ExpireDuration = 10.0f;
 	Info->bFireAndForget = true;
+	Info->bUseSuccessFailIcons = true;
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+	Info->Image = FAppStyle::GetBrush(TEXT("Icons.ErrorWithColor.Large"));
+#else
+	Info->Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
+#endif
+	// Provide a link to easily open the Output Log
+	Info->Hyperlink = FSimpleDelegate::CreateLambda([]() { FGlobalTabmanager::Get()->TryInvokeTab(FName("OutputLog")); });
+	Info->HyperlinkText = LOCTEXT("ShowOutputLogHyperlink", "Show Output Log");
+
 	FSlateNotificationManager::Get().QueueNotification(Info);
 	UE_LOG(LogSourceControl, Error, TEXT("%s"), *InNotificationText.ToString());
 }
