@@ -1094,12 +1094,20 @@ bool FPlasticSwitchToBranchWorker::Execute(FPlasticSourceControlCommand& InComma
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSwitchToBranch>(InCommand.Operation);
 
-	return PlasticSourceControlUtils::RunSwitchToBranch(Operation->BranchName, Operation->UpdatedFiles, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunSwitchToBranch(Operation->BranchName, Operation->UpdatedFiles, InCommand.ErrorMessages);
+
+	// now update the status of the updated files
+	if (Operation->UpdatedFiles.Num())
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Operation->UpdatedFiles, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
+	}
+
+	return InCommand.bCommandSuccessful;
 }
 
 bool FPlasticSwitchToBranchWorker::UpdateStates()
 {
-	return false;
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
 
