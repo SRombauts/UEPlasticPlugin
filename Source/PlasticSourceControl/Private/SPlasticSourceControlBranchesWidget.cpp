@@ -1013,7 +1013,7 @@ FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometr
 			const FString& SelectedBranch = SelectedBranches[0];
 			// Note: this action require a confirmation dialog (while the Delete below already have one in OnDeleteBranchesClicked()).
 			const FText Message = FText::Format(LOCTEXT("SwitchToBranchDialog", "Switch workspace to branch {0}?"), FText::FromString(SelectedBranch));
-			const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::YesNo, Message);
+			const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Info, EAppMsgType::YesNo, Message);
 			if (Choice == EAppReturnType::Yes)
 			{
 				OnSwitchToBranchClicked(SelectedBranch);

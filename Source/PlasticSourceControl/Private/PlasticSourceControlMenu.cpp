@@ -394,7 +394,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 	{
 		// Ask the user before reverting all!
 		const FText DialogText(LOCTEXT("SourceControlMenu_AskRevertAll", "Revert all modifications into the workspace?"));
-		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::OkCancel, DialogText);
+		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Warning, EAppMsgType::OkCancel, DialogText);
 		if (Choice == EAppReturnType::Ok)
 		{
 			const bool bSaved = PackageUtils::SaveDirtyPackages();
@@ -441,7 +441,7 @@ void FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked()
 		// Ask the user before switching to Partial Workspace. It's not possible to switch back with local changes!
 		const FText DialogText(LOCTEXT("SourceControlMenu_AskSwitchToPartialWorkspace", "Switch to Gluon partial workspace?\n"
 			"Please note that, in order to switch back to a regular workspace you will need to undo all local changes."));
-		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::OkCancel, DialogText);
+		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Info, EAppMsgType::OkCancel, DialogText);
 		if (Choice == EAppReturnType::Ok)
 		{
 			// Launch a "SwitchToPartialWorkspace" Operation
