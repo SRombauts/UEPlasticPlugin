@@ -579,16 +579,23 @@ void FPlasticSourceControlProvider::RegisterWorker(const FName& InName, const FG
 
 void FPlasticSourceControlProvider::OutputCommandMessages(const FPlasticSourceControlCommand& InCommand) const
 {
+	// Note: the Perforce provider added a way to call OutputCommandMessages() from FPerforceSourceControlProvider::TryToDownloadFileFromBackgroundThread()
+	// see Commit 18dc0643 by paul chipchase, 05/17/2021 11:06 AM [CL 16346666 by paul chipchase in ue5-main branch]
+	// but we don't have this new API yet so we don't need this thread safety
+	check(IsInGameThread()); // On the game thread we can use FMessageLog
+
 	FMessageLog SourceControlLog("SourceControl");
 
 	for (const FString& ErrorMessage : InCommand.ErrorMessages)
 	{
-		SourceControlLog.Error(FText::FromString(ErrorMessage));
+		SourceControlLog.Error(FText::Format(LOCTEXT("OutputCommandMessagesFormatError", "Command: {0}, Error: {1}"),
+			FText::FromName(InCommand.Operation->GetName()), FText::FromString(ErrorMessage)));
 	}
 
 	for (const FString& InfoMessage : InCommand.InfoMessages)
 	{
-		SourceControlLog.Info(FText::FromString(InfoMessage));
+		SourceControlLog.Info(FText::Format(LOCTEXT("OutputCommandMessagesFormatInfo", "Command: {0}, Info: {1}"),
+			FText::FromName(InCommand.Operation->GetName()), FText::FromString(InfoMessage)));
 	}
 }
 
