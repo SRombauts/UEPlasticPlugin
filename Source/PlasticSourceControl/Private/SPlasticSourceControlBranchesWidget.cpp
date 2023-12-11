@@ -538,8 +538,14 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 	{
 		return nullptr;
 	}
+	const bool bSingleSelection = !SelectedBranch.IsEmpty();
+	const bool bSingleNotCurrent = bSingleSelection && (SelectedBranch != CurrentBranchName);
 
 	const bool bMergeXml = FPlasticSourceControlModule::Get().GetProvider().GetPlasticScmVersion() >= PlasticSourceControlVersions::MergeXml;
+
+	static const FText SelectASingleBranchTooltip(LOCTEXT("SelectASingleBranchTooltip", "Select a single branch."));
+	static const FText SelectADifferentBranchTooltip(LOCTEXT("SelectADifferentBranchTooltip", "Select a branch that is not the current one."));
+	static const FText UpdateUVCSTooltip(LOCTEXT("MergeBranchXmlTooltip", "Update Unity Version Control (PlasticSCM) to 11.0.16.7726 or later."));
 
 	UToolMenus* ToolMenus = UToolMenus::Get();
 	static const FName MenuName = "PlasticSourceControl.BranchesContextMenu";
@@ -556,51 +562,59 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 
 	FToolMenuSection& Section = *Menu->FindSection("Source Control");
 
+	static const FText CreateChildBranchTooltip(LOCTEXT("CreateChildBranchTooltip", "Create child branch from the selected branch."));
+	const FText& CreateChildBranchTooltipDynamic = bSingleSelection ? CreateChildBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
 		TEXT("CreateChildBranch"),
 		LOCTEXT("CreateChildBranch", "Create child branch..."),
-		LOCTEXT("CreateChildBranchTooltip", "Create child branch from the selected branch."),
+		CreateChildBranchTooltipDynamic,
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnCreateBranchClicked, SelectedBranch),
-			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()); })
+			FCanExecuteAction::CreateLambda([bSingleSelection]() { return bSingleSelection; })
 		)
 	);
 
+	static const FText SwitchToBranchTooltip(LOCTEXT("SwitchToBranchTooltip", "Switch the current workspace to this branch."));
+	const FText& SwitchToBranchTooltipDynamic = bSingleNotCurrent ? SwitchToBranchTooltip : bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
 		TEXT("SwitchToBranch"),
 		LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
-		LOCTEXT("SwitchToBranchTooltip", "Switch workspace to this branch."),
+		SwitchToBranchTooltipDynamic,
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked, SelectedBranch),
-			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()) && (SelectedBranch != CurrentBranchName); })
+			FCanExecuteAction::CreateLambda([bSingleNotCurrent]() { return bSingleNotCurrent; })
 		)
 	);
 
 	Section.AddSeparator("PlasticSeparator1");
 
+	static const FText MergeBranchTooltip(LOCTEXT("MergeBranchTooltip", "Merge this branch into the current workspace."));
+	const FText& MergeBranchTooltipDynamic = bMergeXml ? bSingleNotCurrent ? MergeBranchTooltip : bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip : UpdateUVCSTooltip;
 	Section.AddMenuEntry(
 		TEXT("MergeBranch"),
 		LOCTEXT("MergeBranch", "Merge from this branch..."),
-		LOCTEXT("MergeBranchTooltip", "Merge this branch into the current workspace."),
+		MergeBranchTooltipDynamic,
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnMergeBranchClicked, SelectedBranch),
-			FCanExecuteAction::CreateLambda([this, bMergeXml, SelectedBranch]() { return bMergeXml && (!SelectedBranch.IsEmpty()) && (SelectedBranch != CurrentBranchName); })
+			FCanExecuteAction::CreateLambda([bMergeXml, bSingleNotCurrent]() { return bMergeXml && bSingleNotCurrent; })
 		)
 	);
 
 	Section.AddSeparator("PlasticSeparator2");
 
+	static const FText RenameBranchTooltip(LOCTEXT("RenameBranchTooltip", "Rename the selected child branch."));
+	const FText& RenameBranchTooltipDynamic = bSingleSelection ? RenameBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
 		TEXT("RenameBranch"),
 		LOCTEXT("RenameBranch", "Rename..."),
-		LOCTEXT("RenameBranchTooltip", "Rename the selected child branch."),
+		RenameBranchTooltipDynamic,
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnRenameBranchClicked, SelectedBranch),
-			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()); })
+			FCanExecuteAction::CreateLambda([this, bSingleSelection]() { return bSingleSelection; })
 		)
 	);
 	Section.AddMenuEntry(
@@ -609,7 +623,8 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		LOCTEXT("DeleteBranchTooltip", "Delete branch the selected branch(es)."),
 		FSlateIcon(),
 		FUIAction(
-			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnDeleteBranchesClicked, SelectedBranches)
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnDeleteBranchesClicked, SelectedBranches),
+			FCanExecuteAction()
 		)
 	);
 
