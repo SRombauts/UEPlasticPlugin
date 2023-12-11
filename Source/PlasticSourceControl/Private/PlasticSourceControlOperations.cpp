@@ -1147,6 +1147,11 @@ bool FPlasticMergeBranchWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticMergeBranchWorker::UpdateStates()
 {
+#if ENGINE_MAJOR_VERSION == 5
+	// Update the Default changelist.
+	UpdateChangelistState(GetProvider(), FPlasticSourceControlChangelist::DefaultChangelist, States);
+#endif
+
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
