@@ -264,7 +264,6 @@ void ParseFileStatusResult(TArray<FString>&& InFiles, const TArray<FString>& InR
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseFileStatusResult);
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
 	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
 	// Parse the list of status results in a map indexed by absolute filename
@@ -1564,6 +1563,8 @@ static bool ParseMergeResults(const FXmlFile& InXmlResult, TArray<FString>& OutF
 	static const FString Path(TEXT("Path"));
 	static const FString DstPath(TEXT("DstPath"));
 
+	const FString WorkspaceRoot = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot().LeftChop(1);
+
 	const FXmlNode* MergeNode = InXmlResult.GetRootNode();
 	if (MergeNode == nullptr || MergeNode->GetTag() != Merge)
 	{
@@ -1580,7 +1581,7 @@ static bool ParseMergeResults(const FXmlFile& InXmlResult, TArray<FString>& OutF
 				const FString PathName = MergeType == Moved ? DstPath : Path;
 				if (const FXmlNode* PathNode = MergeItemNode->FindChildNode(PathName))
 				{
-					FString Filename = PathNode->GetContent();
+					FString Filename = FPaths::Combine(WorkspaceRoot, PathNode->GetContent());
 					FPaths::NormalizeFilename(Filename);
 					if (!OutFiles.Contains(Filename))
 					{
