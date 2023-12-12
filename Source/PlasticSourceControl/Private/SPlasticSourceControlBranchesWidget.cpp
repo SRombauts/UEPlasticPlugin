@@ -576,7 +576,9 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 	);
 
 	static const FText SwitchToBranchTooltip(LOCTEXT("SwitchToBranchTooltip", "Switch the current workspace to this branch."));
-	const FText& SwitchToBranchTooltipDynamic = bSingleNotCurrent ? SwitchToBranchTooltip : bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip;
+	const FText& SwitchToBranchTooltipDynamic =
+		bSingleNotCurrent ? SwitchToBranchTooltip :
+		bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
 		TEXT("SwitchToBranch"),
 		LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
@@ -591,7 +593,10 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 	Section.AddSeparator("PlasticSeparator1");
 
 	static const FText MergeBranchTooltip(LOCTEXT("MergeBranchTooltip", "Merge this branch into the current workspace."));
-	const FText& MergeBranchTooltipDynamic = bMergeXml ? bSingleNotCurrent ? MergeBranchTooltip : bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip : UpdateUVCSTooltip;
+	const FText& MergeBranchTooltipDynamic =
+		!bMergeXml ? UpdateUVCSTooltip :
+		bSingleNotCurrent ? MergeBranchTooltip :
+		bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
 		TEXT("MergeBranch"),
 		LOCTEXT("MergeBranch", "Merge from this branch..."),
