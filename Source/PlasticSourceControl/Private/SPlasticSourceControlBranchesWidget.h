@@ -63,6 +63,7 @@ private:
 
 	void OnCreateBranchClicked(FString InParentBranchName);
 	void OnSwitchToBranchClicked(FString InBranchName);
+	void OnMergeBranchClicked(FString InBranchName);
 	void OnRenameBranchClicked(FString InBranchName);
 	void OnDeleteBranchesClicked(TArray<FString> InBranchNames);
 
@@ -76,6 +77,7 @@ private:
 	void OnGetBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnCreateBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult, const bool bInSwitchWorkspace);
 	void OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnMergeBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnRenameBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnDeleteBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);

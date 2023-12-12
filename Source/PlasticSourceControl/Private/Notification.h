@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 
-#include "ISourceControlModule.h"
+#include "ISourceControlProvider.h"
+
+class ISourceControlOperation;
+class FSourceControlOperationBase;
 
 class FNotification
 {
@@ -21,8 +24,14 @@ public:
 
 	// Display a short fire-and-forget notification
 	// Note: thread safe methods of queuing a notification from any thread
+	static void DisplayResult(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	static void DisplayResult(const FSourceControlOperationBase& InOperation, ECommandResult::Type InResult);
+
+	static void DisplaySuccess(const FSourceControlOperationBase& InOperation);
 	static void DisplaySuccess(const FName& InOperationName);
 	static void DisplaySuccess(const FText& InNotificationText);
+
+	static void DisplayFailure(const FSourceControlOperationBase& InOperation);
 	static void DisplayFailure(const FName& InOperationName);
 	static void DisplayFailure(const FText& InNotificationText);
 

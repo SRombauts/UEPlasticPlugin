@@ -623,12 +623,12 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 					Args.Add(TEXT("OldestSupportedPlasticScmVersion"), FText::FromString(PlasticSourceControlVersions::OldestSupported.String));
 					const FText UnsuportedVersionWarning = FText::Format(LOCTEXT("Plastic_UnsuportedVersion", "Unity Version Control {PlasticScmVersion} is not supported anymore by this plugin.\nUnity Version Control {OldestSupportedPlasticScmVersion} or a more recent version is required.\nPlease upgrade to the latest version."), Args);
 					FMessageLog("SourceControl").Warning(UnsuportedVersionWarning);
-					FMessageDialog::Open(EAppMsgType::Ok, UnsuportedVersionWarning);
+					FMessageDialog::Open(EAppMsgCategory::Warning, EAppMsgType::Ok, UnsuportedVersionWarning);
 				}
 			}
 			else if (InCommand.ErrorMessages.Num() > 0)
 			{
-				FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(InCommand.ErrorMessages[0]));
+				FMessageDialog::Open(EAppMsgCategory::Error, EAppMsgType::Ok, FText::FromString(InCommand.ErrorMessages[0]));
 			}
 		}
 

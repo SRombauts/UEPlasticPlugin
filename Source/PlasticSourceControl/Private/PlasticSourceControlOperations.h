@@ -152,6 +152,25 @@ public:
 
 
 /**
+ * Internal operation used to merge a branch into the current branch
+*/
+class FPlasticMergeBranch final : public FSourceControlOperationBase
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	// Branch to switch the workspace to
+	FString BranchName;
+
+	/** List of files updated by the operation */
+	TArray<FString> UpdatedFiles;
+};
+
+
+/**
  * Internal operation used to create a branch
 */
 class FPlasticCreateBranch final : public FSourceControlOperationBase
@@ -450,6 +469,28 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() override;
+
+public:
+	/** Temporary states for results */
+	TArray<FPlasticSourceControlState> States;
+};
+
+/** Merge a branch to the current branch. */
+class FPlasticMergeBranchWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticMergeBranchWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticMergeBranchWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+public:
+	/** Temporary states for results */
+	TArray<FPlasticSourceControlState> States;
 };
 
 /** Create a new child branch. */

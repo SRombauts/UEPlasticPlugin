@@ -66,9 +66,17 @@ void SPlasticSourceControlRenameBranch::Construct(const FArguments& InArgs)
 			[
 				SAssignNew(BranchNameTextBox, SEditableTextBox)
 				.Text(FText::FromString(NewBranchName))
-				.OnTextChanged_Lambda([this](const FText& InExpressionText)
+				.OnTextChanged_Lambda([this](const FText& InText)
 				{
-					NewBranchName = InExpressionText.ToString();
+					NewBranchName = InText.ToString();
+				})
+				.OnTextCommitted_Lambda([this](const FText& InText, ETextCommit::Type TextCommitType)
+				{
+					NewBranchName = InText.ToString();
+					if (TextCommitType == ETextCommit::OnEnter)
+					{
+						RenamedClicked();
+					}
 				})
 			]
 		]

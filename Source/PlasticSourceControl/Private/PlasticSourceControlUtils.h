@@ -245,6 +245,14 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
 
 /**
+ * Run merge br:/name and parse the results.
+ * @param	InBranchName			The name of the branch to merge to the current branch
+ * @param	OutUpdatedFiles			The files that where updated
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunMergeBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
+
+/**
  * Run branch create <name> --commentsfile
  * @param	InBranchName			The name of the branch to create
  * @param	InComment				The comment for the new branch to create

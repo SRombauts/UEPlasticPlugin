@@ -304,7 +304,7 @@ void FPlasticSourceControlMenu::ExecuteUnlock(const TArray<FAssetData>& InAssetO
 		else
 		{
 			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-			FNotification::DisplayFailure(UnlockOperation->GetName());
+			FNotification::DisplayFailure(UnlockOperation.Get());
 		}
 	}
 	else
@@ -343,7 +343,7 @@ void FPlasticSourceControlMenu::SyncProjectClicked()
 			else
 			{
 				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-				FNotification::DisplayFailure(SyncOperation->GetName());
+				FNotification::DisplayFailure(SyncOperation.Get());
 			}
 		}
 		else
@@ -377,7 +377,7 @@ void FPlasticSourceControlMenu::RevertUnchangedClicked()
 		else
 		{
 			// Report failure with a notification
-			FNotification::DisplayFailure(RevertUnchangedOperation->GetName());
+			FNotification::DisplayFailure(RevertUnchangedOperation.Get());
 		}
 	}
 	else
@@ -394,7 +394,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 	{
 		// Ask the user before reverting all!
 		const FText DialogText(LOCTEXT("SourceControlMenu_AskRevertAll", "Revert all modifications into the workspace?"));
-		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::OkCancel, DialogText);
+		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Warning, EAppMsgType::OkCancel, DialogText);
 		if (Choice == EAppReturnType::Ok)
 		{
 			const bool bSaved = PackageUtils::SaveDirtyPackages();
@@ -415,7 +415,7 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 				else
 				{
 					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-					FNotification::DisplayFailure(RevertAllOperation->GetName());
+					FNotification::DisplayFailure(RevertAllOperation.Get());
 				}
 			}
 			else
@@ -441,7 +441,7 @@ void FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked()
 		// Ask the user before switching to Partial Workspace. It's not possible to switch back with local changes!
 		const FText DialogText(LOCTEXT("SourceControlMenu_AskSwitchToPartialWorkspace", "Switch to Gluon partial workspace?\n"
 			"Please note that, in order to switch back to a regular workspace you will need to undo all local changes."));
-		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::OkCancel, DialogText);
+		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Info, EAppMsgType::OkCancel, DialogText);
 		if (Choice == EAppReturnType::Ok)
 		{
 			// Launch a "SwitchToPartialWorkspace" Operation
@@ -456,7 +456,7 @@ void FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked()
 			else
 			{
 				// Report failure with a notification
-				FNotification::DisplayFailure(SwitchOperation->GetName());
+				FNotification::DisplayFailure(SwitchOperation.Get());
 			}
 		}
 	}
@@ -553,15 +553,7 @@ void FPlasticSourceControlMenu::OnSourceControlOperationComplete(const FSourceCo
 {
 	Notification.RemoveInProgress();
 
-	// Report result with a notification
-	if (InResult == ECommandResult::Succeeded)
-	{
-		FNotification::DisplaySuccess(InOperation->GetName());
-	}
-	else
-	{
-		FNotification::DisplayFailure(InOperation->GetName());
-	}
+	FNotification::DisplayResult(InOperation, InResult);
 }
 
 // TODO rework the menus with sub-menus like in the POC branch

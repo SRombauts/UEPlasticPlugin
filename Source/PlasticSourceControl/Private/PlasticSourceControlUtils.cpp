@@ -1024,6 +1024,31 @@ bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedF
 	return bResult;
 }
 
+bool RunMergeBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
+{
+	bool bResult = false;
+
+	const FScopedTempFile TempFile;
+	TArray<FString> InfoMessages;
+	TArray<FString> Parameters;
+	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFile.GetFilename()));
+	Parameters.Add(TEXT("--encoding=\"utf-8\""));
+	Parameters.Add(TEXT("--merge"));
+	Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InBranchName));
+	bResult = PlasticSourceControlUtils::RunCommand(TEXT("merge"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
+	if (bResult)
+	{
+		// Load and parse the result of the update command
+		FString Results;
+		if (FFileHelper::LoadFileToString(Results, *TempFile.GetFilename()))
+		{
+			PlasticSourceControlParsers::ParseMergeResults(Results, OutUpdatedFiles);
+		}
+	}
+
+	return bResult;
+}
+
 bool RunCreateBranch(const FString& InBranchName, const FString& InComment, TArray<FString>& OutErrorMessages)
 {
 	// make a temp file to place our comment message in

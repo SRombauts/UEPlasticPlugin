@@ -6,6 +6,7 @@
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProjectSettings.h"
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlVersions.h"
 #include "SPlasticSourceControlBranchRow.h"
 #include "SPlasticSourceControlCreateBranch.h"
 #include "SPlasticSourceControlDeleteBranches.h"
@@ -532,11 +533,19 @@ TArray<FString> SPlasticSourceControlBranchesWidget::GetSelectedBranches()
 TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 {
 	const TArray<FString> SelectedBranches = GetSelectedBranches();
-	const FString SelectedBranch = SelectedBranches.Num() == 1 ? SelectedBranches[0] : FString();
+	const FString& SelectedBranch = SelectedBranches.Num() == 1 ? SelectedBranches[0] : FString();
 	if (SelectedBranches.Num() == 0)
 	{
 		return nullptr;
 	}
+	const bool bSingleSelection = !SelectedBranch.IsEmpty();
+	const bool bSingleNotCurrent = bSingleSelection && (SelectedBranch != CurrentBranchName);
+
+	const bool bMergeXml = FPlasticSourceControlModule::Get().GetProvider().GetPlasticScmVersion() >= PlasticSourceControlVersions::MergeXml;
+
+	static const FText SelectASingleBranchTooltip(LOCTEXT("SelectASingleBranchTooltip", "Select a single branch."));
+	static const FText SelectADifferentBranchTooltip(LOCTEXT("SelectADifferentBranchTooltip", "Select a branch that is not the current one."));
+	static const FText UpdateUVCSTooltip(LOCTEXT("MergeBranchXmlTooltip", "Update Unity Version Control (PlasticSCM) to 11.0.16.7726 or later."));
 
 	UToolMenus* ToolMenus = UToolMenus::Get();
 	static const FName MenuName = "PlasticSourceControl.BranchesContextMenu";
@@ -553,38 +562,64 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 
 	FToolMenuSection& Section = *Menu->FindSection("Source Control");
 
+	static const FText CreateChildBranchTooltip(LOCTEXT("CreateChildBranchTooltip", "Create child branch from the selected branch."));
+	const FText& CreateChildBranchTooltipDynamic = bSingleSelection ? CreateChildBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
 		TEXT("CreateChildBranch"),
 		LOCTEXT("CreateChildBranch", "Create child branch..."),
-		LOCTEXT("CreateChildBranchTooltip", "Create child branch from the selected branch."),
+		CreateChildBranchTooltipDynamic,
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnCreateBranchClicked, SelectedBranch),
-			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()); })
+			FCanExecuteAction::CreateLambda([bSingleSelection]() { return bSingleSelection; })
 		)
 	);
 
+	static const FText SwitchToBranchTooltip(LOCTEXT("SwitchToBranchTooltip", "Switch the current workspace to this branch."));
+	const FText& SwitchToBranchTooltipDynamic =
+		bSingleNotCurrent ? SwitchToBranchTooltip :
+		bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
 		TEXT("SwitchToBranch"),
 		LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
-		LOCTEXT("SwitchToBranchTooltip", "Switch workspace to this branch."),
+		SwitchToBranchTooltipDynamic,
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked, SelectedBranch),
-			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()) && (SelectedBranch != CurrentBranchName); })
+			FCanExecuteAction::CreateLambda([bSingleNotCurrent]() { return bSingleNotCurrent; })
 		)
 	);
 
-	Section.AddSeparator("PlasticSeparator");
+	Section.AddSeparator("PlasticSeparator1");
 
+	static const FText MergeBranchTooltip(LOCTEXT("MergeBranchTooltip", "Merge this branch into the current workspace."));
+	const FText& MergeBranchTooltipDynamic =
+		!bMergeXml ? UpdateUVCSTooltip :
+		bSingleNotCurrent ? MergeBranchTooltip :
+		bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip;
+	Section.AddMenuEntry(
+		TEXT("MergeBranch"),
+		LOCTEXT("MergeBranch", "Merge from this branch..."),
+		MergeBranchTooltipDynamic,
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnMergeBranchClicked, SelectedBranch),
+			FCanExecuteAction::CreateLambda([bMergeXml, bSingleNotCurrent]() { return bMergeXml && bSingleNotCurrent; })
+		)
+	);
+
+	Section.AddSeparator("PlasticSeparator2");
+
+	static const FText RenameBranchTooltip(LOCTEXT("RenameBranchTooltip", "Rename the selected child branch."));
+	const FText& RenameBranchTooltipDynamic = bSingleSelection ? RenameBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
 		TEXT("RenameBranch"),
 		LOCTEXT("RenameBranch", "Rename..."),
-		LOCTEXT("RenameBranchTooltip", "Rename the selected child branch."),
+		RenameBranchTooltipDynamic,
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnRenameBranchClicked, SelectedBranch),
-			FCanExecuteAction::CreateLambda([this, SelectedBranch]() { return (!SelectedBranch.IsEmpty()); })
+			FCanExecuteAction::CreateLambda([this, bSingleSelection]() { return bSingleSelection; })
 		)
 	);
 	Section.AddMenuEntry(
@@ -593,7 +628,8 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		LOCTEXT("DeleteBranchTooltip", "Delete branch the selected branch(es)."),
 		FSlateIcon(),
 		FUIAction(
-			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnDeleteBranchesClicked, SelectedBranches)
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnDeleteBranchesClicked, SelectedBranches),
+			FCanExecuteAction()
 		)
 	);
 
@@ -664,7 +700,7 @@ void SPlasticSourceControlBranchesWidget::CreateBranch(const FString& InParentBr
 			else
 			{
 				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-				FNotification::DisplayFailure(CreateBranchOperation->GetName());
+				FNotification::DisplayFailure(CreateBranchOperation.Get());
 			}
 		}
 		else
@@ -692,7 +728,7 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 			// Find and Unlink all loaded packages in Content directory to allow to update them
 			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
 
-			// Launch a custom "SwitchToBranch" operation
+			// Launch a custom "Switch" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 			TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> SwitchToBranchOperation = ISourceControlOperation::Create<FPlasticSwitchToBranch>();
 			SwitchToBranchOperation->BranchName = InBranchName;
@@ -706,7 +742,7 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 			else
 			{
 				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-				FNotification::DisplayFailure(SwitchToBranchOperation->GetName());
+				FNotification::DisplayFailure(SwitchToBranchOperation.Get());
 			}
 		}
 		else
@@ -721,6 +757,53 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 		FMessageLog SourceControlLog("SourceControl");
 		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
 		SourceControlLog.Notify();
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::OnMergeBranchClicked(FString InBranchName)
+{
+	const FText Message = FText::Format(LOCTEXT("MergeBranch", "Merge branch {0} into the current branch {1}?"), FText::FromString(InBranchName), FText::FromString(CurrentBranchName));
+	const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Info, EAppMsgType::YesNo, Message);
+	if (Choice == EAppReturnType::Yes)
+	{
+		if (!Notification.IsInProgress())
+		{
+			const bool bSaved = PackageUtils::SaveDirtyPackages();
+			if (bSaved)
+			{
+				// Find and Unlink all loaded packages in Content directory to allow to update them
+				PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+
+				// Launch a custom "Merge" operation
+				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+				TSharedRef<FPlasticMergeBranch, ESPMode::ThreadSafe> MergeBranchOperation = ISourceControlOperation::Create<FPlasticMergeBranch>();
+				MergeBranchOperation->BranchName = InBranchName;
+				const ECommandResult::Type Result = Provider.Execute(MergeBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnMergeBranchOperationComplete));
+				if (Result == ECommandResult::Succeeded)
+				{
+					// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+					Notification.DisplayInProgress(MergeBranchOperation->GetInProgressString());
+					StartRefreshStatus();
+				}
+				else
+				{
+					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+					FNotification::DisplayFailure(MergeBranchOperation.Get());
+				}
+			}
+			else
+			{
+				FMessageLog SourceControlLog("SourceControl");
+				SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Merge_Unsaved", "Save All Assets before attempting to Merge a branch into the workspace!"));
+				SourceControlLog.Notify();
+			}
+		}
+		else
+		{
+			FMessageLog SourceControlLog("SourceControl");
+			SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+			SourceControlLog.Notify();
+		}
 	}
 }
 
@@ -757,7 +840,7 @@ void SPlasticSourceControlBranchesWidget::RenameBranch(const FString& InOldBranc
 		else
 		{
 			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-			FNotification::DisplayFailure(RenameBranchOperation->GetName());
+			FNotification::DisplayFailure(RenameBranchOperation.Get());
 		}
 	}
 	else
@@ -800,7 +883,7 @@ void SPlasticSourceControlBranchesWidget::DeleteBranches(const TArray<FString>& 
 		else
 		{
 			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-			FNotification::DisplayFailure(DeleteBranchesOperation->GetName());
+			FNotification::DisplayFailure(DeleteBranchesOperation.Get());
 		}
 	}
 	else
@@ -898,10 +981,10 @@ void SPlasticSourceControlBranchesWidget::OnCreateBranchOperationComplete(const 
 
 	Notification.RemoveInProgress();
 
+	FNotification::DisplayResult(InOperation, InResult);
+
 	if (InResult == ECommandResult::Succeeded)
 	{
-		FNotification::DisplaySuccess(InOperation->GetName());
-
 		if (bInSwitchWorkspace)
 		{
 			TSharedRef<FPlasticCreateBranch, ESPMode::ThreadSafe> CreateBranchOperation = StaticCastSharedRef<FPlasticCreateBranch>(InOperation);
@@ -915,8 +998,6 @@ void SPlasticSourceControlBranchesWidget::OnCreateBranchOperationComplete(const 
 	}
 	else
 	{
-		FNotification::DisplayFailure(InOperation->GetName());
-
 		EndRefreshStatus();
 	}
 }
@@ -934,15 +1015,22 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete(cons
 
 	Notification.RemoveInProgress();
 
-	// Report result with a notification
-	if (InResult == ECommandResult::Succeeded)
-	{
-		FNotification::DisplaySuccess(InOperation->GetName());
-	}
-	else
-	{
-		FNotification::DisplayFailure(InOperation->GetName());
-	}
+	FNotification::DisplayResult(InOperation, InResult);
+}
+
+void SPlasticSourceControlBranchesWidget::OnMergeBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlBranchesWidget::OnMergeBranchOperationComplete);
+
+	// Reload packages that where updated by the MergeBranch operation (and the current map if needed)
+	TSharedRef<FPlasticMergeBranch, ESPMode::ThreadSafe> MergeBranchOperation = StaticCastSharedRef<FPlasticMergeBranch>(InOperation);
+	PackageUtils::ReloadPackages(MergeBranchOperation->UpdatedFiles);
+
+	Notification.RemoveInProgress();
+
+	FNotification::DisplayResult(InOperation, InResult);
+
+	EndRefreshStatus();
 }
 
 void SPlasticSourceControlBranchesWidget::OnRenameBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
@@ -952,15 +1040,7 @@ void SPlasticSourceControlBranchesWidget::OnRenameBranchOperationComplete(const 
 
 	Notification.RemoveInProgress();
 
-	// Report result with a notification
-	if (InResult == ECommandResult::Succeeded)
-	{
-		FNotification::DisplaySuccess(InOperation->GetName());
-	}
-	else
-	{
-		FNotification::DisplayFailure(InOperation->GetName());
-	}
+	FNotification::DisplayResult(InOperation, InResult);
 }
 
 void SPlasticSourceControlBranchesWidget::OnDeleteBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
@@ -970,15 +1050,7 @@ void SPlasticSourceControlBranchesWidget::OnDeleteBranchesOperationComplete(cons
 
 	Notification.RemoveInProgress();
 
-	// Report result with a notification
-	if (InResult == ECommandResult::Succeeded)
-	{
-		FNotification::DisplaySuccess(InOperation->GetName());
-	}
-	else
-	{
-		FNotification::DisplayFailure(InOperation->GetName());
-	}
+	FNotification::DisplayResult(InOperation, InResult);
 }
 
 void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider)
@@ -1013,7 +1085,7 @@ FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometr
 			const FString& SelectedBranch = SelectedBranches[0];
 			// Note: this action require a confirmation dialog (while the Delete below already have one in OnDeleteBranchesClicked()).
 			const FText Message = FText::Format(LOCTEXT("SwitchToBranchDialog", "Switch workspace to branch {0}?"), FText::FromString(SelectedBranch));
-			const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::YesNo, Message);
+			const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Info, EAppMsgType::YesNo, Message);
 			if (Choice == EAppReturnType::Yes)
 			{
 				OnSwitchToBranchClicked(SelectedBranch);

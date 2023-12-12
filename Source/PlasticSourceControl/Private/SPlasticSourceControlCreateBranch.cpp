@@ -59,9 +59,17 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 			[
 				SAssignNew(BranchNameTextBox, SEditableTextBox)
 				.HintText(LOCTEXT("PlasticCreateBrancheNameHint", "Name of the new branch"))
-				.OnTextChanged_Lambda([this](const FText& InExpressionText)
+				.OnTextChanged_Lambda([this](const FText& InText)
 				{
-					NewBranchName = InExpressionText.ToString();
+					NewBranchName = InText.ToString();
+				})
+				.OnTextCommitted_Lambda([this](const FText& InText, ETextCommit::Type TextCommitType)
+				{
+					NewBranchName = InText.ToString();
+					if (TextCommitType == ETextCommit::OnEnter)
+					{
+						CreateClicked();
+					}
 				})
 			]
 		]
@@ -88,9 +96,9 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 					SNew(SMultiLineEditableTextBox)
 					.AutoWrapText(true)
 					.HintText(LOCTEXT("PlasticCreateBrancheCommentHing", "Comments for the new branch"))
-					.OnTextCommitted_Lambda([this](const FText& InExpressionText, ETextCommit::Type)
+					.OnTextCommitted_Lambda([this](const FText& InText, ETextCommit::Type TextCommitType)
 					{
-						NewBranchComment = InExpressionText.ToString();
+						NewBranchComment = InText.ToString();
 					})
 				]
 			]

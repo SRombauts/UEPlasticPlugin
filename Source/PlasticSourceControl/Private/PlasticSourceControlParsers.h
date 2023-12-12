@@ -93,5 +93,6 @@ bool ParseShelvesResult(const FString& InResults, FString& OutComment, FDateTime
 
 bool ParseBranchesResults(const FString& InResults, TArray<FPlasticSourceControlBranchRef>& OutBranches);
 
+bool ParseMergeResults(const FString& InResult, TArray<FString>& OutFiles);
 
 } // namespace PlasticSourceControlParsers
