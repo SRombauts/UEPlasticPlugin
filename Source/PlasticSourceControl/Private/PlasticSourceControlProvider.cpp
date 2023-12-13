@@ -621,14 +621,26 @@ void FPlasticSourceControlProvider::UpdateWorkspaceStatus(const class FPlasticSo
 					FFormatNamedArguments Args;
 					Args.Add(TEXT("PlasticScmVersion"), FText::FromString(PlasticScmVersion.String));
 					Args.Add(TEXT("OldestSupportedPlasticScmVersion"), FText::FromString(PlasticSourceControlVersions::OldestSupported.String));
-					const FText UnsuportedVersionWarning = FText::Format(LOCTEXT("Plastic_UnsuportedVersion", "Unity Version Control {PlasticScmVersion} is not supported anymore by this plugin.\nUnity Version Control {OldestSupportedPlasticScmVersion} or a more recent version is required.\nPlease upgrade to the latest version."), Args);
-					FMessageLog("SourceControl").Warning(UnsuportedVersionWarning);
-					FMessageDialog::Open(EAppMsgCategory::Warning, EAppMsgType::Ok, UnsuportedVersionWarning);
+					const FText UnsupportedVersionWarning = FText::Format(LOCTEXT("Plastic_UnsupportedVersion", "Unity Version Control {PlasticScmVersion} is not supported anymore by this plugin.\nUnity Version Control {OldestSupportedPlasticScmVersion} or a more recent version is required.\nPlease upgrade to the latest version."), Args);
+					FMessageLog("SourceControl").Warning(UnsupportedVersionWarning);
+					FMessageDialog::Open(
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+						EAppMsgCategory::Warning,
+#endif
+						EAppMsgType::Ok, UnsupportedVersionWarning
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+						, LOCTEXT("Plastic_UnsuportedVersionTitle", "Unsupported version!")
+#endif
+					);
 				}
 			}
 			else if (InCommand.ErrorMessages.Num() > 0)
 			{
-				FMessageDialog::Open(EAppMsgCategory::Error, EAppMsgType::Ok, FText::FromString(InCommand.ErrorMessages[0]));
+				FMessageDialog::Open(
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+					EAppMsgCategory::Error,
+#endif
+					EAppMsgType::Ok, FText::FromString(InCommand.ErrorMessages[0]));
 			}
 		}
 

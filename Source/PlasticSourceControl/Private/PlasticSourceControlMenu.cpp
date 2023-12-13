@@ -393,8 +393,17 @@ void FPlasticSourceControlMenu::RevertAllClicked()
 	if (!Notification.IsInProgress())
 	{
 		// Ask the user before reverting all!
-		const FText DialogText(LOCTEXT("SourceControlMenu_AskRevertAll", "Revert all modifications into the workspace?"));
-		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Warning, EAppMsgType::OkCancel, DialogText);
+		const FText AskRevertAllWarning(LOCTEXT("SourceControlMenu_AskRevertAll", "Revert all modifications into the workspace?\n"
+			"This cannot be undone."));
+		const EAppReturnType::Type Choice = FMessageDialog::Open(
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+			EAppMsgCategory::Warning,
+#endif
+			EAppMsgType::OkCancel, AskRevertAllWarning
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+			, LOCTEXT("SourceControlMenu_AskRevertAllTitle", "Revert All?")
+#endif
+		);
 		if (Choice == EAppReturnType::Ok)
 		{
 			const bool bSaved = PackageUtils::SaveDirtyPackages();
@@ -439,9 +448,17 @@ void FPlasticSourceControlMenu::SwitchToPartialWorkspaceClicked()
 	if (!Notification.IsInProgress())
 	{
 		// Ask the user before switching to Partial Workspace. It's not possible to switch back with local changes!
-		const FText DialogText(LOCTEXT("SourceControlMenu_AskSwitchToPartialWorkspace", "Switch to Gluon partial workspace?\n"
-			"Please note that, in order to switch back to a regular workspace you will need to undo all local changes."));
-		const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Info, EAppMsgType::OkCancel, DialogText);
+		const FText SwitchToPartialQuestion(LOCTEXT("SourceControlMenu_AskSwitchToPartialWorkspace", "Switch to Gluon partial workspace?\n"
+			"Please note that in order to switch back to a regular workspace you will need to undo any local changes."));
+		const EAppReturnType::Type Choice = FMessageDialog::Open(
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+			EAppMsgCategory::Info,
+#endif
+			EAppMsgType::OkCancel, SwitchToPartialQuestion
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+			, LOCTEXT("SourceControlMenu_SwitchToPartialTitle", "Switch to Gluon partial workspace?")
+#endif
+		);
 		if (Choice == EAppReturnType::Ok)
 		{
 			// Launch a "SwitchToPartialWorkspace" Operation

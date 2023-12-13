@@ -762,8 +762,16 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 
 void SPlasticSourceControlBranchesWidget::OnMergeBranchClicked(FString InBranchName)
 {
-	const FText Message = FText::Format(LOCTEXT("MergeBranch", "Merge branch {0} into the current branch {1}?"), FText::FromString(InBranchName), FText::FromString(CurrentBranchName));
-	const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Info, EAppMsgType::YesNo, Message);
+	const FText MergeBranchQuestion = FText::Format(LOCTEXT("MergeBranchDialog", "Merge branch {0} into the current branch {1}?"), FText::FromString(InBranchName), FText::FromString(CurrentBranchName));
+	const EAppReturnType::Type Choice = FMessageDialog::Open(
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		EAppMsgCategory::Info,
+#endif
+		EAppMsgType::YesNo, MergeBranchQuestion
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		, LOCTEXT("MergeBranchTitle", "Merge Branch?")
+#endif
+	);
 	if (Choice == EAppReturnType::Yes)
 	{
 		if (!Notification.IsInProgress())
@@ -1084,8 +1092,16 @@ FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometr
 		{
 			const FString& SelectedBranch = SelectedBranches[0];
 			// Note: this action require a confirmation dialog (while the Delete below already have one in OnDeleteBranchesClicked()).
-			const FText Message = FText::Format(LOCTEXT("SwitchToBranchDialog", "Switch workspace to branch {0}?"), FText::FromString(SelectedBranch));
-			const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgCategory::Info, EAppMsgType::YesNo, Message);
+			const FText SwitchToBranchQuestion = FText::Format(LOCTEXT("SwitchToBranchDialog", "Switch workspace to branch {0}?"), FText::FromString(SelectedBranch));
+			const EAppReturnType::Type Choice = FMessageDialog::Open(
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+				EAppMsgCategory::Info,
+#endif
+				EAppMsgType::YesNo, SwitchToBranchQuestion
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+				, LOCTEXT("SwitchToBranchTitle", "Switch Branch?")
+#endif
+			);
 			if (Choice == EAppReturnType::Yes)
 			{
 				OnSwitchToBranchClicked(SelectedBranch);
