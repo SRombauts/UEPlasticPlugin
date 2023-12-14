@@ -16,9 +16,9 @@ This plugin is not intended to replace the [Desktop Client](https://docs.plastic
 or [command line interface "cm"](https://docs.unity.com/ugs/en-us/manual/devops/manual/uvcs-cli/version-control-cli).
 It is a complementary tool improving efficiency in your daily workflow with assets in Editor.
 
-It automates tracking status of assets, brings common source control tasks inside the Editor, and provides visual diffing of Blueprints.
-It also helps import an existing Unreal Project into source control, with appropriate *ignore.conf* file.
-Since Unreal does not manage C++ source code, but only assets, the plugin is especially useful for GDs and artists.
+It tracks status of assets, most notable locks, brings common source control tasks inside the Editor, including updating, branching and merging, and provides visual diffing of Blueprints.
+It also helps import an existing Unreal Project into source control in a simple operation, with appropriate *ignore.conf* file.
+Since the Unreal Editor does not manage C++ source code, but only assets, the plugin is especially useful for tech designers, level designers and artists in general.
 
 ## Table of Contents
 
@@ -37,6 +37,8 @@ Since Unreal does not manage C++ source code, but only assets, the plugin is esp
      - [Source Control Windows](#source-control-windows)
      - [Redirectors](#redirectors)
      - [Detect Changes on other Branches](#detect-changes-on-other-branches)
+     - [Branches](#branches)
+     - [SmartLocks](#smartlocks)
      - [Merge conflicts on Blueprints](#merge-conflicts-on-blueprints)
      - [Workflows](#workflows)
        - [Mainline](#mainline)
@@ -121,7 +123,7 @@ Else, if you want to rebuild the plugin for a Blueprint project:
  4. Right-click on your project's **.uproject** file, **Generate Visual Studio project files**.
  5. In Visual Studio, **Reload All** and **Build Solution** in **Development Editor** mode. That's it, the plugin is built (resulting dlls are located in _Plugins\UEPlasticPlugin\Binaries\Win64_).
 
-To release the plugin, zip the _Plugins_ folder. But before that, remove the _Intermediate_, _Screenshots_ and _.git_ folders, and also the big *.pdb files in _Plugins\UEPlasticPlugin\Binaries\Win64_.
+To release and redistribute the plugin, zip the _Plugins_ folder. But before that, remove the _Intermediate_, _Screenshots_ and _.git_ folders, and optionnaly the heavier *.pdb files in _Plugins\UEPlasticPlugin\Binaries\Win64_.
 
 ### Project Setup
 
@@ -400,7 +402,29 @@ Warning when trying to checkout an asset that has been modified in another branc
 Warning when trying to modify an asset that has been modified in another branch:
 ![Warning on modification for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnModification.png)
 
-### SmartLocks
+#### Branches
+
+The plugin now offers full support for branches, including the ability to create, switch to and merge branches from within the Unreal Editor,
+reloading assets and the current level as appropriate.
+
+View Branches window:
+![View Branches window](Screenshots/UEPlasticPlugin-Branches-Menu.png)
+
+See the workflows sections below for a discussion about [task branches](#task-branches).
+
+Creating a new child branch:
+![Create Branch Dialog](Screenshots/UEPlasticPlugin-CreateBranch-Dialog.png)
+
+Renaming an existing branch:
+![Rename Branch Dialog](Screenshots/UEPlasticPlugin-RenameBranch-Dialog.png)
+
+Merging a branch into the current one:
+![Merge Branch Dialog](Screenshots/UEPlasticPlugin-RenameBranch-Dialog.png)
+
+Deleting the selected branches:
+![Delete Branches Dialog](Screenshots/UEPlasticPlugin-DeleteBranches-Dialog.png)
+
+#### SmartLocks
 
 [Meet Smart Locks, a new way to reduce merge conflicts with Unity Version Control](https://blog.unity.com/engine-platform/unity-version-control-smart-locks)
 
@@ -412,8 +436,6 @@ Smart Locks administrator context menu to configure lock rules or unlock an asse
 In case you ever use branches with binary assets without relying on exclusive checkouts (file locks) ([see Workflows below](#workflows))
 you will encounter cases of merge conflicts on binary assets.
 You have to trigger the resolve in the Unity Version Control GUI, but then skip it without saving changes in order to let the Editor present you with a visual diff.
-
-TODO: take screenshots of Unity Version Control GUI
 
 Branch explorer showing the merge pending with an asset in conflict:
 ![Merged branch with a pending conflict resolution](Screenshots/UE4PlasticPlugin-MergeBranch-Pending.png)
@@ -450,23 +472,24 @@ If you try to use a full workspace (with Unity Version Control GUI instead of Gl
 
 ##### Task branches
 
-Handling of binary assets works best in only one branch (regardless of the source control used)
-since they cannot be merged, and since they increase the cost (time/bandwidth) of switching between branches.
+Handling of binary assets typically works best when working all together in a single main branch (regardless of the source control used).
+This is because binary files cannot be merged, and since they increase the cost (time/bandwidth) of switching between branches.
 
-But with Unity Version Control you can use branches that are easy and cheap to create and merge:
-using them for code will enable you to leverage the built-in code review on these branches.
+But with Unity Version Control you can use branches that are easy and cheap to create and merge.
+Using them for code will enable you to leverage the built-in code review on these branches.
+And in combination with [SmartLocks](#smartlocks) and the full in-Editor [Branches](#branches) support,
+you can now use them safely for binary assets as well!
 
-Note that some studios also use task branches for assets, and include them in their code reviews.
+Note that some studios have always been using task branches for assets, and included them in their code reviews.
 Unity Version Control locks extend to all branches, preventing two people from working at the same time on the same assets regardless of the branch they are one.
-The plugin also offers [some branch support to warn users if an asset has been changed in another branch](#branches-support).
+The plugin also offers full branch support [and warn users if an asset has been changed in another branch](#branches-support).
 
 To use branches, you would need to also close the Editor before switching from a branch to another, and before merging a branch into another:
 
-1. create a child branch from main using the Desktop Client
-2. switch to it, updating the workspace, with the Unreal Editor closed
-3. start the Editor, make modifications and checkout assets
-4. then check-in the assets (remember to save everything, or close the Editor to make sure of it)
-5. close the Editor
+1. create a child branch from main using in-Editor Branches window
+2. switch to it immediately, updating the workspace, and reloading assets
+3. make modifications and checkout assets
+4. then check-in the assets (remember to save everything, the toolbar now has a button to track the number of unsaved assets)
 6. create a code review from the branch
 7. create a new task branch from main or go back to main to merge branches
 
@@ -538,10 +561,11 @@ eg:
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.8.3 2023/10/12 for UE 5.0/5.1/5.2/5.3 and UE 4.27
+### Version 1.9.0 2023/12/21 for UE 5.0/5.1/5.2/5.3 and UE 4.27
  - manage connection to the server
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
  - Smart Locks: display locked files, retained locks, on what branch and by who
+ - Branches: manage branches from a dockable window. Create, rename, switch, merge and delete.
  - Detect Changes on other Branches, to check outdated files vs. remote across multiple branches
  - show current branch name and CL in status text
  - add, duplicate a file
@@ -568,7 +592,6 @@ This version here is the development version, so it always contains additional f
  - xlinks sub-repositories (for Plugins for instance)
  - Toggle verbose logs from the Source Control settings UI
  - Run 'cm' CLI commands directly from the Unreal Editor Console, Blueprints of C++ code.
- - Use custom icons on UE5.1 for files locally Changed (not checked-out), locally Deleted, Conflicted and Ignored
  - Supported on Windows and Linux
 
 ### Feature Requests
@@ -589,8 +612,6 @@ This version here is the development version, so it always contains additional f
 
 ### Features not supported
 Some are reserved for internal use by Epic Games with Perforce only:
- - Branch and Merge workflow: not handled by the Unreal Editor
- - Directory source control status: not handled by the Unreal Editor
  - tags: get labels (used for crash when the full Engine is under Perforce)
  - annotate: blame (used for crash when the full Engine is under Perforce)
 
