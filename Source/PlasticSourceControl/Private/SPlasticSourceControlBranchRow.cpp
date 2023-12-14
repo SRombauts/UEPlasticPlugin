@@ -3,6 +3,7 @@
 #include "SPlasticSourceControlBranchRow.h"
 
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlUtils.h"
 
 #include "Widgets/Text/STextBlock.h"
 
@@ -78,7 +79,7 @@ TSharedRef<SWidget> SPlasticSourceControlBranchRow::GenerateWidgetForColumn(cons
 	else if (InColumnId == PlasticSourceControlBranchesListViewColumn::CreatedBy::Id())
 	{
 		return SNew(STextBlock)
-			.Text(FText::FromString(BranchToVisualize->CreatedBy))
+			.Text(FText::FromString(PlasticSourceControlUtils::UserNameToDisplayName(BranchToVisualize->CreatedBy)))
 			.ToolTipText(FText::FromString(BranchToVisualize->CreatedBy))
 			.Margin(FMargin(6.f, 1.f))
 			.Font(FontInfo)
