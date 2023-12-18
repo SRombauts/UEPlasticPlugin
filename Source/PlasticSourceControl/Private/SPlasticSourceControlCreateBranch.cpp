@@ -140,7 +140,7 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 				.ContentPadding(FEditorStyle::GetMargin("StandardDialog.ContentPadding"))
 #endif
 				.Text(LOCTEXT("Create", "Create"))
-				.IsEnabled(this, &SPlasticSourceControlCreateBranch::IsNewBranchNameValid)
+				.IsEnabled(this, &SPlasticSourceControlCreateBranch::CanCreateBranch)
 				.ToolTipText(this, &SPlasticSourceControlCreateBranch::CreateButtonTooltip)
 				.OnClicked(this, &SPlasticSourceControlCreateBranch::CreateClicked)
 			]
@@ -168,7 +168,8 @@ inline void SPlasticSourceControlCreateBranch::OnCheckedSwitchWorkspace(ECheckBo
 	bSwitchWorkspace = (InState == ECheckBoxState::Checked);
 }
 
-bool SPlasticSourceControlCreateBranch::IsNewBranchNameValid() const
+
+bool SPlasticSourceControlCreateBranch::CanCreateBranch() const
 {
 	if (NewBranchName.IsEmpty())
 	{

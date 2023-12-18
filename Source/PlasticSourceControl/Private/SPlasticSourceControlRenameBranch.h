@@ -30,7 +30,7 @@ public:
 	void Construct(const FArguments& InArgs);
 
 private:
-	bool IsNewBranchNameValid() const;
+	bool CanRenameBranch() const;
 	FText RenameButtonTooltip() const;
 
 	FReply RenamedClicked();

@@ -33,7 +33,7 @@ public:
 private:
 	void OnCheckedSwitchWorkspace(ECheckBoxState InState);
 
-	bool IsNewBranchNameValid() const;
+	bool CanCreateBranch() const;
 	FText CreateButtonTooltip() const;
 
 	FReply CreateClicked();

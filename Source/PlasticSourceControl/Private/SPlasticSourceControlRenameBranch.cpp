@@ -98,7 +98,7 @@ void SPlasticSourceControlRenameBranch::Construct(const FArguments& InArgs)
 				.ContentPadding(FEditorStyle::GetMargin("StandardDialog.ContentPadding"))
 #endif
 				.Text(LOCTEXT("Rename", "Rename"))
-				.IsEnabled(this, &SPlasticSourceControlRenameBranch::IsNewBranchNameValid)
+				.IsEnabled(this, &SPlasticSourceControlRenameBranch::CanRenameBranch)
 				.ToolTipText(this, &SPlasticSourceControlRenameBranch::RenameButtonTooltip)
 				.OnClicked(this, &SPlasticSourceControlRenameBranch::RenamedClicked)
 			]
@@ -121,7 +121,7 @@ void SPlasticSourceControlRenameBranch::Construct(const FArguments& InArgs)
 	ParentWindow.Pin()->SetWidgetToFocusOnActivate(BranchNameTextBox);
 }
 
-bool SPlasticSourceControlRenameBranch::IsNewBranchNameValid() const
+bool SPlasticSourceControlRenameBranch::CanRenameBranch() const
 {
 	if (NewBranchName.IsEmpty())
 	{
