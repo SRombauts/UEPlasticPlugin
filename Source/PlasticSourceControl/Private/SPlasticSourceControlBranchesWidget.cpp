@@ -1099,13 +1099,13 @@ FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometr
 {
 	if (InKeyEvent.GetKey() == EKeys::F5)
 	{
-		// Pressing F5 refresh the list of branches
+		// Pressing F5 refreshes the list of branches
 		RequestBranchesRefresh();
 		return FReply::Handled();
 	}
 	else if (InKeyEvent.GetKey() == EKeys::Enter)
 	{
-		// Pressing Enter switch to the selected branch.
+		// Pressing Enter switches to the selected branch.
 		const TArray<FString> SelectedBranches = GetSelectedBranches();
 		if (SelectedBranches.Num() == 1)
 		{
@@ -1128,9 +1128,20 @@ FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometr
 		}
 		return FReply::Handled();
 	}
-	else if (InKeyEvent.GetKey() == EKeys::Delete)
+	else if (InKeyEvent.GetKey() == EKeys::F2)
 	{
-		// Pressing Delete delete the selected branches
+		// Pressing F2 renames the selected branches
+		const TArray<FString> SelectedBranches = GetSelectedBranches();
+		if (SelectedBranches.Num() == 1)
+		{
+			const FString& SelectedBranch = SelectedBranches[0];
+			OnRenameBranchClicked(SelectedBranch);
+		}
+		return FReply::Handled();
+	}
+	else if ((InKeyEvent.GetKey() == EKeys::Delete) || (InKeyEvent.GetKey() == EKeys::BackSpace))
+	{
+		// Pressing Delete or BackSpace deletes the selected branches
 		const TArray<FString> SelectedBranches = GetSelectedBranches();
 		if (SelectedBranches.Num() > 0)
 		{
