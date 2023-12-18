@@ -17,19 +17,35 @@
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControlWindow"
 
+// Extract the short name of the branch, after the last slash
+static FString GetShortBranchName(const FString& InBranchName)
+{
+	int32 LastSlashIndex;
+	if (InBranchName.FindLastChar(TEXT('/'), LastSlashIndex))
+	{
+		return InBranchName.RightChop(LastSlashIndex + 1);
+	}
+	return FString();
+}
+
+// Extract the name of the parent branch, if any, before and including the last slash
+static FString GetParentBranchName(const FString& InBranchName)
+{
+	int32 LastSlashIndex;
+	if (InBranchName.FindLastChar(TEXT('/'), LastSlashIndex))
+	{
+		return InBranchName.Left(LastSlashIndex + 1);
+	}
+	return FString();
+}
+
 void SPlasticSourceControlRenameBranch::Construct(const FArguments& InArgs)
 {
 	BranchesWidget = InArgs._BranchesWidget;
 	ParentWindow = InArgs._ParentWindow;
 	OldBranchName = InArgs._OldBranchName;
 
-	// Extract the short name of the branch, after the last slash
-	NewBranchName = OldBranchName;
-	int32 LastSlashIndex;
-	if (OldBranchName.FindLastChar(TEXT('/'), LastSlashIndex))
-	{
-		NewBranchName = OldBranchName.RightChop(LastSlashIndex + 1);
-	}
+	NewBranchName = GetShortBranchName(OldBranchName);
 
 	ChildSlot
 	[
@@ -128,6 +144,11 @@ bool SPlasticSourceControlRenameBranch::CanRenameBranch() const
 		return false;
 	}
 
+	if (NewBranchName == GetShortBranchName(OldBranchName))
+	{
+		return false;
+	}
+
 	return SPlasticSourceControlBranchesWidget::IsBranchNameValid(NewBranchName);
 }
 
@@ -135,7 +156,12 @@ FText SPlasticSourceControlRenameBranch::RenameButtonTooltip() const
 {
 	if (NewBranchName.IsEmpty())
 	{
-		return LOCTEXT("RenameEmpty_Tooltip", "Enter a name for the new branch.");
+		return LOCTEXT("RenameEmpty_Tooltip", "Enter a name for the branch.");
+	}
+
+	if (NewBranchName == GetShortBranchName(OldBranchName))
+	{
+		return LOCTEXT("RenameSame_Tooltip", "Enter a new name for the branch.");
 	}
 
 	if (!SPlasticSourceControlBranchesWidget::IsBranchNameValid(NewBranchName))
@@ -143,8 +169,9 @@ FText SPlasticSourceControlRenameBranch::RenameButtonTooltip() const
 		return LOCTEXT("RenameInvalid_Tooltip", "Branch name cannot contain any of the following characters: @#/:\"?'\\n\\r\\t");
 	}
 
-	return FText::Format(LOCTEXT("RenameBranch_Tooltip", "Rename branch to {0}."),
-		FText::FromString(OldBranchName + TEXT("/") + NewBranchName));
+	return FText::Format(LOCTEXT("RenameBranch_Tooltip", "Rename branch {0}\nto {1}."),
+		FText::FromString(OldBranchName),
+		FText::FromString(GetParentBranchName(OldBranchName) + NewBranchName));
 }
 
 FReply SPlasticSourceControlRenameBranch::RenamedClicked()
