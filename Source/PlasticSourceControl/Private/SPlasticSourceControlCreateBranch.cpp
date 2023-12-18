@@ -38,7 +38,7 @@ void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 			.FillWidth(1.0f)
 			[
 				SNew(STextBlock)
-				.Text(FText::Format(LOCTEXT("PlasticCreateBrancheDetails", "Create a new child branch from last changeset on br:{0}"), FText::FromString(ParentBranchName)))
+				.Text(FText::Format(LOCTEXT("PlasticCreateBrancheDetails", "Create a new child branch from last changeset on branch {0}"), FText::FromString(ParentBranchName)))
 			]
 		]
 		+SVerticalBox::Slot()
