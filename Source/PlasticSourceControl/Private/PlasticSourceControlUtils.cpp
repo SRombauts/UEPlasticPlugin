@@ -139,15 +139,35 @@ FString GetConfigDefaultRepServer()
 	return ServerUrl;
 }
 
-void GetUserName(FString& OutUserName)
+FString GetDefaultUserName()
 {
+	FString UserName;
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
 	const bool bResult = RunCommand(TEXT("whoami"), TArray<FString>(), TArray<FString>(), Results, ErrorMessages);
 	if (bResult && Results.Num() > 0)
 	{
-		OutUserName = MoveTemp(Results[0]);
+		UserName = MoveTemp(Results[0]);
 	}
+
+	return UserName;
+}
+
+FString GetProfileUserName(const FString& InServerUrl)
+{
+	FString UserName;
+	TArray<FString> Results;
+	TArray<FString> Parameters;
+	TArray<FString> ErrorMessages;
+	Parameters.Add("list");
+	Parameters.Add(TEXT("--format=\"{server};{user}\""));
+	bool bResult = RunCommand(TEXT("profile"), Parameters, TArray<FString>(), Results, ErrorMessages);
+	if (bResult)
+	{
+		bResult = PlasticSourceControlParsers::ParseProfileInfo(Results, InServerUrl, UserName);
+	}
+
+	return UserName;
 }
 
 bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName, TArray<FString>& OutErrorMessages)

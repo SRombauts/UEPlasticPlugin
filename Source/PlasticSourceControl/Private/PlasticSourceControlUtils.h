@@ -88,10 +88,17 @@ bool GetConfigSetFilesAsReadOnly();
 FString GetConfigDefaultRepServer();
 
 /**
- * Get Unity Version Control current user
- * @param	OutUserName			Name of the Unity Version Control user configured globally
+ * Get Unity Version Control user for the default server
+ * @returns	Name of the Unity Version Control user configured globally
  */
-void GetUserName(FString& OutUserName);
+FString GetDefaultUserName();
+
+/**
+ * Get Unity Version Control user for the specified server
+ * @param	InServerUrl		Name of the specified server
+ * @returns	Name of the Unity Version Control user for the specified server
+ */
+FString GetProfileUserName(const FString& InServerUrl);
 
 /**
  * Get workspace name

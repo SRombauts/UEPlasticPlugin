@@ -62,6 +62,8 @@ struct FRemoveRedundantErrors
 	FString Filter;
 };
 
+bool ParseProfileInfo(TArray<FString>& InResults, const FString& InServerUrl, FString& OutUserName);
+
 bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl);
 
 bool GetChangesetFromWorkspaceStatus(const TArray<FString>& InResults, int32& OutChangeset);

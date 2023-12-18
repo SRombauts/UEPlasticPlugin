@@ -25,6 +25,39 @@ namespace PlasticSourceControlParsers
 #define FILE_STATUS_SEPARATOR TEXT(";")
 
 
+/**
+ * Parse the output of the "cm profile list --format="{server};{user}" command
+ *
+ * Example:
+localhost:8087|sebastien.rombauts
+local|sebastien.rombauts@unity3d.com
+SRombautsU@cloud|sebastien.rombauts@unity3d.com
+*/
+bool ParseProfileInfo(TArray<FString>& InResults, const FString& InServerUrl, FString& OutUserName)
+{
+	for (const FString& Result : InResults)
+	{
+		TArray<FString> ProfileInfos;
+		Result.ParseIntoArray(ProfileInfos, FILE_STATUS_SEPARATOR, false); // Don't cull empty values
+		if (ProfileInfos.Num() == 2)
+		{
+			if (ProfileInfos[0] == InServerUrl)
+			{
+				OutUserName = ProfileInfos[1];
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Parse  workspace information, in the form "Branch /main@UE5PlasticPluginDev@localhost:8087"
+ *                                        or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected to the cloud)
+ *                                        or "Branch /main@rep:UE5OpenWorldPerfTest@repserver:test@cloud"
+ *                                        or "Changeset 1234@UE5PlasticPluginDev@test@cloud" (when the workspace is switched on a changeset instead of a branch)
+*/ 
 bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
 {
 	if (InResults.Num() == 0)
@@ -32,10 +65,6 @@ bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FStr
 		return false;
 	}
 
-	// Get workspace information, in the form "Branch /main@UE5PlasticPluginDev@localhost:8087"
-	//                                     or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected to the cloud)
-	//                                     or "Branch /main@rep:UE5OpenWorldPerfTest@repserver:test@cloud"
-	//                                     or "Changeset 1234@UE5PlasticPluginDev@test@cloud" (when the workspace is switched on a changeset instead of a branch)
 	static const FString BranchPrefix(TEXT("Branch "));
 	static const FString ChangesetPrefix(TEXT("Changeset "));
 	static const FString LabelPrefix(TEXT("Label "));
