@@ -29,6 +29,8 @@ class SPlasticSourceControlBranchesWidget : public SCompoundWidget
 
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
+	static bool IsBranchNameValid(const FString& InBranchName);
+
 	void CreateBranch(const FString& InParentBranchName, const FString& InNewBranchName, const FString& InNewBranchComment, const bool bInSwitchWorkspace);
 	void RenameBranch(const FString& InOldBranchName, const FString& InNewBranchName);
 	void DeleteBranches(const TArray<FString>& InBranchNames);

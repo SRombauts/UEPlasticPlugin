@@ -930,6 +930,25 @@ void SPlasticSourceControlBranchesWidget::Tick(const FGeometry& AllottedGeometry
 	}
 }
 
+bool SPlasticSourceControlBranchesWidget::IsBranchNameValid(const FString& InBranchName)
+{
+	// Branch name cannot contain any of the following characters:
+	// Note: tabs are technically not forbidden in branch names, but having one at the end doesn't work as expected
+	// (it is trimmed at creation, so the switch to the new branch fails)
+	static const FString BranchNameInvalidChars(TEXT("@#/:\"?'\n\r\t"));
+
+	for (TCHAR Char : InBranchName)
+	{
+		int32 Index;
+		if (BranchNameInvalidChars.FindChar(Char, Index))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void SPlasticSourceControlBranchesWidget::StartRefreshStatus()
 {
 	if (!bIsRefreshing)
