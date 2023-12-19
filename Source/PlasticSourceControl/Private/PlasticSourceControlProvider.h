@@ -126,7 +126,7 @@ public:
 	{
 		return BranchName;
 	}
-	inline void SetBranchName(FString&& InBranchName)
+	inline void SetBranchName(const FString& InBranchName)
 	{
 		BranchName = InBranchName;
 	}

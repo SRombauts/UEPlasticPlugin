@@ -1087,7 +1087,7 @@ bool FPlasticGetBranchesWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticGetBranchesWorker::UpdateStates()
 {
-	GetProvider().SetBranchName(MoveTemp(CurrentBranchName));
+	GetProvider().SetBranchName(CurrentBranchName);
 
 	return false;
 }
@@ -1108,8 +1108,10 @@ bool FPlasticSwitchToBranchWorker::Execute(FPlasticSourceControlCommand& InComma
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunSwitchToBranch(Operation->BranchName, Operation->UpdatedFiles, InCommand.ErrorMessages);
 
 	// now update the status of the updated files
-	if (Operation->UpdatedFiles.Num())
+	if (InCommand.bCommandSuccessful && Operation->UpdatedFiles.Num())
 	{
+		// the current branch is used to asses the status of Retained Locks
+		GetProvider().SetBranchName(Operation->BranchName);
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(Operation->UpdatedFiles, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 
