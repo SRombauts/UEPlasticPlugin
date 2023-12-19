@@ -94,7 +94,7 @@ void FNotification::DisplaySuccess(const FText& InNotificationText)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 	Info->Image = FAppStyle::GetBrush(TEXT("Icons.SuccessWithColor.Large"));
 #else
-	Info->Image = FEditorStyle::GetBrush(TEXT("NotificationList.FailImage"));
+	Info->Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
 #endif
 	FSlateNotificationManager::Get().QueueNotification(Info);
 	UE_LOG(LogSourceControl, Verbose, TEXT("%s"), *InNotificationText.ToString());
@@ -132,7 +132,7 @@ void FNotification::DisplayFailure(const FText& InNotificationText)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 	Info->Image = FAppStyle::GetBrush(TEXT("Icons.ErrorWithColor.Large"));
 #else
-	Info->Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
+	Info->Image = FEditorStyle::GetBrush(TEXT("NotificationList.FailImage"));
 #endif
 	// Provide a link to easily open the Output Log
 	Info->Hyperlink = FSimpleDelegate::CreateLambda([]() { FGlobalTabmanager::Get()->TryInvokeTab(FName("OutputLog")); });
