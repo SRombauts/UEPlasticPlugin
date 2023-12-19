@@ -67,7 +67,8 @@ void FNotification::DisplaySuccess(const FSourceControlOperationBase& InOperatio
 {
 	if (InOperation.GetResultInfo().InfoMessages.Num() > 0)
 	{
-		DisplaySuccess(InOperation.GetResultInfo().InfoMessages[0]);
+		// If there are multiple messages, display the last one to not let the user with a notification starting with a "wait" or "in progress" message
+		DisplaySuccess(InOperation.GetResultInfo().InfoMessages.Last());
 	}
 	else
 	{
