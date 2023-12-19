@@ -45,6 +45,22 @@ void FNotification::RemoveInProgress()
 	}
 }
 
+// Add or Queue a notification and dispose of the allocated memory if necessary
+static void AddOrQueueNotification(FNotificationInfo* Info)
+{
+	// AddNotification must be called on game thread. Use QueueNotification if necessary.
+	// Note: not using QueueNotification if not necessary since it alter the order of notifications when mix with In Progress notifications.
+	if (IsInGameThread())
+	{
+		FSlateNotificationManager::Get().AddNotification(*Info);
+		delete Info;
+	}
+	else
+	{
+		FSlateNotificationManager::Get().QueueNotification(Info);
+	}
+}
+
 void FNotification::DisplayResult(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	DisplayResult(StaticCastSharedRef<FSourceControlOperationBase>(InOperation).Get(), InResult);
@@ -97,7 +113,8 @@ void FNotification::DisplaySuccess(const FText& InNotificationText)
 #else
 	Info->Image = FEditorStyle::GetBrush(TEXT("NotificationList.SuccessImage"));
 #endif
-	FSlateNotificationManager::Get().QueueNotification(Info);
+	AddOrQueueNotification(Info);
+
 	UE_LOG(LogSourceControl, Verbose, TEXT("%s"), *InNotificationText.ToString());
 }
 
@@ -138,8 +155,8 @@ void FNotification::DisplayFailure(const FText& InNotificationText)
 	// Provide a link to easily open the Output Log
 	Info->Hyperlink = FSimpleDelegate::CreateLambda([]() { FGlobalTabmanager::Get()->TryInvokeTab(FName("OutputLog")); });
 	Info->HyperlinkText = LOCTEXT("ShowOutputLogHyperlink", "Show Output Log");
+	AddOrQueueNotification(Info);
 
-	FSlateNotificationManager::Get().QueueNotification(Info);
 	UE_LOG(LogSourceControl, Error, TEXT("%s"), *InNotificationText.ToString());
 }
 
