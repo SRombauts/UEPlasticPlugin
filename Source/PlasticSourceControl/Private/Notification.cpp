@@ -67,7 +67,7 @@ void FNotification::DisplaySuccess(const FSourceControlOperationBase& InOperatio
 {
 	if (InOperation.GetResultInfo().InfoMessages.Num() > 0)
 	{
-		DisplayFailure(InOperation.GetResultInfo().InfoMessages[0]);
+		DisplaySuccess(InOperation.GetResultInfo().InfoMessages[0]);
 	}
 	else
 	{
