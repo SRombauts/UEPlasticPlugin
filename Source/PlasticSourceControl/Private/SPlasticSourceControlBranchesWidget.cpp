@@ -686,35 +686,25 @@ void SPlasticSourceControlBranchesWidget::CreateBranch(const FString& InParentBr
 {
 	if (!Notification.IsInProgress())
 	{
-		const bool bSaved = PackageUtils::SaveDirtyPackages();
-		if (bSaved || bInSwitchWorkspace)
-		{
-			// Find and Unlink all loaded packages in Content directory to allow to update them
-			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+		// Find and Unlink all loaded packages in Content directory to allow to update them
+		PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
 
-			// Launch a custom "CreateBranch" operation
-			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-			TSharedRef<FPlasticCreateBranch, ESPMode::ThreadSafe> CreateBranchOperation = ISourceControlOperation::Create<FPlasticCreateBranch>();
-			CreateBranchOperation->BranchName = InParentBranchName + TEXT("/") + InNewBranchName;
-			CreateBranchOperation->Comment = InNewBranchComment;
-			const ECommandResult::Type Result = Provider.Execute(CreateBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnCreateBranchOperationComplete, bInSwitchWorkspace));
-			if (Result == ECommandResult::Succeeded)
-			{
-				// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
-				Notification.DisplayInProgress(CreateBranchOperation->GetInProgressString());
-				StartRefreshStatus();
-			}
-			else
-			{
-				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-				FNotification::DisplayFailure(CreateBranchOperation.Get());
-			}
+		// Launch a custom "CreateBranch" operation
+		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+		TSharedRef<FPlasticCreateBranch, ESPMode::ThreadSafe> CreateBranchOperation = ISourceControlOperation::Create<FPlasticCreateBranch>();
+		CreateBranchOperation->BranchName = InParentBranchName + TEXT("/") + InNewBranchName;
+		CreateBranchOperation->Comment = InNewBranchComment;
+		const ECommandResult::Type Result = Provider.Execute(CreateBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnCreateBranchOperationComplete, bInSwitchWorkspace));
+		if (Result == ECommandResult::Succeeded)
+		{
+			// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+			Notification.DisplayInProgress(CreateBranchOperation->GetInProgressString());
+			StartRefreshStatus();
 		}
 		else
 		{
-			FMessageLog SourceControlLog("SourceControl");
-			SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Switch_Unsaved", "Save All Assets before attempting to Switch workspace to a branch!"));
-			SourceControlLog.Notify();
+			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+			FNotification::DisplayFailure(CreateBranchOperation.Get());
 		}
 	}
 	else
@@ -729,34 +719,27 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 {
 	if (!Notification.IsInProgress())
 	{
-		const bool bSaved = PackageUtils::SaveDirtyPackages();
-		if (bSaved)
-		{
-			// Find and Unlink all loaded packages in Content directory to allow to update them
-			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+		// Warn the user about any unsaved assets (risk of losing work) but don't enforce saving them. Saving and checking out these assets will make the switch to the branch fail.
+		PackageUtils::SaveDirtyPackages();
 
-			// Launch a custom "Switch" operation
-			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-			TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> SwitchToBranchOperation = ISourceControlOperation::Create<FPlasticSwitchToBranch>();
-			SwitchToBranchOperation->BranchName = InBranchName;
-			const ECommandResult::Type Result = Provider.Execute(SwitchToBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete));
-			if (Result == ECommandResult::Succeeded)
-			{
-				// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
-				Notification.DisplayInProgress(SwitchToBranchOperation->GetInProgressString());
-				StartRefreshStatus();
-			}
-			else
-			{
-				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-				FNotification::DisplayFailure(SwitchToBranchOperation.Get());
-			}
+		// Find and Unlink all loaded packages in Content directory to allow to update them
+		PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+
+		// Launch a custom "Switch" operation
+		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+		TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> SwitchToBranchOperation = ISourceControlOperation::Create<FPlasticSwitchToBranch>();
+		SwitchToBranchOperation->BranchName = InBranchName;
+		const ECommandResult::Type Result = Provider.Execute(SwitchToBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSwitchToBranchOperationComplete));
+		if (Result == ECommandResult::Succeeded)
+		{
+			// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+			Notification.DisplayInProgress(SwitchToBranchOperation->GetInProgressString());
+			StartRefreshStatus();
 		}
 		else
 		{
-			FMessageLog SourceControlLog("SourceControl");
-			SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Switch_Unsaved", "Save All Assets before attempting to Switch workspace to a branch!"));
-			SourceControlLog.Notify();
+			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+			FNotification::DisplayFailure(SwitchToBranchOperation.Get());
 		}
 	}
 	else
@@ -783,34 +766,27 @@ void SPlasticSourceControlBranchesWidget::OnMergeBranchClicked(FString InBranchN
 	{
 		if (!Notification.IsInProgress())
 		{
-			const bool bSaved = PackageUtils::SaveDirtyPackages();
-			if (bSaved)
-			{
-				// Find and Unlink all loaded packages in Content directory to allow to update them
-				PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+			// Warn the user about any unsaved assets (risk of losing work) but don't enforce saving them. Saving and checking out these assets might make the merge of the branch fail.
+			PackageUtils::SaveDirtyPackages();
 
-				// Launch a custom "Merge" operation
-				FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-				TSharedRef<FPlasticMergeBranch, ESPMode::ThreadSafe> MergeBranchOperation = ISourceControlOperation::Create<FPlasticMergeBranch>();
-				MergeBranchOperation->BranchName = InBranchName;
-				const ECommandResult::Type Result = Provider.Execute(MergeBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnMergeBranchOperationComplete));
-				if (Result == ECommandResult::Succeeded)
-				{
-					// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
-					Notification.DisplayInProgress(MergeBranchOperation->GetInProgressString());
-					StartRefreshStatus();
-				}
-				else
-				{
-					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-					FNotification::DisplayFailure(MergeBranchOperation.Get());
-				}
+			// Find and Unlink all loaded packages in Content directory to allow to update them
+			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+
+			// Launch a custom "Merge" operation
+			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+			TSharedRef<FPlasticMergeBranch, ESPMode::ThreadSafe> MergeBranchOperation = ISourceControlOperation::Create<FPlasticMergeBranch>();
+			MergeBranchOperation->BranchName = InBranchName;
+			const ECommandResult::Type Result = Provider.Execute(MergeBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnMergeBranchOperationComplete));
+			if (Result == ECommandResult::Succeeded)
+			{
+				// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+				Notification.DisplayInProgress(MergeBranchOperation->GetInProgressString());
+				StartRefreshStatus();
 			}
 			else
 			{
-				FMessageLog SourceControlLog("SourceControl");
-				SourceControlLog.Warning(LOCTEXT("SourceControlMenu_Merge_Unsaved", "Save All Assets before attempting to Merge a branch into the workspace!"));
-				SourceControlLog.Notify();
+				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+				FNotification::DisplayFailure(MergeBranchOperation.Get());
 			}
 		}
 		else
