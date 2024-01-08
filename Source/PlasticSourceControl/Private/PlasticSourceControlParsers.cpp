@@ -550,20 +550,30 @@ FPlasticMergeConflictParser::FPlasticMergeConflictParser(const FString& InResult
 	}
 }
 
+// Types of changes in source control revisions, using Perforce terminology for the History window
+static const TCHAR* SourceControlActionAdded = TEXT("add");
+static const TCHAR* SourceControlActionDeleted = TEXT("delete");
+static const TCHAR* SourceControlActionMoved = TEXT("branch");
+static const TCHAR* SourceControlActionMerged = TEXT("integrate");
+static const TCHAR* SourceControlActionChanged = TEXT("edit");
+
 // Convert a file state to a string ala Perforce, see also ParseShelveFileStatus()
 FString FileStateToAction(const EWorkspaceState InState)
 {
 	switch (InState)
 	{
 	case EWorkspaceState::Added:
-		return TEXT("add");
+		return SourceControlActionAdded;
 	case EWorkspaceState::Deleted:
-		return TEXT("delete");
+		return SourceControlActionDeleted;
 	case EWorkspaceState::Moved:
-		return TEXT("branch");
+	case EWorkspaceState::Copied:
+		return SourceControlActionMoved;
+	case EWorkspaceState::Replaced:
+		return SourceControlActionMerged;
 	case EWorkspaceState::CheckedOutChanged:
 	default:
-		return TEXT("edit");
+		return SourceControlActionChanged;
 	}
 }
 
@@ -714,16 +724,16 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 					{
 						if (Index == 0)
 						{
-							SourceControlRevision->Action = FileStateToAction(EWorkspaceState::Added);
+							SourceControlRevision->Action = SourceControlActionAdded;
 						}
 						else
 						{
-							SourceControlRevision->Action = FileStateToAction(EWorkspaceState::CheckedOutChanged);
+							SourceControlRevision->Action = SourceControlActionChanged;
 						}
 					}
 					else
 					{
-						SourceControlRevision->Action = FileStateToAction(EWorkspaceState::Deleted);
+						SourceControlRevision->Action = SourceControlActionDeleted;
 					}
 				}
 
@@ -1313,7 +1323,7 @@ bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InR
 						return State.GetFilename().Equals(AbsoluteFilename);
 					}))
 				{
-					ExistingShelveRevision->Action = FileStateToAction(EWorkspaceState::Moved);
+					ExistingShelveRevision->Action = SourceControlActionMoved;
 					continue;
 				}
 			}
