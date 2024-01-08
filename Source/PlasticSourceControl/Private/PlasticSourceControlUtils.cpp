@@ -758,9 +758,9 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (!bInIsPartialWorkspace)
 	{
-		const FScopedTempFile TempFile;
+		const FScopedTempFile UpdateResultFile;
 		TArray<FString> InfoMessages;
-		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFile.GetFilename()));
+		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *UpdateResultFile.GetFilename()));
 		Parameters.Add(TEXT("--encoding=\"utf-8\""));
 		Parameters.Add(TEXT("--last"));
 		Parameters.Add(TEXT("--dontmerge"));
@@ -769,7 +769,7 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 		{
 			// Load and parse the result of the update command
 			FString Results;
-			if (FFileHelper::LoadFileToString(Results, *TempFile.GetFilename()))
+			if (FFileHelper::LoadFileToString(Results, *UpdateResultFile.GetFilename()))
 			{
 				bResult = PlasticSourceControlParsers::ParseUpdateResults(Results, OutUpdatedFiles);
 			}
@@ -1004,10 +1004,10 @@ bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedF
 {
 	bool bResult = false;
 
-	const FScopedTempFile TempFile;
+	const FScopedTempFile SwitchResultFile;
 	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFile.GetFilename()));
+	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *SwitchResultFile.GetFilename()));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InBranchName));
 	bResult = PlasticSourceControlUtils::RunCommand(TEXT("switch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
@@ -1015,7 +1015,7 @@ bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedF
 	{
 		// Load and parse the result of the update command
 		FString Results;
-		if (FFileHelper::LoadFileToString(Results, *TempFile.GetFilename()))
+		if (FFileHelper::LoadFileToString(Results, *SwitchResultFile.GetFilename()))
 		{
 			bResult = PlasticSourceControlParsers::ParseUpdateResults(Results, OutUpdatedFiles);
 		}
@@ -1028,10 +1028,10 @@ bool RunMergeBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFile
 {
 	bool bResult = false;
 
-	const FScopedTempFile TempFile;
+	const FScopedTempFile MergeResultFile;
 	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *TempFile.GetFilename()));
+	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *MergeResultFile.GetFilename()));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	Parameters.Add(TEXT("--merge"));
 	Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InBranchName));
@@ -1040,7 +1040,7 @@ bool RunMergeBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFile
 	{
 		// Load and parse the result of the update command
 		FString Results;
-		if (FFileHelper::LoadFileToString(Results, *TempFile.GetFilename()))
+		if (FFileHelper::LoadFileToString(Results, *MergeResultFile.GetFilename()))
 		{
 			PlasticSourceControlParsers::ParseMergeResults(Results, OutUpdatedFiles);
 		}
@@ -1059,7 +1059,7 @@ bool RunCreateBranch(const FString& InBranchName, const FString& InComment, TArr
 		TArray<FString> InfoMessages;
 		Parameters.Add(TEXT("create"));
 		Parameters.Add(FString::Printf(TEXT("\"%s\""), *InBranchName));
-		Parameters.Add(FString::Printf(TEXT("--commentsfile=\"%s\""), *FPaths::ConvertRelativePathToFull(BranchCommentFile.GetFilename())));
+		Parameters.Add(FString::Printf(TEXT("--commentsfile=\"%s\""), *BranchCommentFile.GetFilename()));
 		return PlasticSourceControlUtils::RunCommand(TEXT("branch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
 	}
 
