@@ -704,11 +704,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 		{
 			if (const FXmlNode* RevisionNode = RevisionNodes[Index])
 			{
-#if ENGINE_MAJOR_VERSION == 4
 				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShareable(new FPlasticSourceControlRevision);
-#elif ENGINE_MAJOR_VERSION == 5
-				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
-#endif
 				SourceControlRevision->State = &InOutState;
 				SourceControlRevision->Filename = Filename;
 
