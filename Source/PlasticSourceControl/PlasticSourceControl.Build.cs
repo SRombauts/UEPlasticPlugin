@@ -23,7 +23,7 @@ public class PlasticSourceControl : ModuleRules
 				"UnrealEd",
 				"LevelEditor",
 				"SourceControl",
-				"XmlParser2",
+				"XmlParser",
 				"Projects",
 				"AssetRegistry",
 				"DeveloperSettings",
