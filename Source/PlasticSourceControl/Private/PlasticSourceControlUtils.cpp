@@ -671,23 +671,6 @@ bool RunGetFile(const FString& InRevSpec, const FString& InDumpFileName)
 	return bResult;
 }
 
-// Convert a file state to a string ala Perforce, see also ParseShelveFileStatus()
-FString FileStateToAction(const EWorkspaceState InState)
-{
-	switch (InState)
-	{
-	case EWorkspaceState::Added:
-		return TEXT("add");
-	case EWorkspaceState::Deleted:
-		return TEXT("delete");
-	case EWorkspaceState::Moved:
-		return TEXT("branch");
-	case EWorkspaceState::CheckedOutChanged:
-	default:
-		return TEXT("edit");
-	}
-}
-
 // Run a Plastic "history" command and parse it's XML result.
 bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages)
 {
