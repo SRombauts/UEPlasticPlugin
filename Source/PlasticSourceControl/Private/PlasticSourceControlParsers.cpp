@@ -608,18 +608,37 @@ static FString DecodeXmlEntities(const FString& InString)
 		  <CreationDate>2019-10-14T09:52:07+02:00</CreationDate>
 		  <RevisionType>bin</RevisionType>
 		  <ChangesetNumber>7</ChangesetNumber>
-		  <Owner>SRombauts</Owner>
+		  <Owner>sebastien.rombauts</Owner>
 		  <Comment>New tests</Comment>
 		  <Repository>UE4PlasticPluginDev</Repository>
 		  <Server>localhost:8087</Server>
 		  <RepositorySpec>UE4PlasticPluginDev@localhost:8087</RepositorySpec>
+		  <DataStatus>Available</DataStatus>
+		  <ItemId>1657</ItemId>
 		  <Size>22356</Size>
 		  <Hash>zzuB6G9fbWz1md12+tvBxg==</Hash>
 		</Revision>
 		...
 		<Revision>
 		  <RevisionSpec>C:/Workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset#cs:12</RevisionSpec>
-		  <Branch>Removed /Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset</Branch>
+		  <Branch>/main/rename_test</Branch>
+		  <CreationDate>2022-04-28T16:00:37+02:00</CreationDate>
+		  <RevisionType>bin</RevisionType>
+		  <ChangesetNumber>12</ChangesetNumber>
+		  <Owner>sebastien.rombauts</Owner>
+		  <Comment>Renamed sphere blueprint</Comment>
+		  <Repository>UE4PlasticPluginDev</Repository>
+		  <Server>localhost:8087</Server>
+		  <RepositorySpec>UE4PlasticPluginDev@localhost:8087</RepositorySpec>
+		  <DataStatus>Available</DataStatus>
+		  <ItemPathOrSpec>C:/Workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset</ItemPathOrSpec>
+		  <ItemId>1657</ItemId>
+		  <Size>28603</Size>
+		  <Hash>MREVIZ1qKNqu1h2iq9WiRg==</Hash>
+		</Revision>
+		<Revision>
+		  <RevisionSpec>C:/Workspace/UE4PlasticPluginDev/Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset#cs:12</RevisionSpec>
+		  <Branch>Moved from /Content/FirstPersonBP/Blueprints/BP_ToRename.uasset to /Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset</Branch>
 		  <CreationDate>2022-04-28T16:00:37+02:00</CreationDate>
 		  <RevisionType />
 		  <ChangesetNumber>12</ChangesetNumber>
@@ -628,10 +647,13 @@ static FString DecodeXmlEntities(const FString& InString)
 		  <Repository>UE4PlasticPluginDev</Repository>
 		  <Server>localhost:8087</Server>
 		  <RepositorySpec>UE4PlasticPluginDev@localhost:8087</RepositorySpec>
-		  <Size>22406</Size>
-		  <Hash>uR7NdDRAyKqADdyAqh67Rg==</Hash>
+		  <DataStatus />
+		  <ItemPathOrSpec />
+		  <ItemId />
+		  <Size>0</Size>
+		  <Hash />
 		</Revision>
-
+		...
 	  </Revisions>
 	</RevisionHistory>
 	<RevisionHistory>
@@ -710,6 +732,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 		// Note: limit to last 100 changes, like Perforce
 		static const int32 MaxRevisions = 100;
 		const int32 MinIndex = FMath::Max(0, RevisionNodes.Num() - MaxRevisions);
+		bool bNextEntryIsAMove = false;
 		for (int32 RevisionIndex = RevisionNodes.Num() - 1; RevisionIndex >= MinIndex; RevisionIndex--)
 		{
 			const FXmlNode* RevisionNode = RevisionNodes[RevisionIndex];
@@ -721,9 +744,24 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 
 			if (const FXmlNode* RevisionTypeNode = RevisionNode->FindChildNode(RevisionType))
 			{
-				if (!RevisionTypeNode->GetContent().IsEmpty())
+				// There are two entries for a Move of an asset;
+				// 1. a regular one with the normal data: revision, comment, branch, Id, size, hash etc.
+				// 2. and another "empty" one for the Move
+				// => Since the parsing is done in reverse order, the detection of a Move need to apply to the next entry
+				if (RevisionTypeNode->GetContent().IsEmpty())
 				{
-					if (RevisionIndex == 0)
+					// Empty RevisionType signals a Move: Raises a flag to treat the next entry as a Move, and skip this one as it is empty (it's just an additional entry with data for the move)
+					bNextEntryIsAMove = true;
+					continue;
+				}
+				else
+				{
+					if (bNextEntryIsAMove)
+					{
+						bNextEntryIsAMove = false;
+						SourceControlRevision->Action = SourceControlActionMoved;
+					}
+					else if (RevisionIndex == 0)
 					{
 						SourceControlRevision->Action = SourceControlActionAdded;
 					}
@@ -731,10 +769,6 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 					{
 						SourceControlRevision->Action = SourceControlActionChanged;
 					}
-				}
-				else
-				{
-					SourceControlRevision->Action = SourceControlActionDeleted;
 				}
 			}
 
