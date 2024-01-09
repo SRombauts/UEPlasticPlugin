@@ -33,8 +33,8 @@ Since the Unreal Editor does not manage C++ source code, but only assets, the pl
    - [Working in Editor](#working-in-editor)
      - [Unreal Documentation](#unreal-documentation)
      - [Status Icons](#status-icons)
-     - [Source Control Menu](#source-control-menu)
-     - [Source Control Windows](#source-control-windows)
+     - [Revision Control Menu](#revision-control-menu)
+     - [Revision Control Windows](#revision-control-windows)
      - [Redirectors](#redirectors)
      - [Detect Changes on other Branches](#detect-changes-on-other-branches)
      - [Branches](#branches)
@@ -314,7 +314,7 @@ Plastic SCM forums:
  11. **Changed in another branch**, the asset has been changed in a newer changeset in another branch
  12. **Merge conflict**, the asset has been changed in two separate branches and is pending merge resolution
 
-#### Source Control Menu
+#### Revision Control Menu
 
 ##### Unreal Engine 4 Source Control Menu
 
@@ -324,26 +324,29 @@ Source Control status tooltip, when hovering the Source Control icon in toolbar:
 Source Control top Menu, extended with commands specific to Unity Version Control:
 ![Source Control Top Menu](Screenshots/UE4PlasticPlugin-SourceControlMenu.png)
 
-##### Unreal Engine 5 Source Control Menu
+##### Unreal Engine 5 Revision Control Menu
 
-Source Control Menu and status tooltip, extended with commands specific to Unity Version Control:
+(UE5.1) Source Control Menu and status tooltip, extended with commands specific to Unity Version Control:
 ![Source Control Menu](Screenshots/UE5PlasticPlugin-SourceControlMenu.png)
 
-Each Asset Editor also provide some source control operation, typically to Submit Content:
+(UE5.2+) Revision Control Menu and status tooltip, extended with commands specific to Unity Version Control:
+![Revision Control Menu](Screenshots/UE5PlasticPlugin-RevisionControlMenu.png)
+
+Each Asset Editor also provide some revision control operation, typically to Submit Content:
 ![Asset Tools Menu](Screenshots/UEPlasticPlugin-AssetToolsMenu-Diff.png)
 
 The Blueprint Editor also provide a toolbar drop-down to visual diff against a previous revision:
 ![Blueprint Toolbar Diff drop-down](Screenshots/UEPlasticPlugin-BlueprintToolbar-Diff.png)
 
-#### Source Control Windows
+#### Revision Control Windows
 
-Using the Content Browser context source control sub-menu, you can call in specific actions and windows:
+Using the Content Browser context revision control sub-menu, you can call in specific actions and windows:
 ![Content Browser Context Menu](Screenshots/UEPlasticPlugin-ContentBrowser-ContextMenu-Diff.png)
 
 ##### Submit Files
 
-Submit Files to Source Control window, to check-in selected assets directly (see also Changelists below):
-![Submit Files to Source Control](Screenshots/UEPlasticPlugin-SubmitFiles.png)
+Submit Files to Revision Control window, to check-in selected assets directly (see also Changelists below):
+![Submit Files to Revision Control](Screenshots/UEPlasticPlugin-SubmitFiles.png)
 
 ##### View Changelists
 
@@ -407,6 +410,8 @@ Warning when trying to modify an asset that has been modified in another branch:
 The plugin now offers full support for branches, including the ability to create, switch to and merge branches from within the Unreal Editor,
 reloading assets and the current level as appropriate.
 
+To open it, use the "View Branches" menu item in the Revision Control menu, or click on the name of the current branch in the status bar.
+
 View Branches window:
 ![View Branches window](Screenshots/UEPlasticPlugin-Branches-Menu.png)
 
@@ -419,7 +424,7 @@ Renaming an existing branch:
 ![Rename Branch Dialog](Screenshots/UEPlasticPlugin-RenameBranch-Dialog.png)
 
 Merging a branch into the current one:
-![Merge Branch Dialog](Screenshots/UEPlasticPlugin-RenameBranch-Dialog.png)
+![Merge Branch Dialog](Screenshots/UEPlasticPlugin-MergeBranch-Dialog.png)
 
 Deleting the selected branches:
 ![Delete Branches Dialog](Screenshots/UEPlasticPlugin-DeleteBranches-Dialog.png)
