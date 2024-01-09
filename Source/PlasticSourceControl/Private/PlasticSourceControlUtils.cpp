@@ -685,7 +685,8 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 	{
 		Parameters.Add(TEXT("--moveddeleted"));
 	}
-	Parameters.Add(TEXT("--xml"));
+	const FScopedTempFile HistoryResultFile;
+	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *HistoryResultFile.GetFilename()));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	if (Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::NewHistoryLimit)
@@ -720,7 +721,7 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 		bResult = RunCommand(TEXT("history"), Parameters, Files, Results, Errors);
 		if (bResult)
 		{
-			bResult = PlasticSourceControlParsers::ParseHistoryResults(bInUpdateHistory, Results, InOutStates);
+			bResult = PlasticSourceControlParsers::ParseHistoryResults(bInUpdateHistory, HistoryResultFile.GetFilename(), InOutStates);
 		}
 		if (!Errors.IsEmpty())
 		{

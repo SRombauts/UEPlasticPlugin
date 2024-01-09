@@ -72,7 +72,7 @@ void ParseDirectoryStatusResult(const FString& InDir, const TArray<FString>& InR
 
 void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& InOutStates);
 
-bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InResults, TArray<FPlasticSourceControlState>& InOutStates);
+bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InResultFilename, TArray<FPlasticSourceControlState>& InOutStates);
 
 bool ParseUpdateResults(const FString& InResults, TArray<FString>& OutFiles);
 bool ParseUpdateResults(const TArray<FString>& InResults, TArray<FString>& OutFiles);

@@ -823,14 +823,14 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 	return true;
 }
 
-bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InResults, TArray<FPlasticSourceControlState>& InOutStates)
+bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InResultFilename, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	bool bResult = false;
 
 	FXmlFile XmlFile;
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseHistoryResults::FXmlFile::LoadFile);
-		bResult = XmlFile.LoadFile(InResults, EConstructMethod::ConstructFromBuffer);
+		bResult = XmlFile.LoadFile(InResultFilename);
 	}
 	if (bResult)
 	{
