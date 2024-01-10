@@ -671,23 +671,6 @@ bool RunGetFile(const FString& InRevSpec, const FString& InDumpFileName)
 	return bResult;
 }
 
-// Convert a file state to a string ala Perforce, see also ParseShelveFileStatus()
-FString FileStateToAction(const EWorkspaceState InState)
-{
-	switch (InState)
-	{
-	case EWorkspaceState::Added:
-		return TEXT("add");
-	case EWorkspaceState::Deleted:
-		return TEXT("delete");
-	case EWorkspaceState::Moved:
-		return TEXT("branch");
-	case EWorkspaceState::CheckedOutChanged:
-	default:
-		return TEXT("edit");
-	}
-}
-
 // Run a Plastic "history" command and parse it's XML result.
 bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlState>& InOutStates, TArray<FString>& OutErrorMessages)
 {
@@ -702,7 +685,8 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 	{
 		Parameters.Add(TEXT("--moveddeleted"));
 	}
-	Parameters.Add(TEXT("--xml"));
+	const FScopedTempFile HistoryResultFile;
+	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *HistoryResultFile.GetFilename()));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	if (Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::NewHistoryLimit)
@@ -737,7 +721,7 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 		bResult = RunCommand(TEXT("history"), Parameters, Files, Results, Errors);
 		if (bResult)
 		{
-			bResult = PlasticSourceControlParsers::ParseHistoryResults(bInUpdateHistory, Results, InOutStates);
+			bResult = PlasticSourceControlParsers::ParseHistoryResults(bInUpdateHistory, HistoryResultFile.GetFilename(), InOutStates);
 		}
 		if (!Errors.IsEmpty())
 		{
