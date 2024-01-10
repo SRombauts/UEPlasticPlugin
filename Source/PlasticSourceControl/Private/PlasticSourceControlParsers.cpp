@@ -131,11 +131,11 @@ static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool b
 {
 	EWorkspaceState State;
 
-	if (InFileStatus == "CH") // Modified but not Checked-Out
+	if (InFileStatus == TEXT("CH")) // Modified but not Checked-Out
 	{
 		State = EWorkspaceState::Changed;
 	}
-	else if (InFileStatus == "CO") // Checked-Out with no change, or "don't know" if using on an old version of cm
+	else if (InFileStatus == TEXT("CO")) // Checked-Out with no change, or "don't know" if using on an old version of cm
 	{
 		// Recent version can distinguish between CheckedOut with or with no changes
 		if (bInUsesCheckedOutChanged)
@@ -147,7 +147,7 @@ static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool b
 			State = EWorkspaceState::CheckedOutChanged; // Older version; need to assume it is changed to retain behavior
 		}
 	}
-	else if (InFileStatus == "CO+CH") // Checked-Out and changed from the new --iscochanged
+	else if (InFileStatus == TEXT("CO+CH")) // Checked-Out and changed from the new --iscochanged
 	{
 		State = EWorkspaceState::CheckedOutChanged; // Recent version; here it's checkedout with changes
 	}
@@ -163,23 +163,23 @@ static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool b
 	{
 		State = EWorkspaceState::Replaced;
 	}
-	else if (InFileStatus == "AD")
+	else if (InFileStatus == TEXT("AD"))
 	{
 		State = EWorkspaceState::Added;
 	}
-	else if ((InFileStatus == "PR") || (InFileStatus == "LM")) // Not Controlled/Not in Depot/Untracked (or Locally Moved/Renamed)
+	else if ((InFileStatus == TEXT("PR")) || (InFileStatus == TEXT("LM"))) // Not Controlled/Not in Depot/Untracked (or Locally Moved/Renamed)
 	{
 		State = EWorkspaceState::Private;
 	}
-	else if (InFileStatus == "IG")
+	else if (InFileStatus == TEXT("IG"))
 	{
 		State = EWorkspaceState::Ignored;
 	}
-	else if (InFileStatus == "DE")
+	else if (InFileStatus == TEXT("DE"))
 	{
 		State = EWorkspaceState::Deleted; // Deleted (removed from source control)
 	}
-	else if (InFileStatus == "LD")
+	else if (InFileStatus == TEXT("LD"))
 	{
 		State = EWorkspaceState::LocallyDeleted; // Locally Deleted (ie. missing)
 	}
