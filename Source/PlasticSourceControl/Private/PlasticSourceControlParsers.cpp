@@ -179,7 +179,7 @@ static EWorkspaceState StateFromStatus(const FString& InFileStatus, const bool b
 	{
 		State = EWorkspaceState::Deleted; // Deleted (removed from source control)
 	}
-	else if (InFileStatus == TEXT("LD"))
+	else if (InFileStatus.Contains(TEXT("LD"))) // "LD", "AD+LD"
 	{
 		State = EWorkspaceState::LocallyDeleted; // Locally Deleted (ie. missing)
 	}
