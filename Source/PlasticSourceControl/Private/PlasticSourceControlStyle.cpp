@@ -45,6 +45,7 @@ TSharedRef<FSlateStyleSet> FPlasticSourceControlStyle::Create()
 	Style->SetContentRoot(FPlasticSourceControlModule::GetPlugin()->GetBaseDir() / TEXT("Resources"));
 
 	Style->Set("PlasticSourceControl.PluginIcon.Small", new FSlateImageBrush(FPlasticSourceControlStyle::InContent("Icon128", ".png"), Icon16x16));
+	Style->Set("PlasticSourceControl.GluonIcon.Small", new FSlateImageBrush(FPlasticSourceControlStyle::InContent("gluon", ".ico"), Icon16x16));
 
 	return Style;
 }

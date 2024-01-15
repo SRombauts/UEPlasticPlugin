@@ -5,6 +5,7 @@
 #include "PlasticSourceControlBranchesWindow.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
+#include "PlasticSourceControlStyle.h"
 #include "PlasticSourceControlOperations.h"
 #include "SPlasticSourceControlStatusBar.h"
 
@@ -14,9 +15,10 @@
 
 #include "ContentBrowserMenuContexts.h"
 #include "Interfaces/IPluginManager.h"
-#include "Modules/ModuleManager.h"
+#include "HAL/PlatformProcess.h"
 #include "LevelEditor.h"
 #include "Misc/MessageDialog.h"
+#include "Modules/ModuleManager.h"
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 #include "Styling/AppStyle.h"
 #else
@@ -30,6 +32,11 @@
 
 #include "ToolMenus.h"
 #include "ToolMenuMisc.h"
+
+#if PLATFORM_WINDOWS
+#include "Windows/AllowWindowsPlatformTypes.h"
+#include "Windows/WindowsPlatformMisc.h"
+#endif
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -529,6 +536,41 @@ void FPlasticSourceControlMenu::VisitLockRulesURLClicked(const FString InOrganiz
 	FPlatformProcess::LaunchURL(*OrganizationLockRulesURL, NULL, NULL);
 }
 
+void FPlasticSourceControlMenu::OpenDeskoptApp() const
+{
+#if PLATFORM_WINDOWS
+	// On Windows, use the registry to find the install location
+	FString InstallLocation = TEXT("C:/Program Files/PlasticSCM5");
+	if (FWindowsPlatformMisc::QueryRegKey(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Unity Software Inc.\\Unity DevOps Version Control"), TEXT("Location"), InstallLocation))
+	{
+		FPaths::NormalizeDirectoryName(InstallLocation);
+	}
+
+	const TCHAR* PlasticExe = TEXT("client/plastic.exe");
+	const TCHAR* GluonExe = TEXT("client/gluon.exe");
+	const FString DeskoptAppPath = FPaths::Combine(InstallLocation, FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace() ? GluonExe : PlasticExe);
+#elif PLATFORM_MAC
+	const TCHAR* PlasticExe	= "/Applications/PlasticSCM.app/Contents/MacOS/macplasticx";
+	const TCHAR* GluonExe	= "/Applications/Gluon.app/Contents/MacOS/macgluonx";
+	const TCHAR* DeskoptAppPath = FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace() ? GluonExe : PlasticExe);
+#elif PLATFORM_LINUX
+	const TCHAR* PlasticExe	= "/usr/bin/plasticgui ";
+	const TCHAR* GluonExe	= "/usr/bin/gluon";
+	const TCHAR* DeskoptAppPath = FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace() ? GluonExe : PlasticExe);
+#endif
+
+	const FString CommandLineArguments = FString::Printf(TEXT("--wk=\"%s\""), *FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot());
+
+	UE_LOG(LogSourceControl, Log, TEXT("Opening the Desktop application (%s %s)"), *InstallLocation, *CommandLineArguments);
+
+	FProcHandle Proc = FPlatformProcess::CreateProc(*DeskoptAppPath, *CommandLineArguments, true, false, false, nullptr, 0, nullptr, nullptr, nullptr);
+	if (!Proc.IsValid())
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("Opening the Desktop application (%s %s) failed."), *DeskoptAppPath, *CommandLineArguments);
+		FPlatformProcess::CloseProc(Proc);
+	}
+}
+
 void FPlasticSourceControlMenu::OpenBranchesWindow() const
 {
 	FPlasticSourceControlModule::Get().GetBranchesWindow().OpenTab();
@@ -566,6 +608,8 @@ void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Menu)
 void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 {
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
 		"PlasticSync",
@@ -749,6 +793,25 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			)
 		);
 	}
+
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"PlasticDesktopApp",
+#endif
+		TAttribute<FText>::CreateLambda([&Provider]()
+			{
+				return Provider.IsPartialWorkspace() ? LOCTEXT("PlasticGluon", "Open in Gluon") : LOCTEXT("PlasticDesktopApp", "Open in Desktop App");
+			}),
+		TAttribute<FText>::CreateLambda([&Provider]()
+			{
+				return Provider.IsPartialWorkspace() ? LOCTEXT("PlasticDesktopAppTooltip", "Open the workspace in Unity Version Control Gluon Application.") : LOCTEXT("PlasticGluonTooltip", "Open the workspace in Unity Version Control Desktop Application.");
+			}),
+		TAttribute<FSlateIcon>::CreateLambda([&Provider]()
+			{
+				return FSlateIcon(FPlasticSourceControlStyle::Get().GetStyleSetName(), Provider.IsPartialWorkspace() ? "PlasticSourceControl.GluonIcon.Small" : "PlasticSourceControl.PluginIcon.Small");
+			}),
+		FUIAction(FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenDeskoptApp))
+	);
 
 	AddViewBranches(Menu);
 }
