@@ -136,20 +136,25 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 
 		bUsesLocalReadOnlyState = PlasticSourceControlUtils::GetConfigSetFilesAsReadOnly();
 
-		// Get user name (from the global Unity Version Control client config)
-		PlasticSourceControlUtils::GetUserName(UserName);
-
 		// Register Console Commands
 		PlasticSourceControlConsole.Register();
 
-		if (!bWorkspaceFound)
+		if (bWorkspaceFound)
+		{
+			TArray<FString> ErrorMessages;
+			PlasticSourceControlUtils::GetWorkspaceInfo(BranchName, RepositoryName, ServerUrl, ErrorMessages);
+			UserName = PlasticSourceControlUtils::GetProfileUserName(ServerUrl);
+		}
+		else
 		{
 			// This info message is only useful here, if bPlasticAvailable, for the Login window
 			FFormatNamedArguments Args;
 			Args.Add(TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot));
 			FMessageLog("SourceControl").Info(FText::Format(LOCTEXT("NotInAWorkspace", "{WorkspacePath} is not in a workspace."), Args));
 
+			// Get default server and user name (from the global client config)
 			ServerUrl = PlasticSourceControlUtils::GetConfigDefaultRepServer();
+			UserName = PlasticSourceControlUtils::GetDefaultUserName();
 		}
 	}
 }
