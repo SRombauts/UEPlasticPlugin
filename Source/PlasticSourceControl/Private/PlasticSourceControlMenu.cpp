@@ -2,12 +2,12 @@
 
 #include "PlasticSourceControlMenu.h"
 
-#include "PlasticSourceControlBranchesWindow.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlStyle.h"
 #include "PlasticSourceControlUtils.h"
+#include "PlasticSourceControlVersions.h"
 #include "SPlasticSourceControlStatusBar.h"
 
 #include "ISourceControlModule.h"
@@ -126,6 +126,7 @@ void FPlasticSourceControlMenu::ExtendRevisionControlMenu()
 		if (FToolMenuSection* Section = ToolsMenu->FindSection("Source Control"))
 		{
 			AddViewBranches(*Section);
+			AddViewLocks(*Section);
 		}
 	}
 #endif
@@ -552,6 +553,11 @@ void FPlasticSourceControlMenu::OpenBranchesWindow() const
 	FPlasticSourceControlModule::Get().GetBranchesWindow().OpenTab();
 }
 
+void FPlasticSourceControlMenu::OpenLocksWindow() const
+{
+	FPlasticSourceControlModule::Get().GetLocksWindow().OpenTab();
+}
+
 void FPlasticSourceControlMenu::OnSyncAllOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	OnSourceControlOperationComplete(InOperation, InResult);
@@ -794,6 +800,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 	);
 
 	AddViewBranches(Menu);
+	AddViewLocks(Menu);
 }
 
 #if ENGINE_MAJOR_VERSION == 4
@@ -818,6 +825,32 @@ void FPlasticSourceControlMenu::AddViewBranches(FToolMenuSection& Menu)
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenBranchesWindow),
 			FCanExecuteAction()
+		)
+	);
+}
+
+#if ENGINE_MAJOR_VERSION == 4
+void FPlasticSourceControlMenu::AddViewLocks(FMenuBuilder& Menu)
+#elif ENGINE_MAJOR_VERSION == 5
+void FPlasticSourceControlMenu::AddViewLocks(FToolMenuSection& Menu)
+#endif
+{
+	const bool bVersionSupportsSmartLocks = FPlasticSourceControlModule::Get().GetProvider().GetPlasticScmVersion() >= PlasticSourceControlVersions::SmartLocks;
+
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		TEXT("PlasticLocksWindow"),
+#endif
+		LOCTEXT("PlasticLocksWindow", "View Locks"),
+		LOCTEXT("PlasticLocksWindowTooltip", "Open the Locks window."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked"),
+#else
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked"),
+#endif
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenLocksWindow),
+			FCanExecuteAction::CreateLambda([bVersionSupportsSmartLocks]() { return bVersionSupportsSmartLocks; })
 		)
 	);
 }

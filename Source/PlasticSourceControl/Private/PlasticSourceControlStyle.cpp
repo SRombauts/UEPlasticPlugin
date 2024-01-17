@@ -26,9 +26,12 @@ void FPlasticSourceControlStyle::Initialize()
 
 void FPlasticSourceControlStyle::Shutdown()
 {
-	FSlateStyleRegistry::UnRegisterSlateStyle(*StyleInstance);
-	ensure(StyleInstance.IsUnique());
-	StyleInstance.Reset();
+	if (StyleInstance.IsValid())
+	{
+		FSlateStyleRegistry::UnRegisterSlateStyle(*StyleInstance);
+		ensure(StyleInstance.IsUnique());
+		StyleInstance.Reset();
+	}
 }
 
 FName FPlasticSourceControlStyle::GetStyleSetName()

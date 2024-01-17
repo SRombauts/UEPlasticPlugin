@@ -108,6 +108,9 @@ public:
 
 	virtual FText GetInProgressString() const override;
 
+	/** Ids of locks to unlock */
+	TArray<int32> ItemIds;
+
 	// Release the Lock(s), and optionally remove (delete) them completely
 	bool bRemove = false;
 };

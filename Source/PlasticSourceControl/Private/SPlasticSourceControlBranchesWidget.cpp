@@ -36,7 +36,7 @@
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Views/SHeaderRow.h"
 
-#define LOCTEXT_NAMESPACE "PlasticSourceControlWindow"
+#define LOCTEXT_NAMESPACE "PlasticSourceControlBranchesWindow"
 
 void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 {
@@ -258,7 +258,7 @@ void SPlasticSourceControlBranchesWidget::OnHiddenColumnsListChanged()
 	if (BranchesListView && BranchesListView->GetHeaderRow())
 	{
 		UPlasticSourceControlProjectSettings* Settings = GetMutableDefault<UPlasticSourceControlProjectSettings>();
-		Settings->bShowBranchRepositoryColumn = false;
+		Settings->bShowBranchRepositoryColumn = true;
 		Settings->bShowBranchCreatedByColumn = true;
 		Settings->bShowBranchDateColumn = true;
 		Settings->bShowBranchCommentColumn = true;

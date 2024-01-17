@@ -15,7 +15,7 @@
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
 
-#define LOCTEXT_NAMESPACE "PlasticSourceControlWindow"
+#define LOCTEXT_NAMESPACE "PlasticSourceControlBranchesWindow"
 
 // Extract the short name of the branch, after the last slash
 static FString GetShortBranchName(const FString& InBranchName)

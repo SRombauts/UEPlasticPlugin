@@ -1029,8 +1029,13 @@ bool FPlasticUnlockWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TSharedRef<FPlasticUnlock, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticUnlock>(InCommand.Operation);
 
 	{
-		// retrieve the itemid of assets to unlock
 		FString ItemIds;
+		// The View Locks window directly work with Ids
+		for (const int32 ItemId : Operation->ItemIds)
+		{
+			ItemIds += FString::Printf(TEXT("itemid:%d "), ItemId);
+		}
+		// The context "Unlock" menu deals with filenames: retrieve the itemid of assets to unlock
 		for (const FString& File : InCommand.Files)
 		{
 			const auto State = GetProvider().GetStateInternal(File);

@@ -378,6 +378,7 @@ bool RunListSmartLocks(const FString& InRepository, TMap<FString, PlasticSourceC
 	Parameters.Add(TEXT("--smartlocks"));
 	Parameters.Add(TEXT("--anystatus"));
 	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
+	// TODO: issue with this param, was only added in a later version of UVCS
 	Parameters.Add(TEXT("--dateformat=yyyy-MM-ddTHH:mm:ss"));
 	bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
 

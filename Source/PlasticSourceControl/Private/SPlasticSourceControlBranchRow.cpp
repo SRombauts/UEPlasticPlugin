@@ -14,7 +14,7 @@
 #include "EditorStyleSet.h"
 #endif
 
-#define LOCTEXT_NAMESPACE "PlasticSourceControlWindow"
+#define LOCTEXT_NAMESPACE "PlasticSourceControlBranchesWindow"
 
 FName PlasticSourceControlBranchesListViewColumn::Name::Id() { return TEXT("Name"); }
 FText PlasticSourceControlBranchesListViewColumn::Name::GetDisplayText() { return LOCTEXT("Name_Column", "Name"); }

@@ -17,7 +17,7 @@
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
 #include "Widgets/SBoxPanel.h"
 
-#define LOCTEXT_NAMESPACE "PlasticSourceControlWindow"
+#define LOCTEXT_NAMESPACE "PlasticSourceControlBranchesWindow"
 
 void SPlasticSourceControlCreateBranch::Construct(const FArguments& InArgs)
 {
