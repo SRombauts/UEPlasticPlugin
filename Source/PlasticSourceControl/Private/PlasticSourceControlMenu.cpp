@@ -797,7 +797,6 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
 		"PlasticDesktopApp",
-#endif
 		TAttribute<FText>::CreateLambda([&Provider]()
 			{
 				return Provider.IsPartialWorkspace() ? LOCTEXT("PlasticGluon", "Open in Gluon") : LOCTEXT("PlasticDesktopApp", "Open in Desktop App");
@@ -810,6 +809,11 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			{
 				return FSlateIcon(FPlasticSourceControlStyle::Get().GetStyleSetName(), Provider.IsPartialWorkspace() ? "PlasticSourceControl.GluonIcon.Small" : "PlasticSourceControl.PluginIcon.Small");
 			}),
+#else
+		Provider.IsPartialWorkspace() ? LOCTEXT("PlasticGluon", "Open in Gluon") : LOCTEXT("PlasticDesktopApp", "Open in Desktop App"),
+		Provider.IsPartialWorkspace() ? LOCTEXT("PlasticDesktopAppTooltip", "Open the workspace in Unity Version Control Gluon Application.") : LOCTEXT("PlasticGluonTooltip", "Open the workspace in Unity Version Control Desktop Application."),
+		FSlateIcon(FPlasticSourceControlStyle::Get().GetStyleSetName(), Provider.IsPartialWorkspace() ? "PlasticSourceControl.GluonIcon.Small" : "PlasticSourceControl.PluginIcon.Small"),
+#endif
 		FUIAction(FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenDeskoptApp))
 	);
 
