@@ -36,6 +36,7 @@
 #if PLATFORM_WINDOWS
 #include "Windows/AllowWindowsPlatformTypes.h"
 #include "Windows/WindowsPlatformMisc.h"
+#undef GetUserName
 #endif
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
