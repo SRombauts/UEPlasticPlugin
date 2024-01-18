@@ -376,6 +376,7 @@ bool RunListSmartLocks(const FString& InRepository, TMap<FString, PlasticSourceC
 	Parameters.Add(TEXT("list"));
 	Parameters.Add(TEXT("--machinereadable"));
 	Parameters.Add(TEXT("--smartlocks"));
+	Parameters.Add(FString::Printf(TEXT("--repository=%s"), *InRepository));
 	Parameters.Add(TEXT("--anystatus"));
 	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
 	// TODO: issue with this param, was only added in a later version of UVCS
@@ -388,10 +389,7 @@ bool RunListSmartLocks(const FString& InRepository, TMap<FString, PlasticSourceC
 		{
 			const FString& Result = Results[IdxResult];
 			PlasticSourceControlParsers::FSmartLockInfoParser SmartLockInfoParser(Result);
-			if (SmartLockInfoParser.Repository == InRepository)
-			{
-				OutSmartLocks.Add(SmartLockInfoParser.Filename, SmartLockInfoParser);
-			}
+			OutSmartLocks.Add(SmartLockInfoParser.Filename, SmartLockInfoParser);
 		}
 	}
 

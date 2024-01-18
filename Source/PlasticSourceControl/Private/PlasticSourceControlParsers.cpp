@@ -449,7 +449,6 @@ FSmartLockInfoParser::FSmartLockInfoParser(const FString& InResult)
 	const int32 NbElmts = InResult.ParseIntoArray(SmartLockInfos, FILE_STATUS_SEPARATOR, false);
 	if (NbElmts >= 12)
 	{
-		Repository = MoveTemp(SmartLockInfos[0]);
 		ItemId = FCString::Atoi(*SmartLockInfos[1]);
 		FDateTime::ParseIso8601(*SmartLockInfos[3], Date);
 		BranchName = MoveTemp(SmartLockInfos[6]);

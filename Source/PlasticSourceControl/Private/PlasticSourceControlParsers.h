@@ -19,7 +19,6 @@ class FSmartLockInfoParser
 public:
 	explicit FSmartLockInfoParser(const FString& InResult);
 
-	FString Repository;
 	int32 ItemId;
 	FDateTime Date;
 	FString BranchName;
