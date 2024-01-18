@@ -24,6 +24,12 @@
 #include "PlasticSourceControlChangelistState.h"
 #endif
 
+#if PLATFORM_WINDOWS
+#include "Windows/AllowWindowsPlatformTypes.h"
+#include "Windows/WindowsPlatformMisc.h"
+#undef GetUserName
+#endif
+
 namespace PlasticSourceControlUtils
 {
 
@@ -56,6 +62,34 @@ FString FindPlasticBinaryPath()
 #else
 	return FString(TEXT("/usr/bin/cm"));
 #endif
+}
+
+FString FindDesktopApplicationPath()
+{
+	FString DesktopAppPath;
+
+#if PLATFORM_WINDOWS
+	// On Windows, use the registry to find the install location
+	FString InstallLocation = TEXT("C:/Program Files/PlasticSCM5");
+	if (FWindowsPlatformMisc::QueryRegKey(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Unity Software Inc.\\Unity DevOps Version Control"), TEXT("Location"), InstallLocation))
+	{
+		FPaths::NormalizeDirectoryName(InstallLocation);
+	}
+
+	const TCHAR* PlasticExe = TEXT("client/plastic.exe");
+	const TCHAR* GluonExe = TEXT("client/gluon.exe");
+	DesktopAppPath = FPaths::Combine(InstallLocation, FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace() ? GluonExe : PlasticExe);
+#elif PLATFORM_MAC
+	const TCHAR* PlasticExe = "/Applications/PlasticSCM.app/Contents/MacOS/macplasticx";
+	const TCHAR* GluonExe = "/Applications/Gluon.app/Contents/MacOS/macgluonx";
+	DesktopAppPath = FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace() ? GluonExe : PlasticExe);
+#elif PLATFORM_LINUX
+	const TCHAR* PlasticExe = "/usr/bin/plasticgui ";
+	const TCHAR* GluonExe = "/usr/bin/gluon";
+	DesktopAppPath = FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace() ? GluonExe : PlasticExe);
+#endif
+
+	return DesktopAppPath;
 }
 
 // Find the root of the workspace, looking from the provided path and upward in its parent directories.

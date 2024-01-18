@@ -4,9 +4,10 @@
 
 #include "PlasticSourceControlBranchesWindow.h"
 #include "PlasticSourceControlModule.h"
+#include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlStyle.h"
-#include "PlasticSourceControlOperations.h"
+#include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlStatusBar.h"
 
 #include "ISourceControlModule.h"
@@ -32,12 +33,6 @@
 
 #include "ToolMenus.h"
 #include "ToolMenuMisc.h"
-
-#if PLATFORM_WINDOWS
-#include "Windows/AllowWindowsPlatformTypes.h"
-#include "Windows/WindowsPlatformMisc.h"
-#undef GetUserName
-#endif
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
@@ -539,35 +534,15 @@ void FPlasticSourceControlMenu::VisitLockRulesURLClicked(const FString InOrganiz
 
 void FPlasticSourceControlMenu::OpenDeskoptApp() const
 {
-#if PLATFORM_WINDOWS
-	// On Windows, use the registry to find the install location
-	FString InstallLocation = TEXT("C:/Program Files/PlasticSCM5");
-	if (FWindowsPlatformMisc::QueryRegKey(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Unity Software Inc.\\Unity DevOps Version Control"), TEXT("Location"), InstallLocation))
-	{
-		FPaths::NormalizeDirectoryName(InstallLocation);
-	}
-
-	const TCHAR* PlasticExe = TEXT("client/plastic.exe");
-	const TCHAR* GluonExe = TEXT("client/gluon.exe");
-	const FString DeskoptAppPath = FPaths::Combine(InstallLocation, FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace() ? GluonExe : PlasticExe);
-#elif PLATFORM_MAC
-	const TCHAR* PlasticExe	= "/Applications/PlasticSCM.app/Contents/MacOS/macplasticx";
-	const TCHAR* GluonExe	= "/Applications/Gluon.app/Contents/MacOS/macgluonx";
-	const TCHAR* DeskoptAppPath = FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace() ? GluonExe : PlasticExe);
-#elif PLATFORM_LINUX
-	const TCHAR* PlasticExe	= "/usr/bin/plasticgui ";
-	const TCHAR* GluonExe	= "/usr/bin/gluon";
-	const TCHAR* DeskoptAppPath = FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace() ? GluonExe : PlasticExe);
-#endif
-
+	const FString DesktopAppPath = PlasticSourceControlUtils::FindDesktopApplicationPath();
 	const FString CommandLineArguments = FString::Printf(TEXT("--wk=\"%s\""), *FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot());
 
-	UE_LOG(LogSourceControl, Log, TEXT("Opening the Desktop application (%s %s)"), *InstallLocation, *CommandLineArguments);
+	UE_LOG(LogSourceControl, Log, TEXT("Opening the Desktop application (%s %s)"), *DesktopAppPath, *CommandLineArguments);
 
-	FProcHandle Proc = FPlatformProcess::CreateProc(*DeskoptAppPath, *CommandLineArguments, true, false, false, nullptr, 0, nullptr, nullptr, nullptr);
+	FProcHandle Proc = FPlatformProcess::CreateProc(*DesktopAppPath, *CommandLineArguments, true, false, false, nullptr, 0, nullptr, nullptr, nullptr);
 	if (!Proc.IsValid())
 	{
-		UE_LOG(LogSourceControl, Error, TEXT("Opening the Desktop application (%s %s) failed."), *DeskoptAppPath, *CommandLineArguments);
+		UE_LOG(LogSourceControl, Error, TEXT("Opening the Desktop application (%s %s) failed."), *DesktopAppPath, *CommandLineArguments);
 		FPlatformProcess::CloseProc(Proc);
 	}
 }
