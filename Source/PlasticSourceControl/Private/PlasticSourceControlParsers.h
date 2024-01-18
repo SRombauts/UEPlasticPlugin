@@ -7,6 +7,7 @@
 #include "Runtime/Launch/Resources/Version.h"
 
 class FPlasticSourceControlChangelistState;
+class FPlasticSourceControlLock;
 class FPlasticSourceControlRevision;
 class FPlasticSourceControlState;
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
@@ -14,18 +15,7 @@ typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlas
 namespace PlasticSourceControlParsers
 {
 
-class FSmartLockInfoParser
-{
-public:
-	explicit FSmartLockInfoParser(const FString& InResult);
-
-	int32 ItemId;
-	FDateTime Date;
-	FString BranchName;
-	FString Status;
-	FString Owner;
-	FString Filename;
-};
+FPlasticSourceControlLock ParseLockInfo(const FString& InResult);
 
 class FPlasticMergeConflictParser
 {

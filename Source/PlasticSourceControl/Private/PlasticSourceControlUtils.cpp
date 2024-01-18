@@ -4,6 +4,7 @@
 
 #include "PlasticSourceControlBranch.h"
 #include "PlasticSourceControlCommand.h"
+#include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlParsers.h"
 #include "PlasticSourceControlProjectSettings.h"
@@ -366,9 +367,9 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	return bResult;
 }
 
-bool RunListSmartLocks(const FString& InRepository, TMap<FString, PlasticSourceControlParsers::FSmartLockInfoParser>& OutSmartLocks)
+bool RunListLocks(const FString& InRepository, TArray<FPlasticSourceControlLockRef>& OutLocks)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListSmartLocks);
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListLocks);
 
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
@@ -385,11 +386,12 @@ bool RunListSmartLocks(const FString& InRepository, TMap<FString, PlasticSourceC
 
 	if (bResult)
 	{
+		OutLocks.Reserve(Results.Num());
 		for (int32 IdxResult = 0; IdxResult < Results.Num(); IdxResult++)
 		{
 			const FString& Result = Results[IdxResult];
-			PlasticSourceControlParsers::FSmartLockInfoParser SmartLockInfoParser(Result);
-			OutSmartLocks.Add(SmartLockInfoParser.Filename, SmartLockInfoParser);
+			FPlasticSourceControlLock&& Lock = PlasticSourceControlParsers::ParseLockInfo(Result);
+			OutLocks.Add(MakeShareable(new FPlasticSourceControlLock(Lock)));
 		}
 	}
 

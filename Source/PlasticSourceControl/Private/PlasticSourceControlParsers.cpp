@@ -3,6 +3,7 @@
 #include "PlasticSourceControlParsers.h"
 
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlState.h"
@@ -443,19 +444,24 @@ public:
 	TArray<FString> Files;
 };
 
-FSmartLockInfoParser::FSmartLockInfoParser(const FString& InResult)
+FPlasticSourceControlLock ParseLockInfo(const FString& InResult)
 {
+	FPlasticSourceControlLock Lock;
 	TArray<FString> SmartLockInfos;
 	const int32 NbElmts = InResult.ParseIntoArray(SmartLockInfos, FILE_STATUS_SEPARATOR, false);
 	if (NbElmts >= 12)
 	{
-		ItemId = FCString::Atoi(*SmartLockInfos[1]);
-		FDateTime::ParseIso8601(*SmartLockInfos[3], Date);
-		BranchName = MoveTemp(SmartLockInfos[6]);
-		Status = MoveTemp(SmartLockInfos[8]);
-		Owner = PlasticSourceControlUtils::UserNameToDisplayName(MoveTemp(SmartLockInfos[9]));
-		Filename = MoveTemp(SmartLockInfos[11]);
+		Lock.ItemId = FCString::Atoi(*SmartLockInfos[1]);
+		FDateTime::ParseIso8601(*SmartLockInfos[3], Lock.Date);
+		Lock.DestinationBranch = MoveTemp(SmartLockInfos[4]);
+		Lock.Branch = MoveTemp(SmartLockInfos[6]);
+		Lock.Status = MoveTemp(SmartLockInfos[8]);
+		Lock.bIsLocked = (Lock.Status == TEXT("Locked"));
+		Lock.Owner = PlasticSourceControlUtils::UserNameToDisplayName(MoveTemp(SmartLockInfos[9]));
+		Lock.Workspace = MoveTemp(SmartLockInfos[10]);
+		Lock.Path = MoveTemp(SmartLockInfos[11]);
 	}
+	return Lock;
 }
 
 // Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{ServerPath}"
@@ -504,10 +510,10 @@ void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourc
 	const FString& BranchName = Provider.GetBranchName();
 	const FString& Repository = Provider.GetRepositoryName();
 
-	TMap<FString, FSmartLockInfoParser> SmartLocks;
+	TArray<FPlasticSourceControlLockRef> Locks;
 	if (Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::SmartLocks)
 	{
-		PlasticSourceControlUtils::RunListSmartLocks(Repository, SmartLocks);
+		PlasticSourceControlUtils::RunListLocks(Repository, Locks);
 	}
 
 	// Iterate on all files and all status of the result (assuming same number of line of results than number of file states)
@@ -524,19 +530,24 @@ void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourc
 		FileState.LockedBy = MoveTemp(FileinfoParser.LockedBy);
 		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
 
-		// Additional information coming from SmartLocks (branch name and "Retained" lock status)
-		FSmartLockInfoParser* SmartLock = SmartLocks.Find(FileinfoParser.ServerPath);
-		if (SmartLock != nullptr)
+		// Additional information coming from Locks (branch name and "Retained" lock status)
+		// TODO: will need revisiting for multi destination branches scenario (we might want to collect info from all branches for one asset)
+		FPlasticSourceControlLockRef* LockPtr = Locks.FindByPredicate(
+			[&FileinfoParser](const FPlasticSourceControlLockRef& InLock) { return InLock->Path == FileinfoParser.ServerPath; }
+		);
+		if (LockPtr != nullptr)
 		{
+			FPlasticSourceControlLock& Lock = **LockPtr;
 			// Considers a "Retained" lock as meaningful only if it is retained on another branch
-			if ((SmartLock->Status == "Retained") && (SmartLock->BranchName != BranchName))
+			// TODO: need revisiting, not doing this filtering on the Unity Plugin
+			if ((Lock.Status == "Retained") && (Lock.Branch != BranchName))
 			{
-				FileState.RetainedBy = MoveTemp(SmartLock->Owner);
+				FileState.RetainedBy = MoveTemp(Lock.Owner);
 			}
 
-			FileState.LockedBranch = MoveTemp(SmartLock->BranchName);
-			FileState.LockedId = SmartLock->ItemId;
-			FileState.LockedDate = SmartLock->Date;
+			FileState.LockedBranch = MoveTemp(Lock.Branch);
+			FileState.LockedId = Lock.ItemId;
+			FileState.LockedDate = Lock.Date;
 		}
 
 		// debug log (only for the first few files)
