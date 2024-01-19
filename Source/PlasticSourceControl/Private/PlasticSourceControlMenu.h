@@ -29,6 +29,7 @@ public:
 	void VisitDocsURLClicked() const;
 	void VisitSupportURLClicked() const;
 	void VisitLockRulesURLClicked(const FString InOrganizationName) const;
+	void OpenDeskoptApp() const;
 	void OpenBranchesWindow() const;
 
 private:

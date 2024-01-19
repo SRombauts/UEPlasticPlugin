@@ -4,8 +4,10 @@
 
 #include "PlasticSourceControlBranchesWindow.h"
 #include "PlasticSourceControlModule.h"
-#include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlOperations.h"
+#include "PlasticSourceControlProvider.h"
+#include "PlasticSourceControlStyle.h"
+#include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlStatusBar.h"
 
 #include "ISourceControlModule.h"
@@ -14,9 +16,10 @@
 
 #include "ContentBrowserMenuContexts.h"
 #include "Interfaces/IPluginManager.h"
-#include "Modules/ModuleManager.h"
+#include "HAL/PlatformProcess.h"
 #include "LevelEditor.h"
 #include "Misc/MessageDialog.h"
+#include "Modules/ModuleManager.h"
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 #include "Styling/AppStyle.h"
 #else
@@ -529,6 +532,21 @@ void FPlasticSourceControlMenu::VisitLockRulesURLClicked(const FString InOrganiz
 	FPlatformProcess::LaunchURL(*OrganizationLockRulesURL, NULL, NULL);
 }
 
+void FPlasticSourceControlMenu::OpenDeskoptApp() const
+{
+	const FString DesktopAppPath = PlasticSourceControlUtils::FindDesktopApplicationPath();
+	const FString CommandLineArguments = FString::Printf(TEXT("--wk=\"%s\""), *FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot());
+
+	UE_LOG(LogSourceControl, Log, TEXT("Opening the Desktop application (%s %s)"), *DesktopAppPath, *CommandLineArguments);
+
+	FProcHandle Proc = FPlatformProcess::CreateProc(*DesktopAppPath, *CommandLineArguments, true, false, false, nullptr, 0, nullptr, nullptr, nullptr);
+	if (!Proc.IsValid())
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("Opening the Desktop application (%s %s) failed."), *DesktopAppPath, *CommandLineArguments);
+		FPlatformProcess::CloseProc(Proc);
+	}
+}
+
 void FPlasticSourceControlMenu::OpenBranchesWindow() const
 {
 	FPlasticSourceControlModule::Get().GetBranchesWindow().OpenTab();
@@ -566,6 +584,8 @@ void FPlasticSourceControlMenu::AddMenuExtension(FMenuBuilder& Menu)
 void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 #endif
 {
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+
 	Menu.AddMenuEntry(
 #if ENGINE_MAJOR_VERSION == 5
 		"PlasticSync",
@@ -749,6 +769,29 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 			)
 		);
 	}
+
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		"PlasticDesktopApp",
+		TAttribute<FText>::CreateLambda([&Provider]()
+			{
+				return Provider.IsPartialWorkspace() ? LOCTEXT("PlasticGluon", "Open in Gluon") : LOCTEXT("PlasticDesktopApp", "Open in Desktop App");
+			}),
+		TAttribute<FText>::CreateLambda([&Provider]()
+			{
+				return Provider.IsPartialWorkspace() ? LOCTEXT("PlasticDesktopAppTooltip", "Open the workspace in Unity Version Control Gluon Application.") : LOCTEXT("PlasticGluonTooltip", "Open the workspace in Unity Version Control Desktop Application.");
+			}),
+		TAttribute<FSlateIcon>::CreateLambda([&Provider]()
+			{
+				return FSlateIcon(FPlasticSourceControlStyle::Get().GetStyleSetName(), Provider.IsPartialWorkspace() ? "PlasticSourceControl.GluonIcon.Small" : "PlasticSourceControl.PluginIcon.Small");
+			}),
+#else
+		Provider.IsPartialWorkspace() ? LOCTEXT("PlasticGluon", "Open in Gluon") : LOCTEXT("PlasticDesktopApp", "Open in Desktop App"),
+		Provider.IsPartialWorkspace() ? LOCTEXT("PlasticDesktopAppTooltip", "Open the workspace in Unity Version Control Gluon Application.") : LOCTEXT("PlasticGluonTooltip", "Open the workspace in Unity Version Control Desktop Application."),
+		FSlateIcon(FPlasticSourceControlStyle::Get().GetStyleSetName(), Provider.IsPartialWorkspace() ? "PlasticSourceControl.GluonIcon.Small" : "PlasticSourceControl.PluginIcon.Small"),
+#endif
+		FUIAction(FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenDeskoptApp))
+	);
 
 	AddViewBranches(Menu);
 }

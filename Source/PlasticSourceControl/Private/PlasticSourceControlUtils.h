@@ -54,6 +54,11 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 FString FindPlasticBinaryPath();
 
 /**
+ * Find the path to the Desktop Application: uses the registry on Windows.
+ */
+FString FindDesktopApplicationPath();
+
+/**
  * Find the root of the Plastic workspace, looking from the GameDir and upward in its parent directories
  * @param InPathToGameDir		The path to the Game Directory
  * @param OutWorkspaceRoot		The path to the root directory of the Plastic workspace if found, else the path to the GameDir
