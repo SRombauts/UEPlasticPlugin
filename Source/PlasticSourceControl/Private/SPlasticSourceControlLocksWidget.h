@@ -50,8 +50,9 @@ private:
 
 	TSharedPtr<SWidget> OnOpenContextMenu();
 
-	void OnReleaseLocksClicked(TArray<int32> InItemIds);
-	void OnRemoveLocksClicked(TArray<int32> InItemIds);
+	void OnReleaseLocksClicked(const TArray<int32> InItemIds);
+	void OnRemoveLocksClicked(const TArray<int32> InItemIds);
+	void ExecuteUnlock(const TArray<int32>& InItemIds, const bool bInRemove);
 
 	void StartRefreshStatus();
 	void TickRefreshStatus(double InDeltaTime);
@@ -61,8 +62,7 @@ private:
 
 	/** Source control callbacks */
 	void OnGetLocksOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
-	void OnReleaseLocksOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
-	void OnRemoveLocksOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnUnlockOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
 
 	SListView<FPlasticSourceControlLockRef>* GetListView() const

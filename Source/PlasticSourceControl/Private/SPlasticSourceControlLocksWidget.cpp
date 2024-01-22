@@ -581,21 +581,29 @@ TSharedPtr<SWidget> SPlasticSourceControlLocksWidget::OnOpenContextMenu()
 	return ToolMenus->GenerateWidget(Menu);
 }
 
-void SPlasticSourceControlLocksWidget::OnReleaseLocksClicked(TArray<int32> InItemIds)
+void SPlasticSourceControlLocksWidget::OnReleaseLocksClicked(const TArray<int32> InItemIds)
 {
-	// TODO
+	ExecuteUnlock(InItemIds, false);
 }
 
-void SPlasticSourceControlLocksWidget::OnRemoveLocksClicked(TArray<int32> InItemIds)
+void SPlasticSourceControlLocksWidget::OnRemoveLocksClicked(const TArray<int32> InItemIds)
 {
-	const FText UnlockQuestion = FText::Format(LOCTEXT("RemoveLocksDialog", "Remove the {0} lock(s)?"), FText::AsNumber(InItemIds.Num()));
+	ExecuteUnlock(InItemIds, true);
+}
+
+void SPlasticSourceControlLocksWidget::ExecuteUnlock(const TArray<int32>& InItemIds, const bool bInRemove)
+{
+	const FText UnlockQuestion = FText::Format(bInRemove ?
+		LOCTEXT("RemoveLocksDialog", "Removing locks will allow other users to edit these files anywhere (on any branch) increasing the risk of future merge conflicts. Would you like to remove {0} lock(s)?") :
+		LOCTEXT("ReleaseLocksDialog", "Releasing locks will allow other users to keep working on these files and retrieve locks (on the same branch, in the latest revision). Would you like to release {0} lock(s)?"),
+		FText::AsNumber(InItemIds.Num()));
 	const EAppReturnType::Type Choice = FMessageDialog::Open(
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
 		EAppMsgCategory::Info,
 #endif
 		EAppMsgType::YesNo, UnlockQuestion
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
-		, LOCTEXT("RemoveLocksTitle", "Remove Lock(s)?")
+		, bInRemove ? LOCTEXT("RemoveLocksTitle", "Remove Lock(s)?") : LOCTEXT("ReleaseLocksTitle", "Release Lock(s)?")
 #endif
 	);
 	if (Choice == EAppReturnType::Yes)
@@ -606,8 +614,8 @@ void SPlasticSourceControlLocksWidget::OnRemoveLocksClicked(TArray<int32> InItem
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 			TSharedRef<FPlasticUnlock, ESPMode::ThreadSafe> UnlockOperation = ISourceControlOperation::Create<FPlasticUnlock>();
 			UnlockOperation->ItemIds = InItemIds;
-			UnlockOperation->bRemove = true;
-			const ECommandResult::Type Result = Provider.Execute(UnlockOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlLocksWidget::OnRemoveLocksOperationComplete));
+			UnlockOperation->bRemove = bInRemove;
+			const ECommandResult::Type Result = Provider.Execute(UnlockOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlLocksWidget::OnUnlockOperationComplete));
 			if (Result == ECommandResult::Succeeded)
 			{
 				// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
@@ -704,7 +712,7 @@ void SPlasticSourceControlLocksWidget::OnGetLocksOperationComplete(const FSource
 	OnRefreshUI();
 }
 
-void SPlasticSourceControlLocksWidget::OnRemoveLocksOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+void SPlasticSourceControlLocksWidget::OnUnlockOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	// Ask for a full refresh of the list of locks (and don't call EndRefreshStatus() yet)
 	bShouldRefresh = true;

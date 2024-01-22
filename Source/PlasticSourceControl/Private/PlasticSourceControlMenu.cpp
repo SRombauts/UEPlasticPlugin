@@ -193,7 +193,7 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 	{
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT("PlasticReleaseLock", "Release Lock"),
-			LOCTEXT("PlasticReleaseLockTooltip", "Release Lock(s) on the selected assets. Requires administrator privileges on the server."),
+			LOCTEXT("PlasticReleaseLockTooltip", "Release Lock(s) on the selected assets.\nReleasing locks will allow other users to keep working on these files and retrieve locks (on the same branch, in the latest revision)."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Unlocked"),
 #else
@@ -209,7 +209,7 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 	{
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT("PlasticRemoveLock", "Remove Lock"),
-			LOCTEXT("PlasticRemoveLockTooltip", "Remove/Delete Lock(s) on the selected assets. Requires administrator privileges on the server."),
+			LOCTEXT("PlasticRemoveLockTooltip", "Remove Lock(s) on the selected assets.\nRemoving locks will allow other users to edit these files anywhere (on any branch) increasing the risk of future merge conflicts."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Unlocked"),
 #else
