@@ -687,22 +687,18 @@ void SPlasticSourceControlLocksWidget::RequestLocksRefresh()
 
 	StartRefreshStatus();
 
-	/* TODO
 	TSharedRef<FPlasticGetLocks, ESPMode::ThreadSafe> GetLocksOperation = ISourceControlOperation::Create<FPlasticGetLocks>();
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	Provider.Execute(GetLocksOperation, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlLocksWidget::OnGetLocksOperationComplete));
-	*/
 }
 
 void SPlasticSourceControlLocksWidget::OnGetLocksOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlLocksWidget::OnGetLocksOperationComplete);
 
-	/* TODO
 	TSharedRef<FPlasticGetLocks, ESPMode::ThreadSafe> OperationGetLocks = StaticCastSharedRef<FPlasticGetLocks>(InOperation);
 	SourceControlLocks = MoveTemp(OperationGetLocks->Locks);
-	 */
 
 	EndRefreshStatus();
 	OnRefreshUI();
