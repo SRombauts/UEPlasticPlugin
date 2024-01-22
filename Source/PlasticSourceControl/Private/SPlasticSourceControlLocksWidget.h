@@ -65,6 +65,9 @@ private:
 	void OnUnlockOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
 
+	/** Delegate handler for when source control state changes */
+	void HandleSourceControlStateChanged();
+
 	SListView<FPlasticSourceControlLockRef>* GetListView() const
 	{
 		return LocksListView.Get();
@@ -98,4 +101,7 @@ private:
 
 	TArray<FPlasticSourceControlLockRef> SourceControlLocks; // Full list from source (filtered by date)
 	TArray<FPlasticSourceControlLockRef> LockRows; // Filtered list to display based on the search text filter
+
+	/** Delegate handle for the HandleSourceControlStateChanged function callback */
+	FDelegateHandle SourceControlStateChangedDelegateHandle;
 };

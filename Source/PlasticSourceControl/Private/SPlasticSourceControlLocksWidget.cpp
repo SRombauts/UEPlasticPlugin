@@ -37,6 +37,9 @@
 void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 {
 	ISourceControlModule::Get().RegisterProviderChanged(FSourceControlProviderChanged::FDelegate::CreateSP(this, &SPlasticSourceControlLocksWidget::OnSourceControlProviderChanged));
+	// register for any source control change to detect new local locks on check-out, and release of them on check-in
+	SourceControlStateChangedDelegateHandle = ISourceControlModule::Get().GetProvider().RegisterSourceControlStateChanged_Handle(FSourceControlStateChanged::FDelegate::CreateSP(this, &SPlasticSourceControlLocksWidget::HandleSourceControlStateChanged));
+
 
 	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlLock&>>(TTextFilter<const FPlasticSourceControlLock&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlLocksWidget::PopulateItemSearchStrings));
 	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlLocksWidget::OnRefreshUI);
@@ -734,6 +737,15 @@ void SPlasticSourceControlLocksWidget::OnSourceControlProviderChanged(ISourceCon
 		{
 			GetListView()->RequestListRefresh();
 		}
+	}
+}
+
+void SPlasticSourceControlLocksWidget::HandleSourceControlStateChanged()
+{
+	bShouldRefresh = true;
+	if (GetListView())
+	{
+		GetListView()->RequestListRefresh();
 	}
 }
 
