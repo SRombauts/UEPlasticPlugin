@@ -380,7 +380,7 @@ bool RunListLocks(const FString& InRepository, TArray<FPlasticSourceControlLockR
 	Parameters.Add(FString::Printf(TEXT("--repository=%s"), *InRepository));
 	Parameters.Add(TEXT("--anystatus"));
 	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
-	// TODO: issue with this param, was only added in a later version of UVCS
+	// NOTE: --dateformat was added to smartlocks a couple of releases later in version 11.0.16.8133
 	Parameters.Add(TEXT("--dateformat=yyyy-MM-ddTHH:mm:ss"));
 	bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
 
