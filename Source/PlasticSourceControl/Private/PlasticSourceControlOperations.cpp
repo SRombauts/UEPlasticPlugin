@@ -1044,11 +1044,18 @@ bool FPlasticGetLocksWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunListLocks(GetProvider().GetRepositoryName(), Operation->Locks);
 	}
 
+	{
+		FString RepositoryName, ServerUrl;
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(CurrentBranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+	}
+
 	return InCommand.bCommandSuccessful;
 }
 
 bool FPlasticGetLocksWorker::UpdateStates()
 {
+	GetProvider().SetBranchName(CurrentBranchName);
+
 	return false;
 }
 

@@ -40,6 +40,7 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 	// register for any source control change to detect new local locks on check-out, and release of them on check-in
 	SourceControlStateChangedDelegateHandle = ISourceControlModule::Get().GetProvider().RegisterSourceControlStateChanged_Handle(FSourceControlStateChanged::FDelegate::CreateSP(this, &SPlasticSourceControlLocksWidget::HandleSourceControlStateChanged));
 
+	CurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
 
 	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlLock&>>(TTextFilter<const FPlasticSourceControlLock&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlLocksWidget::PopulateItemSearchStrings));
 	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlLocksWidget::OnRefreshUI);
@@ -100,6 +101,13 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 					SNew(STextBlock)
 					.Text_Lambda([this]() { return RefreshStatus; })
 					.Margin(FMargin(5.f, 0.f))
+				]
+				+SHorizontalBox::Slot()
+				.HAlign(HAlign_Right)
+				[
+					SNew(STextBlock)
+					.Text_Lambda([this]() { return FText::FromString(CurrentBranchName); })
+					.ToolTipText(LOCTEXT("PlasticBranchCurrent_Tooltip", "Current branch."))
 				]
 			]
 		]
@@ -710,6 +718,8 @@ void SPlasticSourceControlLocksWidget::OnGetLocksOperationComplete(const FSource
 
 	TSharedRef<FPlasticGetLocks, ESPMode::ThreadSafe> OperationGetLocks = StaticCastSharedRef<FPlasticGetLocks>(InOperation);
 	SourceControlLocks = MoveTemp(OperationGetLocks->Locks);
+
+	CurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
 
 	EndRefreshStatus();
 	OnRefreshUI();
