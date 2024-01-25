@@ -519,13 +519,15 @@ void SPlasticSourceControlLocksWidget::SortLockView()
 	}
 }
 
-TArray<int32> SPlasticSourceControlLocksWidget::GetSelectedLocks()
+TArray<FString> SPlasticSourceControlLocksWidget::GetSelectedLocks()
 {
-	TArray<int32> SelectedLocks;
+	TArray<FString> SelectedLocks;
 
+	SelectedLocks.Reserve(LocksListView->GetNumItemsSelected());
 	for (const FPlasticSourceControlLockRef& LockRef : LocksListView->GetSelectedItems())
 	{
-		SelectedLocks.Add(LockRef->ItemId);
+		// ItemId specification, including the branch spec: <ItemId>#br:<BranchName>
+		SelectedLocks.Add(FString::Printf(TEXT("%d#br:%s"), LockRef->ItemId, *LockRef->Branch));
 	}
 
 	return SelectedLocks;
@@ -533,7 +535,7 @@ TArray<int32> SPlasticSourceControlLocksWidget::GetSelectedLocks()
 
 TSharedPtr<SWidget> SPlasticSourceControlLocksWidget::OnOpenContextMenu()
 {
-	const TArray<int32> SelectedLocks = GetSelectedLocks();
+	const TArray<FString> SelectedLocks = GetSelectedLocks();
 	if (SelectedLocks.Num() == 0)
 	{
 		return nullptr;
@@ -592,17 +594,17 @@ TSharedPtr<SWidget> SPlasticSourceControlLocksWidget::OnOpenContextMenu()
 	return ToolMenus->GenerateWidget(Menu);
 }
 
-void SPlasticSourceControlLocksWidget::OnReleaseLocksClicked(const TArray<int32> InItemIds)
+void SPlasticSourceControlLocksWidget::OnReleaseLocksClicked(const TArray<FString> InItemIds)
 {
 	ExecuteUnlock(InItemIds, false);
 }
 
-void SPlasticSourceControlLocksWidget::OnRemoveLocksClicked(const TArray<int32> InItemIds)
+void SPlasticSourceControlLocksWidget::OnRemoveLocksClicked(const TArray<FString> InItemIds)
 {
 	ExecuteUnlock(InItemIds, true);
 }
 
-void SPlasticSourceControlLocksWidget::ExecuteUnlock(const TArray<int32>& InItemIds, const bool bInRemove)
+void SPlasticSourceControlLocksWidget::ExecuteUnlock(const TArray<FString>& InItemIds, const bool bInRemove)
 {
 	const FText UnlockQuestion = FText::Format(bInRemove ?
 		LOCTEXT("RemoveLocksDialog", "Removing locks will allow other users to edit these files anywhere (on any branch) increasing the risk of future merge conflicts. Would you like to remove {0} lock(s)?") :
@@ -770,7 +772,7 @@ FReply SPlasticSourceControlLocksWidget::OnKeyDown(const FGeometry& MyGeometry, 
 	else if ((InKeyEvent.GetKey() == EKeys::Delete) || (InKeyEvent.GetKey() == EKeys::BackSpace))
 	{
 		// Pressing Delete or BackSpace removes the selected locks
-		const TArray<int32> SelectedLocks = GetSelectedLocks();
+		const TArray<FString> SelectedLocks = GetSelectedLocks();
 		if (SelectedLocks.Num() > 0)
 		{
 			OnRemoveLocksClicked(SelectedLocks);

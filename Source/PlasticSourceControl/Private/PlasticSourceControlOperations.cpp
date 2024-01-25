@@ -1074,9 +1074,9 @@ bool FPlasticUnlockWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	{
 		FString ItemIds;
 		// The View Locks window directly work with Ids
-		for (const int32 ItemId : Operation->ItemIds)
+		for (const FString& ItemId : Operation->ItemIds)
 		{
-			ItemIds += FString::Printf(TEXT("itemid:%d "), ItemId);
+			ItemIds += FString::Printf(TEXT("itemid:%s "), *ItemId);
 		}
 		// The context "Unlock" menu deals with filenames: retrieve the itemid of assets to unlock
 		for (const FString& File : InCommand.Files)
