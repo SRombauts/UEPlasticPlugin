@@ -1542,6 +1542,7 @@ static bool ParseBranchesResults(const FXmlFile& InXmlResult, TArray<FPlasticSou
 	}
 
 	const TArray<FXmlNode*>& BranchsNodes = PlasticQueryNode->GetChildrenNodes();
+	OutBranches.Reserve(BranchsNodes.Num());
 	for (const FXmlNode* BranchNode : BranchsNodes)
 	{
 		check(BranchNode);
@@ -1579,7 +1580,7 @@ static bool ParseBranchesResults(const FXmlFile& InXmlResult, TArray<FPlasticSou
 			}
 		}
 
-		OutBranches.Add(BranchRef);
+		OutBranches.Add(MoveTemp(BranchRef));
 	}
 
 	return true;
