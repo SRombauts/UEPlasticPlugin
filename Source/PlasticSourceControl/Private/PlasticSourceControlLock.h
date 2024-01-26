@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 
+#include "ISourceControlState.h"
+
 class FPlasticSourceControlLock
 {
 public:
-	int32 ItemId = -1;
+	int32 ItemId = ISourceControlState::INVALID_REVISION;
 	FString Path;
 	FString Status;
 	bool bIsLocked = false;

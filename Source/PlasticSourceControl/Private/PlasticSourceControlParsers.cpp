@@ -492,6 +492,33 @@ public:
 	FString ServerPath;
 };
 
+/**
+ * Find the locks matching the file path from the list of locks
+ *
+ * Multiple matching locks can only happen if multiple destination branches are configured 
+*/
+TArray<FPlasticSourceControlLockRef> FindMatchingLocks(const TArray<FPlasticSourceControlLockRef>& InLocks, const FString& InPath)
+{
+	TArray<FPlasticSourceControlLockRef> MatchingLocks;
+	for (int i = 0; i < InLocks.Num(); i++)
+	{
+		if (InLocks[i]->Path == InPath)
+		{
+			MatchingLocks.Add(InLocks[i]);
+		}
+	}
+	return MatchingLocks;
+}
+
+void ConcatStrings(FString& InOutString, const TCHAR* InSeparator, const FString& InOther)
+{
+	if (!InOutString.IsEmpty())
+	{
+		InOutString += InSeparator;
+	}
+	InOutString += InOther;
+}
+
 /** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"' command
  *
  * Example cm fileinfo results:
@@ -527,27 +554,33 @@ void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourc
 		FileState.LocalRevisionChangeset = FileinfoParser.RevisionChangeset;
 		FileState.DepotRevisionChangeset = FileinfoParser.RevisionHeadChangeset;
 		FileState.RepSpec = FileinfoParser.RepSpec;
-		FileState.LockedBy = MoveTemp(FileinfoParser.LockedBy);
-		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
 
-		// Additional information coming from Locks (branch name and "Retained" lock status)
-		// TODO: will need revisiting for multi destination branches scenario (we might want to collect info from all branches for one asset)
-		FPlasticSourceControlLockRef* LockPtr = Locks.FindByPredicate(
-			[&FileinfoParser](const FPlasticSourceControlLockRef& InLock) { return InLock->Path == FileinfoParser.ServerPath; }
-		);
-		if (LockPtr != nullptr)
+		// Additional information coming from Locks (branch, workspace, date and lock status)
+		// Note: in case of multi destination branches, we might have multiple locks for the same path, so we concatenate the string info
+		const TArray<FPlasticSourceControlLockRef> MatchingLocks = FindMatchingLocks(Locks, FileinfoParser.ServerPath);
+		for (auto& Lock : MatchingLocks)
 		{
-			FPlasticSourceControlLock& Lock = **LockPtr;
-			// Considers a "Retained" lock as meaningful only if it is retained on another branch
-			// TODO: need revisiting, not doing this filtering on the Unity Plugin
-			if ((Lock.Status == "Retained") && (Lock.Branch != BranchName))
+			// "Locked" vs "Retained" lock
+			if (Lock->bIsLocked)
 			{
-				FileState.RetainedBy = MoveTemp(Lock.Owner);
+				ConcatStrings(FileState.LockedBy, TEXT(", "), Lock->Owner);
 			}
+			else
+			{
+				ConcatStrings(FileState.RetainedBy, TEXT(", "), Lock->Owner);
+			}
+			ConcatStrings(FileState.LockedWhere, TEXT(", "), Lock->Workspace);
+			ConcatStrings(FileState.LockedBranch, TEXT(", "), Lock->Branch);
 
-			FileState.LockedBranch = MoveTemp(Lock.Branch);
-			FileState.LockedId = Lock.ItemId;
-			FileState.LockedDate = Lock.Date;
+			// Only save the ItemId if there is only one matching Lock: used to Unlock it from the context menu in the Content Browser,
+			// but leave the ItmeId to invalid if there are more than one: there would be no way to know which one to unlock from the context menu
+			// (Unlocking in such a case require using the View Locks window instead for disambiguation)
+			if (MatchingLocks.Num() == 1)
+			{
+				FileState.LockedId = Lock->ItemId;
+			}
+			// Note; this will keep only the date of the last lock
+			FileState.LockedDate = Lock->Date;
 		}
 
 		// debug log (only for the first few files)

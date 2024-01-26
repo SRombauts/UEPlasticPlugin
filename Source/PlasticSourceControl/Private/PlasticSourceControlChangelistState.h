@@ -8,6 +8,7 @@
 #if ENGINE_MAJOR_VERSION == 5
 
 #include "ISourceControlChangelistState.h"
+#include "ISourceControlState.h"
 
 #include "PlasticSourceControlChangelist.h"
 
