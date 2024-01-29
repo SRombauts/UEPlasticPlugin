@@ -580,7 +580,7 @@ bool FPlasticSourceControlState::CanCheckout() const
 
 	const bool bCanCheckout  =    (WorkspaceState == EWorkspaceState::Controlled	// In source control, Unmodified
 								|| WorkspaceState == EWorkspaceState::Changed)		// In source control, but not checked-out
-								&& !IsCheckedOutOther()	// Is not already checked-out elsewhere
+							//	&& !IsCheckedOutOther()	// Note: with multi-destination branches it is sometimes possible to checkout an asset already checked-out elsewhere. Let the user try.
 								&& IsCurrent();			// Is up to date (at the revision of the repo)
 
 	if (!IsUnknown())
