@@ -407,7 +407,7 @@ Warning when trying to modify an asset that has been modified in another branch:
 
 #### Branches
 
-The plugin now offers full support for branches, including the ability to create, switch to and merge branches from within the Unreal Editor,
+The plugin now offers full support for branches, with a new window to list and filter them, and the ability to create, switch to and merge branches from within the Unreal Editor,
 reloading assets and the current level as appropriate.
 
 To open it, use the "View Branches" menu item in the Revision Control menu, or click on the name of the current branch in the status bar.
@@ -432,6 +432,13 @@ Deleting the selected branches:
 #### SmartLocks
 
 [Meet Smart Locks, a new way to reduce merge conflicts with Unity Version Control](https://blog.unity.com/engine-platform/unity-version-control-smart-locks)
+
+The plugin now offers full support for Smart Locks, with a new window to list and filter them, and the ability to release or remove them selectively.
+
+To open it, use the "View Locks" menu item in the Revision Control menu.
+
+View Locks window:
+![View Locks window](Screenshots/UEPlasticPlugin-Locks-Menu.png)
 
 Smart Locks administrator context menu to configure lock rules or unlock an asset:
 ![Smart Locks admin context menu](Screenshots/UEPlasticPlugin-SmartLocks-Menu.png)
