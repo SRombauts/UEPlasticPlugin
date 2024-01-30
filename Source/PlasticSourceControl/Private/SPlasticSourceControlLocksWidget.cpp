@@ -409,6 +409,11 @@ void SPlasticSourceControlLocksWidget::SortLockView()
 		return FCString::Stricmp(*Lhs->Owner, *Rhs->Owner);
 	};
 
+	auto CompareDestinationBranches = [](const FPlasticSourceControlLock* Lhs, const FPlasticSourceControlLock* Rhs)
+	{
+		return FCString::Stricmp(*Lhs->DestinationBranch, *Rhs->DestinationBranch);
+	};
+
 	auto CompareBranches = [](const FPlasticSourceControlLock* Lhs, const FPlasticSourceControlLock* Rhs)
 	{
 		return FCString::Stricmp(*Lhs->Branch, *Rhs->Branch);
@@ -441,6 +446,10 @@ void SPlasticSourceControlLocksWidget::SortLockView()
 		else if (ColumnId == PlasticSourceControlLocksListViewColumn::Owner::Id())
 		{
 			return TFunction<int32(const FPlasticSourceControlLock*, const FPlasticSourceControlLock*)>(CompareOwners);
+		}
+		else if (ColumnId == PlasticSourceControlLocksListViewColumn::DestinationBranch::Id())
+		{
+			return TFunction<int32(const FPlasticSourceControlLock*, const FPlasticSourceControlLock*)>(CompareDestinationBranches);
 		}
 		else if (ColumnId == PlasticSourceControlLocksListViewColumn::Branch::Id())
 		{
