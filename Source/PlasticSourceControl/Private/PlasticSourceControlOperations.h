@@ -125,8 +125,8 @@ public:
 
 	virtual FText GetInProgressString() const override;
 
-	/** ItemId specifications of items to unlock, including the branch spec: <ItemId>#br:<BranchName> */
-	TArray<FString> ItemIds;
+	/** Objects specifications of items to unlock, typically including the Item Id and branch spec: "itemid:<ItemId>#br:<BranchName>" */
+	TArray<FString> ObjectSpecs;
 
 	// Release the Lock(s), and optionally remove (delete) them completely
 	bool bRemove = false;

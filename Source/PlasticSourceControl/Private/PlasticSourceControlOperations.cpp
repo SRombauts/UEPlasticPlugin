@@ -1072,33 +1072,26 @@ bool FPlasticUnlockWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TSharedRef<FPlasticUnlock, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticUnlock>(InCommand.Operation);
 
 	{
-		FString ItemIds;
-		// The View Locks window directly work with Ids
-		for (const FString& ItemId : Operation->ItemIds)
-		{
-			ItemIds += FString::Printf(TEXT("itemid:%s "), *ItemId);
-		}
-		// The context "Unlock" menu deals with filenames: retrieve the itemid of assets to unlock
-		for (const FString& File : InCommand.Files)
-		{
-			const auto State = GetProvider().GetStateInternal(File);
-			if (State->LockedId != ISourceControlState::INVALID_REVISION)
-			{
-				ItemIds += FString::Printf(TEXT("itemid:%d "), State->LockedId);
-			}
-		}
-
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("unlock"));
 		if (Operation->bRemove)
 			Parameters.Add(TEXT("--remove"));
-		Parameters.Add(ItemIds);
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("lock"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+
+		if (!Operation->ObjectSpecs.IsEmpty())
+		{
+			// The View Locks window works with object specs using ItemIds and Branch names
+			Parameters.Append(Operation->ObjectSpecs);
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("lock"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+		else
+		{
+			// But the context "Unlock" menu only deals with filenames (Asset Paths given by Content Browser)
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("lock"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
 	}
 
-	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
-	}
+	// now update the status of our files
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 
 	return InCommand.bCommandSuccessful;
 }

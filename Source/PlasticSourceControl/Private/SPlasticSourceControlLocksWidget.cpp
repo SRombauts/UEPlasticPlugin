@@ -536,7 +536,7 @@ TArray<FString> SPlasticSourceControlLocksWidget::GetSelectedLocks()
 	for (const FPlasticSourceControlLockRef& LockRef : LocksListView->GetSelectedItems())
 	{
 		// ItemId specification, including the branch spec: <ItemId>#br:<BranchName>
-		SelectedLocks.Add(FString::Printf(TEXT("%d#br:%s"), LockRef->ItemId, *LockRef->Branch));
+		SelectedLocks.Add(FString::Printf(TEXT("itemid:%d#br:%s"), LockRef->ItemId, *LockRef->Branch));
 	}
 
 	return SelectedLocks;
@@ -635,7 +635,7 @@ void SPlasticSourceControlLocksWidget::ExecuteUnlock(const TArray<FString>& InIt
 			// Launch a custom "Unlock" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 			TSharedRef<FPlasticUnlock, ESPMode::ThreadSafe> UnlockOperation = ISourceControlOperation::Create<FPlasticUnlock>();
-			UnlockOperation->ItemIds = InItemIds;
+			UnlockOperation->ObjectSpecs = InItemIds;
 			UnlockOperation->bRemove = bInRemove;
 			const ECommandResult::Type Result = Provider.Execute(UnlockOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlLocksWidget::OnUnlockOperationComplete));
 			if (Result == ECommandResult::Succeeded)
