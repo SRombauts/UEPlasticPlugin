@@ -245,7 +245,7 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 
 bool FPlasticSourceControlMenu::CanReleaseLocks(TArray<FAssetData> InAssetObjectPaths) const
 {
-	const TArray<FString> Files = PackageUtils::AssetDateToFileNames(InAssetObjectPaths);
+	const TArray<FString> Files = PackageUtils::AssetDataToFileNames(InAssetObjectPaths);
 
 	for (const FString& File : Files)
 	{
@@ -263,7 +263,7 @@ bool FPlasticSourceControlMenu::CanReleaseLocks(TArray<FAssetData> InAssetObject
 
 bool FPlasticSourceControlMenu::CanRemoveLocks(TArray<FAssetData> InAssetObjectPaths) const
 {
-	const TArray<FString> Files = PackageUtils::AssetDateToFileNames(InAssetObjectPaths);
+	const TArray<FString> Files = PackageUtils::AssetDataToFileNames(InAssetObjectPaths);
 
 	for (const FString& File : Files)
 	{
@@ -293,7 +293,7 @@ void FPlasticSourceControlMenu::ExecuteUnlock(const TArray<FAssetData>& InAssetO
 {
 	if (!Notification.IsInProgress())
 	{
-		const TArray<FString> Files = PackageUtils::AssetDateToFileNames(InAssetObjectPaths);
+		const TArray<FString> Files = PackageUtils::AssetDataToFileNames(InAssetObjectPaths);
 
 		// Launch a custom "Release/Remove Lock" operation
 		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();

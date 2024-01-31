@@ -6,7 +6,7 @@
 
 namespace PackageUtils
 {
-	TArray<FString> AssetDateToFileNames(const TArray<FAssetData>& InAssetObjectPaths);
+	TArray<FString> AssetDataToFileNames(const TArray<FAssetData>& InAssetObjectPaths);
 
 	bool SaveDirtyPackages();
 	TArray<FString> ListAllPackages();
