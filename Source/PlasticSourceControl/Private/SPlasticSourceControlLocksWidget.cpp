@@ -528,23 +528,9 @@ void SPlasticSourceControlLocksWidget::SortLockView()
 	}
 }
 
-TArray<FString> SPlasticSourceControlLocksWidget::GetSelectedLocks()
-{
-	TArray<FString> SelectedLocks;
-
-	SelectedLocks.Reserve(LocksListView->GetNumItemsSelected());
-	for (const FPlasticSourceControlLockRef& LockRef : LocksListView->GetSelectedItems())
-	{
-		// ItemId specification, including the branch spec: <ItemId>#br:<BranchName>
-		SelectedLocks.Add(FString::Printf(TEXT("itemid:%d#br:%s"), LockRef->ItemId, *LockRef->Branch));
-	}
-
-	return SelectedLocks;
-}
-
 TSharedPtr<SWidget> SPlasticSourceControlLocksWidget::OnOpenContextMenu()
 {
-	const TArray<FString> SelectedLocks = GetSelectedLocks();
+	const TArray<FPlasticSourceControlLockRef> SelectedLocks = LocksListView->GetSelectedItems();
 	if (SelectedLocks.Num() == 0)
 	{
 		return nullptr;
@@ -552,9 +538,9 @@ TSharedPtr<SWidget> SPlasticSourceControlLocksWidget::OnOpenContextMenu()
 
 	// Check to see if any of these locks are releasable, that is, if some of them are "Locked" instead of simply being "Retained"
 	bool bCanReleaseLocks = false;
-	for (const auto& SelectedLockRef : LocksListView->GetSelectedItems())
+	for (const FPlasticSourceControlLockRef& SelectedLock : SelectedLocks)
 	{
-		if (SelectedLockRef->bIsLocked)
+		if (SelectedLock->bIsLocked)
 		{
 			bCanReleaseLocks = true;
 			break;
@@ -603,22 +589,50 @@ TSharedPtr<SWidget> SPlasticSourceControlLocksWidget::OnOpenContextMenu()
 	return ToolMenus->GenerateWidget(Menu);
 }
 
-void SPlasticSourceControlLocksWidget::OnReleaseLocksClicked(const TArray<FString> InItemIds)
+void SPlasticSourceControlLocksWidget::OnReleaseLocksClicked(const TArray<FPlasticSourceControlLockRef> InSelectedLocks)
 {
-	ExecuteUnlock(InItemIds, false);
+	ExecuteUnlock(InSelectedLocks, false);
 }
 
-void SPlasticSourceControlLocksWidget::OnRemoveLocksClicked(const TArray<FString> InItemIds)
+void SPlasticSourceControlLocksWidget::OnRemoveLocksClicked(const TArray<FPlasticSourceControlLockRef> InSelectedLocks)
 {
-	ExecuteUnlock(InItemIds, true);
+	ExecuteUnlock(InSelectedLocks, true);
 }
 
-void SPlasticSourceControlLocksWidget::ExecuteUnlock(const TArray<FString>& InItemIds, const bool bInRemove)
+TArray<FString> LocksToObjectSpecs(const TArray<FPlasticSourceControlLockRef>& InSelectedLocks)
+{
+	TArray<FString> ObjectSpecs;
+
+	for (const FPlasticSourceControlLockRef& SelectedLock : InSelectedLocks)
+	{
+		ObjectSpecs.Add(FString::Printf(TEXT("itemid:%d#br:%s"), SelectedLock->ItemId, *SelectedLock->Branch));
+	}
+
+	return ObjectSpecs;
+}
+
+TArray<FString> LocksToFileNames(const TArray<FPlasticSourceControlLockRef>& InSelectedLocks)
+{
+	TArray<FString> Files;
+
+	// Note: remove the slash '/' from the end of the Workspace root to Combine it with server paths also starting with a slash
+	const FString WorkspaceRoot = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot().LeftChop(1);
+
+	Files.Reserve(InSelectedLocks.Num());
+	for (const FPlasticSourceControlLockRef& SelectedLock : InSelectedLocks)
+	{
+		Files.AddUnique(FPaths::Combine(WorkspaceRoot, SelectedLock->Path));
+	}
+
+	return Files;
+}
+
+void SPlasticSourceControlLocksWidget::ExecuteUnlock(const TArray<FPlasticSourceControlLockRef>& InSelectedLocks, const bool bInRemove)
 {
 	const FText UnlockQuestion = FText::Format(bInRemove ?
 		LOCTEXT("RemoveLocksDialog", "Removing locks will allow other users to edit these files anywhere (on any branch) increasing the risk of future merge conflicts. Would you like to remove {0} lock(s)?") :
 		LOCTEXT("ReleaseLocksDialog", "Releasing locks will allow other users to keep working on these files and retrieve locks (on the same branch, in the latest revision). Would you like to release {0} lock(s)?"),
-		FText::AsNumber(InItemIds.Num()));
+		FText::AsNumber(InSelectedLocks.Num()));
 	const EAppReturnType::Type Choice = FMessageDialog::Open(
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
 		EAppMsgCategory::Info,
@@ -635,9 +649,10 @@ void SPlasticSourceControlLocksWidget::ExecuteUnlock(const TArray<FString>& InIt
 			// Launch a custom "Unlock" operation
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 			TSharedRef<FPlasticUnlock, ESPMode::ThreadSafe> UnlockOperation = ISourceControlOperation::Create<FPlasticUnlock>();
-			UnlockOperation->ObjectSpecs = InItemIds;
 			UnlockOperation->bRemove = bInRemove;
-			const ECommandResult::Type Result = Provider.Execute(UnlockOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlLocksWidget::OnUnlockOperationComplete));
+			UnlockOperation->ObjectSpecs = LocksToObjectSpecs(InSelectedLocks);
+			const TArray<FString> Files = LocksToFileNames(InSelectedLocks);
+			const ECommandResult::Type Result = Provider.Execute(UnlockOperation, Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlLocksWidget::OnUnlockOperationComplete));
 			if (Result == ECommandResult::Succeeded)
 			{
 				// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
@@ -781,7 +796,7 @@ FReply SPlasticSourceControlLocksWidget::OnKeyDown(const FGeometry& MyGeometry, 
 	else if ((InKeyEvent.GetKey() == EKeys::Delete) || (InKeyEvent.GetKey() == EKeys::BackSpace))
 	{
 		// Pressing Delete or BackSpace removes the selected locks
-		const TArray<FString> SelectedLocks = GetSelectedLocks();
+		const TArray<FPlasticSourceControlLockRef> SelectedLocks = LocksListView->GetSelectedItems();
 		if (SelectedLocks.Num() > 0)
 		{
 			OnRemoveLocksClicked(SelectedLocks);
