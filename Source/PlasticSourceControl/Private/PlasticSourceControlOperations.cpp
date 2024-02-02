@@ -1071,23 +1071,43 @@ bool FPlasticUnlockWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FPlasticUnlock, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticUnlock>(InCommand.Operation);
 
+	if (!Operation->Locks.IsEmpty())
+	{
+		// The View Locks window works with object specs using ItemIds and Branch names
+		// The unlock operation works on a per-branch basis when multiple Lock destinations are involved
+		TArray<FString> Branches;
+		Branches.Reserve(Operation->Locks.Num());
+		for (const FPlasticSourceControlLockRef& Lock : Operation->Locks)
+		{
+			Branches.AddUnique(Lock->Branch);
+		}
+		for (const FString& Branch : Branches)
+		{
+			TArray<FString> Parameters;
+			Parameters.Add(TEXT("unlock"));
+			if (Operation->bRemove)
+				Parameters.Add(TEXT("--remove"));
+
+			Parameters.Add(FString::Printf(TEXT("--branch=%s"), *Branch));
+			for (const FPlasticSourceControlLockRef& Lock : Operation->Locks)
+			{
+				if (Lock->Branch == Branch)
+				{
+					Parameters.Add(FString::Printf(TEXT("itemid:%d "), Lock->ItemId));
+				}
+			}
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("lock"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+	}
+	else
 	{
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("unlock"));
 		if (Operation->bRemove)
 			Parameters.Add(TEXT("--remove"));
 
-		if (!Operation->ObjectSpecs.IsEmpty())
-		{
-			// The View Locks window works with object specs using ItemIds and Branch names
-			Parameters.Append(Operation->ObjectSpecs);
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("lock"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
-		}
-		else
-		{
-			// But the context "Unlock" menu only deals with filenames (Asset Paths given by Content Browser)
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("lock"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
-		}
+		// But the context "Unlock" menu only deals with filenames (Asset Paths given by Content Browser)
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("lock"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
 
 	// now update the status of our files

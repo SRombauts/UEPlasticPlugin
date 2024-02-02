@@ -49,9 +49,9 @@ private:
 
 	TSharedPtr<SWidget> OnOpenContextMenu();
 
-	void OnReleaseLocksClicked(const TArray<FPlasticSourceControlLockRef> InSelectedLocks);
-	void OnRemoveLocksClicked(const TArray<FPlasticSourceControlLockRef> InSelectedLocks);
-	void ExecuteUnlock(const TArray<FPlasticSourceControlLockRef>& InSelectedLocks, const bool bInRemove);
+	void OnReleaseLocksClicked(TArray<FPlasticSourceControlLockRef> InSelectedLocks);
+	void OnRemoveLocksClicked(TArray<FPlasticSourceControlLockRef> InSelectedLocks);
+	void ExecuteUnlock(TArray<FPlasticSourceControlLockRef>&& InSelectedLocks, const bool bInRemove);
 
 	void StartRefreshStatus();
 	void TickRefreshStatus(double InDeltaTime);
