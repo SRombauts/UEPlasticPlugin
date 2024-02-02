@@ -2,10 +2,11 @@
 
 #include "SPlasticSourceControlLocksWidget.h"
 
+#include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProjectSettings.h"
-#include "PlasticSourceControlLock.h"
+#include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlLockRow.h"
 
 #include "PackageUtils.h"
@@ -124,7 +125,7 @@ TSharedRef<SWidget> SPlasticSourceControlLocksWidget::CreateToolBar()
 
 	ToolBarBuilder.AddToolBarButton(
 		FUIAction(
-			FExecuteAction::CreateLambda([this]() { RequestLocksRefresh(); })),
+			FExecuteAction::CreateLambda([this]() { RequestLocksRefresh(true); })),
 		NAME_None,
 		LOCTEXT("SourceControl_RefreshButton", "Refresh"),
 		LOCTEXT("SourceControl_RefreshButton_Tooltip", "Refreshes locks from revision control provider."),
@@ -680,7 +681,7 @@ void SPlasticSourceControlLocksWidget::Tick(const FGeometry& AllottedGeometry, c
 
 	if (bShouldRefresh)
 	{
-		RequestLocksRefresh();
+		RequestLocksRefresh(false);
 		bShouldRefresh = false;
 	}
 
@@ -711,7 +712,7 @@ void SPlasticSourceControlLocksWidget::EndRefreshStatus()
 	RefreshStatus = FText::GetEmpty();
 }
 
-void SPlasticSourceControlLocksWidget::RequestLocksRefresh()
+void SPlasticSourceControlLocksWidget::RequestLocksRefresh(const bool bInInvalidateLocksCache)
 {
 	if (!ISourceControlModule::Get().IsEnabled() || (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
 	{
@@ -719,6 +720,11 @@ void SPlasticSourceControlLocksWidget::RequestLocksRefresh()
 	}
 
 	StartRefreshStatus();
+
+	if (bInInvalidateLocksCache)
+	{
+		PlasticSourceControlUtils::InvalidateLocksCache();
+	}
 
 	TSharedRef<FPlasticGetLocks, ESPMode::ThreadSafe> GetLocksOperation = ISourceControlOperation::Create<FPlasticGetLocks>();
 
@@ -778,7 +784,7 @@ FReply SPlasticSourceControlLocksWidget::OnKeyDown(const FGeometry& MyGeometry, 
 	if (InKeyEvent.GetKey() == EKeys::F5)
 	{
 		// Pressing F5 refreshes the list of locks
-		RequestLocksRefresh();
+		RequestLocksRefresh(true);
 		return FReply::Handled();
 	}
 	else if ((InKeyEvent.GetKey() == EKeys::Delete) || (InKeyEvent.GetKey() == EKeys::BackSpace))

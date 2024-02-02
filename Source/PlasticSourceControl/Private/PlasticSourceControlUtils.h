@@ -140,6 +140,11 @@ bool RunCheckConnection(FString& OutBranchName, FString& OutRepositoryName, FStr
 FString UserNameToDisplayName(const FString& InUserName);
 
 /**
+ * Invalidate the cache of locks so that the next call to RunListLocks() will not use it and actually run the cm lock list command
+ */
+void InvalidateLocksCache();
+
+/**
  * Run a Plastic "lock list" command and parse it.
  *
  * @param	InRepository		The repository to ask for the locks

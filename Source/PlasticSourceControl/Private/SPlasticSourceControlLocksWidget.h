@@ -57,7 +57,7 @@ private:
 	void TickRefreshStatus(double InDeltaTime);
 	void EndRefreshStatus();
 
-	void RequestLocksRefresh();
+	void RequestLocksRefresh(const bool bInInvalidateLocksCache);
 
 	/** Source control callbacks */
 	void OnGetLocksOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);

@@ -367,9 +367,31 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	return bResult;
 }
 
+static TArray<FPlasticSourceControlLockRef> LocksCache;
+static FDateTime LocksTimestamp;
+static FCriticalSection	LocksCriticalSection;
+
+void InvalidateLocksCache()
+{
+	FScopeLock Lock(&LocksCriticalSection);
+	LocksCache.Reset();
+	LocksTimestamp = FDateTime();
+}
+
 bool RunListLocks(const FString& InRepository, TArray<FPlasticSourceControlLockRef>& OutLocks)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListLocks);
+
+	// Cache Locks with a Timestamp, and an InvalidateCachedLocks() function
+	{
+		FScopeLock Lock(&LocksCriticalSection);
+		const FTimespan ElapsedTime = FDateTime::Now() - LocksTimestamp;
+		if (ElapsedTime.GetTotalSeconds() < 60.0)
+		{
+			OutLocks = LocksCache;
+			return true;
+		}
+	}
 
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
@@ -393,6 +415,10 @@ bool RunListLocks(const FString& InRepository, TArray<FPlasticSourceControlLockR
 			FPlasticSourceControlLock&& Lock = PlasticSourceControlParsers::ParseLockInfo(Result);
 			OutLocks.Add(MakeShareable(new FPlasticSourceControlLock(Lock)));
 		}
+
+		FScopeLock Lock(&LocksCriticalSection);
+		LocksCache = OutLocks;
+		LocksTimestamp = FDateTime::Now();
 	}
 
 	return bResult;
