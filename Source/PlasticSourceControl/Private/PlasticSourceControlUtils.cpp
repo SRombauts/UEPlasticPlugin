@@ -1132,14 +1132,20 @@ bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates)
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FDateTime Now = FDateTime::Now();
 
+	bool bUpdatedStates = false;
 	for (auto&& InState : InStates)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(InState.LocalFilename);
+		// Only report that the cache was updated if the state changed in a meaningful way, useful to the Editor
+		if (*State != InState)
+		{
+			bUpdatedStates = true;
+		}
 		*State = MoveTemp(InState);
 		State->TimeStamp = Now;
 	}
 
-	return (InStates.Num() > 0);
+	return bUpdatedStates;
 }
 
 void RemoveRedundantErrors(FPlasticSourceControlCommand& InCommand, const FString& InFilter)
