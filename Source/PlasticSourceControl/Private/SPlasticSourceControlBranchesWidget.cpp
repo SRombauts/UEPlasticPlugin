@@ -6,6 +6,7 @@
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProjectSettings.h"
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlUtils.h"
 #include "PlasticSourceControlVersions.h"
 #include "SPlasticSourceControlBranchRow.h"
 #include "SPlasticSourceControlCreateBranch.h"
@@ -77,38 +78,91 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 			[
 				SNew(SHorizontalBox)
 				+SHorizontalBox::Slot()
-				.HAlign(HAlign_Left)
+				.FillWidth(1.0f)
+				[
+					SNew(SHorizontalBox)
+					+SHorizontalBox::Slot()
+					.HAlign(HAlign_Left)
+					.VAlign(VAlign_Center)
+					.AutoWidth()
+					[
+						CreateToolBar()
+					]
+					+SHorizontalBox::Slot()
+					.MaxWidth(10.0f)
+					[
+						SNew(SSpacer)
+					]
+					+SHorizontalBox::Slot()
+					.VAlign(VAlign_Center)
+					.MaxWidth(300.0f)
+					[
+						SAssignNew(FileSearchBox, SSearchBox)
+						.HintText(LOCTEXT("SearchBranches", "Search Branches"))
+						.ToolTipText(LOCTEXT("PlasticBranchesSearch_Tooltip", "Filter the list of branches by keyword."))
+						.OnTextChanged(this, &SPlasticSourceControlBranchesWidget::OnSearchTextChanged)
+					]
+					+SHorizontalBox::Slot()
+					.VAlign(VAlign_Center)
+					.MaxWidth(125.0f)
+					.Padding(10.f, 0.f)
+					[
+						SNew(SComboButton)
+						.ToolTipText(LOCTEXT("PlasticBranchesDate_Tooltip", "Filter the list of branches by date of creation."))
+						.OnGetMenuContent(this, &SPlasticSourceControlBranchesWidget::BuildFromDateDropDownMenu)
+						.ButtonContent()
+						[
+							SNew(STextBlock)
+							.Text_Lambda([this]() { return FromDateInDaysValues[FromDateInDays]; })
+						]
+					]
+				]
+				+SHorizontalBox::Slot()
+				.HAlign(HAlign_Right)
 				.VAlign(VAlign_Center)
 				.AutoWidth()
 				[
-					CreateToolBar()
-				]
-				+SHorizontalBox::Slot()
-				.MaxWidth(10.0f)
-				[
-					SNew(SSpacer)
-				]
-				+SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
-				.MaxWidth(300.0f)
-				[
-					SAssignNew(FileSearchBox, SSearchBox)
-					.HintText(LOCTEXT("SearchBranches", "Search Branches"))
-					.ToolTipText(LOCTEXT("PlasticBranchesSearch_Tooltip", "Filter the list of branches by keyword."))
-					.OnTextChanged(this, &SPlasticSourceControlBranchesWidget::OnSearchTextChanged)
-				]
-				+SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
-				.MaxWidth(125.0f)
-				.Padding(10.f, 0.f)
-				[
-					SNew(SComboButton)
-					.ToolTipText(LOCTEXT("PlasticBranchesDate_Tooltip", "Filter the list of branches by date of creation."))
-					.OnGetMenuContent(this, &SPlasticSourceControlBranchesWidget::BuildFromDateDropDownMenu)
-					.ButtonContent()
+					// Button to open the Branch Explorer
+					SNew(SButton)
+					.ContentPadding(FMargin(6.0f, 0.0f))
+					.ToolTipText(LOCTEXT("PlasticBranchExplorerTooltip", "Open the Branch Explorer of the Desktop Application for the current workspace."))
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+#else
+					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
+#endif
+					.OnClicked_Lambda([]()
+						{
+							PlasticSourceControlUtils::OpenDesktopApplication(true);
+							return FReply::Handled();
+						})
 					[
-						SNew(STextBlock)
-						.Text_Lambda([this]() { return FromDateInDaysValues[FromDateInDays]; })
+						SNew(SHorizontalBox)
+						+SHorizontalBox::Slot()
+						.AutoWidth()
+						.VAlign(VAlign_Center)
+						.HAlign(HAlign_Center)
+						[
+							SNew(SImage)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+							.Image(FAppStyle::GetBrush("SourceControl.Branch"))
+#else
+							.Image(FEditorStyle::GetBrush("SourceControl.Branch"))
+#endif
+						]
+						+SHorizontalBox::Slot()
+						.AutoWidth()
+						.VAlign(VAlign_Center)
+						.Padding(5.0f, 0.0f, 0.0f, 0.0f)
+						[
+							SNew(STextBlock)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+							.TextStyle(&FAppStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
+#else
+							.TextStyle(&FEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
+#endif
+							.Text(LOCTEXT("OpenBranchExplorer", "Branch Explorer"))
+						]
 					]
 				]
 			]
