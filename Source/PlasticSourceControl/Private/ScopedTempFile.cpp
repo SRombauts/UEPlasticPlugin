@@ -10,25 +10,21 @@
 
 FScopedTempFile::FScopedTempFile()
 {
-	Filename = FPaths::CreateTempFilename(*FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()), TEXT("Plastic-Temp"), TEXT(".xml"));
+	Filename = FPaths::CreateTempFilename(*FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()), TEXT("Temp-"), TEXT(".xml"));
 }
 
 FScopedTempFile::FScopedTempFile(const FString& InText)
 {
-	Filename = FPaths::CreateTempFilename(*FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()), TEXT("Plastic-Temp"), TEXT(".txt"));
+	Filename = FPaths::CreateTempFilename(*FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()), TEXT("Temp-"), TEXT(".txt"));
 	if (!FFileHelper::SaveStringToFile(InText, *Filename, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
 	{
 		UE_LOG(LogSourceControl, Error, TEXT("Failed to write to temp file: %s"), *Filename);
 	}
 }
 
-FScopedTempFile::FScopedTempFile(const FText& InText)
+FScopedTempFile::FScopedTempFile(const FText& InText) :
+	FScopedTempFile(InText.ToString())
 {
-	Filename = FPaths::CreateTempFilename(*FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()), TEXT("Plastic-Temp"), TEXT(".txt"));
-	if (!FFileHelper::SaveStringToFile(InText.ToString(), *Filename, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
-	{
-		UE_LOG(LogSourceControl, Error, TEXT("Failed to write to temp file: %s"), *Filename);
-	}
 }
 
 FScopedTempFile::~FScopedTempFile()
