@@ -44,6 +44,8 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 
 	CurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
 
+	const FString OrganizationName = FPlasticSourceControlModule::Get().GetProvider().GetCloudOrganization();
+
 	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlLock&>>(TTextFilter<const FPlasticSourceControlLock&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlLocksWidget::PopulateItemSearchStrings));
 	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlLocksWidget::OnRefreshUI);
 
@@ -63,25 +65,77 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 			[
 				SNew(SHorizontalBox)
 				+SHorizontalBox::Slot()
-				.HAlign(HAlign_Left)
+				.FillWidth(1.0f)
+				[
+					SNew(SHorizontalBox)
+					+SHorizontalBox::Slot()
+					.HAlign(HAlign_Left)
+					.VAlign(VAlign_Center)
+					.AutoWidth()
+					[
+						CreateToolBar()
+					]
+					+SHorizontalBox::Slot()
+					.MaxWidth(10.0f)
+					[
+						SNew(SSpacer)
+					]
+					+SHorizontalBox::Slot()
+					.VAlign(VAlign_Center)
+					.MaxWidth(300.0f)
+					[
+						SAssignNew(FileSearchBox, SSearchBox)
+						.HintText(LOCTEXT("SearchLocks", "Search Locks"))
+						.ToolTipText(LOCTEXT("PlasticLocksSearch_Tooltip", "Filter the list of locks by keyword."))
+						.OnTextChanged(this, &SPlasticSourceControlLocksWidget::OnSearchTextChanged)
+					]
+				]
+				+SHorizontalBox::Slot()
+				.HAlign(HAlign_Right)
 				.VAlign(VAlign_Center)
 				.AutoWidth()
 				[
-					CreateToolBar()
-				]
-				+SHorizontalBox::Slot()
-				.MaxWidth(10.0f)
-				[
-					SNew(SSpacer)
-				]
-				+SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
-				.MaxWidth(300.0f)
-				[
-					SAssignNew(FileSearchBox, SSearchBox)
-					.HintText(LOCTEXT("SearchLocks", "Search Locks"))
-					.ToolTipText(LOCTEXT("PlasticLocksSearch_Tooltip", "Filter the list of locks by keyword."))
-					.OnTextChanged(this, &SPlasticSourceControlLocksWidget::OnSearchTextChanged)
+					// Button to Configure Lock Rules in the cloud (only enabled for a cloud repository)
+					SNew(SButton)
+					.ContentPadding(FMargin(6.0f, 0.0f))
+					.IsEnabled(!OrganizationName.IsEmpty())
+					.ToolTipText(OrganizationName.IsEmpty() ?
+						LOCTEXT("PlasticLockRulesURLTooltipDisabled", "Web link to the Unity Dashboard disabled. Only available for Cloud repositories.") :
+						LOCTEXT("PlasticLockRulesURLTooltipEnabled", "Navigate to lock rules configuration page in the Unity Dashboard."))
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+#else
+					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
+#endif
+					.OnClicked(this, &SPlasticSourceControlLocksWidget::OnConfigureLockRulesClicked, OrganizationName)
+					[
+						SNew(SHorizontalBox)
+						+SHorizontalBox::Slot()
+						.AutoWidth()
+						.VAlign(VAlign_Center)
+						.HAlign(HAlign_Center)
+						[
+							SNew(SImage)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+							.Image(FAppStyle::GetBrush("PropertyWindow.Locked"))
+#else
+							.Image(FEditorStyle::GetBrush("PropertyWindow.Locked"))
+#endif
+						]
+						+SHorizontalBox::Slot()
+						.AutoWidth()
+						.VAlign(VAlign_Center)
+						.Padding(5.0f, 0.0f, 0.0f, 0.0f)
+						[
+							SNew(STextBlock)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+							.TextStyle(&FAppStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
+#else
+							.TextStyle(&FEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
+#endif
+							.Text(LOCTEXT("ConfigureLockRules", "Configure rules"))
+						]
+					]
 				]
 			]
 		]
@@ -589,6 +643,12 @@ TSharedPtr<SWidget> SPlasticSourceControlLocksWidget::OnOpenContextMenu()
 	);
 
 	return ToolMenus->GenerateWidget(Menu);
+}
+
+FReply SPlasticSourceControlLocksWidget::OnConfigureLockRulesClicked(const FString InOrganizationName)
+{
+	PlasticSourceControlUtils::OpenLockRulesInCloudDashboard(InOrganizationName);
+	return FReply::Handled();
 }
 
 void SPlasticSourceControlLocksWidget::OnReleaseLocksClicked(TArray<FPlasticSourceControlLockRef> InSelectedLocks)
