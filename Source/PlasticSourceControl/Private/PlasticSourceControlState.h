@@ -54,6 +54,19 @@ public:
 		Move(MoveTemp(InState));
 	}
 
+	// Comparison operator designed to detect and report only meaningful changes to the Editor, mainly for the purpose of updating Content Browser overlay icons
+	bool operator==(const FPlasticSourceControlState& InState) const
+	{
+		return (WorkspaceState == InState.WorkspaceState)
+			&& (LockedBy == InState.LockedBy)
+			&& (RetainedBy == InState.RetainedBy)
+			&& (IsCurrent() == InState.IsCurrent());
+	}
+	bool operator!=(const FPlasticSourceControlState& InState) const
+	{
+		return !(*this == InState);
+	}
+
 	const FPlasticSourceControlState& operator=(FPlasticSourceControlState&& InState)
 	{
 		Move(MoveTemp(InState));

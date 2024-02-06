@@ -29,7 +29,7 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control", meta = (ClampMin = 0))
 	int32 LimitNumberOfRevisionsInHistory = 50;
 
-	/** Show the repository when the branch is created (hidden by default) */
+	/** Show the repository where the branch is created (hidden by default) */
 	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
 	bool bShowBranchRepositoryColumn = false;
 
@@ -44,4 +44,20 @@ public:
 	/* Show the comment of the branch */
 	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
 	bool bShowBranchCommentColumn = true;
+
+	/* Show the Id of the lock (hidden by default) */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	bool bShowLockIdColumn = false;
+
+	/* Show the Workspace of the lock */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	bool bShowLockWorkspaceColumn = true;
+
+	/* Show the Date of the lock */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	bool bShowLockDateColumn = true;
+
+	/* Show the Destination Branch of the lock (hidden by default) */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	bool bShowLockDestinationBranchColumn = false;
 };

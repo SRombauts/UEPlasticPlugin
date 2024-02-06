@@ -3,6 +3,7 @@
 #include "PlasticSourceControlParsers.h"
 
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlState.h"
@@ -443,20 +444,24 @@ public:
 	TArray<FString> Files;
 };
 
-FSmartLockInfoParser::FSmartLockInfoParser(const FString& InResult)
+FPlasticSourceControlLock ParseLockInfo(const FString& InResult)
 {
+	FPlasticSourceControlLock Lock;
 	TArray<FString> SmartLockInfos;
 	const int32 NbElmts = InResult.ParseIntoArray(SmartLockInfos, FILE_STATUS_SEPARATOR, false);
 	if (NbElmts >= 12)
 	{
-		Repository = MoveTemp(SmartLockInfos[0]);
-		ItemId = FCString::Atoi(*SmartLockInfos[1]);
-		FDateTime::ParseIso8601(*SmartLockInfos[3], Date);
-		BranchName = MoveTemp(SmartLockInfos[6]);
-		Status = MoveTemp(SmartLockInfos[8]);
-		Owner = PlasticSourceControlUtils::UserNameToDisplayName(MoveTemp(SmartLockInfos[9]));
-		Filename = MoveTemp(SmartLockInfos[11]);
+		Lock.ItemId = FCString::Atoi(*SmartLockInfos[1]);
+		FDateTime::ParseIso8601(*SmartLockInfos[3], Lock.Date);
+		Lock.DestinationBranch = MoveTemp(SmartLockInfos[4]);
+		Lock.Branch = MoveTemp(SmartLockInfos[6]);
+		Lock.Status = MoveTemp(SmartLockInfos[8]);
+		Lock.bIsLocked = (Lock.Status == TEXT("Locked"));
+		Lock.Owner = PlasticSourceControlUtils::UserNameToDisplayName(MoveTemp(SmartLockInfos[9]));
+		Lock.Workspace = MoveTemp(SmartLockInfos[10]);
+		Lock.Path = MoveTemp(SmartLockInfos[11]);
 	}
+	return Lock;
 }
 
 // Parse the fileinfo output format "{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere};{ServerPath}"
@@ -487,6 +492,33 @@ public:
 	FString ServerPath;
 };
 
+/**
+ * Find the locks matching the file path from the list of locks
+ *
+ * Multiple matching locks can only happen if multiple destination branches are configured 
+*/
+TArray<FPlasticSourceControlLockRef> FindMatchingLocks(const TArray<FPlasticSourceControlLockRef>& InLocks, const FString& InPath)
+{
+	TArray<FPlasticSourceControlLockRef> MatchingLocks;
+	for (int i = 0; i < InLocks.Num(); i++)
+	{
+		if (InLocks[i]->Path == InPath)
+		{
+			MatchingLocks.Add(InLocks[i]);
+		}
+	}
+	return MatchingLocks;
+}
+
+void ConcatStrings(FString& InOutString, const TCHAR* InSeparator, const FString& InOther)
+{
+	if (!InOutString.IsEmpty())
+	{
+		InOutString += InSeparator;
+	}
+	InOutString += InOther;
+}
+
 /** Parse the array of strings result of a 'cm fileinfo --format="{RevisionChangeset};{RevisionHeadChangeset};{RepSpec};{LockedBy};{LockedWhere}"' command
  *
  * Example cm fileinfo results:
@@ -505,10 +537,10 @@ void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourc
 	const FString& BranchName = Provider.GetBranchName();
 	const FString& Repository = Provider.GetRepositoryName();
 
-	TMap<FString, FSmartLockInfoParser> SmartLocks;
+	TArray<FPlasticSourceControlLockRef> Locks;
 	if (Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::SmartLocks)
 	{
-		PlasticSourceControlUtils::RunListSmartLocks(Repository, SmartLocks);
+		PlasticSourceControlUtils::RunListLocks(Repository, Locks);
 	}
 
 	// Iterate on all files and all status of the result (assuming same number of line of results than number of file states)
@@ -522,22 +554,33 @@ void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourc
 		FileState.LocalRevisionChangeset = FileinfoParser.RevisionChangeset;
 		FileState.DepotRevisionChangeset = FileinfoParser.RevisionHeadChangeset;
 		FileState.RepSpec = FileinfoParser.RepSpec;
-		FileState.LockedBy = MoveTemp(FileinfoParser.LockedBy);
-		FileState.LockedWhere = MoveTemp(FileinfoParser.LockedWhere);
 
-		// Additional information coming from SmartLocks (branch name and "Retained" lock status)
-		FSmartLockInfoParser* SmartLock = SmartLocks.Find(FileinfoParser.ServerPath);
-		if (SmartLock != nullptr)
+		// Additional information coming from Locks (branch, workspace, date and lock status)
+		// Note: in case of multi destination branches, we might have multiple locks for the same path, so we concatenate the string info
+		const TArray<FPlasticSourceControlLockRef> MatchingLocks = FindMatchingLocks(Locks, FileinfoParser.ServerPath);
+		for (auto& Lock : MatchingLocks)
 		{
-			// Considers a "Retained" lock as meaningful only if it is retained on another branch
-			if ((SmartLock->Status == "Retained") && (SmartLock->BranchName != BranchName))
+			// "Locked" vs "Retained" lock
+			if (Lock->bIsLocked)
 			{
-				FileState.RetainedBy = MoveTemp(SmartLock->Owner);
+				ConcatStrings(FileState.LockedBy, TEXT(", "), Lock->Owner);
 			}
+			else
+			{
+				ConcatStrings(FileState.RetainedBy, TEXT(", "), Lock->Owner);
+			}
+			ConcatStrings(FileState.LockedWhere, TEXT(", "), Lock->Workspace);
+			ConcatStrings(FileState.LockedBranch, TEXT(", "), Lock->Branch);
 
-			FileState.LockedBranch = MoveTemp(SmartLock->BranchName);
-			FileState.LockedId = SmartLock->ItemId;
-			FileState.LockedDate = SmartLock->Date;
+			// Only save the ItemId if there is only one matching Lock: used to Unlock it from the context menu in the Content Browser,
+			// but leave the ItmeId to invalid if there are more than one: there would be no way to know which one to unlock from the context menu
+			// (Unlocking in such a case require using the View Locks window instead for disambiguation)
+			if (MatchingLocks.Num() == 1)
+			{
+				FileState.LockedId = Lock->ItemId;
+			}
+			// Note; this will keep only the date of the last lock
+			FileState.LockedDate = Lock->Date;
 		}
 
 		// debug log (only for the first few files)
@@ -1532,6 +1575,7 @@ static bool ParseBranchesResults(const FXmlFile& InXmlResult, TArray<FPlasticSou
 	}
 
 	const TArray<FXmlNode*>& BranchsNodes = PlasticQueryNode->GetChildrenNodes();
+	OutBranches.Reserve(BranchsNodes.Num());
 	for (const FXmlNode* BranchNode : BranchsNodes)
 	{
 		check(BranchNode);
@@ -1569,7 +1613,7 @@ static bool ParseBranchesResults(const FXmlFile& InXmlResult, TArray<FPlasticSou
 			}
 		}
 
-		OutBranches.Add(BranchRef);
+		OutBranches.Add(MoveTemp(BranchRef));
 	}
 
 	return true;

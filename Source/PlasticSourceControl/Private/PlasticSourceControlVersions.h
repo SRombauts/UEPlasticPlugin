@@ -44,6 +44,8 @@ namespace PlasticSourceControlVersions
 
 	// 11.0.16.8101 Introducing Smart Locks
 	// https://plasticscm.com/download/releasenotes/11.0.16.8101 (2023/07/06)
-	static const FSoftwareVersion SmartLocks(TEXT("11.0.16.8101"));
+	// 11.0.16.8133 add support for non-localized --datetimeformat
+	// https://plasticscm.com/download/releasenotes/11.0.16.8101 (2023/08/03)
+	static const FSoftwareVersion SmartLocks(TEXT("11.0.16.8133"));
 
 } // namespace PlasticSourceControlVersions

@@ -25,7 +25,7 @@ static UWorld* GetCurrentWorld()
 	return nullptr;
 }
 
-TArray<FString> AssetDateToFileNames(const TArray<FAssetData>& InAssetObjectPaths)
+TArray<FString> AssetDataToFileNames(const TArray<FAssetData>& InAssetObjectPaths)
 {
 	TArray<FString> FileNames;
 	FileNames.Reserve(InAssetObjectPaths.Num());

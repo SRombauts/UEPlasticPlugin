@@ -20,6 +20,7 @@
 
 class FPlasticSourceControlProvider;
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
+typedef TSharedRef<class FPlasticSourceControlLock, ESPMode::ThreadSafe> FPlasticSourceControlLockRef;
 
 
 /**
@@ -98,6 +99,22 @@ public:
 
 
 /**
+ * Internal operation to list locks, aka "cm lock list"
+*/
+class FPlasticGetLocks final : public FSourceControlOperationBase
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	// List of locks found
+	TArray<FPlasticSourceControlLockRef> Locks;
+};
+
+
+/**
  * Internal operation used to release or remove Lock(s) on file(s)
 */
 class FPlasticUnlock final : public FSourceControlOperationBase
@@ -107,6 +124,9 @@ public:
 	virtual FName GetName() const override;
 
 	virtual FText GetInProgressString() const override;
+
+	// Locks to unlock, including the Item Id and branch name
+	TArray<FPlasticSourceControlLockRef> Locks;
 
 	// Release the Lock(s), and optionally remove (delete) them completely
 	bool bRemove = false;
@@ -420,6 +440,23 @@ public:
 public:
 	/** Temporary states for results */
 	TArray<FPlasticSourceControlState> States;
+};
+
+/** list locks. */
+class FPlasticGetLocksWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticGetLocksWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticGetLocksWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+	// Current branch the workspace is on (at the end of the operation)
+	FString CurrentBranchName;
 };
 
 /** release or remove Lock(s) on file(s). */

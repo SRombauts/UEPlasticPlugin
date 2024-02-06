@@ -2,12 +2,12 @@
 
 #include "PlasticSourceControlMenu.h"
 
-#include "PlasticSourceControlBranchesWindow.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProvider.h"
 #include "PlasticSourceControlStyle.h"
 #include "PlasticSourceControlUtils.h"
+#include "PlasticSourceControlVersions.h"
 #include "SPlasticSourceControlStatusBar.h"
 
 #include "ISourceControlModule.h"
@@ -126,6 +126,7 @@ void FPlasticSourceControlMenu::ExtendRevisionControlMenu()
 		if (FToolMenuSection* Section = ToolsMenu->FindSection("Source Control"))
 		{
 			AddViewBranches(*Section);
+			AddViewLocks(*Section);
 		}
 	}
 #endif
@@ -192,7 +193,7 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 	{
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT("PlasticReleaseLock", "Release Lock"),
-			LOCTEXT("PlasticReleaseLockTooltip", "Release Lock(s) on the selected assets. Requires administrator privileges on the server."),
+			LOCTEXT("PlasticReleaseLockTooltip", "Release Lock(s) on the selected assets.\nReleasing locks will allow other users to keep working on these files and retrieve locks (on the same branch, in the latest revision)."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Unlocked"),
 #else
@@ -208,7 +209,7 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 	{
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT("PlasticRemoveLock", "Remove Lock"),
-			LOCTEXT("PlasticRemoveLockTooltip", "Remove/Delete Lock(s) on the selected assets. Requires administrator privileges on the server."),
+			LOCTEXT("PlasticRemoveLockTooltip", "Remove Lock(s) on the selected assets.\nRemoving locks will allow other users to edit these files anywhere (on any branch) increasing the risk of future merge conflicts."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Unlocked"),
 #else
@@ -244,7 +245,7 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 
 bool FPlasticSourceControlMenu::CanReleaseLocks(TArray<FAssetData> InAssetObjectPaths) const
 {
-	const TArray<FString> Files = PackageUtils::AssetDateToFileNames(InAssetObjectPaths);
+	const TArray<FString> Files = PackageUtils::AssetDataToFileNames(InAssetObjectPaths);
 
 	for (const FString& File : Files)
 	{
@@ -262,7 +263,7 @@ bool FPlasticSourceControlMenu::CanReleaseLocks(TArray<FAssetData> InAssetObject
 
 bool FPlasticSourceControlMenu::CanRemoveLocks(TArray<FAssetData> InAssetObjectPaths) const
 {
-	const TArray<FString> Files = PackageUtils::AssetDateToFileNames(InAssetObjectPaths);
+	const TArray<FString> Files = PackageUtils::AssetDataToFileNames(InAssetObjectPaths);
 
 	for (const FString& File : Files)
 	{
@@ -292,7 +293,7 @@ void FPlasticSourceControlMenu::ExecuteUnlock(const TArray<FAssetData>& InAssetO
 {
 	if (!Notification.IsInProgress())
 	{
-		const TArray<FString> Files = PackageUtils::AssetDateToFileNames(InAssetObjectPaths);
+		const TArray<FString> Files = PackageUtils::AssetDataToFileNames(InAssetObjectPaths);
 
 		// Launch a custom "Release/Remove Lock" operation
 		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -552,6 +553,11 @@ void FPlasticSourceControlMenu::OpenBranchesWindow() const
 	FPlasticSourceControlModule::Get().GetBranchesWindow().OpenTab();
 }
 
+void FPlasticSourceControlMenu::OpenLocksWindow() const
+{
+	FPlasticSourceControlModule::Get().GetLocksWindow().OpenTab();
+}
+
 void FPlasticSourceControlMenu::OnSyncAllOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	OnSourceControlOperationComplete(InOperation, InResult);
@@ -794,6 +800,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 	);
 
 	AddViewBranches(Menu);
+	AddViewLocks(Menu);
 }
 
 #if ENGINE_MAJOR_VERSION == 4
@@ -818,6 +825,32 @@ void FPlasticSourceControlMenu::AddViewBranches(FToolMenuSection& Menu)
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenBranchesWindow),
 			FCanExecuteAction()
+		)
+	);
+}
+
+#if ENGINE_MAJOR_VERSION == 4
+void FPlasticSourceControlMenu::AddViewLocks(FMenuBuilder& Menu)
+#elif ENGINE_MAJOR_VERSION == 5
+void FPlasticSourceControlMenu::AddViewLocks(FToolMenuSection& Menu)
+#endif
+{
+	const bool bVersionSupportsSmartLocks = FPlasticSourceControlModule::Get().GetProvider().GetPlasticScmVersion() >= PlasticSourceControlVersions::SmartLocks;
+
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		TEXT("PlasticLocksWindow"),
+#endif
+		LOCTEXT("PlasticLocksWindow", "View Locks"),
+		LOCTEXT("PlasticLocksWindowTooltip", "Open the Locks window."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked"),
+#else
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked"),
+#endif
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenLocksWindow),
+			FCanExecuteAction::CreateLambda([bVersionSupportsSmartLocks]() { return bVersionSupportsSmartLocks; })
 		)
 	);
 }

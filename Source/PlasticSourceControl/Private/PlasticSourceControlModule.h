@@ -9,6 +9,7 @@
 #include "PlasticSourceControlWorkspaceCreation.h"
 
 #include "PlasticSourceControlBranchesWindow.h"
+#include "PlasticSourceControlLocksWindow.h"
 
 /**
  * PlasticSourceControl is the official Unity Version Control Plugin for Unreal Engine
@@ -43,6 +44,11 @@ public:
 		return PlasticSourceControlBranchesWindow;
 	}
 
+	FPlasticSourceControlLocksWindow& GetLocksWindow()
+	{
+		return PlasticSourceControlLocksWindow;
+	}
+
 	/**
 	 * Singleton-like access to this module's interface.  This is just for convenience!
 	 * Beware of calling this during the shutdown phase, though.  Your module might have been unloaded already.
@@ -67,7 +73,9 @@ private:
 	/** The Plastic source control provider */
 	FPlasticSourceControlProvider PlasticSourceControlProvider;
 
+	/** Dockable windows adding advanced features to the plugin */
 	FPlasticSourceControlBranchesWindow PlasticSourceControlBranchesWindow;
+	FPlasticSourceControlLocksWindow PlasticSourceControlLocksWindow;
 
 	/** Logic to create a new workspace */
 	FPlasticSourceControlWorkspaceCreation PlasticSourceControlWorkspaceCreation;

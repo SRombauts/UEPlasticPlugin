@@ -31,6 +31,7 @@ public:
 	void VisitLockRulesURLClicked(const FString InOrganizationName) const;
 	void OpenDeskoptApp() const;
 	void OpenBranchesWindow() const;
+	void OpenLocksWindow() const;
 
 private:
 	bool IsSourceControlConnected() const;
@@ -38,11 +39,13 @@ private:
 #if ENGINE_MAJOR_VERSION == 4
 	void AddMenuExtension(FMenuBuilder& Menu);
 	void AddViewBranches(FMenuBuilder& Menu);
+	void AddViewLocks(FMenuBuilder& Menu);
 
 	TSharedRef<class FExtender> OnExtendLevelEditorViewMenu(const TSharedRef<class FUICommandList> CommandList);
 #elif ENGINE_MAJOR_VERSION == 5
 	void AddMenuExtension(FToolMenuSection& Menu);
 	void AddViewBranches(FToolMenuSection& Menu);
+	void AddViewLocks(FToolMenuSection& Menu);
 #endif
 
 	/** Extends the UE5 toolbar with a status bar widget to display the current branch and open the branch tab */

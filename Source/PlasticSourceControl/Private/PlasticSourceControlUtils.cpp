@@ -4,6 +4,7 @@
 
 #include "PlasticSourceControlBranch.h"
 #include "PlasticSourceControlCommand.h"
+#include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlParsers.h"
 #include "PlasticSourceControlProjectSettings.h"
@@ -366,9 +367,31 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	return bResult;
 }
 
-bool RunListSmartLocks(const FString& InRepository, TMap<FString, PlasticSourceControlParsers::FSmartLockInfoParser>& OutSmartLocks)
+static TArray<FPlasticSourceControlLockRef> LocksCache;
+static FDateTime LocksTimestamp;
+static FCriticalSection	LocksCriticalSection;
+
+void InvalidateLocksCache()
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListSmartLocks);
+	FScopeLock Lock(&LocksCriticalSection);
+	LocksCache.Reset();
+	LocksTimestamp = FDateTime();
+}
+
+bool RunListLocks(const FString& InRepository, TArray<FPlasticSourceControlLockRef>& OutLocks)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListLocks);
+
+	// Cache Locks with a Timestamp, and an InvalidateCachedLocks() function
+	{
+		FScopeLock Lock(&LocksCriticalSection);
+		const FTimespan ElapsedTime = FDateTime::Now() - LocksTimestamp;
+		if (ElapsedTime.GetTotalSeconds() < 60.0)
+		{
+			OutLocks = LocksCache;
+			return true;
+		}
+	}
 
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
@@ -376,22 +399,26 @@ bool RunListSmartLocks(const FString& InRepository, TMap<FString, PlasticSourceC
 	Parameters.Add(TEXT("list"));
 	Parameters.Add(TEXT("--machinereadable"));
 	Parameters.Add(TEXT("--smartlocks"));
+	Parameters.Add(FString::Printf(TEXT("--repository=%s"), *InRepository));
 	Parameters.Add(TEXT("--anystatus"));
 	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
+	// NOTE: --dateformat was added to smartlocks a couple of releases later in version 11.0.16.8133
 	Parameters.Add(TEXT("--dateformat=yyyy-MM-ddTHH:mm:ss"));
 	bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
 
 	if (bResult)
 	{
+		OutLocks.Reserve(Results.Num());
 		for (int32 IdxResult = 0; IdxResult < Results.Num(); IdxResult++)
 		{
 			const FString& Result = Results[IdxResult];
-			PlasticSourceControlParsers::FSmartLockInfoParser SmartLockInfoParser(Result);
-			if (SmartLockInfoParser.Repository == InRepository)
-			{
-				OutSmartLocks.Add(SmartLockInfoParser.Filename, SmartLockInfoParser);
-			}
+			FPlasticSourceControlLock&& Lock = PlasticSourceControlParsers::ParseLockInfo(Result);
+			OutLocks.Add(MakeShareable(new FPlasticSourceControlLock(Lock)));
 		}
+
+		FScopeLock Lock(&LocksCriticalSection);
+		LocksCache = OutLocks;
+		LocksTimestamp = FDateTime::Now();
 	}
 
 	return bResult;
@@ -1131,14 +1158,20 @@ bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates)
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FDateTime Now = FDateTime::Now();
 
+	bool bUpdatedStates = false;
 	for (auto&& InState : InStates)
 	{
 		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = Provider.GetStateInternal(InState.LocalFilename);
+		// Only report that the cache was updated if the state changed in a meaningful way, useful to the Editor
+		if (*State != InState)
+		{
+			bUpdatedStates = true;
+		}
 		*State = MoveTemp(InState);
 		State->TimeStamp = Now;
 	}
 
-	return (InStates.Num() > 0);
+	return bUpdatedStates;
 }
 
 void RemoveRedundantErrors(FPlasticSourceControlCommand& InCommand, const FString& InFilter)
