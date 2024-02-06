@@ -977,8 +977,10 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 		TArray<FString> Parameters;
 		Parameters.Add(Operation->ServerUrl);
 		Parameters.Add(Operation->RepositoryName);
-		PlasticSourceControlUtils::RunCommand(TEXT("makerepository"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+		// Note: the whole operation should fail entirely if the repository creation failed (if the repository already exists, if the organization name is invalid, credential, autorizations etc.)
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("makerepository"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
+	if (InCommand.bCommandSuccessful)
 	{
 		TArray<FString> Parameters;
 		Parameters.Add(Operation->WorkspaceName);
@@ -986,7 +988,7 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 		Parameters.Add(FString::Printf(TEXT("--repository=rep:%s@repserver:%s"), *Operation->RepositoryName, *Operation->ServerUrl));
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
-	if (Operation->bPartialWorkspace)
+	if (InCommand.bCommandSuccessful && Operation->bPartialWorkspace)
 	{
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("update"));
