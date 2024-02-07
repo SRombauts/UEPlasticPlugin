@@ -88,18 +88,13 @@ void FNotification::DisplaySuccess(const FSourceControlOperationBase& InOperatio
 	}
 	else
 	{
-		DisplaySuccess(InOperation.GetName());
+		const FText NotificationText = FText::Format(
+			LOCTEXT("PlasticSourceControlOperation_Success", "{0} operation was successful."),
+			FText::FromName(InOperation.GetName())
+		);
+
+		DisplaySuccess(NotificationText);
 	}
-}
-
-void FNotification::DisplaySuccess(const FName& InOperationName)
-{
-	const FText NotificationText = FText::Format(
-		LOCTEXT("PlasticSourceControlOperation_Success", "{0} operation was successful."),
-		FText::FromName(InOperationName)
-	);
-
-	DisplaySuccess(NotificationText);
 }
 
 void FNotification::DisplaySuccess(const FText& InNotificationText)
@@ -123,22 +118,24 @@ void FNotification::DisplayFailure(const FSourceControlOperationBase& InOperatio
 {
 	if (InOperation.GetResultInfo().ErrorMessages.Num() > 0)
 	{
-		DisplayFailure(InOperation.GetResultInfo().ErrorMessages[0]);
+		// If there are multiple messages, display the last one to not let the user with a notification starting with a "wait" or "in progress" message
+		const FText NotificationText = FText::Format(
+			LOCTEXT("PlasticSourceControlOperation_Failure", "Error: {0} operation failed!\n{1}"),
+			FText::FromName(InOperation.GetName()),
+			InOperation.GetResultInfo().ErrorMessages.Last()
+		);
+
+		DisplayFailure(NotificationText);
 	}
 	else
 	{
-		DisplayFailure(InOperation.GetName());
+		const FText NotificationText = FText::Format(
+			LOCTEXT("PlasticSourceControlOperation_Failure", "Error: {0} operation failed!"),
+			FText::FromName(InOperation.GetName())
+		);
+
+		DisplayFailure(NotificationText);
 	}
-}
-
-void FNotification::DisplayFailure(const FName& InOperationName)
-{
-	const FText NotificationText = FText::Format(
-		LOCTEXT("PlasticSourceControlOperation_Failure", "Error: {0} operation failed!"),
-		FText::FromName(InOperationName)
-	);
-
-	DisplayFailure(NotificationText);
 }
 
 void FNotification::DisplayFailure(const FText& InNotificationText)
