@@ -317,8 +317,7 @@ static void UpdateChangelistState(FPlasticSourceControlProvider& SCCProvider, co
 
 		for (const FPlasticSourceControlState& InState : InStates)
 		{
-			// Note: cannot use IsModified() because cm cannot yet handle local modifications in changelists, only the GUI can
-			if (!InState.IsCheckedOutImplementation())
+			if (!InState.IsPendingChanges())
 			{
 				continue;
 			}
@@ -843,7 +842,7 @@ bool FPlasticRevertUnchangedWorker::UpdateStates()
 	// Update affected changelists if any
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		if (!NewState.IsCheckedOutImplementation())
+		if (!NewState.IsPendingChanges())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
@@ -943,7 +942,8 @@ bool FPlasticRevertAllWorker::UpdateStates()
 	for (const FPlasticSourceControlState& NewState : States)
 	{
 		// TODO: also detect files that were added and are now private! Should be removed as well from their changelist
-		if (!NewState.IsCheckedOutImplementation())
+		// TODO: revisit that, as it's perhaps more subtle now, depending of if it's the Default changelist or not!
+		if (!NewState.IsPendingChanges())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
@@ -1393,7 +1393,8 @@ bool FPlasticUpdateStatusWorker::UpdateStates()
 	// Update affected changelists if any (in case of a file reverted outside of the Unreal Editor)
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		if (!NewState.IsCheckedOutImplementation())
+		// TODO: revisit that, as it's perhaps more subtle now, depending of if it's the Default changelist or not!
+		if (!NewState.IsPendingChanges())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
