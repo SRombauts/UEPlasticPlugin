@@ -612,6 +612,13 @@ bool FPlasticSourceControlState::IsCheckedOut() const
 	}
 }
 
+bool FPlasticSourceControlState::IsPendingChanges() const
+{
+	return WorkspaceState != EWorkspaceState::Unknown
+		&& WorkspaceState != EWorkspaceState::Ignored
+		&& WorkspaceState != EWorkspaceState::Controlled;
+}
+
 bool FPlasticSourceControlState::IsCheckedOutImplementation() const
 {
 	const bool bIsCheckedOut = WorkspaceState == EWorkspaceState::CheckedOutChanged

@@ -166,6 +166,7 @@ public:
 	virtual bool IsConflicted() const override;
 	virtual bool CanRevert() const override;
 
+	bool IsPendingChanges() const;
 	bool IsCheckedOutImplementation() const;
 	bool IsLocked() const;
 	bool IsRetainedInOtherBranch() const;
