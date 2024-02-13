@@ -47,8 +47,11 @@ void FPlasticSourceControlWorkspaceCreation::OnMakeWorkspaceOperationComplete(co
 {
 	OnSourceControlOperationComplete(InOperation, InResult);
 
-	// Launch the next asynchronous operation
-	LaunchMarkForAddOperation();
+	if (InResult == ECommandResult::Succeeded)
+	{
+		// Launch the next asynchronous operation
+		LaunchMarkForAddOperation();
+	}
 }
 
 /// 2. Add all project files to Source Control (.uproject, Config/, Content/, Source/ files and ignore.conf if any)
@@ -84,8 +87,11 @@ void FPlasticSourceControlWorkspaceCreation::OnMarkForAddOperationComplete(const
 {
 	OnSourceControlOperationComplete(InOperation, InResult);
 
-	// Launch the next asynchronous operation
-	LaunchCheckInOperation();
+	if (InResult == ECommandResult::Succeeded)
+	{
+		// Launch the next asynchronous operation
+		LaunchCheckInOperation();
+	}
 }
 
 /// 3. Launch an asynchronous "CheckIn" operation and start another ongoing notification
