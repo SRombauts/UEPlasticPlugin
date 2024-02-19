@@ -1083,7 +1083,7 @@ bool FPlasticUnlockWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FPlasticUnlock, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticUnlock>(InCommand.Operation);
 
-	if (!Operation->Locks.IsEmpty())
+	if (Operation->Locks.Num() > 0)
 	{
 		// The View Locks window works with object specs using ItemIds and Branch names
 		// The unlock operation works on a per-branch basis when multiple Lock destinations are involved
