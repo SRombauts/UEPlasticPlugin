@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Unity Technologies
+// Copyright (c) 2024 Unity Technologies
 
 #pragma once
 
@@ -111,7 +111,7 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName,
 
 /**
  * Get workspace info: the current branch, repository name, and server URL
- * 
+ *
  * @param	OutBranchName		Name of the current branch
  * @param	OutRepositoryName	Name of the repository of the current workspace
  * @param	OutServerUrl		URL/Port of the server of the repository
@@ -294,7 +294,7 @@ bool RunDeleteBranches(const TArray<FString>& InBranchNames, TArray<FString>& Ou
  */
 bool UpdateCachedStates(TArray<FPlasticSourceControlState>&& InStates);
 
-/** 
+/**
  * Remove redundant errors (that contain a particular string) and also
  * update the commands success status if all errors were removed.
  */

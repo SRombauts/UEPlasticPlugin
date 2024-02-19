@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Unity Technologies
+// Copyright (c) 2024 Unity Technologies
 
 using UnrealBuildTool;
 
@@ -8,7 +8,7 @@ public class PlasticSourceControl : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		// Note: from UE5.4 onward, replaced by IWYUSupport = IWYUSupport.Full; 
+		// Note: from UE5.4 onward, replaced by IWYUSupport = IWYUSupport.Full;
 		bEnforceIWYU = true;
 
 		PrivateDependencyModuleNames.AddRange(

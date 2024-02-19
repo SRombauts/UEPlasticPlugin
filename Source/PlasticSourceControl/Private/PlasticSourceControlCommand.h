@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Unity Technologies
+// Copyright (c) 2024 Unity Technologies
 
 #pragma once
 
@@ -38,7 +38,7 @@ public:
 	/**
 	 * This method is also used to tell the object to cleanup but not before
 	 * the object has finished it's work.
-	 */ 
+	 */
 	virtual void DoThreadedWork() override;
 
 	/** Save any results and call any registered callbacks. */

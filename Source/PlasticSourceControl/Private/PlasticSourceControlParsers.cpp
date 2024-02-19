@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Unity Technologies
+// Copyright (c) 2024 Unity Technologies
 
 #include "PlasticSourceControlParsers.h"
 
@@ -58,7 +58,7 @@ bool ParseProfileInfo(TArray<FString>& InResults, const FString& InServerUrl, FS
  *                                        or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected to the cloud)
  *                                        or "Branch /main@rep:UE5OpenWorldPerfTest@repserver:test@cloud"
  *                                        or "Changeset 1234@UE5PlasticPluginDev@test@cloud" (when the workspace is switched on a changeset instead of a branch)
-*/ 
+*/
 bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
 {
 	if (InResults.Num() == 0)
@@ -266,7 +266,7 @@ static FPlasticSourceControlState StateFromStatusResult(const FString& InResult,
  * @brief Parse status results in case of a regular operation for a list of files (not for a whole directory).
  *
  * This is the most common scenario, for any operation from the Content Browser or the View Changes window.
- * 
+ *
  * In this case, iterates on the list of files the Editor provides,
  * searching corresponding file status from the array of strings results of a "status" command.
  *
@@ -495,7 +495,7 @@ public:
 /**
  * Find the locks matching the file path from the list of locks
  *
- * Multiple matching locks can only happen if multiple destination branches are configured 
+ * Multiple matching locks can only happen if multiple destination branches are configured
 */
 TArray<FPlasticSourceControlLockRef> FindMatchingLocks(const TArray<FPlasticSourceControlLockRef>& InLocks, const FString& InPath)
 {
@@ -667,7 +667,7 @@ static FString DecodeXmlEntities(const FString& InString)
 
 /**
  * Parse results of the 'cm history --moveddeleted --xml --encoding="utf-8"' command.
- * 
+ *
  * Results of the history command looks like that:
 <RevisionHistoriesResult>
   <RevisionHistories>
@@ -951,7 +951,7 @@ bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InResultFil
 }
 
 /* Parse results of the 'cm update --xml=tempfile.xml --encoding="utf-8"' command.
- * 
+ *
  * Results of the update command looks like that:
 <UpdatedItems>
   <List>

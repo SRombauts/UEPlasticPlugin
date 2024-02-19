@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Unity Technologies
+// Copyright (c) 2024 Unity Technologies
 
 #include "PlasticSourceControlRevision.h"
 #include "PlasticSourceControlModule.h"
