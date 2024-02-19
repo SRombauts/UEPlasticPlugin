@@ -378,7 +378,7 @@ void InvalidateLocksCache()
 	LocksTimestamp = FDateTime();
 }
 
-bool RunListLocks(const FString& InRepository, TArray<FPlasticSourceControlLockRef>& OutLocks)
+bool RunListLocks(const FPlasticSourceControlProvider& InProvider, TArray<FPlasticSourceControlLockRef>& OutLocks)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListLocks);
 
@@ -399,11 +399,15 @@ bool RunListLocks(const FString& InRepository, TArray<FPlasticSourceControlLockR
 	Parameters.Add(TEXT("list"));
 	Parameters.Add(TEXT("--machinereadable"));
 	Parameters.Add(TEXT("--smartlocks"));
-	Parameters.Add(FString::Printf(TEXT("--repository=%s"), *InRepository));
+	Parameters.Add(FString::Printf(TEXT("--repository=%s"), *InProvider.GetRepositoryName()));
 	Parameters.Add(TEXT("--anystatus"));
 	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
 	// NOTE: --dateformat was added to smartlocks a couple of releases later in version 11.0.16.8133
 	Parameters.Add(TEXT("--dateformat=yyyy-MM-ddTHH:mm:ss"));
+	if (InProvider.GetPlasticScmVersion() >= PlasticSourceControlVersions::WorkingBranch)
+	{
+		Parameters.Add(FString::Printf(TEXT("--workingbranch=%s"), *InProvider.GetBranchName()));
+	}
 	bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
 
 	if (bResult)

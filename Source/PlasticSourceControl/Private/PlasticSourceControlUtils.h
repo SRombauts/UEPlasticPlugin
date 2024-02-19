@@ -10,6 +10,7 @@
 
 class FPlasticSourceControlChangelistState;
 class FPlasticSourceControlCommand;
+class FPlasticSourceControlProvider;
 class FPlasticSourceControlState;
 struct FSoftwareVersion;
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
@@ -147,11 +148,11 @@ void InvalidateLocksCache();
 /**
  * Run a Plastic "lock list" command and parse it.
  *
- * @param	InRepository		The repository to ask for the locks
+ * @param	InProvider			The source control provider to get the repository and current branch to ask the locks for
  * @param	OutLocks			The list of locks
  * @returns true if the command succeeded and returned no errors
  */
-bool RunListLocks(const FString& InRepository, TArray<FPlasticSourceControlLockRef>& OutLocks);
+bool RunListLocks(const FPlasticSourceControlProvider& InProvider, TArray<FPlasticSourceControlLockRef>& OutLocks);
 
 // Specify the "search type" for the "status" command
 enum class EStatusSearchType

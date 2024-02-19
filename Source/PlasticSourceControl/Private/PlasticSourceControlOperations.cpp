@@ -1053,7 +1053,7 @@ bool FPlasticGetLocksWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TSharedRef<FPlasticGetLocks, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetLocks>(InCommand.Operation);
 
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunListLocks(GetProvider().GetRepositoryName(), Operation->Locks);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunListLocks(GetProvider(), Operation->Locks);
 	}
 
 	{
