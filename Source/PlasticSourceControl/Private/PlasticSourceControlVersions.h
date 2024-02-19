@@ -45,7 +45,11 @@ namespace PlasticSourceControlVersions
 	// 11.0.16.8101 Introducing Smart Locks
 	// https://plasticscm.com/download/releasenotes/11.0.16.8101 (2023/07/06)
 	// 11.0.16.8133 add support for non-localized --datetimeformat
-	// https://plasticscm.com/download/releasenotes/11.0.16.8101 (2023/08/03)
+	// https://plasticscm.com/download/releasenotes/11.0.16.8133 (2023/08/03)
 	static const FSoftwareVersion SmartLocks(TEXT("11.0.16.8133"));
+
+	// 11.0.16.8445 lock list new --workingbranch option to only list the locks that apply to the destination branch of the specified branch.
+	// https://plasticscm.com/download/releasenotes/11.0.16.8445 (2024/02/22)
+	static const FSoftwareVersion WorkingBranch(TEXT("11.0.16.8445"));
 
 } // namespace PlasticSourceControlVersions
