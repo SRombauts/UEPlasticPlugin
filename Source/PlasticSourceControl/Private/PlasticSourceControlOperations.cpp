@@ -396,7 +396,7 @@ bool DeleteChangelist(const FPlasticSourceControlProvider& PlasticSourceControlP
 	}
 }
 
-TArray<FString> FileNamesFromFileStates(const TArray<FSourceControlStateRef>& InFileStates)
+static TArray<FString> FileNamesFromFileStates(const TArray<FSourceControlStateRef>& InFileStates)
 {
 	TArray<FString> Files;
 
@@ -410,7 +410,7 @@ TArray<FString> FileNamesFromFileStates(const TArray<FSourceControlStateRef>& In
 
 #endif
 
-TArray<FString> GetFilesFromCommand(FPlasticSourceControlProvider& PlasticSourceControlProvider, FPlasticSourceControlCommand& InCommand)
+static TArray<FString> GetFilesFromCommand(FPlasticSourceControlProvider& PlasticSourceControlProvider, FPlasticSourceControlCommand& InCommand)
 {
 	TArray<FString> Files;
 #if ENGINE_MAJOR_VERSION == 5
@@ -1736,7 +1736,7 @@ bool FPlasticGetPendingChangelistsWorker::UpdateStates()
 	return bUpdated;
 }
 
-FPlasticSourceControlChangelist GenerateUniqueChangelistName(FPlasticSourceControlProvider& PlasticSourceControlProvider)
+static FPlasticSourceControlChangelist GenerateUniqueChangelistName(FPlasticSourceControlProvider& PlasticSourceControlProvider)
 {
 	FPlasticSourceControlChangelist NewChangelist;
 
@@ -1755,7 +1755,7 @@ FPlasticSourceControlChangelist GenerateUniqueChangelistName(FPlasticSourceContr
 	return NewChangelist;
 }
 
-FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlProvider& PlasticSourceControlProvider, const FString& InDescription, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
+static FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlProvider& PlasticSourceControlProvider, const FString& InDescription, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
 {
 	FPlasticSourceControlChangelist NewChangelist = GenerateUniqueChangelistName(PlasticSourceControlProvider);
 
@@ -1788,7 +1788,7 @@ FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlPro
 	return NewChangelist;
 }
 
-bool EditChangelistDescription(const FPlasticSourceControlProvider& PlasticSourceControlProvider, const FPlasticSourceControlChangelist& InChangelist, const FString& InDescription, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
+static bool EditChangelistDescription(const FPlasticSourceControlProvider& PlasticSourceControlProvider, const FPlasticSourceControlChangelist& InChangelist, const FString& InDescription, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
 {
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("edit"));
@@ -1811,7 +1811,7 @@ bool EditChangelistDescription(const FPlasticSourceControlProvider& PlasticSourc
 	}
 }
 
-bool MoveFilesToChangelist(const FPlasticSourceControlProvider& PlasticSourceControlProvider, const FPlasticSourceControlChangelist& InChangelist, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
+static bool MoveFilesToChangelist(const FPlasticSourceControlProvider& PlasticSourceControlProvider, const FPlasticSourceControlChangelist& InChangelist, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
 {
 	if (InFiles.Num() > 0)
 	{
@@ -2119,7 +2119,7 @@ bool FPlasticReopenWorker::UpdateStates()
 	}
 }
 
-bool CreateShelve(const FString& InChangelistName, const FString& InChangelistDescription, const TArray<FString>& InFilesToShelve, int32& OutShelveId, TArray<FString>& OutErrorMessages)
+static bool CreateShelve(const FString& InChangelistName, const FString& InChangelistDescription, const TArray<FString>& InFilesToShelve, int32& OutShelveId, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Results;
 	TArray<FString> Parameters;
@@ -2148,7 +2148,7 @@ bool CreateShelve(const FString& InChangelistName, const FString& InChangelistDe
 	return OutShelveId != ISourceControlState::INVALID_REVISION;
 }
 
-bool DeleteShelve(const int32 InShelveId, TArray<FString>& OutErrorMessages)
+static bool DeleteShelve(const int32 InShelveId, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Results;
 	TArray<FString> Parameters;
