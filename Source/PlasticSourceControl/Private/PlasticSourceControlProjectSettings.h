@@ -30,34 +30,34 @@ public:
 	int32 LimitNumberOfRevisionsInHistory = 50;
 
 	/** Show the repository where the branch is created (hidden by default) */
-	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Branches window")
 	bool bShowBranchRepositoryColumn = false;
 
 	/* Show the name of the creator of the branch */
-	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Branches window")
 	bool bShowBranchCreatedByColumn = true;
 
 	/* Show the date of creation of the branch */
-	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Branches window")
 	bool bShowBranchDateColumn = true;
 
 	/* Show the comment of the branch */
-	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Branches window")
 	bool bShowBranchCommentColumn = true;
 
 	/* Show the Id of the lock (hidden by default) */
-	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Locks window")
 	bool bShowLockIdColumn = false;
 
 	/* Show the Workspace of the lock */
-	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Locks window")
 	bool bShowLockWorkspaceColumn = true;
 
 	/* Show the Date of the lock */
-	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Locks window")
 	bool bShowLockDateColumn = true;
 
 	/* Show the Destination Branch of the lock (hidden by default) */
-	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control")
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Locks window")
 	bool bShowLockDestinationBranchColumn = false;
 };
