@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "ISourceControlProvider.h"
 #include "Notification.h"
+#include "AssetRegistry/AssetData.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 class FMenuBuilder;

@@ -2,6 +2,7 @@
 
 #include "Notification.h"
 
+#include "Framework/Docking/TabManager.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Widgets/Notifications/SNotificationList.h"
 

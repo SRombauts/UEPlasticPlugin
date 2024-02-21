@@ -11,6 +11,7 @@
 #include "PlasticSourceControlVersions.h"
 #include "ISourceControlModule.h"
 
+#include "HAL/PlatformFile.h"
 #include "Misc/Paths.h"
 #include "XmlParser.h"
 
