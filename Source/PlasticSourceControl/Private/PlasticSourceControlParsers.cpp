@@ -539,7 +539,9 @@ void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourc
 	TArray<FPlasticSourceControlLockRef> Locks;
 	if (Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::SmartLocks)
 	{
-		PlasticSourceControlUtils::RunListLocks(Provider, Locks);
+		// In the Content Browser, only show locks applying to the current working branch
+		const bool bForAllDestBranches = false;
+		PlasticSourceControlUtils::RunListLocks(Provider, bForAllDestBranches, Locks);
 	}
 
 	// Iterate on all files and all status of the result (assuming same number of line of results than number of file states)

@@ -378,7 +378,7 @@ void InvalidateLocksCache()
 	LocksTimestamp = FDateTime();
 }
 
-bool RunListLocks(const FPlasticSourceControlProvider& InProvider, TArray<FPlasticSourceControlLockRef>& OutLocks)
+bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bInForAllDestBranches, TArray<FPlasticSourceControlLockRef>& OutLocks)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListLocks);
 
@@ -404,11 +404,12 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, TArray<FPlast
 	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
 	// NOTE: --dateformat was added to smartlocks a couple of releases later in version 11.0.16.8133
 	Parameters.Add(TEXT("--dateformat=yyyy-MM-ddTHH:mm:ss"));
-	if (InProvider.GetPlasticScmVersion() >= PlasticSourceControlVersions::WorkingBranch)
+	// For displaying Locks as a status overlay icon in the Content Browser, restricts the Locks to only those applying to the current branch so there can be only one and never any ambiguity
+	if (!bInForAllDestBranches && (InProvider.GetPlasticScmVersion() >= PlasticSourceControlVersions::WorkingBranch))
 	{
 		Parameters.Add(FString::Printf(TEXT("--workingbranch=%s"), *InProvider.GetBranchName()));
 	}
-	bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
+	const bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
 
 	if (bResult)
 	{

@@ -1053,7 +1053,9 @@ bool FPlasticGetLocksWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TSharedRef<FPlasticGetLocks, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetLocks>(InCommand.Operation);
 
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunListLocks(GetProvider(), Operation->Locks);
+		// In the View Locks window, always show locks for all destination branches
+		const bool bForAllDestBranches = true;
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunListLocks(GetProvider(), bForAllDestBranches, Operation->Locks);
 	}
 
 	{
@@ -1186,6 +1188,7 @@ bool FPlasticSwitchToBranchWorker::Execute(FPlasticSourceControlCommand& InComma
 	{
 		// the current branch is used to asses the status of Retained Locks
 		GetProvider().SetBranchName(Operation->BranchName);
+		PlasticSourceControlUtils::InvalidateLocksCache();
 		PlasticSourceControlUtils::RunUpdateStatus(Operation->UpdatedFiles, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 

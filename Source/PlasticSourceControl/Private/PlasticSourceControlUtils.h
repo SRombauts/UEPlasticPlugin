@@ -148,11 +148,12 @@ void InvalidateLocksCache();
 /**
  * Run a Plastic "lock list" command and parse it.
  *
- * @param	InProvider			The source control provider to get the repository and current branch to ask the locks for
- * @param	OutLocks			The list of locks
+ * @param	InProvider				The source control provider to get the repository and current branch to ask the locks for
+ * @param   bInForAllDestBranches	Retrieve locks for all destination branches, or restrict them to only those applying to the working branch
+ * @param	OutLocks				The list of locks
  * @returns true if the command succeeded and returned no errors
  */
-bool RunListLocks(const FPlasticSourceControlProvider& InProvider, TArray<FPlasticSourceControlLockRef>& OutLocks);
+bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bInForAllDestBranches, TArray<FPlasticSourceControlLockRef>& OutLocks);
 
 /**
  * Get the list of filenames from the list of locks
