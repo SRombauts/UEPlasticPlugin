@@ -522,19 +522,31 @@ Binary assets should be locked for exclusive access to avoid merge conflicts.
 
 To lock all assets on the whole `Content` directory, you need to put a `lock.conf` in your server directory (for instance `C:\Program Files\PlasticSCM5\server`) with this content:
 
-    rep:<repname> [lockserver:[<server>:<port>]]
+    rep:<repname> [br:[<destination_branch>]] [excluded_branches:<exclusion_pattern>…]
     /Content
 
-For instance the more generic one would be:
+For instance a specific ruleset to one repository:
 
-    rep:*
+    rep:UE5PlasticPluginDev
     /Content
 
-or to be more specific to one repository:
+or with multiple destination branches for Locks:
 
-    rep:UE5PlasticPluginDev lockserver:localhost:8087
+    rep:UE5PlasticPluginDev br:/main /main/release excluded_branches:/main/experiments
+    /Content
+
+or using file extensions instead of a path:
+
+    rep:UE5PlasticPluginDev
     *.uasset
     *.umap
+
+The more generic config applying to all respository on the server would be:
+
+    rep: *
+    /Content
+
+But beware, as this default global rule will not be used (merged) with any other rules specific repository, but completely replaced ("overridden") by them.
 
 On Unity Version Control Cloud, you can just set-up lock rules like that:
 
