@@ -2,6 +2,7 @@
 
 #include "PlasticSourceControlLocksWindow.h"
 
+#include "Framework/Docking/TabManager.h"
 #include "Widgets/Docking/SDockTab.h"
 
 #include "PlasticSourceControlStyle.h"

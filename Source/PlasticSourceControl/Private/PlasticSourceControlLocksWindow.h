@@ -16,5 +16,5 @@ public:
 private:
 	TSharedRef<class SDockTab> OnSpawnTab(const class FSpawnTabArgs& SpawnTabArgs);
 
-	TSharedPtr<SWidget> CreateLocksWidget();
+	TSharedPtr<class SWidget> CreateLocksWidget();
 };

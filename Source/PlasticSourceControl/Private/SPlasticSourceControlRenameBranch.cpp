@@ -14,6 +14,8 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
+#include "Widgets/Text/STextBlock.h"
+#include "Widgets/SBoxPanel.h"
 #include "Widgets/SWindow.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControlBranchesWindow"

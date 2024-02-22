@@ -17,7 +17,6 @@
 typedef TSharedRef<class FPlasticSourceControlLock, ESPMode::ThreadSafe> FPlasticSourceControlLockRef;
 
 class SSearchBox;
-class SWindow;
 
 // Widget displaying the list of locks in the tab window, see FPlasticSourceControlLocksWindow
 class SPlasticSourceControlLocksWidget : public SCompoundWidget

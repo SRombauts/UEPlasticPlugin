@@ -35,10 +35,10 @@
 #include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Layout/SSpacer.h"
-#include "Widgets/SBoxPanel.h"
-#include "Widgets/SWindow.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Views/SHeaderRow.h"
+#include "Widgets/SBoxPanel.h"
+#include "Widgets/SWindow.h"
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControlBranchesWindow"
 
