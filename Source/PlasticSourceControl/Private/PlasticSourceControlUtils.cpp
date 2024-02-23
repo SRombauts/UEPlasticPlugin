@@ -455,6 +455,33 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bI
 	return bResult;
 }
 
+TArray<FPlasticSourceControlLockRef> GetLocksForWorkingBranch(const FPlasticSourceControlProvider& InProvider, const TArray<FString>& InFiles)
+{
+	TArray<FPlasticSourceControlLockRef> Locks;
+
+	// Only get locks for the current working branch
+	const bool bInForAllDestBranches = false;
+	RunListLocks(InProvider, bInForAllDestBranches, Locks);
+
+	TArray<FPlasticSourceControlLockRef> MatchingLocks;
+	MatchingLocks.Reserve(InFiles.Num());
+
+	// Only return locks for the specified files
+	for (const FString& File : InFiles)
+	{
+		for (const FPlasticSourceControlLockRef& Lock : Locks)
+		{
+			if (File.EndsWith(Lock->Path))
+			{
+				MatchingLocks.Add(Lock);
+				break;
+			}
+		}
+	}
+
+	return MatchingLocks;
+}
+
 TArray<FString> LocksToFileNames(const FString InWorkspaceRoot, const TArray<FPlasticSourceControlLockRef>& InLocks)
 {
 	TArray<FString> Files;

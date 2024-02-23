@@ -156,6 +156,15 @@ void InvalidateLocksCache();
 bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bInForAllDestBranches, TArray<FPlasticSourceControlLockRef>& OutLocks);
 
 /**
+ * Get locks applying to the working branch for the specified files.
+ *
+ * @param	InProvider			The source control provider to get the repository and current branch to ask the locks for
+ * @param	InFiles				The files to be operated on (server paths)
+ * @return	OutLocks			The list of corresponding locks if any
+ */
+TArray<FPlasticSourceControlLockRef> GetLocksForWorkingBranch(const FPlasticSourceControlProvider& InProvider, const TArray<FString>& InFiles);
+
+/**
  * Get the list of filenames from the list of locks
  * @param	InWorkspaceRoot		The workspace from where to run the command - typically the Project path
  * @param	InLocks				Locks to get the file names for
