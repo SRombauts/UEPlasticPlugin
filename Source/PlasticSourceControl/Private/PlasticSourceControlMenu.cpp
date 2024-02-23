@@ -2,6 +2,7 @@
 
 #include "PlasticSourceControlMenu.h"
 
+#include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProvider.h"
@@ -188,6 +189,10 @@ void FPlasticSourceControlMenu::ExtendAssetContextMenu()
 
 void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& MenuBuilder, TArray<FAssetData> InAssetObjectPaths)
 {
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const TArray<FString> Files = PackageUtils::AssetDataToFileNames(InAssetObjectPaths);
+	const TArray<FPlasticSourceControlLockRef> SelectedLocks = PlasticSourceControlUtils::GetLocksForWorkingBranch(Provider, Files);
+
 	MenuBuilder.BeginSection("AssetPlasticActions", LOCTEXT("UnityVersionControlAssetContextLocksMenuHeading", "Unity Version Control Locks"));
 
 	{
@@ -200,8 +205,8 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Unlocked"),
 #endif
 			FUIAction(
-				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ExecuteReleaseLocks, InAssetObjectPaths),
-				FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanReleaseLocks, InAssetObjectPaths)
+				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ExecuteReleaseLocks, SelectedLocks),
+				FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanReleaseLocks, SelectedLocks)
 			)
 		);
 	}
@@ -216,8 +221,8 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Unlocked"),
 #endif
 			FUIAction(
-				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ExecuteRemoveLocks, InAssetObjectPaths),
-				FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanRemoveLocks, InAssetObjectPaths)
+				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ExecuteRemoveLocks, SelectedLocks),
+				FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanRemoveLocks, SelectedLocks)
 			)
 		);
 	}
@@ -243,16 +248,12 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 	MenuBuilder.EndSection();
 }
 
-bool FPlasticSourceControlMenu::CanReleaseLocks(TArray<FAssetData> InAssetObjectPaths) const
+bool FPlasticSourceControlMenu::CanReleaseLocks(TArray<FPlasticSourceControlLockRef> InSelectedLocks) const
 {
-	const TArray<FString> Files = PackageUtils::AssetDataToFileNames(InAssetObjectPaths);
-
-	for (const FString& File : Files)
+	for (const FPlasticSourceControlLockRef& Lock : InSelectedLocks)
 	{
-		const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(File);
-		const auto State = FPlasticSourceControlModule::Get().GetProvider().GetStateInternal(AbsoluteFilename);
-		// If exclusively Checked Out (Locked) the lock can be released coming back to it's potential underlying "Retained" status if changes where already checked in the branch
-		if (!State->LockedBy.IsEmpty() && State->LockedId != ISourceControlState::INVALID_REVISION)
+		// If "Locked" (currently exclusively Checked Out) the lock can be Released, coming back to it's potential underlying "Retained" status if changes where already checked in the branch
+		if (Lock->bIsLocked)
 		{
 			return true;
 		}
@@ -261,45 +262,34 @@ bool FPlasticSourceControlMenu::CanReleaseLocks(TArray<FAssetData> InAssetObject
 	return false;
 }
 
-bool FPlasticSourceControlMenu::CanRemoveLocks(TArray<FAssetData> InAssetObjectPaths) const
+bool FPlasticSourceControlMenu::CanRemoveLocks(TArray<FPlasticSourceControlLockRef> InSelectedLocks) const
 {
-	const TArray<FString> Files = PackageUtils::AssetDataToFileNames(InAssetObjectPaths);
-
-	for (const FString& File : Files)
-	{
-		const FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(File);
-		const auto State = FPlasticSourceControlModule::Get().GetProvider().GetStateInternal(AbsoluteFilename);
-		// If Locked or Retained, the lock can be removed, that is completely deleted in order to simply ignore the changes from the branch
-		if (State->LockedId != ISourceControlState::INVALID_REVISION)
-		{
-			return true;
-		}
-	}
-
-	return false;
+	// All "Locked" or "Retained" locks can be Removed
+	return (InSelectedLocks.Num() > 0);
 }
 
-void FPlasticSourceControlMenu::ExecuteReleaseLocks(TArray<FAssetData> InAssetObjectPaths)
+void FPlasticSourceControlMenu::ExecuteReleaseLocks(TArray<FPlasticSourceControlLockRef> InSelectedLocks)
 {
-	ExecuteUnlock(InAssetObjectPaths, false);
+	ExecuteUnlock(MoveTemp(InSelectedLocks), false);
 }
 
-void FPlasticSourceControlMenu::ExecuteRemoveLocks(TArray<FAssetData> InAssetObjectPaths)
+void FPlasticSourceControlMenu::ExecuteRemoveLocks(TArray<FPlasticSourceControlLockRef> InSelectedLocks)
 {
-	ExecuteUnlock(InAssetObjectPaths, true);
+	ExecuteUnlock(MoveTemp(InSelectedLocks), true);
 }
 
-void FPlasticSourceControlMenu::ExecuteUnlock(const TArray<FAssetData>& InAssetObjectPaths, const bool bInRemove)
+void FPlasticSourceControlMenu::ExecuteUnlock(TArray<FPlasticSourceControlLockRef>&& InSelectedLocks, const bool bInRemove)
 {
 	if (!Notification.IsInProgress())
 	{
-		const TArray<FString> Files = PackageUtils::AssetDataToFileNames(InAssetObjectPaths);
-
 		// Launch a custom "Release/Remove Lock" operation
 		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+		const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
+		const TArray<FString> Files = PlasticSourceControlUtils::LocksToFileNames(WorkspaceRoot, InSelectedLocks);
 		TSharedRef<FPlasticUnlock, ESPMode::ThreadSafe> UnlockOperation = ISourceControlOperation::Create<FPlasticUnlock>();
-		const ECommandResult::Type Result = Provider.Execute(UnlockOperation, Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 		UnlockOperation->bRemove = bInRemove;
+		UnlockOperation->Locks = MoveTemp(InSelectedLocks);
+		const ECommandResult::Type Result = Provider.Execute(UnlockOperation, Files, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateRaw(this, &FPlasticSourceControlMenu::OnSourceControlOperationComplete));
 		if (Result == ECommandResult::Succeeded)
 		{
 			// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
