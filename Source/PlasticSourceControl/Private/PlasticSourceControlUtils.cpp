@@ -367,31 +367,55 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	return bResult;
 }
 
-static TArray<FPlasticSourceControlLockRef> LocksCache;
-static FDateTime LocksTimestamp;
-static FCriticalSection	LocksCriticalSection;
+// Cache Locks with a Timestamp, and an InvalidateCachedLocks() function
+class FLocksCache
+{
+public:
+	void Reset()
+	{
+		FScopeLock Lock(&CriticalSection);
+		Locks.Reset();
+		Timestamp = FDateTime();
+	}
+
+	void SetLocks(const TArray<FPlasticSourceControlLockRef>& InLocks)
+	{
+		FScopeLock Lock(&CriticalSection);
+		Locks = InLocks;
+		Timestamp = FDateTime::Now();
+	}
+
+	bool GetLocks(TArray<FPlasticSourceControlLockRef>& OutLocks)
+	{
+		FScopeLock Lock(&CriticalSection);
+		const FTimespan ElapsedTime = FDateTime::Now() - Timestamp;
+		if (ElapsedTime.GetTotalSeconds() < 60.0)
+		{
+			OutLocks = Locks;
+			return true;
+		}
+		return false;
+	}
+
+private:
+	TArray<FPlasticSourceControlLockRef> Locks;
+	FDateTime Timestamp;
+	FCriticalSection CriticalSection;
+};
+
+static FLocksCache LocksCache;
 
 void InvalidateLocksCache()
 {
-	FScopeLock Lock(&LocksCriticalSection);
 	LocksCache.Reset();
-	LocksTimestamp = FDateTime();
 }
 
 bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bInForAllDestBranches, TArray<FPlasticSourceControlLockRef>& OutLocks)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListLocks);
 
-	// Cache Locks with a Timestamp, and an InvalidateCachedLocks() function
-	{
-		FScopeLock Lock(&LocksCriticalSection);
-		const FTimespan ElapsedTime = FDateTime::Now() - LocksTimestamp;
-		if (ElapsedTime.GetTotalSeconds() < 60.0)
-		{
-			OutLocks = LocksCache;
-			return true;
-		}
-	}
+	if (LocksCache.GetLocks(OutLocks))
+		return true;
 
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
@@ -421,9 +445,7 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bI
 			OutLocks.Add(MakeShareable(new FPlasticSourceControlLock(Lock)));
 		}
 
-		FScopeLock Lock(&LocksCriticalSection);
-		LocksCache = OutLocks;
-		LocksTimestamp = FDateTime::Now();
+		LocksCache.SetLocks(OutLocks);
 	}
 
 	return bResult;
