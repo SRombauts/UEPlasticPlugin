@@ -428,6 +428,22 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, TArray<FPlast
 	return bResult;
 }
 
+TArray<FString> LocksToFileNames(const FString InWorkspaceRoot, const TArray<FPlasticSourceControlLockRef>& InLocks)
+{
+	TArray<FString> Files;
+
+	// Note: remove the slash '/' from the end of the Workspace root to Combine it with server paths also starting with a slash
+	const FString& WorkspaceRoot = InWorkspaceRoot[InWorkspaceRoot.Len() - 1] == TEXT('/') ? InWorkspaceRoot.LeftChop(1) : InWorkspaceRoot;
+
+	Files.Reserve(InLocks.Num());
+	for (const FPlasticSourceControlLockRef& Lock : InLocks)
+	{
+		Files.AddUnique(FPaths::Combine(WorkspaceRoot, Lock->Path));
+	}
+
+	return Files;
+}
+
 /**
  * @brief Run a "fileinfo" command to update complementary status information of given files.
  *

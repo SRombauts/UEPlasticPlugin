@@ -104,7 +104,7 @@ FString GetProfileUserName(const FString& InServerUrl);
 
 /**
  * Get workspace name
- * @param	InWorkspaceRoot		The workspace from where to run the command - usually the Game directory
+ * @param	InWorkspaceRoot		The workspace from where to run the command - typically the Project path
  * @param	OutWorkspaceName	Name of the current workspace
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
 */
@@ -153,6 +153,14 @@ void InvalidateLocksCache();
  * @returns true if the command succeeded and returned no errors
  */
 bool RunListLocks(const FPlasticSourceControlProvider& InProvider, TArray<FPlasticSourceControlLockRef>& OutLocks);
+
+/**
+ * Get the list of filenames from the list of locks
+ * @param	InWorkspaceRoot		The workspace from where to run the command - typically the Project path
+ * @param	InLocks				Locks to get the file names for
+ * @return	List of absolute filenames
+*/
+TArray<FString> LocksToFileNames(const FString InWorkspaceRoot, const TArray<FPlasticSourceControlLockRef>& InLocks);
 
 // Specify the "search type" for the "status" command
 enum class EStatusSearchType
