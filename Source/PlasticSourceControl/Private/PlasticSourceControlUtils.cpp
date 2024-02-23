@@ -403,16 +403,20 @@ private:
 	FCriticalSection CriticalSection;
 };
 
-static FLocksCache LocksCache;
+static FLocksCache LocksCacheForAllDestBranches;
+static FLocksCache LocksCacheForWorkingBranch;
 
 void InvalidateLocksCache()
 {
-	LocksCache.Reset();
+	LocksCacheForAllDestBranches.Reset();
+	LocksCacheForWorkingBranch.Reset();
 }
 
 bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bInForAllDestBranches, TArray<FPlasticSourceControlLockRef>& OutLocks)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListLocks);
+
+	FLocksCache& LocksCache = bInForAllDestBranches ? LocksCacheForAllDestBranches : LocksCacheForWorkingBranch;
 
 	if (LocksCache.GetLocks(OutLocks))
 		return true;
