@@ -1119,7 +1119,10 @@ bool FPlasticUnlockWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticUnlockWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
+	PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
+	// Note: Force the return to always trigger a refresh of the List of Locks
+	// It's needed since when removing the Lock of a Checked Out asset there is actually no change in local status as the asset remains Checked Out!
+	return true;
 }
 
 FName FPlasticGetBranchesWorker::GetName() const
