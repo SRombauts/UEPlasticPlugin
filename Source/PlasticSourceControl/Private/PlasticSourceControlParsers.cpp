@@ -566,7 +566,9 @@ void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourc
 			{
 				ConcatStrings(FileState.LockedBy, TEXT(", "), Lock->Owner);
 			}
-			else
+			// Considers a "Retained" lock as meaningful only if it is retained on another branch
+			// NOTE: this is required to avoid the Unreal Editor showing a popup warning preventing the user to save the asset
+			else if (Lock->Branch != BranchName)
 			{
 				ConcatStrings(FileState.RetainedBy, TEXT(", "), Lock->Owner);
 			}
