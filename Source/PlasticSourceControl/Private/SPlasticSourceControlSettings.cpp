@@ -347,6 +347,22 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.Font(Font)
 			]
 		]
+		// Option for the View Changes (Changelists) window to also show locally Changed and Private files
+		+SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2.0f)
+		.VAlign(VAlign_Center)
+		[
+			SNew(SCheckBox)
+			.ToolTipText(LOCTEXT("ViewLocalChanges_Tooltip", "Enable the \"View Changes\" window to search for and show locally Changed and Private files (can be slow)."))
+			.IsChecked(SPlasticSourceControlSettings::IsViewLocalChangesChecked())
+			.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedViewLocalChanges)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("ViewLocalChanges", "Enable the \"View Changes\" window to list local Changes."))
+				.Font(Font)
+			]
+		]
 		// Option to enable Source Control Verbose logs
 		+SVerticalBox::Slot()
 		.AutoHeight()
@@ -605,6 +621,19 @@ ECheckBoxState SPlasticSourceControlSettings::IsUpdateStatusOtherBranchesChecked
 {
 	FPlasticSourceControlSettings& PlasticSettings = FPlasticSourceControlModule::Get().GetProvider().AccessSettings();
 	return PlasticSettings.GetUpdateStatusOtherBranches() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+void SPlasticSourceControlSettings::OnCheckedViewLocalChanges(ECheckBoxState NewCheckedState)
+{
+	FPlasticSourceControlSettings& PlasticSettings = FPlasticSourceControlModule::Get().GetProvider().AccessSettings();
+	PlasticSettings.SetViewLocalChanges(NewCheckedState == ECheckBoxState::Checked);
+	PlasticSettings.SaveSettings();
+}
+
+ECheckBoxState SPlasticSourceControlSettings::IsViewLocalChangesChecked() const
+{
+	FPlasticSourceControlSettings& PlasticSettings = FPlasticSourceControlModule::Get().GetProvider().AccessSettings();
+	return PlasticSettings.GetViewLocalChanges() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
 void SPlasticSourceControlSettings::OnCheckedEnableVerboseLogs(ECheckBoxState NewCheckedState)

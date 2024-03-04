@@ -940,14 +940,15 @@ bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangeli
 	FString Errors;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--changelists"));
-	// NOTE: don't use "--all" to avoid searching for --localmoved since it's the most time consuming (beside --changed)
-	// and its not used by the plugin (matching similarities doesn't seem to work with .uasset files)
 	Parameters.Add(TEXT("--controlledchanged"));
-	// TODO: add a user settings to avoid searching for --changed and --localdeleted, to work like Perforce on big projects,
-	// provided that the user understands the consequences (they won't see assets modified locally without a proper checkout)
-	Parameters.Add(TEXT("--changed"));
-	Parameters.Add(TEXT("--localdeleted"));
-	Parameters.Add(TEXT("--private"));
+	if (FPlasticSourceControlModule::Get().GetProvider().AccessSettings().GetViewLocalChanges())
+	{
+		// NOTE: don't use "--all" to avoid searching for --localmoved since it's the most time consuming (beside --changed)
+		// and its not used by the plugin (matching similarities doesn't seem to work with .uasset files)
+		Parameters.Add(TEXT("--changed"));
+		Parameters.Add(TEXT("--localdeleted"));
+		Parameters.Add(TEXT("--private"));
+	}
 	Parameters.Add(TEXT("--noheader"));
 	Parameters.Add(TEXT("--xml"));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
