@@ -367,31 +367,59 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 	return bResult;
 }
 
-static TArray<FPlasticSourceControlLockRef> LocksCache;
-static FDateTime LocksTimestamp;
-static FCriticalSection	LocksCriticalSection;
+// Cache Locks with a Timestamp, and an InvalidateCachedLocks() function
+class FLocksCache
+{
+public:
+	void Reset()
+	{
+		FScopeLock Lock(&CriticalSection);
+		Locks.Reset();
+		Timestamp = FDateTime();
+	}
+
+	void SetLocks(const TArray<FPlasticSourceControlLockRef>& InLocks)
+	{
+		FScopeLock Lock(&CriticalSection);
+		Locks = InLocks;
+		Timestamp = FDateTime::Now();
+	}
+
+	bool GetLocks(TArray<FPlasticSourceControlLockRef>& OutLocks)
+	{
+		FScopeLock Lock(&CriticalSection);
+		const FTimespan ElapsedTime = FDateTime::Now() - Timestamp;
+		if (ElapsedTime.GetTotalSeconds() < 60.0)
+		{
+			OutLocks = Locks;
+			return true;
+		}
+		return false;
+	}
+
+private:
+	TArray<FPlasticSourceControlLockRef> Locks;
+	FDateTime Timestamp;
+	FCriticalSection CriticalSection;
+};
+
+static FLocksCache LocksCacheForAllDestBranches;
+static FLocksCache LocksCacheForWorkingBranch;
 
 void InvalidateLocksCache()
 {
-	FScopeLock Lock(&LocksCriticalSection);
-	LocksCache.Reset();
-	LocksTimestamp = FDateTime();
+	LocksCacheForAllDestBranches.Reset();
+	LocksCacheForWorkingBranch.Reset();
 }
 
-bool RunListLocks(const FString& InRepository, TArray<FPlasticSourceControlLockRef>& OutLocks)
+bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bInForAllDestBranches, TArray<FPlasticSourceControlLockRef>& OutLocks)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListLocks);
 
-	// Cache Locks with a Timestamp, and an InvalidateCachedLocks() function
-	{
-		FScopeLock Lock(&LocksCriticalSection);
-		const FTimespan ElapsedTime = FDateTime::Now() - LocksTimestamp;
-		if (ElapsedTime.GetTotalSeconds() < 60.0)
-		{
-			OutLocks = LocksCache;
-			return true;
-		}
-	}
+	FLocksCache& LocksCache = bInForAllDestBranches ? LocksCacheForAllDestBranches : LocksCacheForWorkingBranch;
+
+	if (LocksCache.GetLocks(OutLocks))
+		return true;
 
 	TArray<FString> Results;
 	TArray<FString> ErrorMessages;
@@ -399,12 +427,17 @@ bool RunListLocks(const FString& InRepository, TArray<FPlasticSourceControlLockR
 	Parameters.Add(TEXT("list"));
 	Parameters.Add(TEXT("--machinereadable"));
 	Parameters.Add(TEXT("--smartlocks"));
-	Parameters.Add(FString::Printf(TEXT("--repository=%s"), *InRepository));
+	Parameters.Add(FString::Printf(TEXT("--repository=%s"), *InProvider.GetRepositoryName()));
 	Parameters.Add(TEXT("--anystatus"));
 	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
 	// NOTE: --dateformat was added to smartlocks a couple of releases later in version 11.0.16.8133
 	Parameters.Add(TEXT("--dateformat=yyyy-MM-ddTHH:mm:ss"));
-	bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
+	// For displaying Locks as a status overlay icon in the Content Browser, restricts the Locks to only those applying to the current branch so there can be only one and never any ambiguity
+	if (!bInForAllDestBranches && (InProvider.GetPlasticScmVersion() >= PlasticSourceControlVersions::WorkingBranch))
+	{
+		Parameters.Add(FString::Printf(TEXT("--workingbranch=%s"), *InProvider.GetBranchName()));
+	}
+	const bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
 
 	if (bResult)
 	{
@@ -416,12 +449,53 @@ bool RunListLocks(const FString& InRepository, TArray<FPlasticSourceControlLockR
 			OutLocks.Add(MakeShareable(new FPlasticSourceControlLock(Lock)));
 		}
 
-		FScopeLock Lock(&LocksCriticalSection);
-		LocksCache = OutLocks;
-		LocksTimestamp = FDateTime::Now();
+		LocksCache.SetLocks(OutLocks);
 	}
 
 	return bResult;
+}
+
+TArray<FPlasticSourceControlLockRef> GetLocksForWorkingBranch(const FPlasticSourceControlProvider& InProvider, const TArray<FString>& InFiles)
+{
+	TArray<FPlasticSourceControlLockRef> Locks;
+
+	// Only get locks for the current working branch
+	const bool bInForAllDestBranches = false;
+	RunListLocks(InProvider, bInForAllDestBranches, Locks);
+
+	TArray<FPlasticSourceControlLockRef> MatchingLocks;
+	MatchingLocks.Reserve(InFiles.Num());
+
+	// Only return locks for the specified files
+	for (const FString& File : InFiles)
+	{
+		for (const FPlasticSourceControlLockRef& Lock : Locks)
+		{
+			if (File.EndsWith(Lock->Path))
+			{
+				MatchingLocks.Add(Lock);
+				break;
+			}
+		}
+	}
+
+	return MatchingLocks;
+}
+
+TArray<FString> LocksToFileNames(const FString InWorkspaceRoot, const TArray<FPlasticSourceControlLockRef>& InLocks)
+{
+	TArray<FString> Files;
+
+	// Note: remove the slash '/' from the end of the Workspace root to Combine it with server paths also starting with a slash
+	const FString& WorkspaceRoot = InWorkspaceRoot[InWorkspaceRoot.Len() - 1] == TEXT('/') ? InWorkspaceRoot.LeftChop(1) : InWorkspaceRoot;
+
+	Files.Reserve(InLocks.Num());
+	for (const FPlasticSourceControlLockRef& Lock : InLocks)
+	{
+		Files.AddUnique(FPaths::Combine(WorkspaceRoot, Lock->Path));
+	}
+
+	return Files;
 }
 
 /**

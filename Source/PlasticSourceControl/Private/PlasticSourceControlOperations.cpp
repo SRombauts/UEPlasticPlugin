@@ -1053,7 +1053,9 @@ bool FPlasticGetLocksWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TSharedRef<FPlasticGetLocks, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetLocks>(InCommand.Operation);
 
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunListLocks(GetProvider().GetRepositoryName(), Operation->Locks);
+		// In the View Locks window, always show locks for all destination branches
+		const bool bForAllDestBranches = true;
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunListLocks(GetProvider(), bForAllDestBranches, Operation->Locks);
 	}
 
 	{
@@ -1083,43 +1085,29 @@ bool FPlasticUnlockWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FPlasticUnlock, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticUnlock>(InCommand.Operation);
 
-	if (Operation->Locks.Num() > 0)
-	{
-		// The View Locks window works with object specs using ItemIds and Branch names
-		// The unlock operation works on a per-branch basis when multiple Lock destinations are involved
-		TArray<FString> Branches;
-		Branches.Reserve(Operation->Locks.Num());
-		for (const FPlasticSourceControlLockRef& Lock : Operation->Locks)
-		{
-			Branches.AddUnique(Lock->Branch);
-		}
-		for (const FString& Branch : Branches)
-		{
-			TArray<FString> Parameters;
-			Parameters.Add(TEXT("unlock"));
-			if (Operation->bRemove)
-				Parameters.Add(TEXT("--remove"));
+	InCommand.bCommandSuccessful = true;
 
-			Parameters.Add(FString::Printf(TEXT("--branch=%s"), *Branch));
-			for (const FPlasticSourceControlLockRef& Lock : Operation->Locks)
-			{
-				if (Lock->Branch == Branch)
-				{
-					Parameters.Add(FString::Printf(TEXT("itemid:%d "), Lock->ItemId));
-				}
-			}
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("lock"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
-		}
+	TArray<FString> Branches;
+	for (const FPlasticSourceControlLockRef& Lock : Operation->Locks)
+	{
+		Branches.AddUnique(Lock->Branch);
 	}
-	else
+	for (const FString& Branch : Branches)
 	{
 		TArray<FString> Parameters;
 		Parameters.Add(TEXT("unlock"));
 		if (Operation->bRemove)
 			Parameters.Add(TEXT("--remove"));
 
-		// But the context "Unlock" menu only deals with filenames (Asset Paths given by Content Browser)
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("lock"), Parameters, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+		Parameters.Add(FString::Printf(TEXT("--branch=%s"), *Branch));
+		for (const FPlasticSourceControlLockRef& Lock : Operation->Locks)
+		{
+			if (Lock->Branch == Branch)
+			{
+				Parameters.Add(FString::Printf(TEXT("itemid:%d "), Lock->ItemId));
+			}
+		}
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("lock"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
 
 	// now update the status of our files
@@ -1131,7 +1119,10 @@ bool FPlasticUnlockWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticUnlockWorker::UpdateStates()
 {
-	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
+	PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
+	// Note: Force the return to always trigger a refresh of the List of Locks
+	// It's needed since when removing the Lock of a Checked Out asset there is actually no change in local status as the asset remains Checked Out!
+	return true;
 }
 
 FName FPlasticGetBranchesWorker::GetName() const
@@ -1186,6 +1177,7 @@ bool FPlasticSwitchToBranchWorker::Execute(FPlasticSourceControlCommand& InComma
 	{
 		// the current branch is used to asses the status of Retained Locks
 		GetProvider().SetBranchName(Operation->BranchName);
+		PlasticSourceControlUtils::InvalidateLocksCache();
 		PlasticSourceControlUtils::RunUpdateStatus(Operation->UpdatedFiles, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber, InCommand.BranchName);
 	}
 
