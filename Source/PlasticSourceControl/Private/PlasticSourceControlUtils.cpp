@@ -93,6 +93,15 @@ FString FindDesktopApplicationPath()
 	return DesktopAppPath;
 }
 
+void OpenLockRulesInCloudDashboard(const FString& InOrganizationName)
+{
+	const FString OrganizationLockRulesURL = FString::Printf(
+		TEXT("https://dashboard.unity3d.com/devops/organizations/default/plastic-scm/organizations/%s/lock-rules"),
+		*InOrganizationName
+	);
+	FPlatformProcess::LaunchURL(*OrganizationLockRulesURL, NULL, NULL);
+}
+
 // Find the root of the workspace, looking from the provided path and upward in its parent directories.
 bool GetWorkspacePath(const FString& InPath, FString& OutWorkspaceRoot)
 {
