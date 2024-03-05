@@ -520,19 +520,9 @@ void FPlasticSourceControlMenu::VisitLockRulesURLClicked(const FString InOrganiz
 	PlasticSourceControlUtils::OpenLockRulesInCloudDashboard(InOrganizationName);
 }
 
-void FPlasticSourceControlMenu::OpenDeskoptApp() const
+void FPlasticSourceControlMenu::OpenDesktopApplication() const
 {
-	const FString DesktopAppPath = PlasticSourceControlUtils::FindDesktopApplicationPath();
-	const FString CommandLineArguments = FString::Printf(TEXT("--wk=\"%s\""), *FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot());
-
-	UE_LOG(LogSourceControl, Log, TEXT("Opening the Desktop application (%s %s)"), *DesktopAppPath, *CommandLineArguments);
-
-	FProcHandle Proc = FPlatformProcess::CreateProc(*DesktopAppPath, *CommandLineArguments, true, false, false, nullptr, 0, nullptr, nullptr, nullptr);
-	if (!Proc.IsValid())
-	{
-		UE_LOG(LogSourceControl, Error, TEXT("Opening the Desktop application (%s %s) failed."), *DesktopAppPath, *CommandLineArguments);
-		FPlatformProcess::CloseProc(Proc);
-	}
+	PlasticSourceControlUtils::OpenDesktopApplication();
 }
 
 void FPlasticSourceControlMenu::OpenBranchesWindow() const
@@ -788,7 +778,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 		Provider.IsPartialWorkspace() ? LOCTEXT("PlasticDesktopAppTooltip", "Open the workspace in Unity Version Control Gluon Application.") : LOCTEXT("PlasticGluonTooltip", "Open the workspace in Unity Version Control Desktop Application."),
 		FSlateIcon(FPlasticSourceControlStyle::Get().GetStyleSetName(), Provider.IsPartialWorkspace() ? "PlasticSourceControl.GluonIcon.Small" : "PlasticSourceControl.PluginIcon.Small"),
 #endif
-		FUIAction(FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenDeskoptApp))
+		FUIAction(FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenDesktopApplication))
 	);
 
 	AddViewBranches(Menu);

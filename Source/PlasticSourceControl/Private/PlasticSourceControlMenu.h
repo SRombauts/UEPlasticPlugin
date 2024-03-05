@@ -32,7 +32,7 @@ public:
 	void VisitDocsURLClicked() const;
 	void VisitSupportURLClicked() const;
 	void VisitLockRulesURLClicked(const FString InOrganizationName) const;
-	void OpenDeskoptApp() const;
+	void OpenDesktopApplication() const;
 	void OpenBranchesWindow() const;
 	void OpenChangesetsWindow() const;
 	void OpenLocksWindow() const;
