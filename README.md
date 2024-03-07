@@ -3,9 +3,9 @@ Unity Version Control (formerly Plastic SCM) plugin for Unreal Engine
 
 [![release](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
 
-This is the **official [Unity Version Control (formerly Plastic SCM)](https://unity.com/solutions/version-control) plugin for Unreal Engine 4 & 5** (UE 4.11 to 4.27, and UE 5.0 to 5.3).
+This is the **official [Unity Version Control (formerly Plastic SCM)](https://unity.com/solutions/version-control) plugin for Unreal Engine** (UE 4.11 to 4.27, and UE 5.0 to 5.3).
 
-It is now [distributed in the Unreal Engine Marketplace as a Code Plugin, supporting Engine Versions 5.1 to 5.3 ![Unity Version Control in the Unreal Engine Marketplace](Screenshots/Marketplace_UnityVersionControl.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
+It is now [distributed in the Unreal Engine Marketplace as a Code Plugin, supporting Engine Versions 5.1 to 5.3 on Windows. ![Unity Version Control in the Unreal Engine Marketplace](Screenshots/Marketplace_UnityVersionControl.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
 
 As a general rule, the Marketplace and GitHub versions of the plugin will always be the most up-to-date and recent versions.
 They're easier for us to patch by applying a hotfix, in case a bug is raised and something broken must be fixed quickly.
@@ -16,45 +16,49 @@ This plugin is not intended to replace the [Desktop Client](https://docs.plastic
 or [command line interface "cm"](https://docs.unity.com/ugs/en-us/manual/devops/manual/uvcs-cli/version-control-cli).
 It is a complementary tool improving efficiency in your daily workflow with assets in Editor.
 
-It tracks status of assets, most notable locks, brings common source control tasks inside the Editor, including updating, branching and merging, and provides visual diffing of Blueprints.
+It tracks status of assets, most notably locks, brings common source control tasks inside the Editor, including updating, branching and merging, and provides visual diffing of Blueprints.
 It also helps import an existing Unreal Project into source control in a simple operation, with appropriate *ignore.conf* file.
 Since the Unreal Editor does not manage C++ source code, but only assets, the plugin is especially useful for tech designers, level designers and artists in general.
 
 ## Table of Contents
 
- - [User Guide](#user-guide)
-   - [Plugin Setup](#plugin-setup)
-   - [Project Setup](#project-setup)
-     - [Enable Source Control](#enable-source-control)
-     - [Create a new workspace](#create-a-new-workspace--repository-directly-from-unreal)
-     - [Source Control settings](#source-control-settings)
-     - [Project Settings](#project-settings)
-     - [Editor Preferences](#editor-preferences)
-   - [Working in Editor](#working-in-editor)
-     - [Unreal Documentation](#unreal-documentation)
-     - [Status Icons](#status-icons)
-     - [Revision Control Menu](#revision-control-menu)
-     - [Revision Control Windows](#revision-control-windows)
-     - [Redirectors](#redirectors)
-     - [Detect Changes on other Branches](#detect-changes-on-other-branches)
-     - [Branches](#branches)
-     - [SmartLocks](#smartlocks)
-     - [Merge conflicts on Blueprints](#merge-conflicts-on-blueprints)
-     - [Workflows](#workflows)
-       - [Mainline](#mainline)
-       - [Task branches](#task-branches)
-   - [Unity Version Control Setup](#unity-version-control-setup)
-     - [Configure Locks for Unreal Assets (exclusive checkout)](#configure-locks-for-unreal-assets-exclusive-checkout)
-     - [Configure Visual Diff of Blueprints from Unity Version Control GUI](#configure-visual-diff-of-blueprints-from-unity-version-control-gui)
- - [Status](#status)
-   - [Feature Requests](#feature-requests)
-   - [Known issues](#known-issues)
-   - [Features not supported](#features-not-supported)
- - [Support](#support)
-   - [Enable debug logs](#enable-debug-logs)
-   - [Report an issue](#report-an-issue)
- - [Source code architecture](#source-code-architecture)
- - [Copyright](#copyright)
+- [User Guide](#user-guide)
+  - [Plugin Setup](#plugin-setup)
+    - [In-Engine version of the plugin](#in-engine-version-of-the-plugin)
+    - [Install from Unreal Engine Marketplace](#install-from-unreal-engine-marketplace)
+    - [Install from releases in Github](#install-from-releases-in-github)
+    - [Build from sources](#build-from-sources)
+  - [Project Setup](#project-setup)
+    - [Enable Source Control](#enable-source-control)
+    - [Create a new workspace](#create-a-new-workspace--repository-directly-from-unreal)
+    - [Source Control settings](#source-control-settings)
+    - [Project Settings](#project-settings)
+    - [Editor Preferences](#editor-preferences)
+  - [Working in Editor](#working-in-editor)
+    - [Unreal Documentation](#unreal-documentation)
+    - [Status Icons](#status-icons)
+    - [Revision Control Menu](#revision-control-menu)
+    - [Revision Control Windows](#revision-control-windows)
+    - [Redirectors](#redirectors)
+    - [Detect Changes on other Branches](#detect-changes-on-other-branches)
+    - [Branches](#branches)
+    - [SmartLocks](#smartlocks)
+    - [Merge conflicts on Blueprints](#merge-conflicts-on-blueprints)
+    - [Workflows](#workflows)
+      - [Mainline](#mainline)
+      - [Task branches](#task-branches)
+  - [Unity Version Control Setup](#unity-version-control-setup)
+    - [Configure Locks for Unreal Assets (exclusive checkout)](#configure-locks-for-unreal-assets-exclusive-checkout)
+    - [Configure Visual Diff of Blueprints from Unity Version Control GUI](#configure-visual-diff-of-blueprints-from-unity-version-control-gui)
+- [Status](#status)
+  - [Feature Requests](#feature-requests)
+  - [Known issues](#known-issues)
+  - [Features not supported](#features-not-supported)
+- [Support](#support)
+  - [Enable debug logs](#enable-debug-logs)
+  - [Report an issue](#report-an-issue)
+- [Source code architecture](#source-code-architecture)
+- [Copyright](#copyright)
 
 ## User Guide
 
@@ -70,6 +74,7 @@ However the integrated version will always be lagging behind the latest release 
 - UE5.1 shipped with the version 1.6.2 with support for the new View Changelists window
 - UE5.2 shipped with the version 1.8.0 with support for the Shelves in the renamed View Changes window
 - UE5.3 shipped with the same version 1.8.0
+- UE5.4 is going to ship with version 1.9.0
 
 #### Install from Unreal Engine Marketplace
 
@@ -239,18 +244,18 @@ The plugin allows you to configure project-related settings.
 
 There are 3 settings available at the moment:
 
- - **User Name to Display Name**
-   - For each entry in this dictionary, the Editor will replace the user name in the key with the display value you specify.
- - **Hide Email Domain in Username** (true by default)
-   - This setting toggles the visibility of domain names in user names, if the user name is an email.
- - **Prompt for Checkout on Change** (true by default)
-   - Un-checking this setting will make the Editor consider all files as already checked out. In that case, you won't get
+- **User Name to Display Name**
+  - For each entry in this dictionary, the Editor will replace the user name in the key with the display value you specify.
+- **Hide Email Domain in Username** (true by default)
+  - This setting toggles the visibility of domain names in user names, if the user name is an email.
+- **Prompt for Checkout on Change** (true by default)
+  - Un-checking this setting will make the Editor consider all files as already checked out. In that case, you won't get
      any notifications when you modify assets, and the "Checkout Assets" dialog won't show when you save those changes.
      This mimics how Git works, i.e. allowing the user to perform changes without worrying about checking out items.
      Note: Changelists don't currently support locally changed assets (ie not checked-out)
- - **Limit Number Of Revisions in History** (50 by default)
-   - If a non-null value is set, limit the maximum number of revisions requested to Unity Version Control to display in the "History" window.
-   - Requires [Unity Version Control 11.0.16.7608](https://plasticscm.com/download/releasenotes/11.0.16.7608) that added support for history --limit
+- **Limit Number Of Revisions in History** (50 by default)
+  - If a non-null value is set, limit the maximum number of revisions requested to Unity Version Control to display in the "History" window.
+  - Requires [Unity Version Control 11.0.16.7608](https://plasticscm.com/download/releasenotes/11.0.16.7608) that added support for history --limit
 
 #### Editor Preferences
 
@@ -258,16 +263,16 @@ There are 3 settings available at the moment:
 
 Unreal Engine allows you to configure Editor behaviors. In particular:
 
- - **Tools for diffing text**
-   - Configure the external diff tool needed to compare revisions of assets that are not Blueprints (eg Materials)
- - **Prompt for Checkout on Asset Modification**
-   - Trigger a notification "N files need Checkout" with a link to checkout the asset(s) as soon as a change is made to an asset (without even saving it).
- - **Automatically Checkout on Asset Modification**
-   - Checkout an asset as soon as a change is made to it (without even saving it). Will not show the "checkout" notification.
- - **Add New Files when Modified**
-   - Automatically add "private" assets to source control when saving them.
- - **Use Global Settings**
-   - Share the Source Control Settings ini files between all projects.
+- **Tools for diffing text**
+  - Configure the external diff tool needed to compare revisions of assets that are not Blueprints (eg Materials)
+- **Prompt for Checkout on Asset Modification**
+  - Trigger a notification "N files need Checkout" with a link to checkout the asset(s) as soon as a change is made to an asset (without even saving it).
+- **Automatically Checkout on Asset Modification**
+  - Checkout an asset as soon as a change is made to it (without even saving it). Will not show the "checkout" notification.
+- **Add New Files when Modified**
+  - Automatically add "private" assets to source control when saving them.
+- **Use Global Settings**
+  - Share the Source Control Settings ini files between all projects.
 
 ![Editor Preferences - Source Control](Screenshots/UEPlasticPlugin-EditorPreferencesSourceControl.png)
 
@@ -276,11 +281,13 @@ Unreal Engine allows you to configure Editor behaviors. In particular:
 #### Unreal Documentation
 
 Official documentation from Epic Games:
- - [Source Control Inside Unreal Editor](https://docs.unrealengine.com/5.0/en-US/using-source-control-in-the-unreal-editor/)
- - [Diffing Unreal Assets (blog post)](https://www.unrealengine.com/en-US/blog/diffing-unreal-assets)
+
+- [Source Control Inside Unreal Editor](https://docs.unrealengine.com/5.0/en-US/using-source-control-in-the-unreal-editor/)
+- [Diffing Unreal Assets (blog post)](https://www.unrealengine.com/en-US/blog/diffing-unreal-assets)
 
 Plastic SCM forums:
- - [Unreal Engine section in Plastic SCM forums](https://forum.plasticscm.com/forum/42-unreal-engine/)
+
+- [Unreal Engine section in Plastic SCM forums](https://forum.plasticscm.com/forum/42-unreal-engine/)
 
 #### Status Icons
 
@@ -585,10 +592,10 @@ eg:
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.9.0 2023/12/21 for UE 5.0/5.1/5.2/5.3 and UE 4.27
+### Version 1.10.0 2024/03/?? for UE 5.0/5.1/5.2/5.3 and UE 4.27
  - manage connection to the server
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
- - Smart Locks: display locked files, retained locks, on what branch and by who
+ - Smart Locks: manage Locks from a dockable window. Release or Remove them. Display status icons for locked files, retained locks, on what branch and by whom.
  - Branches: manage branches from a dockable window. Create, rename, switch, merge and delete.
  - Detect Changes on other Branches, to check outdated files vs. remote across multiple branches
  - show current branch name and CL in status text
@@ -629,24 +636,17 @@ This version here is the development version, so it always contains additional f
  - Shelves on Xlinks sub-repositories
 
 ### Known issues
- - Merge Conflict: "Accept Target" crash the UE4.11 Editor (same with Git Plugin)
- - Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Unity Version Control GUI
- - Editing an asset that is "Changed" but not checked-out pop up a "Files need check-out!" (UnrealEdSrv.cpp) that does nothing when clicked!
- - Bug: the Editor does not handle visual diff for renamed/moved assets
+
+- Merge Conflict: "Accept Target" crash the UE4 & UE5 Editor (same with Perforce and Git Plugins)
+- Merge conflict from cherry-pick or from range-merge cannot be solved by the plugin: use the Unity Version Control GUI
+- Bug: the Editor does not handle visual diff for renamed/moved assets
 
 ### Features not supported
+
 Some are reserved for internal use by Epic Games with Perforce only:
- - tags: get labels (used for crash when the full Engine is under Perforce)
- - annotate: blame (used for crash when the full Engine is under Perforce)
 
-## Support
-
-You can always ask for support in:
- - [Unity Version Control support](https://support.unity.com/hc/en-us/requests/new?ticket_form_id=360001051792)
- - [Unity Version Control forums](https://forum.unity.com/forums/unity-version-control.605/)
- - [Unity Version Control (Plastic SCM) forums](https://forum.plasticscm.com/forum/42-unreal-engine/)
- - [Unreal Engine forums](https://forums.unrealengine.com/)
- - [Unreal Slackers Discord community](https://discord.gg/unreal-slackers)
+- tags: get labels (used for crash when the full Engine is under Perforce)
+- annotate: blame (used for crash when the full Engine is under Perforce)
 
 ### Enable debug logs
 
