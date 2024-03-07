@@ -48,6 +48,8 @@ private:
 
 	TSharedPtr<SWidget> OnOpenContextMenu();
 
+	FReply OnConfigureLockRulesClicked(const FString InOrganizationName);
+
 	void OnReleaseLocksClicked(TArray<FPlasticSourceControlLockRef> InSelectedLocks);
 	void OnRemoveLocksClicked(TArray<FPlasticSourceControlLockRef> InSelectedLocks);
 	void ExecuteUnlock(TArray<FPlasticSourceControlLockRef>&& InSelectedLocks, const bool bInRemove);

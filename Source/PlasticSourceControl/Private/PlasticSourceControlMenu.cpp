@@ -516,11 +516,7 @@ void FPlasticSourceControlMenu::VisitSupportURLClicked() const
 
 void FPlasticSourceControlMenu::VisitLockRulesURLClicked(const FString InOrganizationName) const
 {
-	const FString OrganizationLockRulesURL = FString::Printf(
-		TEXT("https://dashboard.unity3d.com/devops/organizations/default/plastic-scm/organizations/%s/lock-rules"),
-		*InOrganizationName
-	);
-	FPlatformProcess::LaunchURL(*OrganizationLockRulesURL, NULL, NULL);
+	PlasticSourceControlUtils::OpenLockRulesInCloudDashboard(InOrganizationName);
 }
 
 void FPlasticSourceControlMenu::OpenDeskoptApp() const

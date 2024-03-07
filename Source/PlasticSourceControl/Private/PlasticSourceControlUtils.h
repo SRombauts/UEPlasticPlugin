@@ -56,6 +56,13 @@ FString FindPlasticBinaryPath();
 FString FindDesktopApplicationPath();
 
 /**
+ * Open the Unity Cloud Dashboard on the page to show and manage Lock Rules.
+ *
+ * @param	InOrganizationName	Name of the organization to use, from the server URL
+ */
+void OpenLockRulesInCloudDashboard(const FString& InOrganizationName);
+
+/**
  * Find the root of the Plastic workspace, looking from the GameDir and upward in its parent directories
  * @param InPathToGameDir		The path to the Game Directory
  * @param OutWorkspaceRoot		The path to the root directory of the Plastic workspace if found, else the path to the GameDir
