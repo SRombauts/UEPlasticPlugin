@@ -695,14 +695,27 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		return false;
 	}
 
-	const TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
+	TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
 
 	TArray<FString> LocallyChangedFiles;
 	TArray<FString> CheckedOutFiles;
 
-	for (const FString& File : Files)
+	int32 i = 0;
+	while (i < Files.Num())
 	{
+		FString& File = Files[i];
+
 		const TSharedRef<const FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(File);
+
+		// Remove files that cannot be reverted from the list (e.g. Private files)
+		if (!State->CanRevert())
+		{
+			// Private files are not under source control, so we can't revert them
+			UE_LOG(LogSourceControl, Log, TEXT("File '%s' cannot be reverted"), *File);
+			Files.RemoveAt(i);
+			continue;
+		}
+		i++;
 
 		if (State->WorkspaceState == EWorkspaceState::Changed)
 		{
@@ -817,7 +830,7 @@ static TArray<FString> GetFilesCheckedOut(FPlasticSourceControlProvider& InSourc
 		}
 		else
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("MoveFilesToChangelist: File '%s' is not checked out and cannot be moved to another changelist"), *File);
+			UE_LOG(LogSourceControl, Warning, TEXT("GetFilesCheckedOut: File '%s' is not checked out and cannot be moved to another changelist"), *File);
 		}
 	}
 	return MoveableFiles;
@@ -961,8 +974,6 @@ bool FPlasticRevertAllWorker::UpdateStates()
 	// Update affected changelists if any
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		// TODO: also detect files that were added and are now private! Should be removed as well from their changelist
-		// TODO: revisit that, as it's perhaps more subtle now, depending of if it's the Default changelist or not!
 		if (!NewState.IsPendingChanges())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
@@ -1413,7 +1424,6 @@ bool FPlasticUpdateStatusWorker::UpdateStates()
 	// Update affected changelists if any (in case of a file reverted outside of the Unreal Editor)
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		// TODO: revisit that, as it's perhaps more subtle now, depending of if it's the Default changelist or not!
 		if (!NewState.IsPendingChanges())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
