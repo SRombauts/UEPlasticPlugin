@@ -324,7 +324,7 @@ static void UpdateChangelistState(FPlasticSourceControlProvider& SCCProvider, co
 
 			// Add a shared reference to the state of the file, that will then be updated by PlasticSourceControlUtils::UpdateCachedStates()
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = SCCProvider.GetStateInternal(InState.GetFilename());
-			ChangelistState->Files.Add(State);
+			ChangelistState->Files.AddUnique(State);
 
 			// Keep the changelist stored with cached file state in sync with the actual changelist that owns this file.
 			State->Changelist = InChangelist;
