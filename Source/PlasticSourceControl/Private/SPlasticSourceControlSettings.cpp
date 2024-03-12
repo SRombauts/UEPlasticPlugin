@@ -359,7 +359,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			.OnCheckStateChanged(this, &SPlasticSourceControlSettings::OnCheckedViewLocalChanges)
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("ViewLocalChanges", "Enable the \"View Changes\" window to list local Changes."))
+				.Text(LOCTEXT("ViewLocalChanges", "Show local Changes in the \"View Changes\" window."))
 				.Font(Font)
 			]
 		]
