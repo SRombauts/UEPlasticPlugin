@@ -851,7 +851,13 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 	Parameters.Add(TEXT("-R"));
 
 	// Filter out files that we shouldn't try to uncheckout!
-	TArray<FString> Files = GetFilesCheckedOut(GetProvider(), GetFilesFromCommand(GetProvider(), InCommand));
+	TArray<FString> FilesFromCommand = GetFilesFromCommand(GetProvider(), InCommand);
+	TArray<FString> Files = GetFilesCheckedOut(GetProvider(), FilesFromCommand);
+	if (Files.Num() == 0 && FilesFromCommand.Num() > 0)
+	{
+		// If the command specified a set of files but none are checked out, do nothing
+		return true;
+	}
 
 	// revert the checkout of all unchanged files recursively
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("uncounchanged"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
