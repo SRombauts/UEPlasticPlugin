@@ -950,6 +950,14 @@ bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangeli
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--changelists"));
 	Parameters.Add(TEXT("--controlledchanged"));
+	if (FPlasticSourceControlModule::Get().GetProvider().AccessSettings().GetViewLocalChanges())
+	{
+		// NOTE: don't use "--all" to avoid searching for --localmoved since it's the most time consuming (beside --changed)
+		// and its not used by the plugin (matching similarities doesn't seem to work with .uasset files)
+		Parameters.Add(TEXT("--changed"));
+		Parameters.Add(TEXT("--localdeleted"));
+		Parameters.Add(TEXT("--private"));
+	}
 	Parameters.Add(TEXT("--noheader"));
 	Parameters.Add(TEXT("--xml"));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));

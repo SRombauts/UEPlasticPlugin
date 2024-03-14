@@ -56,6 +56,9 @@ private:
 	void OnCheckedUpdateStatusOtherBranches(ECheckBoxState NewCheckedState);
 	ECheckBoxState IsUpdateStatusOtherBranchesChecked() const;
 
+	void OnCheckedViewLocalChanges(ECheckBoxState NewCheckedState);
+	ECheckBoxState IsViewLocalChangesChecked() const;
+
 	void OnCheckedEnableVerboseLogs(ECheckBoxState NewCheckedState);
 	ECheckBoxState IsEnableVerboseLogsChecked() const;
 

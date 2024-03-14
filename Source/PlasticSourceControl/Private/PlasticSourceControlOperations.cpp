@@ -317,15 +317,14 @@ static void UpdateChangelistState(FPlasticSourceControlProvider& SCCProvider, co
 
 		for (const FPlasticSourceControlState& InState : InStates)
 		{
-			// Note: cannot use IsModified() because cm cannot yet handle local modifications in changelists, only the GUI can
-			if (!InState.IsCheckedOutImplementation())
+			if (!InState.IsPendingChanges())
 			{
 				continue;
 			}
 
 			// Add a shared reference to the state of the file, that will then be updated by PlasticSourceControlUtils::UpdateCachedStates()
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = SCCProvider.GetStateInternal(InState.GetFilename());
-			ChangelistState->Files.Add(State);
+			ChangelistState->Files.AddUnique(State);
 
 			// Keep the changelist stored with cached file state in sync with the actual changelist that owns this file.
 			State->Changelist = InChangelist;
@@ -397,21 +396,20 @@ bool DeleteChangelist(const FPlasticSourceControlProvider& PlasticSourceControlP
 	}
 }
 
-TArray<FString> FileNamesFromFileStates(const TArray<FSourceControlStateRef>& InFileStates)
+static TArray<FString> FileNamesFromFileStates(const TArray<FSourceControlStateRef>& InFileStates)
 {
 	TArray<FString> Files;
-
+	Files.Reserve(InFileStates.Num());
 	for (const FSourceControlStateRef& FileState : InFileStates)
 	{
 		Files.Add(FileState->GetFilename());
 	}
-
 	return Files;
 }
 
 #endif
 
-TArray<FString> GetFilesFromCommand(FPlasticSourceControlProvider& PlasticSourceControlProvider, FPlasticSourceControlCommand& InCommand)
+static TArray<FString> GetFilesFromCommand(FPlasticSourceControlProvider& PlasticSourceControlProvider, FPlasticSourceControlCommand& InCommand)
 {
 	TArray<FString> Files;
 #if ENGINE_MAJOR_VERSION == 5
@@ -697,14 +695,27 @@ bool FPlasticRevertWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		return false;
 	}
 
-	const TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
+	TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
 
 	TArray<FString> LocallyChangedFiles;
 	TArray<FString> CheckedOutFiles;
 
-	for (const FString& File : Files)
+	int32 i = 0;
+	while (i < Files.Num())
 	{
+		FString& File = Files[i];
+
 		const TSharedRef<const FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(File);
+
+		// Remove files that cannot be reverted from the list (e.g. Private files)
+		if (!State->CanRevert())
+		{
+			// Private files are not under source control, so we can't revert them
+			UE_LOG(LogSourceControl, Log, TEXT("File '%s' cannot be reverted"), *File);
+			Files.RemoveAt(i);
+			continue;
+		}
+		i++;
 
 		if (State->WorkspaceState == EWorkspaceState::Changed)
 		{
@@ -805,6 +816,26 @@ bool FPlasticRevertWorker::UpdateStates()
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
+
+static TArray<FString> GetFilesCheckedOut(FPlasticSourceControlProvider& InSourceControlProvider, const TArray<FString>& InFiles)
+{
+	TArray<FString> MoveableFiles;
+	MoveableFiles.Reserve(InFiles.Num());
+	for (const auto& File : InFiles)
+	{
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FileState = InSourceControlProvider.GetStateInternal(File);
+		if (FileState->IsCheckedOutImplementation())
+		{
+			MoveableFiles.Add(File);
+		}
+		else
+		{
+			UE_LOG(LogSourceControl, Warning, TEXT("GetFilesCheckedOut: File '%s' is not checked out and cannot be moved to another changelist"), *File);
+		}
+	}
+	return MoveableFiles;
+}
+
 FName FPlasticRevertUnchangedWorker::GetName() const
 {
 	return "RevertUnchanged";
@@ -819,7 +850,14 @@ bool FPlasticRevertUnchangedWorker::Execute(FPlasticSourceControlCommand& InComm
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("-R"));
 
-	TArray<FString> Files = GetFilesFromCommand(GetProvider(), InCommand);
+	// Filter out files that we shouldn't try to uncheckout!
+	TArray<FString> FilesFromCommand = GetFilesFromCommand(GetProvider(), InCommand);
+	TArray<FString> Files = GetFilesCheckedOut(GetProvider(), FilesFromCommand);
+	if (Files.Num() == 0 && FilesFromCommand.Num() > 0)
+	{
+		// If the command specified a set of files but none are checked out, do nothing
+		return true;
+	}
 
 	// revert the checkout of all unchanged files recursively
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("uncounchanged"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
@@ -843,7 +881,7 @@ bool FPlasticRevertUnchangedWorker::UpdateStates()
 	// Update affected changelists if any
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		if (!NewState.IsCheckedOutImplementation())
+		if (!NewState.IsPendingChanges())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
@@ -942,8 +980,7 @@ bool FPlasticRevertAllWorker::UpdateStates()
 	// Update affected changelists if any
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		// TODO: also detect files that were added and are now private! Should be removed as well from their changelist
-		if (!NewState.IsCheckedOutImplementation())
+		if (!NewState.IsPendingChanges())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
@@ -1393,7 +1430,7 @@ bool FPlasticUpdateStatusWorker::UpdateStates()
 	// Update affected changelists if any (in case of a file reverted outside of the Unreal Editor)
 	for (const FPlasticSourceControlState& NewState : States)
 	{
-		if (!NewState.IsCheckedOutImplementation())
+		if (!NewState.IsPendingChanges())
 		{
 			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
 			if (State->Changelist.IsInitialized())
@@ -1735,7 +1772,7 @@ bool FPlasticGetPendingChangelistsWorker::UpdateStates()
 	return bUpdated;
 }
 
-FPlasticSourceControlChangelist GenerateUniqueChangelistName(FPlasticSourceControlProvider& PlasticSourceControlProvider)
+static FPlasticSourceControlChangelist GenerateUniqueChangelistName(FPlasticSourceControlProvider& PlasticSourceControlProvider)
 {
 	FPlasticSourceControlChangelist NewChangelist;
 
@@ -1754,7 +1791,7 @@ FPlasticSourceControlChangelist GenerateUniqueChangelistName(FPlasticSourceContr
 	return NewChangelist;
 }
 
-FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlProvider& PlasticSourceControlProvider, const FString& InDescription, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
+static FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlProvider& PlasticSourceControlProvider, const FString& InDescription, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
 {
 	FPlasticSourceControlChangelist NewChangelist = GenerateUniqueChangelistName(PlasticSourceControlProvider);
 
@@ -1787,7 +1824,7 @@ FPlasticSourceControlChangelist CreatePendingChangelist(FPlasticSourceControlPro
 	return NewChangelist;
 }
 
-bool EditChangelistDescription(const FPlasticSourceControlProvider& PlasticSourceControlProvider, const FPlasticSourceControlChangelist& InChangelist, const FString& InDescription, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
+static bool EditChangelistDescription(const FPlasticSourceControlProvider& PlasticSourceControlProvider, const FPlasticSourceControlChangelist& InChangelist, const FString& InDescription, TArray<FString>& InInfoMessages, TArray<FString>& InErrorMessages)
 {
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("edit"));
@@ -1810,12 +1847,12 @@ bool EditChangelistDescription(const FPlasticSourceControlProvider& PlasticSourc
 	}
 }
 
-bool MoveFilesToChangelist(const FPlasticSourceControlProvider& PlasticSourceControlProvider, const FPlasticSourceControlChangelist& InChangelist, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
+static bool MoveFilesToChangelist(const FPlasticSourceControlProvider& InSourceControlProvider, const FPlasticSourceControlChangelist& InChangelist, const TArray<FString>& InFiles, TArray<FString>& OutResults, TArray<FString>& OutErrorMessages)
 {
 	if (InFiles.Num() > 0)
 	{
 		TArray<FString> Parameters;
-		if (PlasticSourceControlProvider.GetPlasticScmVersion() < PlasticSourceControlVersions::NewChangelistFileArgs)
+		if (InSourceControlProvider.GetPlasticScmVersion() < PlasticSourceControlVersions::NewChangelistFileArgs)
 		{
 			Parameters.Add(TEXT("\"") + InChangelist.GetName() + TEXT("\""));
 			Parameters.Add(TEXT("add"));
@@ -1826,11 +1863,26 @@ bool MoveFilesToChangelist(const FPlasticSourceControlProvider& PlasticSourceCon
 			const FScopedTempFile ChangelistNameFile(InChangelist.GetName());
 			Parameters.Add(FString::Printf(TEXT("--namefile=\"%s\""), *ChangelistNameFile.GetFilename()));
 			Parameters.Add(TEXT("add"));
-			UE_LOG(LogSourceControl, Verbose, TEXT("MoveFilesToChangelist(%s)"), *InChangelist.GetName());
+			UE_LOG(LogSourceControl, Verbose, TEXT("MoveFilesToChangelist: %s"), *InChangelist.GetName());
 			return PlasticSourceControlUtils::RunCommand(TEXT("changelist"), Parameters, InFiles, OutResults, OutErrorMessages);
 		}
 	}
 	return true;
+}
+
+// Old "cm" doesn't support newlines, quotes, and question marks on changelist's name or description
+static FString CleanupChangelistDescription(const FPlasticSourceControlProvider& InSourceControlProvider, const FText& InDescription)
+{
+	FString Description = InDescription.ToString();
+	if (InSourceControlProvider.GetPlasticScmVersion() < PlasticSourceControlVersions::NewChangelistFileArgs)
+	{
+		Description.ReplaceInline(TEXT("\r\n"), TEXT(" "), ESearchCase::CaseSensitive);
+		Description.ReplaceCharInline(TEXT('\n'), TEXT(' '), ESearchCase::CaseSensitive);
+		Description.ReplaceCharInline(TEXT('\"'), TEXT('\''), ESearchCase::CaseSensitive);
+		Description.ReplaceCharInline(TEXT('?'), TEXT('.'), ESearchCase::CaseSensitive);
+		Description.ReplaceCharInline(TEXT('*'), TEXT('.'), ESearchCase::CaseSensitive);
+	}
+	return Description;
 }
 
 FPlasticNewChangelistWorker::FPlasticNewChangelistWorker(FPlasticSourceControlProvider& InSourceControlProvider)
@@ -1850,17 +1902,7 @@ bool FPlasticNewChangelistWorker::Execute(class FPlasticSourceControlCommand& In
 
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FNewChangelist, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FNewChangelist>(InCommand.Operation);
-
-	FString Description = Operation->GetDescription().ToString();
-	// Note: old "cm" doesn't support newlines, quotes, and question marks on changelist's name or description
-	if (GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::NewChangelistFileArgs)
-	{
-		Description.ReplaceInline(TEXT("\r\n"), TEXT(" "), ESearchCase::CaseSensitive);
-		Description.ReplaceCharInline(TEXT('\n'), TEXT(' '), ESearchCase::CaseSensitive);
-		Description.ReplaceCharInline(TEXT('\"'), TEXT('\''), ESearchCase::CaseSensitive);
-		Description.ReplaceCharInline(TEXT('?'), TEXT('.'), ESearchCase::CaseSensitive);
-		Description.ReplaceCharInline(TEXT('*'), TEXT('.'), ESearchCase::CaseSensitive);
-	}
+	FString Description = CleanupChangelistDescription(GetProvider(), Operation->GetDescription());
 
 	// Create a new numbered persistent changelist ala Perforce
 	NewChangelist = CreatePendingChangelist(GetProvider(), Description, InCommand.InfoMessages, InCommand.ErrorMessages);
@@ -1877,10 +1919,19 @@ bool FPlasticNewChangelistWorker::Execute(class FPlasticSourceControlCommand& In
 
 		if (InCommand.Files.Num() > 0)
 		{
-			InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), NewChangelist, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+			// Filter out files that cannot be moved from the Default changelist; files with Pending Changes but not actually Checked Out
+			TArray<FString> FilesToMove = GetFilesCheckedOut(GetProvider(), InCommand.Files);
+			if (FilesToMove.Num() == 0)
+			{
+				UE_LOG(LogSourceControl, Error, TEXT("No file can be moved."));
+				InCommand.bCommandSuccessful = false;
+				return InCommand.bCommandSuccessful;
+			}
+
+			InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), NewChangelist, FilesToMove, InCommand.InfoMessages, InCommand.ErrorMessages);
 			if (InCommand.bCommandSuccessful)
 			{
-				MovedFiles = InCommand.Files;
+				MovedFiles = MoveTemp(FilesToMove);
 			}
 		}
 	}
@@ -1990,16 +2041,7 @@ bool FPlasticEditChangelistWorker::Execute(class FPlasticSourceControlCommand& I
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FEditChangelist, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FEditChangelist>(InCommand.Operation);
 
-	EditedDescription = Operation->GetDescription().ToString();
-	// Note: old "cm" doesn't support newlines, quotes, and question marks on changelist's name or description
-	if (GetProvider().GetPlasticScmVersion() < PlasticSourceControlVersions::NewChangelistFileArgs)
-	{
-		EditedDescription.ReplaceInline(TEXT("\r\n"), TEXT(" "), ESearchCase::CaseSensitive);
-		EditedDescription.ReplaceCharInline(TEXT('\n'), TEXT(' '), ESearchCase::CaseSensitive);
-		EditedDescription.ReplaceCharInline(TEXT('\"'), TEXT('\''), ESearchCase::CaseSensitive);
-		EditedDescription.ReplaceCharInline(TEXT('?'), TEXT('.'), ESearchCase::CaseSensitive);
-		EditedDescription.ReplaceCharInline(TEXT('*'), TEXT('.'), ESearchCase::CaseSensitive);
-	}
+	EditedDescription = CleanupChangelistDescription(GetProvider(), Operation->GetDescription());
 
 	if (InCommand.Changelist.IsDefault())
 	{
@@ -2009,8 +2051,20 @@ bool FPlasticEditChangelistWorker::Execute(class FPlasticSourceControlCommand& I
 		{
 			// And then move all its files to the new changelist
 			TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> ChangelistState = GetProvider().GetStateInternal(InCommand.Changelist);
-			ReopenedFiles = FileNamesFromFileStates(ChangelistState->Files);
-			InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), EditedChangelist, ReopenedFiles, InCommand.InfoMessages, InCommand.ErrorMessages);
+			// Filter out files that cannot be moved from the Default changelist; files with Pending Changes but not actually Checked Out
+			TArray<FString> FilesToMove = GetFilesCheckedOut(GetProvider(), FileNamesFromFileStates(ChangelistState->Files));
+			if (FilesToMove.Num() == 0)
+			{
+				UE_LOG(LogSourceControl, Error, TEXT("No file can be moved."));
+				InCommand.bCommandSuccessful = false;
+				return InCommand.bCommandSuccessful;
+			}
+
+			InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), EditedChangelist, FilesToMove, InCommand.InfoMessages, InCommand.ErrorMessages);
+			if (InCommand.bCommandSuccessful)
+			{
+				ReopenedFiles = MoveTemp(FilesToMove);
+			}
 		}
 	}
 	else
@@ -2074,10 +2128,19 @@ bool FPlasticReopenWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	check(InCommand.Operation->GetName() == GetName());
 
-	InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), InCommand.Changelist, InCommand.Files, InCommand.InfoMessages, InCommand.ErrorMessages);
+	// Filter out files that cannot be moved from the Default changelist; files with Pending Changes but not actually Checked Out
+	TArray<FString> FilesToMove = GetFilesCheckedOut(GetProvider(), InCommand.Files);
+	if (FilesToMove.Num() == 0)
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("No file can be moved."));
+		InCommand.bCommandSuccessful = false;
+		return InCommand.bCommandSuccessful;
+	}
+
+	InCommand.bCommandSuccessful = MoveFilesToChangelist(GetProvider(), InCommand.Changelist, FilesToMove, InCommand.InfoMessages, InCommand.ErrorMessages);
 	if (InCommand.bCommandSuccessful)
 	{
-		ReopenedFiles = InCommand.Files;
+		ReopenedFiles = MoveTemp(FilesToMove);
 		DestinationChangelist = InCommand.Changelist;
 	}
 
@@ -2118,7 +2181,7 @@ bool FPlasticReopenWorker::UpdateStates()
 	}
 }
 
-bool CreateShelve(const FString& InChangelistName, const FString& InChangelistDescription, const TArray<FString>& InFilesToShelve, int32& OutShelveId, TArray<FString>& OutErrorMessages)
+static bool CreateShelve(const FString& InChangelistName, const FString& InChangelistDescription, const TArray<FString>& InFilesToShelve, int32& OutShelveId, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Results;
 	TArray<FString> Parameters;
@@ -2147,7 +2210,7 @@ bool CreateShelve(const FString& InChangelistName, const FString& InChangelistDe
 	return OutShelveId != ISourceControlState::INVALID_REVISION;
 }
 
-bool DeleteShelve(const int32 InShelveId, TArray<FString>& OutErrorMessages)
+static bool DeleteShelve(const int32 InShelveId, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Results;
 	TArray<FString> Parameters;

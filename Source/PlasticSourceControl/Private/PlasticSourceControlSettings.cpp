@@ -59,6 +59,18 @@ void FPlasticSourceControlSettings::SetUpdateStatusOtherBranches(const bool bInU
 	bUpdateStatusOtherBranches = bInUpdateStatusOtherBranches;
 }
 
+bool FPlasticSourceControlSettings::GetViewLocalChanges() const
+{
+	FScopeLock ScopeLock(&CriticalSection);
+	return bViewLocalChanges;
+}
+
+void FPlasticSourceControlSettings::SetViewLocalChanges(const bool bInViewLocalChanges)
+{
+	FScopeLock ScopeLock(&CriticalSection);
+	bViewLocalChanges = bInViewLocalChanges;
+}
+
 bool FPlasticSourceControlSettings::GetEnableVerboseLogs() const
 {
 	FScopeLock ScopeLock(&CriticalSection);
@@ -79,6 +91,7 @@ void FPlasticSourceControlSettings::LoadSettings()
 	GConfig->GetString(*PlasticSettingsConstants::SettingsSection, TEXT("BinaryPath"), BinaryPath, IniFile);
 	GConfig->GetBool(*PlasticSettingsConstants::SettingsSection, TEXT("UpdateStatusAtStartup"), bUpdateStatusAtStartup, IniFile);
 	GConfig->GetBool(*PlasticSettingsConstants::SettingsSection, TEXT("UpdateStatusOtherBranches"), bUpdateStatusOtherBranches, IniFile);
+	GConfig->GetBool(*PlasticSettingsConstants::SettingsSection, TEXT("ViewLocalChanges"), bViewLocalChanges, IniFile);
 	GConfig->GetBool(*PlasticSettingsConstants::SettingsSection, TEXT("EnableVerboseLogs"), bEnableVerboseLogs, IniFile);
 }
 
@@ -89,5 +102,6 @@ void FPlasticSourceControlSettings::SaveSettings() const
 	GConfig->SetString(*PlasticSettingsConstants::SettingsSection, TEXT("BinaryPath"), *BinaryPath, IniFile);
 	GConfig->SetBool(*PlasticSettingsConstants::SettingsSection, TEXT("UpdateStatusAtStartup"), bUpdateStatusAtStartup, IniFile);
 	GConfig->SetBool(*PlasticSettingsConstants::SettingsSection, TEXT("UpdateStatusOtherBranches"), bUpdateStatusOtherBranches, IniFile);
+	GConfig->SetBool(*PlasticSettingsConstants::SettingsSection, TEXT("ViewLocalChanges"), bViewLocalChanges, IniFile);
 	GConfig->SetBool(*PlasticSettingsConstants::SettingsSection, TEXT("EnableVerboseLogs"), bEnableVerboseLogs, IniFile);
 }
