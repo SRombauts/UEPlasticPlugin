@@ -466,18 +466,17 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		{
 			TArray<FString> Parameters;
 			Parameters.Add(FString::Printf(TEXT("--commentsfile=\"%s\""), *CommitMsgFile.GetFilename()));
+			Parameters.Add(TEXT("--all"));			// Also files Changed (not CheckedOut) and Moved/Deleted Locally
+			Parameters.Add(TEXT("--private"));		// Also Private files (not in source control)
+			Parameters.Add(TEXT("--dependencies"));	// Include all the dependent items automatically.
 			if (!GetProvider().IsPartialWorkspace())
 			{
-				Parameters.Add(TEXT("--all"));		// Also files Changed (not CheckedOut) and Moved/Deleted Locally
-				Parameters.Add(TEXT("--private"));	// Also Private files (not in source control)
-			//  NOTE: --update added as #23 but removed as #32 because most assets are locked by the Unreal Editor
+				//  NOTE: --update added as #23 but removed as #32 because most assets are locked by the Unreal Editor
 			//  Parameters.Add(TEXT("--update")); // Processes the update-merge automatically if it eventually happens.
 				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("checkin"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 			}
 			else
 			{
-				Parameters.Add(TEXT("--applychanged"));	// Also files Changed (not CheckedOut) and Moved/Deleted Locally
-				Parameters.Add(TEXT("--private"));		// Also Private files (not in source control)
 				InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial checkin"), Parameters, Files, InCommand.InfoMessages, InCommand.ErrorMessages);
 			}
 			if (InCommand.bCommandSuccessful)
