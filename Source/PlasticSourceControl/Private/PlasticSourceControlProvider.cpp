@@ -224,13 +224,9 @@ void FPlasticSourceControlProvider::HandlePackageSaved(const FString& InPackageF
 
 	// Note: the Editor doesn't ask to refresh the source control status of an asset after it is saved, only *before* (to check that it's possible to save)
 	// So when an asset with no change is saved, update its state in cache to record the fact that the asset is now changed.
-	if (FileState->WorkspaceState == EWorkspaceState::Controlled)
-	{
-		// Note that updating the state in cache isn't enough to refresh the status icon in the Content Browser (since the Editor isn't made aware of the change)
-		// but source control operations are working as expected (eg. "Checkin" and "Revert" are available in the context menu)
-		FileState->WorkspaceState = EWorkspaceState::Changed; // The icon will only appears later when the UI is refreshed (eg switching directory in the Content Browser)
-	}
-	else if (FileState->WorkspaceState == EWorkspaceState::CheckedOutUnchanged)
+	// Note that updating the state in cache isn't enough to refresh the status icon in the Content Browser or the View Changes windows (since the Editor isn't made aware of the change)
+	// so don't trigger the "Changed" status here, it will be handled on the next update status operation.
+	if (FileState->WorkspaceState == EWorkspaceState::CheckedOutUnchanged)
 	{
 		FileState->WorkspaceState = EWorkspaceState::CheckedOutChanged; // In this case the "CheckedOut" icon is already displayed (both states are using the same status icon)
 	}

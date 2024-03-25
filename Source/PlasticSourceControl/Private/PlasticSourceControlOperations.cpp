@@ -1444,6 +1444,18 @@ bool FPlasticUpdateStatusWorker::UpdateStates()
 				State->Changelist.Reset();
 			}
 		}
+		else if (NewState.WorkspaceState == EWorkspaceState::Changed)
+		{
+			TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(NewState.GetFilename());
+			if (State->WorkspaceState != EWorkspaceState::Changed)
+			{
+				// 1- Add these files to the default changelist
+				TSharedRef<FPlasticSourceControlChangelistState, ESPMode::ThreadSafe> DefaultChangelist = GetProvider().GetStateInternal(FPlasticSourceControlChangelist::DefaultChangelist);
+				DefaultChangelist->Files.AddUnique(State);
+				// 2- And set the reference to the default changelist
+				State->Changelist = FPlasticSourceControlChangelist::DefaultChangelist;
+			}
+		}
 	}
 #endif
 
