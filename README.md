@@ -74,7 +74,7 @@ However the integrated version will always be lagging behind the latest release 
 - UE5.1 shipped with the version 1.6.2 with support for the new View Changelists window
 - UE5.2 shipped with the version 1.8.0 with support for the Shelves in the renamed View Changes window
 - UE5.3 shipped with the same version 1.8.0
-- UE5.4 is going to ship with version 1.9.0
+- UE5.4 shipped with the version 1.9.0 with a new View Branches window to create, switch to and merge branches.
 
 #### Install from Unreal Engine Marketplace
 
