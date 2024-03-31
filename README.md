@@ -20,6 +20,9 @@ It tracks status of assets, most notably locks, brings common source control tas
 It also helps import an existing Unreal Project into source control in a simple operation, with appropriate *ignore.conf* file.
 Since the Unreal Editor does not manage C++ source code, but only assets, the plugin is especially useful for tech designers, level designers and artists in general.
 
+Quick tour "Branching with Unity Version Control (Plastic SCM) in Unreal Engine 5" on YouTube:
+[![Branching with Unity Version Control (Plastic SCM) in Unreal Engine 5](https://img.youtube.com/vi/zuyAySbFU98/0.jpg)](https://www.youtube.com/watch?v=zuyAySbFU98)
+
 ## Table of Contents
 
 - [User Guide](#user-guide)
@@ -124,11 +127,11 @@ Else, if you want to rebuild the plugin for a Blueprint project:
  0. You need Visual Studio 2015 or 2017 with C++ language support (free Community Edition is fine).
  1. Launch the Unreal Engine Editor, create a new C++ **Basic Code** Project (No Starter Content), for instance ProjectName. This should launch Visual Studio, build the game project, and open it into the Editor.
  2. Close the Editor, then using the file explorer, create a new **Plugins** directory at the root of your project.
- 3. Clone the source code of the plugin into this _Plugins_ directory (for instance _Plugins\UEPlasticPlugin_).
+ 3. Clone the source code of the plugin into this *Plugins* directory (for instance *Plugins\UEPlasticPlugin*).
  4. Right-click on your project's **.uproject** file, **Generate Visual Studio project files**.
- 5. In Visual Studio, **Reload All** and **Build Solution** in **Development Editor** mode. That's it, the plugin is built (resulting dlls are located in _Plugins\UEPlasticPlugin\Binaries\Win64_).
+ 5. In Visual Studio, **Reload All** and **Build Solution** in **Development Editor** mode. That's it, the plugin is built (resulting dlls are located in *Plugins\UEPlasticPlugin\Binaries\Win64*).
 
-To release and redistribute the plugin, zip the _Plugins_ folder. But before that, remove the _Intermediate_, _Screenshots_ and _.git_ folders, and optionnaly the heavier *.pdb files in _Plugins\UEPlasticPlugin\Binaries\Win64_.
+To release and redistribute the plugin, zip the *Plugins* folder. But before that, remove the *Intermediate*, *Screenshots* and *.git* folders, and optionnaly the heavier *.pdb files in *Plugins\UEPlasticPlugin\Binaries\Win64*.
 
 ### Project Setup
 
@@ -462,7 +465,7 @@ Branch explorer showing the merge pending with an asset in conflict:
 Corresponding icon in the Content Browser (only showing after the resolved has been triggered in Unity Version Control):  
 ![Merge Conflict](Screenshots/Icons/UEPlasticPlugin-NotAtHead.png)
 
-Right click on the asset in conflict to open the _Merge_ Tool (just a conflict solver with 3-way Visual Diff, no merge):  
+Right click on the asset in conflict to open the *Merge* Tool (just a conflict solver with 3-way Visual Diff, no merge):  
 ![Merge context menu](Screenshots/UEPlasticPlugin-ContextMenu-Merge.png)
 
 Visual diff of Blueprint properties in conflict:  
