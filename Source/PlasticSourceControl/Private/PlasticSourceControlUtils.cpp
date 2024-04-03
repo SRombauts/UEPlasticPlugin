@@ -765,7 +765,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EStatusSearchType InS
 		// This should be an edge case (typically the uproject file) .
 		if (!bDirFound)
 		{
-			FString Path = FPaths::GetPath(File) + TEXT('/');
+			const FString Path = FPaths::GetPath(File) + TEXT('/');
 			FFilesInCommonDir* ExistingGroup = GroupOfFiles.Find(Path);
 			if (ExistingGroup != nullptr)
 			{
@@ -773,7 +773,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EStatusSearchType InS
 			}
 			else
 			{
-				GroupOfFiles.Add(Path, { MoveTemp(Path), {File} });
+				GroupOfFiles.Add(Path, { Path, {File} });
 			}
 		}
 	}
