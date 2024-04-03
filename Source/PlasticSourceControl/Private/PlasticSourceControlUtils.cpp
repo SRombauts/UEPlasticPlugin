@@ -947,6 +947,7 @@ bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangeli
 
 	FString Results;
 	FString Errors;
+	const FScopedTempFile GetChangelistFile;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--changelists"));
 	Parameters.Add(TEXT("--controlledchanged"));
@@ -959,12 +960,12 @@ bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangeli
 		Parameters.Add(TEXT("--private"));
 	}
 	Parameters.Add(TEXT("--noheader"));
-	Parameters.Add(TEXT("--xml"));
+	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *GetChangelistFile.GetFilename()));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), Results, Errors);
 	if (bResult)
 	{
-		bResult = PlasticSourceControlParsers::ParseChangelistsResults(Results, OutChangelistsStates, OutCLFilesStates);
+		bResult = PlasticSourceControlParsers::ParseChangelistsResults(GetChangelistFile.GetFilename(), OutChangelistsStates, OutCLFilesStates);
 	}
 	if (!Errors.IsEmpty())
 	{
