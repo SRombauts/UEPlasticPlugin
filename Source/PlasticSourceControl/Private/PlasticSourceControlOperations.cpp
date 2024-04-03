@@ -448,6 +448,29 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		return false;
 	}
 
+	// Add Private files to source control to be able to check them in
+	TArray<FString> FilesToAdd;
+	for (const FString& File : Files)
+	{
+		TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> State = GetProvider().GetStateInternal(File);
+		if (!State->IsSourceControlled())
+		{
+			FilesToAdd.Add(File);
+		}
+	}
+	if (FilesToAdd.Num() > 0)
+	{
+		UE_LOG(LogSourceControl, Log, TEXT("CheckIn: Adding %d file(s) to source control"), FilesToAdd.Num());
+		if (!GetProvider().IsPartialWorkspace())
+		{
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("add"), TArray<FString>(), FilesToAdd, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+		else
+		{
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("partial add"), TArray<FString>(), FilesToAdd, InCommand.InfoMessages, InCommand.ErrorMessages);
+		}
+	}
+
 #if ENGINE_MAJOR_VERSION == 5
 	if (InCommand.Changelist.IsInitialized())
 	{
@@ -471,8 +494,6 @@ bool FPlasticCheckInWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		TArray<FString> Parameters;
 		Parameters.Add(FString::Printf(TEXT("--commentsfile=\"%s\""), *CommitMsgFile.GetFilename()));
 		Parameters.Add(TEXT("--all"));			// Also files Changed (not CheckedOut) and Moved/Deleted Locally
-		Parameters.Add(TEXT("--private"));		// Also Private files (not in source control)
-		Parameters.Add(TEXT("--dependencies"));	// Include all the dependent items automatically.
 		if (!GetProvider().IsPartialWorkspace())
 		{
 			//  NOTE: --update added as #23 but removed as #32 because most assets are locked by the Unreal Editor
