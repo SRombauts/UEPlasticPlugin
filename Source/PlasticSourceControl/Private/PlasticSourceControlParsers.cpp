@@ -1137,7 +1137,9 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 	static const FString Type(TEXT("Type"));
 	static const FString Path(TEXT("Path"));
 
-	const FString& WorkspaceRoot = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
+	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
 	const FXmlNode* StatusOutputNode = InXmlResult.GetRootNode();
 	if (StatusOutputNode == nullptr || StatusOutputNode->GetTag() != StatusOutput)
@@ -1184,6 +1186,10 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 				{
 					FPlasticSourceControlState FileState(FPaths::ConvertRelativePathToFull(WorkspaceRoot, MoveTemp(FileName)));
 					FileState.Changelist = ChangelistState.Changelist;
+					if (const FXmlNode* TypeNode = ChangeNode->FindChildNode(Type))
+					{
+						FileState.WorkspaceState = StateFromStatus(TypeNode->GetContent(), bUsesCheckedOutChanged);
+					}
 					OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
 				}
 			}

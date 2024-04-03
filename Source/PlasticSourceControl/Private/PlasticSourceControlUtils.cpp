@@ -945,13 +945,15 @@ bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangeli
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunGetChangelists);
 
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+
 	FString Results;
 	FString Errors;
 	const FScopedTempFile GetChangelistFile;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--changelists"));
 	Parameters.Add(TEXT("--controlledchanged"));
-	if (FPlasticSourceControlModule::Get().GetProvider().AccessSettings().GetViewLocalChanges())
+	if (Provider.AccessSettings().GetViewLocalChanges())
 	{
 		// NOTE: don't use "--all" to avoid searching for --localmoved since it's the most time consuming (beside --changed)
 		// and its not used by the plugin (matching similarities doesn't seem to work with .uasset files)
@@ -959,6 +961,14 @@ bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangeli
 		Parameters.Add(TEXT("--localdeleted"));
 		Parameters.Add(TEXT("--private"));
 	}
+
+	// If the version of cm is recent enough use the new --iscochanged for "CO+CH" status
+	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
+	if (bUsesCheckedOutChanged)
+	{
+		Parameters.Add(TEXT("--iscochanged"));
+	}
+
 	Parameters.Add(TEXT("--noheader"));
 	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *GetChangelistFile.GetFilename()));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
