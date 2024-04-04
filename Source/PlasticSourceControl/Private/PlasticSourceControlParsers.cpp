@@ -1137,7 +1137,9 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 	static const FString Type(TEXT("Type"));
 	static const FString Path(TEXT("Path"));
 
-	const FString& WorkspaceRoot = FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot();
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
+	const bool bUsesCheckedOutChanged = Provider.GetPlasticScmVersion() >= PlasticSourceControlVersions::StatusIsCheckedOutChanged;
 
 	const FXmlNode* StatusOutputNode = InXmlResult.GetRootNode();
 	if (StatusOutputNode == nullptr || StatusOutputNode->GetTag() != StatusOutput)
@@ -1184,6 +1186,10 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 				{
 					FPlasticSourceControlState FileState(FPaths::ConvertRelativePathToFull(WorkspaceRoot, MoveTemp(FileName)));
 					FileState.Changelist = ChangelistState.Changelist;
+					if (const FXmlNode* TypeNode = ChangeNode->FindChildNode(Type))
+					{
+						FileState.WorkspaceState = StateFromStatus(TypeNode->GetContent(), bUsesCheckedOutChanged);
+					}
 					OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
 				}
 			}
@@ -1205,14 +1211,14 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 	return true;
 }
 
-bool ParseChangelistsResults(const FString& Results, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates)
+bool ParseChangelistsResults(const FString& InResultFilename, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates)
 {
 	bool bResult = false;
 
 	FXmlFile XmlFile;
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults::FXmlFile::LoadFile);
-		bResult = XmlFile.LoadFile(Results, EConstructMethod::ConstructFromBuffer);
+		bResult = XmlFile.LoadFile(InResultFilename);
 	}
 	if (bResult)
 	{
