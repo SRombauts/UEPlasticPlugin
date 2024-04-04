@@ -3,6 +3,7 @@
 #include "PlasticSourceControlUtils.h"
 
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlChangeset.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
@@ -1128,6 +1129,79 @@ bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDat
 }
 
 #endif
+
+bool GetChangesetId(const FDateTime& InFromDate, FString& OutChangesetId, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Results;
+	TArray<FString> Errors;
+	const FScopedTempFile ChangesetResultFile;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("changeset"));
+	Parameters.Add(FString::Printf(TEXT("\"where date >= '%d/%d/%d'\""),
+		InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay(),
+		InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay()
+	));
+	Parameters.Add(TEXT("limit 1"));
+	Parameters.Add(TEXT("--format={changesetid}"));
+	const bool bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("find"), Parameters, TArray<FString>(), Results, Errors);
+	if (bCommandSuccessful)
+	{
+		// "cm find --format={changesetid}" output should look like this:
+		//	56
+		//	
+		//	Total: 1
+		if ((Results.Num() >= 2) && !Results[0].IsEmpty())
+		{
+			OutChangesetId = Results[0];
+		}
+	}
+
+	return bCommandSuccessful;
+}
+
+// TODO we need to revisit this to separate getting the list of files from finding the changesets => the cm log is too expansive
+// => just use cm find changeset --xml
+bool RunGetChangesets(const FDateTime& InFromDate, TArray<FPlasticSourceControlChangesetRef>& OutChangesets, TArray<FString>& OutErrorMessages)
+{
+	bool bCommandSuccessful = true;
+
+	FString ChangesetId; // By default "cm log" will limit to a few changesets
+	if (InFromDate != FDateTime())
+	{
+		// Find the Changeset Id of the first changeset created from the given date
+		bCommandSuccessful = GetChangesetId(InFromDate, ChangesetId, OutErrorMessages);
+	}
+	else
+	{
+		ChangesetId = TEXT("0"); // If no date is given, start from the beginning; this is too expansive in big projects
+	}
+
+	// log all changesets from that one
+	if (bCommandSuccessful)
+	{
+		const FScopedTempFile ChangesetResultFile;
+		FString Results;
+		FString Errors;
+		TArray<FString> Parameters;
+		if (!ChangesetId.IsEmpty())
+		{
+			Parameters.Add(FString::Printf(TEXT("--from=\"%s\""), *ChangesetId));
+		}
+		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *ChangesetResultFile.GetFilename()));
+		Parameters.Add(TEXT("--encoding=\"utf-8\""));
+		bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("log"), Parameters, TArray<FString>(), Results, Errors);
+		if (bCommandSuccessful && FPaths::FileExists(ChangesetResultFile.GetFilename()))
+		{
+			bCommandSuccessful = PlasticSourceControlParsers::ParseChangesetsResults(ChangesetResultFile.GetFilename(), OutChangesets);
+		}
+		if (!Errors.IsEmpty())
+		{
+			OutErrorMessages.Add(MoveTemp(Errors));
+		}
+	}
+
+	return bCommandSuccessful;
+}
 
 bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBranchRef>& OutBranches, TArray<FString>& OutErrorMessages)
 {

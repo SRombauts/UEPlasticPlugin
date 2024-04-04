@@ -3,6 +3,7 @@
 #include "PlasticSourceControlParsers.h"
 
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlChangeset.h"
 #include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
@@ -1543,6 +1544,201 @@ bool ParseShelvesResult(const FString& InResults, FString& OutComment, FDateTime
 }
 
 #endif
+
+
+// TODO doc: Type of change in the log of changesets
+static EWorkspaceState StateFromType(const FString& InChangeType)
+{
+	static const FString Added(TEXT("Added"));
+	static const FString Changed(TEXT("Changed"));
+	static const FString Deleted(TEXT("Deleted"));
+	static const FString Moved(TEXT("Moved"));
+
+	if (InChangeType.Equals(Changed))
+	{
+		return EWorkspaceState::CheckedOutChanged;
+	}
+	else if (InChangeType.Equals(Added))
+	{
+		return EWorkspaceState::Added;
+	}
+	else if (InChangeType.Equals(Moved))
+	{
+		return EWorkspaceState::Moved;
+	}
+	else if (InChangeType.Equals(Deleted))
+	{
+		return EWorkspaceState::Deleted;
+	}
+
+	return EWorkspaceState::Unknown;
+}
+
+/**
+ * Parse file changes in a changeset.
+ */
+static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, FPlasticSourceControlChangesetRef& InOutChangesetRef)
+{
+	static const FString Changes(TEXT("Changes"));
+	static const FString Item(TEXT("Item"));
+	static const FString Type(TEXT("Type"));
+	static const FString SrcCmPath(TEXT("SrcCmPath"));
+	static const FString DstCmPath(TEXT("DstCmPath"));
+
+	if (const FXmlNode* ChangesNode = InChangesetNode->FindChildNode(Changes))
+	{
+		const TArray<FXmlNode*>& ItemNodes = ChangesNode->GetChildrenNodes();
+		InOutChangesetRef->Files.Reserve(ItemNodes.Num());
+		for (const FXmlNode* ItemNode : ItemNodes)
+		{
+			check(ItemNode);
+
+			const FXmlNode* PathNode = ItemNode->FindChildNode(DstCmPath);
+			const FXmlNode* TypeNode = ItemNode->FindChildNode(Type);
+			if ((PathNode == nullptr) || (TypeNode == nullptr))
+			{
+				continue;
+			}
+
+			// Here we make sure to only collect file states, not directories, since we shouldn't display the added directories to the Editor
+			FString FileName = PathNode->GetContent();
+			int32 DotIndex;
+			if (FileName.FindChar(TEXT('.'), DotIndex))
+			{
+				const EWorkspaceState WorkspaceState = StateFromType(TypeNode->GetContent());
+
+				TSharedRef<class FPlasticSourceControlState, ESPMode::ThreadSafe> State = MakeShareable(new FPlasticSourceControlState(MoveTemp(FileName), WorkspaceState));
+
+				// Add one revision to be able to fetch the file content for diff, if it's not marked for deletion.
+				if (WorkspaceState != EWorkspaceState::Deleted)
+				{
+					const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
+					SourceControlRevision->State = &State.Get();
+					SourceControlRevision->Filename = State->GetFilename();
+					SourceControlRevision->ChangesetNumber = InOutChangesetRef->ChangesetId; // Note: for display in the diff window only
+					SourceControlRevision->Date = InOutChangesetRef->Date; // Note: not yet used for display as of UE5.2
+
+					State->History.Add(SourceControlRevision);
+				}
+
+				InOutChangesetRef->Files.Add(MoveTemp(State));
+			}
+		}
+	}
+}
+
+/**
+ * Parse results of the 'cm log TODO --xml --encoding="utf-8"' command.
+ *
+ * Results of the find command looks like the following:
+<?xml version="1.0" encoding="utf-8"?>
+<LogList>
+  <Changeset>
+	<ObjId>2674</ObjId>
+	<ChangesetId>73</ChangesetId>
+	<Branch>/main/test</Branch>
+	<Comment>private files and folders</Comment>
+	<Owner>sebastien.rombauts@unity3d.com</Owner>
+	<GUID>cd803bd1-7d59-4573-b9de-1a4e684d573a</GUID>
+	<Changes>
+	  <Item>
+		<Branch>/main/test</Branch>
+		<RevNo>72</RevNo>
+		<Owner>sebastien.rombauts@unity3d.com</Owner>
+		<RevId>2861</RevId>
+		<ParentRevId>-1</ParentRevId>
+		<SrcCmPath>/Private/Private.md</SrcCmPath>
+		<SrcParentItemId>2868</SrcParentItemId>
+		<DstCmPath>/Private/Private.md</DstCmPath>
+		<DstParentItemId>2868</DstParentItemId>
+		<Date>2024-04-03T14:59:31+02:00</Date>
+		<Type>Added</Type>
+	  </Item>
+	[...]
+	</Changes>
+	<Date>2024-04-02T16:20:11+02:00</Date>
+  </Changeset>
+  [...]
+</LogList>
+*/
+static bool ParseChangesetesResults(const FXmlFile& InXmlResult, TArray<FPlasticSourceControlChangesetRef>& OutChangesets)
+{
+	static const FString LogList(TEXT("LogList"));
+	static const FString ChangesetId(TEXT("ChangesetId"));
+	static const FString Branch(TEXT("Branch"));
+	static const FString Comment(TEXT("Comment"));
+	static const FString Owner(TEXT("Owner"));
+	static const FString Date(TEXT("Date"));
+
+	const FXmlNode* LogListNode = InXmlResult.GetRootNode();
+	if (LogListNode == nullptr || LogListNode->GetTag() != LogList)
+	{
+		return false;
+	}
+
+	const TArray<FXmlNode*>& ChangesetsNodes = LogListNode->GetChildrenNodes();
+	OutChangesets.Reserve(ChangesetsNodes.Num());
+	for (const FXmlNode* ChangesetNode : ChangesetsNodes)
+	{
+		check(ChangesetNode);
+		const FXmlNode* ChangesetIdNode = ChangesetNode->FindChildNode(ChangesetId);
+		if (ChangesetIdNode == nullptr)
+		{
+			continue;
+		}
+
+		FPlasticSourceControlChangesetRef ChangesetRef = MakeShareable(new FPlasticSourceControlChangeset());
+
+		ChangesetRef->ChangesetId = FCString::Atoi(*ChangesetIdNode->GetContent());
+
+		if (const FXmlNode* CommentNode = ChangesetNode->FindChildNode(Comment))
+		{
+			ChangesetRef->Comment = DecodeXmlEntities(CommentNode->GetContent());
+		}
+		if (const FXmlNode* BranchNode = ChangesetNode->FindChildNode(Branch))
+		{
+			ChangesetRef->Branch = DecodeXmlEntities(BranchNode->GetContent());
+		}
+		if (const FXmlNode* OwnerNode = ChangesetNode->FindChildNode(Owner))
+		{
+			// Note: keeping the full email address as the owner name so we can display both the short and full name in the tooltip
+			ChangesetRef->CreatedBy = OwnerNode->GetContent();
+		}
+		if (const FXmlNode* DateNode = ChangesetNode->FindChildNode(Date))
+		{
+			const FString& DateIso = DateNode->GetContent();
+			FDateTime::ParseIso8601(*DateIso, ChangesetRef->Date);
+		}
+
+		// And list Files States and create a Revision
+		ParseChangesInChangeset(ChangesetNode, ChangesetRef);
+
+		OutChangesets.Add(MoveTemp(ChangesetRef));
+	}
+
+	return true;
+}
+
+bool ParseChangesetsResults(const FString& InXmlFilename, TArray<FPlasticSourceControlChangesetRef>& OutChangesets)
+{
+	bool bResult = false;
+
+	FXmlFile XmlFile;
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangesetesResults);
+		bResult = XmlFile.LoadFile(InXmlFilename);
+	}
+	if (bResult)
+	{
+		bResult = ParseChangesetesResults(XmlFile, OutChangesets);
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("ParseChangesetesResults: XML parse error '%s'"), *XmlFile.GetLastError())
+	}
+
+	return bResult;
+}
 
 /**
  * Parse results of the 'cm find "branches where date >= 'YYYY-MM-DD' or changesets >= 'YYYY-MM-DD'" --xml --encoding="utf-8"' command.

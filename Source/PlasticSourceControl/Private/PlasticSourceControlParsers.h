@@ -11,6 +11,7 @@ class FPlasticSourceControlLock;
 class FPlasticSourceControlRevision;
 class FPlasticSourceControlState;
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
+typedef TSharedRef<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetRef;
 
 namespace PlasticSourceControlParsers
 {
@@ -81,6 +82,8 @@ bool ParseShelvesResults(const FString& InResults, TArray<FPlasticSourceControlC
 bool ParseShelvesResult(const FString& InResults, FString& OutComment, FDateTime& OutDate, FString& OutOwner);
 
 #endif
+
+bool ParseChangesetsResults(const FString& InXmlFilename, TArray<FPlasticSourceControlChangesetRef>& OutChangesets);
 
 bool ParseBranchesResults(const FString& InXmlFilename, TArray<FPlasticSourceControlBranchRef>& OutBranches);
 
