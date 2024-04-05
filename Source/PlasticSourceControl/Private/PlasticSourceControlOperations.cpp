@@ -2734,22 +2734,22 @@ bool FPlasticGetFileWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TSharedRef<FGetFile, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FGetFile>(InCommand.Operation);
 
-	const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
-	SourceControlRevision->Filename = FPaths::ConvertRelativePathToFull(Operation->GetDepotFilePath());
+	FPlasticSourceControlRevision SourceControlRevision;
+	SourceControlRevision.Filename = FPaths::ConvertRelativePathToFull(Operation->GetDepotFilePath());
 
 	if (Operation->IsShelve())
 	{
-		SourceControlRevision->ShelveId = FCString::Atoi(*Operation->GetChangelistNumber());
-		UE_LOG(LogSourceControl, Log, TEXT("GetFile(ShelveId:%d)"), SourceControlRevision->ShelveId);
+		SourceControlRevision.ShelveId = FCString::Atoi(*Operation->GetChangelistNumber());
+		UE_LOG(LogSourceControl, Log, TEXT("GetFile(ShelveId:%d)"), SourceControlRevision.ShelveId);
 	}
 	else
 	{
-		SourceControlRevision->RevisionId = FCString::Atoi(*Operation->GetRevisionNumber());
-		UE_LOG(LogSourceControl, Log, TEXT("GetFile(revid:%d)"), SourceControlRevision->RevisionId);
+		SourceControlRevision.RevisionId = FCString::Atoi(*Operation->GetRevisionNumber());
+		UE_LOG(LogSourceControl, Log, TEXT("GetFile(revid:%d)"), SourceControlRevision.RevisionId);
 	}
 
 	FString OutFilename;
-	InCommand.bCommandSuccessful = SourceControlRevision->Get(OutFilename, InCommand.Concurrency);
+	InCommand.bCommandSuccessful = SourceControlRevision.Get(OutFilename, InCommand.Concurrency);
 	if (InCommand.bCommandSuccessful)
 	{
 		Operation->SetOutPackageFilename(OutFilename);
