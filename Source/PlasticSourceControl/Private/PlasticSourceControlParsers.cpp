@@ -458,7 +458,8 @@ FPlasticSourceControlLock ParseLockInfo(const FString& InResult)
 		Lock.Branch = MoveTemp(SmartLockInfos[6]);
 		Lock.Status = MoveTemp(SmartLockInfos[8]);
 		Lock.bIsLocked = (Lock.Status == TEXT("Locked"));
-		Lock.Owner = PlasticSourceControlUtils::UserNameToDisplayName(MoveTemp(SmartLockInfos[9]));
+		// Note: keeping the full email address as the owner name so we can display both the short and full name in the tooltip
+		Lock.Owner = MoveTemp(SmartLockInfos[9]);
 		Lock.Workspace = MoveTemp(SmartLockInfos[10]);
 		Lock.Path = MoveTemp(SmartLockInfos[11]);
 	}
@@ -564,13 +565,13 @@ void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourc
 			// "Locked" vs "Retained" lock
 			if (Lock->bIsLocked)
 			{
-				ConcatStrings(FileState.LockedBy, TEXT(", "), Lock->Owner);
+				ConcatStrings(FileState.LockedBy, TEXT(", "), PlasticSourceControlUtils::UserNameToDisplayName(Lock->Owner));
 			}
 			// Considers a "Retained" lock as meaningful only if it is retained on another branch
 			// NOTE: this is required to avoid the Unreal Editor showing a popup warning preventing the user to save the asset
 			else if (Lock->Branch != BranchName)
 			{
-				ConcatStrings(FileState.RetainedBy, TEXT(", "), Lock->Owner);
+				ConcatStrings(FileState.RetainedBy, TEXT(", "), PlasticSourceControlUtils::UserNameToDisplayName(Lock->Owner));
 			}
 			ConcatStrings(FileState.LockedWhere, TEXT(", "), Lock->Workspace);
 			ConcatStrings(FileState.LockedBranch, TEXT(", "), Lock->Branch);
