@@ -63,7 +63,7 @@ void ParseDirectoryStatusResult(const FString& InDir, const TArray<FString>& InR
 
 void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourceControlState>& InOutStates);
 
-bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InResultFilename, TArray<FPlasticSourceControlState>& InOutStates);
+bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InXmlFilename, TArray<FPlasticSourceControlState>& InOutStates);
 
 bool ParseUpdateResults(const FString& InResults, TArray<FString>& OutFiles);
 bool ParseUpdateResults(const TArray<FString>& InResults, TArray<FString>& OutFiles);
@@ -72,7 +72,7 @@ FText ParseCheckInResults(const TArray<FString>& InResults);
 
 #if ENGINE_MAJOR_VERSION == 5
 
-bool ParseChangelistsResults(const FString& InResultFilename, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates);
+bool ParseChangelistsResults(const FString& InXmlFilename, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates);
 
 bool ParseShelveDiffResult(const FString InWorkspaceRoot, TArray<FString>&& InResults, FPlasticSourceControlChangelistState& InOutChangelistsState);
 bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InResults, TArray<FPlasticSourceControlRevision>& OutBaseRevisions);
@@ -82,7 +82,7 @@ bool ParseShelvesResult(const FString& InResults, FString& OutComment, FDateTime
 
 #endif
 
-bool ParseBranchesResults(const FString& InResults, TArray<FPlasticSourceControlBranchRef>& OutBranches);
+bool ParseBranchesResults(const FString& InXmlFilename, TArray<FPlasticSourceControlBranchRef>& OutBranches);
 
 bool ParseMergeResults(const FString& InResult, TArray<FString>& OutFiles);
 

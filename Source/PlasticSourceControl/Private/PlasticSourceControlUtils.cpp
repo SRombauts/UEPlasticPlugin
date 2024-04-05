@@ -1133,6 +1133,7 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 {
 	bool bCommandSuccessful;
 
+	const FScopedTempFile BranchResultFile;
 	FString Results;
 	FString Errors;
 	TArray<FString> Parameters;
@@ -1146,14 +1147,14 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 	}
 	else
 	{
-		Parameters.Add(TEXT("\"branches\""));
+		Parameters.Add(TEXT("branches"));
 	}
-	Parameters.Add(TEXT("--xml"));
+	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *BranchResultFile.GetFilename()));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("find"), Parameters, TArray<FString>(), Results, Errors);
 	if (bCommandSuccessful)
 	{
-		bCommandSuccessful = PlasticSourceControlParsers::ParseBranchesResults(Results, OutBranches);
+		bCommandSuccessful = PlasticSourceControlParsers::ParseBranchesResults(BranchResultFile.GetFilename(), OutBranches);
 	}
 	if (!Errors.IsEmpty())
 	{

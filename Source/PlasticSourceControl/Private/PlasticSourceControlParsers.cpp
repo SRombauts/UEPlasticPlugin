@@ -932,14 +932,14 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 	return true;
 }
 
-bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InResultFilename, TArray<FPlasticSourceControlState>& InOutStates)
+bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InXmlFilename, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	bool bResult = false;
 
 	FXmlFile XmlFile;
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseHistoryResults::FXmlFile::LoadFile);
-		bResult = XmlFile.LoadFile(InResultFilename);
+		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
@@ -1211,14 +1211,14 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 	return true;
 }
 
-bool ParseChangelistsResults(const FString& InResultFilename, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates)
+bool ParseChangelistsResults(const FString& InXmlFilename, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates)
 {
 	bool bResult = false;
 
 	FXmlFile XmlFile;
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults::FXmlFile::LoadFile);
-		bResult = XmlFile.LoadFile(InResultFilename);
+		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
@@ -1583,9 +1583,9 @@ static bool ParseBranchesResults(const FXmlFile& InXmlResult, TArray<FPlasticSou
 		return false;
 	}
 
-	const TArray<FXmlNode*>& BranchsNodes = PlasticQueryNode->GetChildrenNodes();
-	OutBranches.Reserve(BranchsNodes.Num());
-	for (const FXmlNode* BranchNode : BranchsNodes)
+	const TArray<FXmlNode*>& BranchesNodes = PlasticQueryNode->GetChildrenNodes();
+	OutBranches.Reserve(BranchesNodes.Num());
+	for (const FXmlNode* BranchNode : BranchesNodes)
 	{
 		check(BranchNode);
 		const FXmlNode* NameNode = BranchNode->FindChildNode(Name);
@@ -1602,18 +1602,16 @@ static bool ParseBranchesResults(const FXmlFile& InXmlResult, TArray<FPlasticSou
 		{
 			BranchRef->Comment = DecodeXmlEntities(CommentNode->GetContent());
 		}
-
 		if (const FXmlNode* DateNode = BranchNode->FindChildNode(Date))
 		{
 			const FString& DateIso = DateNode->GetContent();
 			FDateTime::ParseIso8601(*DateIso, BranchRef->Date);
 		}
-
 		if (const FXmlNode* OwnerNode = BranchNode->FindChildNode(Owner))
 		{
+			// Note: keeping the full email address as the owner name so we can display both the short and full name in the tooltip
 			BranchRef->CreatedBy = OwnerNode->GetContent();
 		}
-
 		if (const FXmlNode* RepNameNode = BranchNode->FindChildNode(RepName))
 		{
 			if (const FXmlNode* RepServerNode = BranchNode->FindChildNode(RepServer))
@@ -1628,14 +1626,14 @@ static bool ParseBranchesResults(const FXmlFile& InXmlResult, TArray<FPlasticSou
 	return true;
 }
 
-bool ParseBranchesResults(const FString& InResults, TArray<FPlasticSourceControlBranchRef>& OutBranches)
+bool ParseBranchesResults(const FString& InXmlFilename, TArray<FPlasticSourceControlBranchRef>& OutBranches)
 {
 	bool bResult = false;
 
 	FXmlFile XmlFile;
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseBranchesResults);
-		bResult = XmlFile.LoadFile(InResults, EConstructMethod::ConstructFromBuffer);
+		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
