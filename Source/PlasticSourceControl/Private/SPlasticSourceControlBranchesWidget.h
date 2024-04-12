@@ -55,6 +55,7 @@ private:
 	void OnColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode);
 
 	void SortBranchView();
+
 	TArray<FString> GetSelectedBranches();
 
 	TSharedPtr<SWidget> OnOpenContextMenu();
@@ -88,6 +89,11 @@ private:
 	{
 		return BranchesListView.Get();
 	}
+
+	void SwitchToBranchWithConfirmation(const FString& InSelectedBranch);
+
+	/** Double click to switch to the branch */
+	void OnItemDoubleClicked(FPlasticSourceControlBranchRef InBranch);
 
 	/** Interpret F5, Enter and Delete keys */
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
