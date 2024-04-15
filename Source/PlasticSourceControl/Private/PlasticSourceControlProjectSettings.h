@@ -60,4 +60,20 @@ public:
 	/* Show the Destination Branch of the lock (hidden by default) */
 	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Locks window")
 	bool bShowLockDestinationBranchColumn = false;
+
+	/* Show the name of the creator of the changeset */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Changesets window")
+	bool bShowChangesetCreatedByColumn = true;
+
+	/* Show the date of creation of the changeset */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Changesets window")
+	bool bShowChangesetDateColumn = true;
+
+	/* Show the comment of the changeset */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Changesets window")
+	bool bShowChangesetCommentColumn = true;
+
+	/* Show the branch the changeset was created on */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Changesets window")
+	bool bShowChangesetBranchColumn = true;
 };
