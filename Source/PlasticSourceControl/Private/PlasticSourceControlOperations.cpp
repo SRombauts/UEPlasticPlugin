@@ -4,6 +4,7 @@
 
 #include "PackageUtils.h"
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlChangeset.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
@@ -56,6 +57,7 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("CreateBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticCreateBranchWorker>));
 	PlasticSourceControlProvider.RegisterWorker("RenameBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRenameBranchWorker>));
 	PlasticSourceControlProvider.RegisterWorker("DeleteBranches", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteBranchesWorker>));
+	PlasticSourceControlProvider.RegisterWorker("GetChangesets", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetChangesetsWorker>));
 	PlasticSourceControlProvider.RegisterWorker("MakeWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticMakeWorkspaceWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Sync", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SyncAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
@@ -217,6 +219,16 @@ FName FPlasticDeleteBranches::GetName() const
 FText FPlasticDeleteBranches::GetInProgressString() const
 {
 	return LOCTEXT("SourceControl_DeleteBranches", "Deleting branch(es)...");
+}
+
+FName FPlasticGetChangesets::GetName() const
+{
+	return "GetChangesets";
+}
+
+FText FPlasticGetChangesets::GetInProgressString() const
+{
+	return LOCTEXT("SourceControl_GetChangesets", "Getting the list of changesets...");
 }
 
 
@@ -1196,8 +1208,7 @@ bool FPlasticGetBranchesWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetBranches>(InCommand.Operation);
 
 	{
-		const FDateTime& FromDate = Operation->FromDate;
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetBranches(FromDate, Operation->Branches, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetBranches(Operation->FromDate, Operation->Branches, InCommand.ErrorMessages);
 	}
 
 	{
@@ -1342,6 +1353,39 @@ bool FPlasticDeleteBranchesWorker::Execute(FPlasticSourceControlCommand& InComma
 
 bool FPlasticDeleteBranchesWorker::UpdateStates()
 {
+	return false;
+}
+
+
+FName FPlasticGetChangesetsWorker::GetName() const
+{
+	return "GetChangesets";
+}
+
+bool FPlasticGetChangesetsWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetChangesetsWorker::Execute);
+
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticGetChangesets, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetChangesets>(InCommand.Operation);
+
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetChangesets(Operation->FromDate, Operation->Changesets, InCommand.ErrorMessages);
+	}
+
+	{
+		FString RepositoryName, ServerUrl;
+		// TODO: refresh current changeset ID
+	//	InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(CurrentChangesetId, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+	}
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticGetChangesetsWorker::UpdateStates()
+{
+	// TODO GetProvider().SetChangesetNumber(CurrentChangesetId);
+
 	return false;
 }
 
