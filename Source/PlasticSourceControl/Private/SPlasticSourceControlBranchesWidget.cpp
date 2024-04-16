@@ -52,8 +52,10 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlBranchesWidget::OnRefreshUI);
 
 	FromDateInDaysValues.Add(TPair<int32, FText>(7, FText::FromString(TEXT("Last week"))));
+	FromDateInDaysValues.Add(TPair<int32, FText>(15, FText::FromString(TEXT("Last 15 days"))));
 	FromDateInDaysValues.Add(TPair<int32, FText>(30, FText::FromString(TEXT("Last month"))));
-	FromDateInDaysValues.Add(TPair<int32, FText>(90, FText::FromString(TEXT("Last 3 months"))));
+	FromDateInDaysValues.Add(TPair<int32, FText>(91, FText::FromString(TEXT("Last 3 months"))));
+	FromDateInDaysValues.Add(TPair<int32, FText>(182, FText::FromString(TEXT("Last 6 months"))));
 	FromDateInDaysValues.Add(TPair<int32, FText>(365, FText::FromString(TEXT("Last year"))));
 	FromDateInDaysValues.Add(TPair<int32, FText>(-1, FText::FromString(TEXT("All time"))));
 
@@ -192,6 +194,7 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateContentPanel()
 		.OnGenerateRow(this, &SPlasticSourceControlBranchesWidget::OnGenerateRow)
 		.SelectionMode(ESelectionMode::Multi)
 		.OnContextMenuOpening(this, &SPlasticSourceControlBranchesWidget::OnOpenContextMenu)
+		.OnMouseButtonDoubleClick(this, &SPlasticSourceControlBranchesWidget::OnItemDoubleClicked)
 		.OnItemToString_Debug_Lambda([this](FPlasticSourceControlBranchRef Branch) { return Branch->Name; })
 		.HeaderRow
 		(
@@ -1082,6 +1085,33 @@ void SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged(ISource
 	}
 }
 
+void SPlasticSourceControlBranchesWidget::SwitchToBranchWithConfirmation(const FString& InSelectedBranch)
+{
+	const FText SwitchToBranchQuestion = FText::Format(LOCTEXT("SwitchToBranchDialog", "Switch workspace to branch {0}?"), FText::FromString(InSelectedBranch));
+	const EAppReturnType::Type Choice = FMessageDialog::Open(
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		EAppMsgCategory::Info,
+#endif
+		EAppMsgType::YesNo, SwitchToBranchQuestion
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		, LOCTEXT("SwitchToBranchTitle", "Switch Branch?")
+#endif
+	);
+	if (Choice == EAppReturnType::Yes)
+	{
+		OnSwitchToBranchClicked(InSelectedBranch);
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::OnItemDoubleClicked(FPlasticSourceControlBranchRef InBranch)
+{
+	// Double click switches to the selected branch (with a confirmation dialog)
+	if (InBranch->Name != CurrentBranchName)
+	{
+		SwitchToBranchWithConfirmation(InBranch->Name);
+	}
+}
+
 FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
 {
 	if (InKeyEvent.GetKey() == EKeys::F5)
@@ -1092,32 +1122,17 @@ FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometr
 	}
 	else if (InKeyEvent.GetKey() == EKeys::Enter)
 	{
-		// Pressing Enter switches to the selected branch.
+		// Pressing Enter switches to the selected branch (with a confirmation dialog)
 		const TArray<FString> SelectedBranches = GetSelectedBranches();
-		if (SelectedBranches.Num() == 1)
+		if (SelectedBranches.Num() == 1 && SelectedBranches[0] != CurrentBranchName)
 		{
-			const FString& SelectedBranch = SelectedBranches[0];
-			// Note: this action require a confirmation dialog (while the Delete below already have one in OnDeleteBranchesClicked()).
-			const FText SwitchToBranchQuestion = FText::Format(LOCTEXT("SwitchToBranchDialog", "Switch workspace to branch {0}?"), FText::FromString(SelectedBranch));
-			const EAppReturnType::Type Choice = FMessageDialog::Open(
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
-				EAppMsgCategory::Info,
-#endif
-				EAppMsgType::YesNo, SwitchToBranchQuestion
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
-				, LOCTEXT("SwitchToBranchTitle", "Switch Branch?")
-#endif
-			);
-			if (Choice == EAppReturnType::Yes)
-			{
-				OnSwitchToBranchClicked(SelectedBranch);
-			}
+			SwitchToBranchWithConfirmation(SelectedBranches[0]);
 		}
 		return FReply::Handled();
 	}
 	else if (InKeyEvent.GetKey() == EKeys::F2)
 	{
-		// Pressing F2 renames the selected branches
+		// Pressing F2 renames the selected branches (with a dialog)
 		const TArray<FString> SelectedBranches = GetSelectedBranches();
 		if (SelectedBranches.Num() == 1)
 		{
@@ -1128,7 +1143,7 @@ FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometr
 	}
 	else if ((InKeyEvent.GetKey() == EKeys::Delete) || (InKeyEvent.GetKey() == EKeys::BackSpace))
 	{
-		// Pressing Delete or BackSpace deletes the selected branches
+		// Pressing Delete or BackSpace deletes the selected branches (with a confirmation dialog)
 		const TArray<FString> SelectedBranches = GetSelectedBranches();
 		if (SelectedBranches.Num() > 0)
 		{

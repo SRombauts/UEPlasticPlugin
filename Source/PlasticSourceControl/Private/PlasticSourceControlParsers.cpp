@@ -3,6 +3,7 @@
 #include "PlasticSourceControlParsers.h"
 
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlChangeset.h"
 #include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
@@ -123,7 +124,7 @@ bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FStr
 }
 
 /**
-* Parse the current changeset from the header returned by "cm status --machinereadable --header --fieldseparator=;"
+* Parse the current changeset from the header returned by "cm status --machinereadable --fieldseparator=;"
 *
 * Get workspace status in one of the form
 STATUS;41;UEPlasticPluginDev;localhost:8087
@@ -458,7 +459,8 @@ FPlasticSourceControlLock ParseLockInfo(const FString& InResult)
 		Lock.Branch = MoveTemp(SmartLockInfos[6]);
 		Lock.Status = MoveTemp(SmartLockInfos[8]);
 		Lock.bIsLocked = (Lock.Status == TEXT("Locked"));
-		Lock.Owner = PlasticSourceControlUtils::UserNameToDisplayName(MoveTemp(SmartLockInfos[9]));
+		// Note: keeping the full email address as the owner name so we can display both the short and full name in the tooltip
+		Lock.Owner = MoveTemp(SmartLockInfos[9]);
 		Lock.Workspace = MoveTemp(SmartLockInfos[10]);
 		Lock.Path = MoveTemp(SmartLockInfos[11]);
 	}
@@ -564,13 +566,13 @@ void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourc
 			// "Locked" vs "Retained" lock
 			if (Lock->bIsLocked)
 			{
-				ConcatStrings(FileState.LockedBy, TEXT(", "), Lock->Owner);
+				ConcatStrings(FileState.LockedBy, TEXT(", "), PlasticSourceControlUtils::UserNameToDisplayName(Lock->Owner));
 			}
 			// Considers a "Retained" lock as meaningful only if it is retained on another branch
 			// NOTE: this is required to avoid the Unreal Editor showing a popup warning preventing the user to save the asset
 			else if (Lock->Branch != BranchName)
 			{
-				ConcatStrings(FileState.RetainedBy, TEXT(", "), Lock->Owner);
+				ConcatStrings(FileState.RetainedBy, TEXT(", "), PlasticSourceControlUtils::UserNameToDisplayName(Lock->Owner));
 			}
 			ConcatStrings(FileState.LockedWhere, TEXT(", "), Lock->Workspace);
 			ConcatStrings(FileState.LockedBranch, TEXT(", "), Lock->Branch);
@@ -932,14 +934,14 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 	return true;
 }
 
-bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InResultFilename, TArray<FPlasticSourceControlState>& InOutStates)
+bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InXmlFilename, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	bool bResult = false;
 
 	FXmlFile XmlFile;
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseHistoryResults::FXmlFile::LoadFile);
-		bResult = XmlFile.LoadFile(InResultFilename);
+		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
@@ -1211,14 +1213,14 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 	return true;
 }
 
-bool ParseChangelistsResults(const FString& InResultFilename, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates)
+bool ParseChangelistsResults(const FString& InXmlFilename, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates)
 {
 	bool bResult = false;
 
 	FXmlFile XmlFile;
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults::FXmlFile::LoadFile);
-		bResult = XmlFile.LoadFile(InResultFilename);
+		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
@@ -1543,6 +1545,106 @@ bool ParseShelvesResult(const FString& InResults, FString& OutComment, FDateTime
 
 #endif
 
+
+/**
+ * Parse results of the 'cm find changeset --xml --encoding="utf-8"' command.
+ *
+ * Results of the find command looks like the following:
+<?xml version="1.0" encoding="utf-8" ?>
+<PLASTICQUERY>
+  <CHANGESET>
+    <ID>2652</ID>
+    <CHANGESETID>56</CHANGESETID>
+    <COMMENT>test</COMMENT>
+    <DATE>2024-03-25T10:37:14+01:00</DATE>
+    <OWNER>sebastien.rombauts@unity3d.com</OWNER>
+    <REPOSITORY>UE5PlasticPluginDev</REPOSITORY>
+    <REPNAME>UE5PlasticPluginDev</REPNAME>
+    <REPSERVER>SRombautsU@cloud</REPSERVER>
+    <BRANCH>/main</BRANCH>
+    <PARENT>55</PARENT>
+    <GUID>d49c552e-9654-44d0-86eb-0d55fa5e8dc3</GUID>
+    <ROOTREV>2651</ROOTREV>
+  </CHANGESET>
+  [...]
+</PLASTICQUERY>
+*/
+static bool ParseChangesetesResults(const FXmlFile& InXmlResult, TArray<FPlasticSourceControlChangesetRef>& OutChangesets)
+{
+	static const FString PlasticQuery(TEXT("PLASTICQUERY"));
+	static const FString ChangesetId(TEXT("CHANGESETID"));
+	static const FString Branch(TEXT("BRANCH"));
+	static const FString Comment(TEXT("COMMENT"));
+	static const FString Owner(TEXT("OWNER"));
+	static const FString Date(TEXT("DATE"));
+
+	const FXmlNode* PlasticQueryNode = InXmlResult.GetRootNode();
+	if (PlasticQueryNode == nullptr || PlasticQueryNode->GetTag() != PlasticQuery)
+	{
+		return false;
+	}
+
+	const TArray<FXmlNode*>& ChangesetsNodes = PlasticQueryNode->GetChildrenNodes();
+	OutChangesets.Reserve(ChangesetsNodes.Num());
+	for (const FXmlNode* ChangesetNode : ChangesetsNodes)
+	{
+		check(ChangesetNode);
+		const FXmlNode* ChangesetIdNode = ChangesetNode->FindChildNode(ChangesetId);
+		if (ChangesetIdNode == nullptr)
+		{
+			continue;
+		}
+
+		FPlasticSourceControlChangesetRef ChangesetRef = MakeShareable(new FPlasticSourceControlChangeset());
+
+		ChangesetRef->ChangesetId = FCString::Atoi(*ChangesetIdNode->GetContent());
+
+		if (const FXmlNode* CommentNode = ChangesetNode->FindChildNode(Comment))
+		{
+			ChangesetRef->Comment = DecodeXmlEntities(CommentNode->GetContent());
+		}
+		if (const FXmlNode* BranchNode = ChangesetNode->FindChildNode(Branch))
+		{
+			ChangesetRef->Branch = DecodeXmlEntities(BranchNode->GetContent());
+		}
+		if (const FXmlNode* OwnerNode = ChangesetNode->FindChildNode(Owner))
+		{
+			// Note: keeping the full email address as the owner name so we can display both the short and full name in the tooltip
+			ChangesetRef->CreatedBy = OwnerNode->GetContent();
+		}
+		if (const FXmlNode* DateNode = ChangesetNode->FindChildNode(Date))
+		{
+			const FString& DateIso = DateNode->GetContent();
+			FDateTime::ParseIso8601(*DateIso, ChangesetRef->Date);
+		}
+
+		OutChangesets.Add(MoveTemp(ChangesetRef));
+	}
+
+	return true;
+}
+
+bool ParseChangesetsResults(const FString& InXmlFilename, TArray<FPlasticSourceControlChangesetRef>& OutChangesets)
+{
+	bool bResult = false;
+
+	FXmlFile XmlFile;
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangesetesResults);
+		bResult = XmlFile.LoadFile(InXmlFilename);
+	}
+	if (bResult)
+	{
+		bResult = ParseChangesetesResults(XmlFile, OutChangesets);
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("ParseChangesetesResults: XML parse error '%s'"), *XmlFile.GetLastError())
+	}
+
+	return bResult;
+}
+
 /**
  * Parse results of the 'cm find "branches where date >= 'YYYY-MM-DD' or changesets >= 'YYYY-MM-DD'" --xml --encoding="utf-8"' command.
  *
@@ -1583,9 +1685,9 @@ static bool ParseBranchesResults(const FXmlFile& InXmlResult, TArray<FPlasticSou
 		return false;
 	}
 
-	const TArray<FXmlNode*>& BranchsNodes = PlasticQueryNode->GetChildrenNodes();
-	OutBranches.Reserve(BranchsNodes.Num());
-	for (const FXmlNode* BranchNode : BranchsNodes)
+	const TArray<FXmlNode*>& BranchesNodes = PlasticQueryNode->GetChildrenNodes();
+	OutBranches.Reserve(BranchesNodes.Num());
+	for (const FXmlNode* BranchNode : BranchesNodes)
 	{
 		check(BranchNode);
 		const FXmlNode* NameNode = BranchNode->FindChildNode(Name);
@@ -1602,18 +1704,16 @@ static bool ParseBranchesResults(const FXmlFile& InXmlResult, TArray<FPlasticSou
 		{
 			BranchRef->Comment = DecodeXmlEntities(CommentNode->GetContent());
 		}
-
 		if (const FXmlNode* DateNode = BranchNode->FindChildNode(Date))
 		{
 			const FString& DateIso = DateNode->GetContent();
 			FDateTime::ParseIso8601(*DateIso, BranchRef->Date);
 		}
-
 		if (const FXmlNode* OwnerNode = BranchNode->FindChildNode(Owner))
 		{
+			// Note: keeping the full email address as the owner name so we can display both the short and full name in the tooltip
 			BranchRef->CreatedBy = OwnerNode->GetContent();
 		}
-
 		if (const FXmlNode* RepNameNode = BranchNode->FindChildNode(RepName))
 		{
 			if (const FXmlNode* RepServerNode = BranchNode->FindChildNode(RepServer))
@@ -1628,14 +1728,14 @@ static bool ParseBranchesResults(const FXmlFile& InXmlResult, TArray<FPlasticSou
 	return true;
 }
 
-bool ParseBranchesResults(const FString& InResults, TArray<FPlasticSourceControlBranchRef>& OutBranches)
+bool ParseBranchesResults(const FString& InXmlFilename, TArray<FPlasticSourceControlBranchRef>& OutBranches)
 {
 	bool bResult = false;
 
 	FXmlFile XmlFile;
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseBranchesResults);
-		bResult = XmlFile.LoadFile(InResults, EConstructMethod::ConstructFromBuffer);
+		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{

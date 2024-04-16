@@ -443,7 +443,7 @@ void SPlasticSourceControlLocksWidget::SortLockView()
 
 	auto CompareItemIds = [](const FPlasticSourceControlLock* Lhs, const FPlasticSourceControlLock* Rhs)
 	{
-		return (Lhs->ItemId < Rhs->ItemId);
+		return Lhs->ItemId < Rhs->ItemId ? -1 : (Lhs->ItemId == Rhs->ItemId ? 0 : 1);
 	};
 
 	auto CompareStatuses = [](const FPlasticSourceControlLock* Lhs, const FPlasticSourceControlLock* Rhs)

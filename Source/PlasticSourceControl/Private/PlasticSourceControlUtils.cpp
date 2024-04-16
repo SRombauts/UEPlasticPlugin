@@ -3,6 +3,7 @@
 #include "PlasticSourceControlUtils.h"
 
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlChangeset.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
@@ -242,6 +243,22 @@ bool GetWorkspaceInfo(FString& OutBranchName, FString& OutRepositoryName, FStrin
 	if (bResult)
 	{
 		bResult = PlasticSourceControlParsers::ParseWorkspaceInfo(Results, OutBranchName, OutRepositoryName, OutServerUrl);
+	}
+
+	return bResult;
+}
+
+bool GetChangesetNumber(int32& OutChangesetNumber, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Results;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("--header"));
+	Parameters.Add(TEXT("--machinereadable"));
+	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
+	bool bResult = RunCommand(TEXT("status"), Parameters, TArray<FString>(), Results, OutErrorMessages);
+	if (bResult)
+	{
+		bResult = PlasticSourceControlParsers::GetChangesetFromWorkspaceStatus(Results, OutChangesetNumber);
 	}
 
 	return bResult;
@@ -1129,31 +1146,58 @@ bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDat
 
 #endif
 
+bool RunGetChangesets(const FDateTime& InFromDate, TArray<FPlasticSourceControlChangesetRef>& OutChangesets, TArray<FString>& OutErrorMessages)
+{
+	bool bCommandSuccessful = false;
+
+	const FScopedTempFile ChangesetResultFile;
+	TArray<FString> Results;
+	TArray<FString> Errors;
+	TArray<FString> Parameters;
+	Parameters.Add(TEXT("changesets"));
+	if (InFromDate != FDateTime())
+	{
+		Parameters.Add(FString::Printf(TEXT("\"where date >= '%d/%d/%d'\""), InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay()));
+	}
+	Parameters.Add(TEXT("order by ChangesetId desc"));
+	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *ChangesetResultFile.GetFilename()));
+	Parameters.Add(TEXT("--encoding=\"utf-8\""));
+	bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("find"), Parameters, TArray<FString>(), Results, Errors);
+	if (bCommandSuccessful && FPaths::FileExists(ChangesetResultFile.GetFilename()))
+	{
+		bCommandSuccessful = PlasticSourceControlParsers::ParseChangesetsResults(ChangesetResultFile.GetFilename(), OutChangesets);
+	}
+	if (!Errors.IsEmpty())
+	{
+		OutErrorMessages.Append(MoveTemp(Errors));
+	}
+
+	return bCommandSuccessful;
+}
+
 bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBranchRef>& OutBranches, TArray<FString>& OutErrorMessages)
 {
 	bool bCommandSuccessful;
 
+	const FScopedTempFile BranchResultFile;
 	FString Results;
 	FString Errors;
 	TArray<FString> Parameters;
+	Parameters.Add(TEXT("branches"));
 	if (InFromDate != FDateTime())
 	{
 		// Find branches created since this date or containing changes dating from or after this date
-		Parameters.Add(FString::Printf(TEXT("\"branches where date >= '%d/%d/%d'\" or changesets >= '%d/%d/%d'"),
+		Parameters.Add(FString::Printf(TEXT("\"where date >= '%d/%d/%d'\" or changesets >= '%d/%d/%d'"),
 			InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay(),
 			InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay()
 		));
 	}
-	else
-	{
-		Parameters.Add(TEXT("\"branches\""));
-	}
-	Parameters.Add(TEXT("--xml"));
+	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *BranchResultFile.GetFilename()));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("find"), Parameters, TArray<FString>(), Results, Errors);
 	if (bCommandSuccessful)
 	{
-		bCommandSuccessful = PlasticSourceControlParsers::ParseBranchesResults(Results, OutBranches);
+		bCommandSuccessful = PlasticSourceControlParsers::ParseBranchesResults(BranchResultFile.GetFilename(), OutBranches);
 	}
 	if (!Errors.IsEmpty())
 	{

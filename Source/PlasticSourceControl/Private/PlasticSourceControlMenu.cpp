@@ -127,6 +127,7 @@ void FPlasticSourceControlMenu::ExtendRevisionControlMenu()
 		if (FToolMenuSection* Section = ToolsMenu->FindSection("Source Control"))
 		{
 			AddViewBranches(*Section);
+			AddViewChangesets(*Section);
 			AddViewLocks(*Section);
 		}
 	}
@@ -539,6 +540,11 @@ void FPlasticSourceControlMenu::OpenBranchesWindow() const
 	FPlasticSourceControlModule::Get().GetBranchesWindow().OpenTab();
 }
 
+void FPlasticSourceControlMenu::OpenChangesetsWindow() const
+{
+	FPlasticSourceControlModule::Get().GetChangesetsWindow().OpenTab();
+}
+
 void FPlasticSourceControlMenu::OpenLocksWindow() const
 {
 	FPlasticSourceControlModule::Get().GetLocksWindow().OpenTab();
@@ -786,6 +792,7 @@ void FPlasticSourceControlMenu::AddMenuExtension(FToolMenuSection& Menu)
 	);
 
 	AddViewBranches(Menu);
+	AddViewChangesets(Menu);
 	AddViewLocks(Menu);
 }
 
@@ -803,13 +810,35 @@ void FPlasticSourceControlMenu::AddViewBranches(FToolMenuSection& Menu)
 		LOCTEXT("PlasticBranchesWindowTooltip", "Open the Branches window."),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Branch"),
-#elif ENGINE_MAJOR_VERSION == 5
-		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Branch"),
-#elif ENGINE_MAJOR_VERSION == 4
+#else
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Branch"),
 #endif
 		FUIAction(
 			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenBranchesWindow),
+			FCanExecuteAction()
+		)
+	);
+}
+
+#if ENGINE_MAJOR_VERSION == 4
+void FPlasticSourceControlMenu::AddViewChangesets(FMenuBuilder& Menu)
+#elif ENGINE_MAJOR_VERSION == 5
+void FPlasticSourceControlMenu::AddViewChangesets(FToolMenuSection& Menu)
+#endif
+{
+	Menu.AddMenuEntry(
+#if ENGINE_MAJOR_VERSION == 5
+		TEXT("PlasticChangesetsWindow"),
+#endif
+		LOCTEXT("PlasticChangesetsWindow", "View Changesets"),
+		LOCTEXT("PlasticChangesetsWindowTooltip", "Open the Changesets window."),
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.History"),
+#else
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "SourceControl.Actions.History"),
+#endif
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenChangesetsWindow),
 			FCanExecuteAction()
 		)
 	);

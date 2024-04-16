@@ -20,6 +20,7 @@
 
 class FPlasticSourceControlProvider;
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
+typedef TSharedRef<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetRef;
 typedef TSharedRef<class FPlasticSourceControlLock, ESPMode::ThreadSafe> FPlasticSourceControlLockRef;
 
 
@@ -144,7 +145,7 @@ public:
 
 	virtual FText GetInProgressString() const override;
 
-	// Limit the list of branches to ones created from this date
+	// Limit the list of branches to ones created from this date (optional, filtering enabled by default)
 	FDateTime FromDate;
 
 	// List of branches found
@@ -234,6 +235,25 @@ public:
 	virtual FText GetInProgressString() const override;
 
 	TArray<FString> BranchNames;
+};
+
+
+/**
+ * Internal operation to list changesets, aka "cm find changesets"
+*/
+class FPlasticGetChangesets final : public FSourceControlOperationBase
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	// Limit the list of changesets to ones created from this date (optional, filtering enabled by default)
+	FDateTime FromDate;
+
+	// List of changesets found
+	TArray<FPlasticSourceControlChangesetRef> Changesets;
 };
 
 
@@ -454,9 +474,6 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() override;
-
-	// Current branch the workspace is on (at the end of the operation)
-	FString CurrentBranchName;
 };
 
 /** release or remove Lock(s) on file(s). */
@@ -489,9 +506,6 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() override;
-
-	// Current branch the workspace is on (at the end of the operation)
-	FString CurrentBranchName;
 };
 
 /** Switch workspace to another branch. */
@@ -570,6 +584,23 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() override;
+};
+
+/** list changesets. */
+class FPlasticGetChangesetsWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticGetChangesetsWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticGetChangesetsWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+	// Current changeset the workspace is on (at the end of the operation)
+	int32 CurrentChangesetId;
 };
 
 /** Plastic update the workspace to latest changes */

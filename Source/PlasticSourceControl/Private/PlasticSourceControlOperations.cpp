@@ -4,6 +4,7 @@
 
 #include "PackageUtils.h"
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlChangeset.h"
 #include "PlasticSourceControlCommand.h"
 #include "PlasticSourceControlLock.h"
 #include "PlasticSourceControlModule.h"
@@ -56,6 +57,7 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("CreateBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticCreateBranchWorker>));
 	PlasticSourceControlProvider.RegisterWorker("RenameBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRenameBranchWorker>));
 	PlasticSourceControlProvider.RegisterWorker("DeleteBranches", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteBranchesWorker>));
+	PlasticSourceControlProvider.RegisterWorker("GetChangesets", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetChangesetsWorker>));
 	PlasticSourceControlProvider.RegisterWorker("MakeWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticMakeWorkspaceWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Sync", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SyncAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
@@ -217,6 +219,16 @@ FName FPlasticDeleteBranches::GetName() const
 FText FPlasticDeleteBranches::GetInProgressString() const
 {
 	return LOCTEXT("SourceControl_DeleteBranches", "Deleting branch(es)...");
+}
+
+FName FPlasticGetChangesets::GetName() const
+{
+	return "GetChangesets";
+}
+
+FText FPlasticGetChangesets::GetInProgressString() const
+{
+	return LOCTEXT("SourceControl_GetChangesets", "Getting the list of changesets...");
 }
 
 
@@ -1118,7 +1130,7 @@ bool FPlasticGetLocksWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	{
 		FString RepositoryName, ServerUrl;
-		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(CurrentBranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(InCommand.BranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
 	}
 
 	return InCommand.bCommandSuccessful;
@@ -1126,8 +1138,6 @@ bool FPlasticGetLocksWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticGetLocksWorker::UpdateStates()
 {
-	GetProvider().SetBranchName(CurrentBranchName);
-
 	return false;
 }
 
@@ -1196,13 +1206,12 @@ bool FPlasticGetBranchesWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetBranches>(InCommand.Operation);
 
 	{
-		const FDateTime& FromDate = Operation->FromDate;
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetBranches(FromDate, Operation->Branches, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetBranches(Operation->FromDate, Operation->Branches, InCommand.ErrorMessages);
 	}
 
 	{
 		FString RepositoryName, ServerUrl;
-		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(CurrentBranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(InCommand.BranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
 	}
 
 	return InCommand.bCommandSuccessful;
@@ -1210,8 +1219,6 @@ bool FPlasticGetBranchesWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticGetBranchesWorker::UpdateStates()
 {
-	GetProvider().SetBranchName(CurrentBranchName);
-
 	return false;
 }
 
@@ -1341,6 +1348,35 @@ bool FPlasticDeleteBranchesWorker::Execute(FPlasticSourceControlCommand& InComma
 }
 
 bool FPlasticDeleteBranchesWorker::UpdateStates()
+{
+	return false;
+}
+
+
+FName FPlasticGetChangesetsWorker::GetName() const
+{
+	return "GetChangesets";
+}
+
+bool FPlasticGetChangesetsWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetChangesetsWorker::Execute);
+
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticGetChangesets, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetChangesets>(InCommand.Operation);
+
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetChangesets(Operation->FromDate, Operation->Changesets, InCommand.ErrorMessages);
+	}
+
+	{
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetChangesetNumber(InCommand.ChangesetNumber, InCommand.ErrorMessages);
+	}
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticGetChangesetsWorker::UpdateStates()
 {
 	return false;
 }
@@ -2734,22 +2770,22 @@ bool FPlasticGetFileWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	TSharedRef<FGetFile, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FGetFile>(InCommand.Operation);
 
-	const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
-	SourceControlRevision->Filename = FPaths::ConvertRelativePathToFull(Operation->GetDepotFilePath());
+	FPlasticSourceControlRevision SourceControlRevision;
+	SourceControlRevision.Filename = FPaths::ConvertRelativePathToFull(Operation->GetDepotFilePath());
 
 	if (Operation->IsShelve())
 	{
-		SourceControlRevision->ShelveId = FCString::Atoi(*Operation->GetChangelistNumber());
-		UE_LOG(LogSourceControl, Log, TEXT("GetFile(ShelveId:%d)"), SourceControlRevision->ShelveId);
+		SourceControlRevision.ShelveId = FCString::Atoi(*Operation->GetChangelistNumber());
+		UE_LOG(LogSourceControl, Log, TEXT("GetFile(ShelveId:%d)"), SourceControlRevision.ShelveId);
 	}
 	else
 	{
-		SourceControlRevision->RevisionId = FCString::Atoi(*Operation->GetRevisionNumber());
-		UE_LOG(LogSourceControl, Log, TEXT("GetFile(revid:%d)"), SourceControlRevision->RevisionId);
+		SourceControlRevision.RevisionId = FCString::Atoi(*Operation->GetRevisionNumber());
+		UE_LOG(LogSourceControl, Log, TEXT("GetFile(revid:%d)"), SourceControlRevision.RevisionId);
 	}
 
 	FString OutFilename;
-	InCommand.bCommandSuccessful = SourceControlRevision->Get(OutFilename, InCommand.Concurrency);
+	InCommand.bCommandSuccessful = SourceControlRevision.Get(OutFilename, InCommand.Concurrency);
 	if (InCommand.bCommandSuccessful)
 	{
 		Operation->SetOutPackageFilename(OutFilename);

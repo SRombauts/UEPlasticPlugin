@@ -21,6 +21,7 @@ void FPlasticSourceControlModule::StartupModule()
 
 	/// Register our tab windows here as they needs to be ready for the editor to reload at startup
 	PlasticSourceControlBranchesWindow.Register();
+	PlasticSourceControlChangesetsWindow.Register();
 	PlasticSourceControlLocksWindow.Register();
 }
 
@@ -30,6 +31,7 @@ void FPlasticSourceControlModule::ShutdownModule()
 	PlasticSourceControlProvider.Close();
 
 	PlasticSourceControlBranchesWindow.Unregister();
+	PlasticSourceControlChangesetsWindow.Unregister();
 	PlasticSourceControlLocksWindow.Unregister();
 
 	// unbind provider from editor

@@ -14,6 +14,7 @@ class FPlasticSourceControlProvider;
 class FPlasticSourceControlState;
 struct FSoftwareVersion;
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
+typedef TSharedRef<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetRef;
 typedef TSharedRef<class FPlasticSourceControlLock, ESPMode::ThreadSafe> FPlasticSourceControlLockRef;
 
 enum class EWorkspaceState;
@@ -126,6 +127,15 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName,
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  */
 bool GetWorkspaceInfo(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages);
+
+
+/**
+ * Get the current changeset number from the workspace (-1 for a partial workspace)
+ *
+ * @param	OutChangesetNumber	Current changeset number
+ * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+ */
+bool GetChangesetNumber(int32& OutChangesetNumber, TArray<FString>& OutErrorMessages);
 
 /**
  * Get workspace info and check the connection to the server
@@ -266,6 +276,14 @@ bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDat
 void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChangelistsState, FString&& InFilename, EWorkspaceState InShelveStatus, FString&& InMovedFrom);
 
 #endif
+
+/**
+ * Run find "changesets where date >= 'YYYY-MM-DD'" and "log --xml" and parse the results.
+ * @param	InFromDate				The date to search from
+ * @param	OutChangesets			The list of changesets, with files and their states
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunGetChangesets(const FDateTime& InFromDate, TArray<FPlasticSourceControlChangesetRef>& OutChangesets, TArray<FString>& OutErrorMessages);
 
 /**
  * Run find "branches where date >= 'YYYY-MM-DD' or changesets >= 'YYYY-MM-DD'" and parse the results.

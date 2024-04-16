@@ -9,6 +9,7 @@
 #include "PlasticSourceControlWorkspaceCreation.h"
 
 #include "PlasticSourceControlBranchesWindow.h"
+#include "PlasticSourceControlChangesetsWindow.h"
 #include "PlasticSourceControlLocksWindow.h"
 
 /**
@@ -44,6 +45,11 @@ public:
 		return PlasticSourceControlBranchesWindow;
 	}
 
+	FPlasticSourceControlChangesetsWindow& GetChangesetsWindow()
+	{
+		return PlasticSourceControlChangesetsWindow;
+	}
+
 	FPlasticSourceControlLocksWindow& GetLocksWindow()
 	{
 		return PlasticSourceControlLocksWindow;
@@ -75,6 +81,7 @@ private:
 
 	/** Dockable windows adding advanced features to the plugin */
 	FPlasticSourceControlBranchesWindow PlasticSourceControlBranchesWindow;
+	FPlasticSourceControlChangesetsWindow PlasticSourceControlChangesetsWindow;
 	FPlasticSourceControlLocksWindow PlasticSourceControlLocksWindow;
 
 	/** Logic to create a new workspace */
