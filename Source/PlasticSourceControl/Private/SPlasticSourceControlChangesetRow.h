@@ -64,10 +64,12 @@ class SPlasticSourceControlChangesetRow : public SMultiColumnTableRow<FPlasticSo
 public:
 	SLATE_BEGIN_ARGS(SPlasticSourceControlChangesetRow)
 		: _ChangesetToVisualize(nullptr)
+		, _bIsCurrentChangeset(false)
 		, _HighlightText()
 	{
 	}
 		SLATE_ARGUMENT(FPlasticSourceControlChangesetPtr, ChangesetToVisualize)
+		SLATE_ARGUMENT(bool, bIsCurrentChangeset)
 		SLATE_ATTRIBUTE(FText, HighlightText)
 	SLATE_END_ARGS()
 
@@ -86,6 +88,9 @@ public:
 private:
 	/** The Changeset that we are visualizing in this row. */
 	FPlasticSourceControlChangeset* ChangesetToVisualize;
+
+	/** True if this is the current changeset, to be highlighted on the list of changesets. */
+	bool bIsCurrentChangeset;
 
 	/** The search text to highlight if any */
 	TAttribute<FText> HighlightText;

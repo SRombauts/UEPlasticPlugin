@@ -39,6 +39,7 @@ FText PlasticSourceControlChangesetsListViewColumn::Branch::GetToolTipText() { r
 void SPlasticSourceControlChangesetRow::Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwner)
 {
 	ChangesetToVisualize = InArgs._ChangesetToVisualize.Get();
+	bIsCurrentChangeset = InArgs._bIsCurrentChangeset;
 	HighlightText = InArgs._HighlightText;
 
 	FSuperRowType::FArguments Args = FSuperRowType::FArguments()
@@ -48,20 +49,28 @@ void SPlasticSourceControlChangesetRow::Construct(const FArguments& InArgs, cons
 
 TSharedRef<SWidget> SPlasticSourceControlChangesetRow::GenerateWidgetForColumn(const FName& InColumnId)
 {
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+	const FSlateFontInfo FontInfo = bIsCurrentChangeset ? FAppStyle::GetFontStyle("BoldFont") : FAppStyle::GetFontStyle("NormalFont");
+#else
+	const FSlateFontInfo FontInfo = bIsCurrentChangeset ? FEditorStyle::GetFontStyle("BoldFont") : FEditorStyle::GetFontStyle("NormalFont");
+#endif
+
 	if (InColumnId == PlasticSourceControlChangesetsListViewColumn::ChangesetId::Id())
 	{
 		return SNew(STextBlock)
 			.Text(FText::AsNumber(ChangesetToVisualize->ChangesetId))
 			.ToolTipText(FText::AsNumber(ChangesetToVisualize->ChangesetId))
 			.Margin(FMargin(6.f, 1.f))
+			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
 	else if (InColumnId == PlasticSourceControlChangesetsListViewColumn::CreatedBy::Id())
 	{
 		return SNew(STextBlock)
-			.Text(FText::FromString(ChangesetToVisualize->CreatedBy))
+			.Text(FText::FromString(PlasticSourceControlUtils::UserNameToDisplayName(ChangesetToVisualize->CreatedBy)))
 			.ToolTipText(FText::FromString(ChangesetToVisualize->CreatedBy))
 			.Margin(FMargin(6.f, 1.f))
+			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
 	else if (InColumnId == PlasticSourceControlChangesetsListViewColumn::Date::Id())
@@ -69,14 +78,19 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetRow::GenerateWidgetForColumn(c
 		return SNew(STextBlock)
 			.Text(FText::AsDateTime(ChangesetToVisualize->Date))
 			.ToolTipText(FText::AsDateTime(ChangesetToVisualize->Date))
-			.Margin(FMargin(6.f, 1.f));
+			.Margin(FMargin(6.f, 1.f))
+			.Font(FontInfo);
 	}
 	else if (InColumnId == PlasticSourceControlChangesetsListViewColumn::Comment::Id())
 	{
 		return SNew(STextBlock)
-			.Text(FText::FromString(PlasticSourceControlUtils::UserNameToDisplayName(ChangesetToVisualize->Comment)))
+			.Text(FText::FromString(ChangesetToVisualize->Comment))
 			.ToolTipText(FText::FromString(ChangesetToVisualize->Comment))
 			.Margin(FMargin(6.f, 1.f))
+#if ENGINE_MAJOR_VERSION >= 5
+			.OverflowPolicy(ETextOverflowPolicy::Ellipsis)
+#endif
+			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
 	else if (InColumnId == PlasticSourceControlChangesetsListViewColumn::Branch::Id())
@@ -88,6 +102,7 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetRow::GenerateWidgetForColumn(c
 #if ENGINE_MAJOR_VERSION >= 5
 			.OverflowPolicy(ETextOverflowPolicy::Ellipsis)
 #endif
+			.Font(FontInfo)
 			.HighlightText(HighlightText);
 	}
 	else
