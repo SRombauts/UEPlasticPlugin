@@ -95,11 +95,8 @@ TSharedRef<SWidget> SPlasticSourceControlBranchRow::GenerateWidgetForColumn(cons
 	}
 	else if (InColumnId == PlasticSourceControlBranchesListViewColumn::Comment::Id())
 	{
-		FString CommentOnOneLine = BranchToVisualize->Comment;
-		CommentOnOneLine.ReplaceCharInline(TEXT('\n'), TEXT(' '), ESearchCase::CaseSensitive);
-
 		return SNew(STextBlock)
-			.Text(FText::FromString(MoveTemp(CommentOnOneLine)))
+			.Text(FText::FromString(BranchToVisualize->Comment))
 			.ToolTipText(FText::FromString(BranchToVisualize->Comment))
 			.Margin(FMargin(6.f, 1.f))
 #if ENGINE_MAJOR_VERSION >= 5
