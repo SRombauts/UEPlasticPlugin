@@ -1130,7 +1130,7 @@ bool FPlasticGetLocksWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	{
 		FString RepositoryName, ServerUrl;
-		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(CurrentBranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(InCommand.BranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
 	}
 
 	return InCommand.bCommandSuccessful;
@@ -1138,8 +1138,6 @@ bool FPlasticGetLocksWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticGetLocksWorker::UpdateStates()
 {
-	GetProvider().SetBranchName(CurrentBranchName);
-
 	return false;
 }
 
@@ -1213,7 +1211,7 @@ bool FPlasticGetBranchesWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	{
 		FString RepositoryName, ServerUrl;
-		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(CurrentBranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(InCommand.BranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
 	}
 
 	return InCommand.bCommandSuccessful;
@@ -1221,8 +1219,6 @@ bool FPlasticGetBranchesWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 bool FPlasticGetBranchesWorker::UpdateStates()
 {
-	GetProvider().SetBranchName(CurrentBranchName);
-
 	return false;
 }
 

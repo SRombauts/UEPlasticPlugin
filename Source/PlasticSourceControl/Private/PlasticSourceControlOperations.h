@@ -474,9 +474,6 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() override;
-
-	// Current branch the workspace is on (at the end of the operation)
-	FString CurrentBranchName;
 };
 
 /** release or remove Lock(s) on file(s). */
@@ -509,9 +506,6 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() override;
-
-	// Current branch the workspace is on (at the end of the operation)
-	FString CurrentBranchName;
 };
 
 /** Switch workspace to another branch. */
