@@ -21,11 +21,11 @@ FText PlasticSourceControlChangesetsListViewColumn::ChangesetId::GetDisplayText(
 FText PlasticSourceControlChangesetsListViewColumn::ChangesetId::GetToolTipText() { return LOCTEXT("ChangesetId_Column_Tooltip", "Id of the changeset"); }
 
 FName PlasticSourceControlChangesetsListViewColumn::CreatedBy::Id() { return TEXT("CreatedBy"); }
-FText PlasticSourceControlChangesetsListViewColumn::CreatedBy::GetDisplayText() { return LOCTEXT("CreatedBy_Column", "Created By"); }
+FText PlasticSourceControlChangesetsListViewColumn::CreatedBy::GetDisplayText() { return LOCTEXT("CreatedBy_Column", "Created by"); }
 FText PlasticSourceControlChangesetsListViewColumn::CreatedBy::GetToolTipText() { return LOCTEXT("CreatedBy_Column_Tooltip", "Creator of the changeset"); }
 
 FName PlasticSourceControlChangesetsListViewColumn::Date::Id() { return TEXT("Date"); }
-FText PlasticSourceControlChangesetsListViewColumn::Date::GetDisplayText() { return LOCTEXT("Date_Column", "Creation Date"); }
+FText PlasticSourceControlChangesetsListViewColumn::Date::GetDisplayText() { return LOCTEXT("Date_Column", "Creation date"); }
 FText PlasticSourceControlChangesetsListViewColumn::Date::GetToolTipText() { return LOCTEXT("Date_Column_Tooltip", "Date of creation of the changeset"); }
 
 FName PlasticSourceControlChangesetsListViewColumn::Comment::Id() { return TEXT("Comment"); }
