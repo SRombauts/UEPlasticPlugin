@@ -1157,10 +1157,7 @@ bool RunGetChangesets(const FDateTime& InFromDate, TArray<FPlasticSourceControlC
 	Parameters.Add(TEXT("changesets"));
 	if (InFromDate != FDateTime())
 	{
-		Parameters.Add(FString::Printf(TEXT("\"where date >= '%d/%d/%d'\""),
-			InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay(),
-			InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay()
-		));
+		Parameters.Add(FString::Printf(TEXT("\"where date >= '%d/%d/%d'\""), InFromDate.GetYear(), InFromDate.GetMonth(), InFromDate.GetDay()));
 	}
 	Parameters.Add(TEXT("order by ChangesetId desc"));
 	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *ChangesetResultFile.GetFilename()));
