@@ -1374,9 +1374,7 @@ bool FPlasticGetChangesetsWorker::Execute(FPlasticSourceControlCommand& InComman
 	}
 
 	{
-		FString RepositoryName, ServerUrl;
-		// TODO: refresh current changeset ID
-	//	InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(CurrentChangesetId, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetChangesetNumber(InCommand.ChangesetNumber, InCommand.ErrorMessages);
 	}
 
 	return InCommand.bCommandSuccessful;
@@ -1384,8 +1382,6 @@ bool FPlasticGetChangesetsWorker::Execute(FPlasticSourceControlCommand& InComman
 
 bool FPlasticGetChangesetsWorker::UpdateStates()
 {
-	// TODO GetProvider().SetChangesetNumber(CurrentChangesetId);
-
 	return false;
 }
 

@@ -124,7 +124,7 @@ bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FStr
 }
 
 /**
-* Parse the current changeset from the header returned by "cm status --machinereadable --header --fieldseparator=;"
+* Parse the current changeset from the header returned by "cm status --machinereadable --fieldseparator=;"
 *
 * Get workspace status in one of the form
 STATUS;41;UEPlasticPluginDev;localhost:8087

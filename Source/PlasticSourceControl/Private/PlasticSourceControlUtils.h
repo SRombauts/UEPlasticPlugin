@@ -128,6 +128,15 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName,
  */
 bool GetWorkspaceInfo(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages);
 
+
+/**
+ * Get the current changeset number from the workspace (-1 for a partial workspace)
+ *
+ * @param	OutChangesetNumber	Current changeset number
+ * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+ */
+bool GetChangesetNumber(int32& OutChangesetNumber, TArray<FString>& OutErrorMessages);
+
 /**
  * Get workspace info and check the connection to the server
  *
