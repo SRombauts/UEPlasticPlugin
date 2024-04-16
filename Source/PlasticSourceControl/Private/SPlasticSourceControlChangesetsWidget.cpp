@@ -410,16 +410,12 @@ void SPlasticSourceControlChangesetsWidget::SortChangesetView()
 
 	auto CompareChangesetIds = [](const FPlasticSourceControlChangeset* Lhs, const FPlasticSourceControlChangeset* Rhs)
 	{
-		return (Lhs->ChangesetId < Rhs->ChangesetId);
+		return Lhs->ChangesetId < Rhs->ChangesetId ? -1 : (Lhs->ChangesetId == Rhs->ChangesetId ? 0 : 1);
 	};
 
 	auto CompareCreatedBys = [](const FPlasticSourceControlChangeset* Lhs, const FPlasticSourceControlChangeset* Rhs)
 	{
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
-		return UE::ComparisonUtility::CompareNaturalOrder(*Lhs->CreatedBy, *Rhs->CreatedBy);
-#else
 		return FCString::Stricmp(*Lhs->CreatedBy, *Rhs->CreatedBy);
-#endif
 	};
 
 	auto CompareDates = [](const FPlasticSourceControlChangeset* Lhs, const FPlasticSourceControlChangeset* Rhs)
@@ -458,14 +454,6 @@ void SPlasticSourceControlChangesetsWidget::SortChangesetView()
 		else if (ColumnId == PlasticSourceControlChangesetsListViewColumn::Branch::Id())
 		{
 			return TFunction<int32(const FPlasticSourceControlChangeset*, const FPlasticSourceControlChangeset*)>(CompareBranches);
-		}
-		else if (ColumnId == PlasticSourceControlChangesetsListViewColumn::CreatedBy::Id())
-		{
-			return TFunction<int32(const FPlasticSourceControlChangeset*, const FPlasticSourceControlChangeset*)>(CompareCreatedBys);
-		}
-		else if (ColumnId == PlasticSourceControlChangesetsListViewColumn::Date::Id())
-		{
-			return TFunction<int32(const FPlasticSourceControlChangeset*, const FPlasticSourceControlChangeset*)>(CompareDates);
 		}
 		else
 		{
