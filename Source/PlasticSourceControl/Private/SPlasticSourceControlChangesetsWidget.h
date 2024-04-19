@@ -15,6 +15,7 @@
 #include "ISourceControlProvider.h"
 
 typedef TSharedRef<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetRef;
+typedef TSharedPtr<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetPtr;
 
 class SSearchBox;
 
@@ -49,6 +50,14 @@ private:
 
 	void SortChangesetView();
 
+	TSharedPtr<SWidget> OnOpenContextMenu();
+
+	void OnDiffChangesetClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset);
+	void OnDiffChangesetsClicked(TArray<FPlasticSourceControlChangesetRef> InSelectedChangesets);
+	void OnDiffBranchClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset);
+	void OnSwitchToBranchClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset);
+	void OnSwitchToChangesetClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset);
+
 	void StartRefreshStatus();
 	void TickRefreshStatus(double InDeltaTime);
 	void EndRefreshStatus();
@@ -57,6 +66,8 @@ private:
 
 	/** Source control callbacks */
 	void OnGetChangesetsOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnSwitchToChangesetOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
 
 	/** Delegate handler for when source control state changes */
@@ -67,7 +78,12 @@ private:
 		return ChangesetsListView.Get();
 	}
 
-	/** Interpret F5 keys */
+	void SwitchToChangesetWithConfirmation(const FString& InSelectedChangeset);
+
+	/** Double click to diff the selected changeset */
+	void OnItemDoubleClicked(FPlasticSourceControlChangesetRef InBranch);
+
+	/** Interpret F5 and Enter keys */
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
 private:
