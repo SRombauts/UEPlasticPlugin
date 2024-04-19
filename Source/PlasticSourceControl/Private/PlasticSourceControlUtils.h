@@ -59,6 +59,28 @@ FString FindPlasticBinaryPath();
 bool OpenDesktopApplication(const bool bInBranchExplorer = false);
 
 /**
+ * Open the Desktop Application for diffing a Changeset.
+ *
+ * @param	InChangesetId		Changeset to diff
+ */
+bool OpenDesktopApplicationForDiff(const int32 InChangesetId);
+
+/**
+ * Open the Desktop Application for diffing a couple of Changesets.
+ *
+ * @param	InChangesetIdSrc	Source (Left) Changeset to diff
+ * @param	InChangesetIdDst	Destination (Right) Changeset to diff
+ */
+bool OpenDesktopApplicationForDiff(const int32 InChangesetIdSrc, const int32 InChangesetIdDst);
+
+/**
+ * Open the Desktop Application for diffing a whole Branch.
+ *
+ * @param	InBranchName		Name of the Branch to diff
+ */
+bool OpenDesktopApplicationForDiff(const FString& InBranchName);
+
+/**
  * Open the Unity Cloud Dashboard on the page to show and manage Lock Rules.
  *
  * @param	InOrganizationName	Name of the organization to use, from the server URL

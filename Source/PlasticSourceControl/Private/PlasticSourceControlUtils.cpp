@@ -120,6 +120,42 @@ bool OpenDesktopApplication(const bool bInBranchExplorer)
 	return OpenDesktopApplication(CommandLineArguments);
 }
 
+static FString GetFullSpec(const int32 InChangesetId)
+{
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	return FString::Printf(TEXT("cs:%d@%s@%s"), InChangesetId, *Provider.GetRepositoryName(), *Provider.GetServerUrl());
+}
+
+static FString GetFullSpec(const FString& InBranchName)
+{
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	return FString::Printf(TEXT("br:%s@%s@%s"), *InBranchName, *Provider.GetRepositoryName(), *Provider.GetServerUrl());
+}
+
+bool OpenDesktopApplicationForDiff(const int32 InChangesetId)
+{
+	const FString CommandLineArguments = FString::Printf(TEXT("--diffchangeset=\"%s\""),
+		*GetFullSpec(InChangesetId));
+
+	return OpenDesktopApplication(CommandLineArguments);
+}
+
+bool OpenDesktopApplicationForDiff(const int32 InChangesetIdSrc, const int32 InChangesetIdDst)
+{
+	const FString CommandLineArguments = FString::Printf(TEXT("--diffchangesetsrc=\"%s\" --diffchangesetdst=\"%s\""),
+		*GetFullSpec(InChangesetIdSrc), *GetFullSpec(InChangesetIdDst));
+
+	return OpenDesktopApplication(CommandLineArguments);
+}
+
+bool OpenDesktopApplicationForDiff(const FString& InBranchName)
+{
+	const FString CommandLineArguments = FString::Printf(TEXT("--diffbranch=\"%s\""),
+		*GetFullSpec(InBranchName));
+
+	return OpenDesktopApplication(CommandLineArguments);
+}
+
 void OpenLockRulesInCloudDashboard(const FString& InOrganizationName)
 {
 	const FString OrganizationLockRulesURL = FString::Printf(
