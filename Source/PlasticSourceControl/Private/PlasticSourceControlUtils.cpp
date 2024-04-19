@@ -94,19 +94,30 @@ static FString FindDesktopApplicationPath()
 	return DesktopAppPath;
 }
 
-void OpenDesktopApplication(const bool bInBranchExplorer)
+static bool OpenDesktopApplication(const FString& InCommandLineArguments)
 {
 	const FString DesktopAppPath = FindDesktopApplicationPath();
-	const FString CommandLineArguments = FString::Printf(TEXT("--wk=\"%s\"%s"), *FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot(), bInBranchExplorer ? TEXT(" --view=BranchExplorerView") : TEXT(""));
 
-	UE_LOG(LogSourceControl, Log, TEXT("Opening the Desktop application (%s %s)"), *DesktopAppPath, *CommandLineArguments);
+	UE_LOG(LogSourceControl, Log, TEXT("Opening the Desktop application (%s %s)"), *DesktopAppPath, *InCommandLineArguments);
 
-	FProcHandle Proc = FPlatformProcess::CreateProc(*DesktopAppPath, *CommandLineArguments, true, false, false, nullptr, 0, nullptr, nullptr, nullptr);
+	FProcHandle Proc = FPlatformProcess::CreateProc(*DesktopAppPath, *InCommandLineArguments, true, false, false, nullptr, 0, nullptr, nullptr, nullptr);
 	if (!Proc.IsValid())
 	{
-		UE_LOG(LogSourceControl, Error, TEXT("Opening the Desktop application (%s %s) failed."), *DesktopAppPath, *CommandLineArguments);
+		UE_LOG(LogSourceControl, Error, TEXT("Opening the Desktop application (%s %s) failed."), *DesktopAppPath, *InCommandLineArguments);
 		FPlatformProcess::CloseProc(Proc);
+		return false;
 	}
+
+	return true;
+}
+
+bool OpenDesktopApplication(const bool bInBranchExplorer)
+{
+	const FString CommandLineArguments = FString::Printf(TEXT("--wk=\"%s\" %s"),
+		*FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot(),
+		bInBranchExplorer ? TEXT("--view=BranchExplorerView") : TEXT(""));
+
+	return OpenDesktopApplication(CommandLineArguments);
 }
 
 void OpenLockRulesInCloudDashboard(const FString& InOrganizationName)

@@ -56,7 +56,7 @@ FString FindPlasticBinaryPath();
  *
  * @param	bInBranchExplorer	Should it open the Branch Explorer instead of the Workspace Explorer (false by default)?
  */
-void OpenDesktopApplication(const bool bInBranchExplorer = false);
+bool OpenDesktopApplication(const bool bInBranchExplorer = false);
 
 /**
  * Open the Unity Cloud Dashboard on the page to show and manage Lock Rules.
