@@ -26,8 +26,9 @@ typedef TSharedRef<class FPlasticSourceControlLock, ESPMode::ThreadSafe> FPlasti
 
 /**
  * Internal operation used to revert checked-out unchanged files
+ *
+ * NOTE: added to Engine in Unreal Engine 5 for changelists
 */
-// NOTE: added to Engine in Unreal Engine 5 for changelists
 class FPlasticRevertUnchanged final : public FSourceControlOperationBase
 {
 public:
@@ -40,12 +41,16 @@ public:
 
 /**
  * Internal operation used to sync all files in the workspace
+ *
+ * NOTE: override the standard "Sync" operation to provide a list of updated files and a custom progress string
 */
 class FPlasticSyncAll final : public FSync
 {
 public:
 	// ISourceControlOperation interface
 	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
 
 	/** List of files updated by the operation */
 	TArray<FString> UpdatedFiles;
@@ -255,7 +260,6 @@ public:
 	// List of changesets found
 	TArray<FPlasticSourceControlChangesetRef> Changesets;
 };
-
 
 /** Called when first activated on a project, and then at project load time.
  *  Look for the root directory of the Plastic workspace (where the ".plastic/" subdirectory is located). */

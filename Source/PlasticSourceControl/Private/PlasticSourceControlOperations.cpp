@@ -103,6 +103,16 @@ FName FPlasticSyncAll::GetName() const
 	return "SyncAll";
 }
 
+FText FPlasticSyncAll::GetInProgressString() const
+{
+	if (!Revision.IsEmpty())
+	{
+		return FText::Format(LOCTEXT("SourceControl_SyncAll", "Switching the workspace to changeset {0}..."), FText::FromString(Revision));
+	}
+
+	return FSync::GetInProgressString();
+}
+
 FName FPlasticRevertAll::GetName() const
 {
 	return "RevertAll";
@@ -177,7 +187,7 @@ FName FPlasticSwitchToBranch::GetName() const
 
 FText FPlasticSwitchToBranch::GetInProgressString() const
 {
-	return LOCTEXT("SourceControl_SwitchToBranch", "Switching the workspace to another branch...");
+	return FText::Format(LOCTEXT("SourceControl_SwitchToBranch", "Switching the workspace to branch {0}..."), FText::FromString(BranchName));
 }
 
 FName FPlasticMergeBranch::GetName() const
@@ -187,7 +197,7 @@ FName FPlasticMergeBranch::GetName() const
 
 FText FPlasticMergeBranch::GetInProgressString() const
 {
-	return LOCTEXT("SourceControl_MergeBranch", "Merging branch to the current one...");
+	return FText::Format(LOCTEXT("SourceControl_MergeBranch", "Merging branch {0} to the current one..."), FText::FromString(BranchName));
 }
 
 FName FPlasticCreateBranch::GetName() const
@@ -197,7 +207,7 @@ FName FPlasticCreateBranch::GetName() const
 
 FText FPlasticCreateBranch::GetInProgressString() const
 {
-	return LOCTEXT("SourceControl_CreateBranch", "Creating new child branch...");
+	return FText::Format(LOCTEXT("SourceControl_CreateBranch", "Creating new child branch {0}..."), FText::FromString(BranchName));
 }
 
 
@@ -208,7 +218,7 @@ FName FPlasticRenameBranch::GetName() const
 
 FText FPlasticRenameBranch::GetInProgressString() const
 {
-	return LOCTEXT("SourceControl_RenameBranch", "Renaming a branch...");
+	return FText::Format(LOCTEXT("SourceControl_RenameBranch", "Renaming the branch {0} to {1}..."), FText::FromString(OldName), FText::FromString(NewName));
 }
 
 FName FPlasticDeleteBranches::GetName() const
@@ -218,7 +228,7 @@ FName FPlasticDeleteBranches::GetName() const
 
 FText FPlasticDeleteBranches::GetInProgressString() const
 {
-	return LOCTEXT("SourceControl_DeleteBranches", "Deleting branch(es)...");
+	return FText::Format(LOCTEXT("SourceControl_DeleteBranches", "Deleting branch(es) {0}..."), FText::FromString(BranchNames[0]));
 }
 
 FName FPlasticGetChangesets::GetName() const
@@ -230,7 +240,6 @@ FText FPlasticGetChangesets::GetInProgressString() const
 {
 	return LOCTEXT("SourceControl_GetChangesets", "Getting the list of changesets...");
 }
-
 
 static bool AreAllFiles(const TArray<FString>& InFiles)
 {
