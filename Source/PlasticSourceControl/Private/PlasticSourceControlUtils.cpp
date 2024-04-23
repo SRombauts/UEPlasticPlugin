@@ -972,7 +972,7 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 }
 
 // Run a Plastic "update" command to sync the workspace and parse its XML results.
-bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
+bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, const FString& InChangesetId, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
 {
 	bool bResult = false;
 
@@ -983,10 +983,17 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 	{
 		const FScopedTempFile UpdateResultFile;
 		TArray<FString> InfoMessages;
+		if (!InChangesetId.IsEmpty())
+		{
+			Parameters.Add(FString::Printf(TEXT("--changeset=%s"), *InChangesetId));
+		}
+		else
+		{
+			Parameters.Add(TEXT("--last"));
+		}
+		Parameters.Add(TEXT("--dontmerge"));
 		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *UpdateResultFile.GetFilename()));
 		Parameters.Add(TEXT("--encoding=\"utf-8\""));
-		Parameters.Add(TEXT("--last"));
-		Parameters.Add(TEXT("--dontmerge"));
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
 		if (bResult)
 		{
@@ -1001,6 +1008,10 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 	else
 	{
 		TArray<FString> Results;
+		if (!InChangesetId.IsEmpty())
+		{
+			Parameters.Add(FString::Printf(TEXT("--changeset=%s"), *InChangesetId));
+		}
 		Parameters.Add(TEXT("--report"));
 		Parameters.Add(TEXT("--machinereadable"));
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InFiles, Results, OutErrorMessages);

@@ -1666,8 +1666,10 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSyncWorker::Execute);
 
+	TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> SyncOperation = StaticCastSharedRef<FPlasticSyncAll>(InCommand.Operation);
+
 	TArray<FString> UpdatedFiles;
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdate(InCommand.Files, GetProvider().IsPartialWorkspace(), UpdatedFiles, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdate(InCommand.Files, GetProvider().IsPartialWorkspace(), SyncOperation->GetRevision(), UpdatedFiles, InCommand.ErrorMessages);
 
 	// now update the status of the updated files
 	if (UpdatedFiles.Num())
@@ -1677,8 +1679,8 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	if ((InCommand.Operation->GetName() == FName("SyncAll")))
 	{
-		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSyncAll>(InCommand.Operation);
-		Operation->UpdatedFiles = MoveTemp(UpdatedFiles);
+		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> SyncAllOperation = StaticCastSharedRef<FPlasticSyncAll>(InCommand.Operation);
+		SyncAllOperation->UpdatedFiles = MoveTemp(UpdatedFiles);
 	}
 
 	return InCommand.bCommandSuccessful;

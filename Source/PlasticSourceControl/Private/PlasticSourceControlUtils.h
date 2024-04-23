@@ -257,10 +257,11 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
  *
  * @param	InFiles					The files or paths to sync
  * @param	bInIsPartialWorkspace	Whether running on a partial/gluon or regular/full workspace
+ * @param	InChangesetId			The optional changeset to sync to (leave empty to sync to the latest in the branch)
  * @param	OutUpdatedFiles			The files that where updated
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
  */
-bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
+bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, const FString& InChangesetId, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
 
 #if ENGINE_MAJOR_VERSION == 5
 
