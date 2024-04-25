@@ -992,6 +992,7 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 			Parameters.Add(TEXT("--last"));
 		}
 		Parameters.Add(TEXT("--dontmerge"));
+		Parameters.Add(TEXT("--noinput"));
 		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *UpdateResultFile.GetFilename()));
 		Parameters.Add(TEXT("--encoding=\"utf-8\""));
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
@@ -1013,6 +1014,7 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 			Parameters.Add(FString::Printf(TEXT("--changeset=%s"), *InChangesetId));
 		}
 		Parameters.Add(TEXT("--report"));
+		Parameters.Add(TEXT("--noinput"));
 		Parameters.Add(TEXT("--machinereadable"));
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InFiles, Results, OutErrorMessages);
 		if (bResult)
@@ -1287,9 +1289,10 @@ bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedF
 	const FScopedTempFile SwitchResultFile;
 	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
+	Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InBranchName));
+	Parameters.Add(TEXT("--noinput"));
 	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *SwitchResultFile.GetFilename()));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
-	Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InBranchName));
 	bResult = PlasticSourceControlUtils::RunCommand(TEXT("switch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
 	if (bResult)
 	{
