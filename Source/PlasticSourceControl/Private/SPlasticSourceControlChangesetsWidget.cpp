@@ -591,7 +591,7 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenContextMenu()
 
 	Section.AddMenuEntry(
 		TEXT("DiffBranch"),
-		bSingleSelection ? FText::Format(LOCTEXT("DiffBranchDynamic", "Diff branch {0}"), FText::FromString(SelectedChangeset->Branch)) : LOCTEXT("DiffBranch", "Diff branch"),
+		bSingleBranchSelected ? FText::Format(LOCTEXT("DiffBranchDynamic", "Diff branch {0}"), FText::FromString(SelectedChangeset->Branch)) : LOCTEXT("DiffBranch", "Diff branch"),
 		bSingleBranchSelected ? LOCTEXT("DiffChangesetTooltip", "Launch the Desktop application diff window showing all changes in the selected branch.") : SelectASingleBranchTooltip,
 		FSlateIcon(),
 		FUIAction(
@@ -604,7 +604,7 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenContextMenu()
 
 	Section.AddMenuEntry(
 		TEXT("SwitchToBranch"),
-		bSingleSelection ? FText::Format(LOCTEXT("SwitchToBranchDynamic", "Switch workspace to the branch {0}"), FText::FromString(SelectedChangeset->Branch)) : LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
+		bSingleBranchSelected ? FText::Format(LOCTEXT("SwitchToBranchDynamic", "Switch workspace to the branch {0}"), FText::FromString(SelectedChangeset->Branch)) : LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
 		bSingleBranchSelected ? LOCTEXT("SwitchToBranchTooltip", "Switch the workspace to the head of the branch with this changeset.") : SelectASingleBranchTooltip,
 		FSlateIcon(),
 		FUIAction(
@@ -616,7 +616,7 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenContextMenu()
 	Section.AddMenuEntry(
 		TEXT("SwitchToChangeset"),
 		bSingleSelection ? FText::Format(LOCTEXT("SwitchToChangesetDynamic", "Switch workspace to this changeset {0}"), FText::AsNumber(SelectedChangeset->ChangesetId)) : LOCTEXT("SwitchToChangeset", "Switch workspace to this changeset"),
-		bSingleNotCurrent ? LOCTEXT("SwitchToChangesetsTooltip", "Switch the workspace to the specific changeset. Note that you won't be able to check in any change from it.") :
+		bSingleNotCurrent ? LOCTEXT("SwitchToChangesetsTooltip", "Switch the workspace to the specific changeset instead of a branch.\nSome information related to smart locks and to incoming changes won't be available.") :
 		bSingleSelection ? SelectADifferentChangesetTooltip : SelectASingleChangesetTooltip,
 		FSlateIcon(),
 		FUIAction(
@@ -692,7 +692,7 @@ void SPlasticSourceControlChangesetsWidget::OnSwitchToBranchClicked(FPlasticSour
 
 void SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset)
 {
-	const FText SwitchConfirmation = FText::Format(LOCTEXT("SwitchToChangesetDialog", "Are you sure you want to switch the workspace to the changeset {0} instead of a branch? You won't be able to check in any change from it."),
+	const FText SwitchConfirmation = FText::Format(LOCTEXT("SwitchToChangesetDialog", "Are you sure you want to switch the workspace to the changeset {0} instead of a branch?\nSome information related to smart locks and to incoming changes won't be available."),
 		FText::AsNumber(InSelectedChangeset->ChangesetId));
 	const EAppReturnType::Type Choice = FMessageDialog::Open(
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
@@ -707,7 +707,7 @@ void SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetClicked(FPlasticS
 	{
 		if (!Notification.IsInProgress())
 		{
-			// Launch a custom "SyncAll" operation (using the underlying standard "Sync" operation)
+			// Launch a custom "Switch" operation
 
 			// Warn the user about any unsaved assets (risk of losing work) but don't enforce saving them. Saving and checking out these assets will make the switch to the branch fail.
 			PackageUtils::SaveDirtyPackages();
@@ -715,8 +715,8 @@ void SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetClicked(FPlasticS
 			// Find and Unlink all loaded packages in Content directory to allow to update them
 			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
 
-			TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> SwitchToChangesetOperation = ISourceControlOperation::Create<FPlasticSyncAll>();
-			SwitchToChangesetOperation->SetRevision(FString::FromInt(InSelectedChangeset->ChangesetId));
+			TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToChangesetOperation = ISourceControlOperation::Create<FPlasticSwitch>();
+			SwitchToChangesetOperation->ChangesetId = InSelectedChangeset->ChangesetId;
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 			const ECommandResult::Type Result = Provider.Execute(SwitchToChangesetOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete));
 			if (Result == ECommandResult::Succeeded)
@@ -842,7 +842,7 @@ void SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete
 	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete);
 
 	// Reload packages that where updated by the SwitchToChangeset operation (and the current map if needed)
-	TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> SwitchToChangesetOperation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
+	TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToChangesetOperation = StaticCastSharedRef<FPlasticSwitch>(InOperation);
 	PackageUtils::ReloadPackages(SwitchToChangesetOperation->UpdatedFiles);
 
 	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
@@ -876,9 +876,6 @@ void SPlasticSourceControlChangesetsWidget::HandleSourceControlStateChanged()
 		GetListView()->RequestListRefresh();
 	}
 }
-
-void SPlasticSourceControlChangesetsWidget::SwitchToChangesetWithConfirmation(const FString& InSelectedChangeset)
-{}
 
 void SPlasticSourceControlChangesetsWidget::OnItemDoubleClicked(FPlasticSourceControlChangesetRef InChangeset)
 {

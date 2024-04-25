@@ -78,8 +78,6 @@ private:
 		return ChangesetsListView.Get();
 	}
 
-	void SwitchToChangesetWithConfirmation(const FString& InSelectedChangeset);
-
 	/** Double click to diff the selected changeset */
 	void OnItemDoubleClicked(FPlasticSourceControlChangesetRef InBranch);
 
