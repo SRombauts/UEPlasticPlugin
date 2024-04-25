@@ -278,10 +278,11 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 /**
  * Run switch br:/name and parse the results.
  * @param	InBranchName			The name of the branch to switch the workspace to
+ * @param	bInIsPartialWorkspace	Whether running on a partial/gluon or regular/full workspace
  * @param	OutUpdatedFiles			The files that where updated
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
  */
-bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
+bool RunSwitchToBranch(const FString& InBranchName, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages);
 
 /**
  * Run merge br:/name and parse the results.

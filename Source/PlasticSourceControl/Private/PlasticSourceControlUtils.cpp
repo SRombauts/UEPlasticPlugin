@@ -1164,7 +1164,7 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 	return bCommandSuccessful;
 }
 
-bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
+bool RunSwitchToBranch(const FString& InBranchName, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
 {
 	bool bResult = false;
 
@@ -1173,14 +1173,28 @@ bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedF
 	TArray<FString> Parameters;
 	Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InBranchName));
 	Parameters.Add(TEXT("--noinput"));
-	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *SwitchResultFile.GetFilename()));
-	Parameters.Add(TEXT("--encoding=\"utf-8\""));
-	bResult = PlasticSourceControlUtils::RunCommand(TEXT("switch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
-	if (bResult)
+	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+	if (!bInIsPartialWorkspace)
 	{
-		// Load and parse the result of the update command
-		FString Results;
-		if (FFileHelper::LoadFileToString(Results, *SwitchResultFile.GetFilename()))
+		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *SwitchResultFile.GetFilename()));
+		Parameters.Add(TEXT("--encoding=\"utf-8\""));
+		bResult = PlasticSourceControlUtils::RunCommand(TEXT("switch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
+		if (bResult)
+		{
+			// Load and parse the result of the update command
+			FString Results;
+			if (FFileHelper::LoadFileToString(Results, *SwitchResultFile.GetFilename()))
+			{
+				bResult = PlasticSourceControlParsers::ParseUpdateResults(Results, OutUpdatedFiles);
+			}
+		}
+	}
+	else
+	{
+		TArray<FString> Results;
+		Parameters.Add(TEXT("--report"));
+		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial switch"), Parameters, TArray<FString>(), Results, OutErrorMessages);
+		if (bResult)
 		{
 			bResult = PlasticSourceControlParsers::ParseUpdateResults(Results, OutUpdatedFiles);
 		}

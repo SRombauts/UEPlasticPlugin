@@ -1228,7 +1228,7 @@ bool FPlasticSwitchToBranchWorker::Execute(FPlasticSourceControlCommand& InComma
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSwitchToBranch>(InCommand.Operation);
 
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunSwitchToBranch(Operation->BranchName, Operation->UpdatedFiles, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunSwitchToBranch(Operation->BranchName, GetProvider().IsPartialWorkspace(), Operation->UpdatedFiles, InCommand.ErrorMessages);
 
 	// now update the status of the updated files
 	if (InCommand.bCommandSuccessful && Operation->UpdatedFiles.Num())
