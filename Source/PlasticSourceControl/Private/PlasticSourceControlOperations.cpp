@@ -52,7 +52,7 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("GetLocks", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetLocksWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Unlock", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticUnlockWorker>));
 	PlasticSourceControlProvider.RegisterWorker("GetBranches", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetBranchesWorker>));
-	PlasticSourceControlProvider.RegisterWorker("Switch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSwitchToBranchWorker>));
+	PlasticSourceControlProvider.RegisterWorker("Switch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSwitchWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Merge", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticMergeBranchWorker>));
 	PlasticSourceControlProvider.RegisterWorker("CreateBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticCreateBranchWorker>));
 	PlasticSourceControlProvider.RegisterWorker("RenameBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRenameBranchWorker>));
@@ -180,12 +180,12 @@ FText FPlasticGetBranches::GetInProgressString() const
 	return LOCTEXT("SourceControl_GetBranches", "Getting the list of branches...");
 }
 
-FName FPlasticSwitchToBranch::GetName() const
+FName FPlasticSwitch::GetName() const
 {
 	return "Switch";
 }
 
-FText FPlasticSwitchToBranch::GetInProgressString() const
+FText FPlasticSwitch::GetInProgressString() const
 {
 	return FText::Format(LOCTEXT("SourceControl_SwitchToBranch", "Switching the workspace to branch {0}..."), FText::FromString(BranchName));
 }
@@ -1232,19 +1232,19 @@ bool FPlasticGetBranchesWorker::UpdateStates()
 }
 
 
-FName FPlasticSwitchToBranchWorker::GetName() const
+FName FPlasticSwitchWorker::GetName() const
 {
 	return "Switch";
 }
 
-bool FPlasticSwitchToBranchWorker::Execute(FPlasticSourceControlCommand& InCommand)
+bool FPlasticSwitchWorker::Execute(FPlasticSourceControlCommand& InCommand)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSwitchToBranchWorker::Execute);
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticSwitchWorker::Execute);
 
 	check(InCommand.Operation->GetName() == GetName());
-	TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSwitchToBranch>(InCommand.Operation);
+	TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticSwitch>(InCommand.Operation);
 
-	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunSwitchToBranch(Operation->BranchName, GetProvider().IsPartialWorkspace(), Operation->UpdatedFiles, InCommand.ErrorMessages);
+	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunSwitch(Operation->BranchName, Operation->ChangesetId, GetProvider().IsPartialWorkspace(), Operation->UpdatedFiles, InCommand.ErrorMessages);
 
 	// now update the status of the updated files
 	if (InCommand.bCommandSuccessful && Operation->UpdatedFiles.Num())
@@ -1258,7 +1258,7 @@ bool FPlasticSwitchToBranchWorker::Execute(FPlasticSourceControlCommand& InComma
 	return InCommand.bCommandSuccessful;
 }
 
-bool FPlasticSwitchToBranchWorker::UpdateStates()
+bool FPlasticSwitchWorker::UpdateStates()
 {
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }

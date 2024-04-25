@@ -1282,14 +1282,21 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 	return bCommandSuccessful;
 }
 
-bool RunSwitchToBranch(const FString& InBranchName, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
+bool RunSwitch(const FString& InBranchName, const int32 InChangesetId, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
 {
 	bool bResult = false;
 
 	const FScopedTempFile SwitchResultFile;
 	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InBranchName));
+	if (InChangesetId != ISourceControlState::INVALID_REVISION)
+	{
+		Parameters.Add(FString::Printf(TEXT("cs:%d"), InChangesetId));
+	}
+	else
+	{
+		Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InBranchName));
+	}
 	Parameters.Add(TEXT("--noinput"));
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (!bInIsPartialWorkspace)

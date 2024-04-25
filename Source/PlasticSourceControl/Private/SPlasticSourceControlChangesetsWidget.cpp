@@ -667,7 +667,7 @@ void SPlasticSourceControlChangesetsWidget::OnSwitchToBranchClicked(FPlasticSour
 
 		// Launch a custom "Switch" operation
 		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-		TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> SwitchToBranchOperation = ISourceControlOperation::Create<FPlasticSwitchToBranch>();
+		TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToBranchOperation = ISourceControlOperation::Create<FPlasticSwitch>();
 		SwitchToBranchOperation->BranchName = InSelectedChangeset->Branch;
 		const ECommandResult::Type Result = Provider.Execute(SwitchToBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSwitchToBranchOperationComplete));
 		if (Result == ECommandResult::Succeeded)
@@ -826,7 +826,7 @@ void SPlasticSourceControlChangesetsWidget::OnSwitchToBranchOperationComplete(co
 	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::OnSwitchToBranchOperationComplete);
 
 	// Reload packages that where updated by the SwitchToBranch operation (and the current map if needed)
-	TSharedRef<FPlasticSwitchToBranch, ESPMode::ThreadSafe> SwitchToBranchOperation = StaticCastSharedRef<FPlasticSwitchToBranch>(InOperation);
+	TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToBranchOperation = StaticCastSharedRef<FPlasticSwitch>(InOperation);
 	PackageUtils::ReloadPackages(SwitchToBranchOperation->UpdatedFiles);
 
 	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
