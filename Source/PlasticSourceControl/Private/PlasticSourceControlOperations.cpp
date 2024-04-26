@@ -1246,13 +1246,16 @@ bool FPlasticSwitchWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunSwitch(Operation->BranchName, Operation->ChangesetId, GetProvider().IsPartialWorkspace(), Operation->UpdatedFiles, InCommand.ErrorMessages);
 
+	// the current branch is used to asses the status of Retained Locks
+	{
+		FString RepositoryName, ServerUrl;
+		PlasticSourceControlUtils::GetWorkspaceInfo(InCommand.WorkspaceSelector, InCommand.BranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+		GetProvider().SetWorkspaceSelector(InCommand.WorkspaceSelector, InCommand.BranchName);
+	}
+
 	// now update the status of the updated files
 	if (InCommand.bCommandSuccessful && Operation->UpdatedFiles.Num())
 	{
-		// the current branch is used to asses the status of Retained Locks
-		const FString& WorkspaceSelector = Operation->BranchName.IsEmpty() ? FString::FromInt(Operation->ChangesetId) : Operation->BranchName;
-		GetProvider().SetWorkspaceSelector(Operation->BranchName, WorkspaceSelector);
-		PlasticSourceControlUtils::InvalidateLocksCache();
 		PlasticSourceControlUtils::RunUpdateStatus(Operation->UpdatedFiles, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber);
 	}
 
@@ -1681,8 +1684,15 @@ bool FPlasticSyncWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	TArray<FString> UpdatedFiles;
 	InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunUpdate(InCommand.Files, GetProvider().IsPartialWorkspace(), SyncOperation->GetRevision(), UpdatedFiles, InCommand.ErrorMessages);
 
+	// the current branch is used to asses the status of Retained Locks
+	{
+		FString RepositoryName, ServerUrl;
+		PlasticSourceControlUtils::GetWorkspaceInfo(InCommand.WorkspaceSelector, InCommand.BranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+		GetProvider().SetWorkspaceSelector(InCommand.WorkspaceSelector, InCommand.BranchName);
+	}
+
 	// now update the status of the updated files
-	if (UpdatedFiles.Num())
+	if (InCommand.bCommandSuccessful && UpdatedFiles.Num())
 	{
 		PlasticSourceControlUtils::RunUpdateStatus(UpdatedFiles, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber);
 	}

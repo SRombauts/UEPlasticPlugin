@@ -131,10 +131,10 @@ public:
 	{
 		return WorkspaceSelector;
 	}
-	inline void SetWorkspaceSelector(const FString& InBranchName, const FString& InWorkspaceSelector)
+	inline void SetWorkspaceSelector(const FString& InWorkspaceSelector, const FString& InBranchName)
 	{
-		BranchName = InBranchName;
 		WorkspaceSelector = InWorkspaceSelector;
+		BranchName = InBranchName;
 	}
 
 	/** Get the current Changeset Number */
