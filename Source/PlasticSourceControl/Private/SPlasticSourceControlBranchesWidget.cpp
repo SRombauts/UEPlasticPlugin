@@ -45,6 +45,8 @@
 void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 {
 	ISourceControlModule::Get().RegisterProviderChanged(FSourceControlProviderChanged::FDelegate::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged));
+	// register for any source control change to detect any change of branch from the Changesets window
+	SourceControlStateChangedDelegateHandle = ISourceControlModule::Get().GetProvider().RegisterSourceControlStateChanged_Handle(FSourceControlStateChanged::FDelegate::CreateSP(this, &SPlasticSourceControlBranchesWidget::HandleSourceControlStateChanged));
 
 	WorkspaceSelector = FPlasticSourceControlModule::Get().GetProvider().GetWorkspaceSelector();
 
@@ -1100,6 +1102,14 @@ void SPlasticSourceControlBranchesWidget::SwitchToBranchWithConfirmation(const F
 	if (Choice == EAppReturnType::Yes)
 	{
 		OnSwitchToBranchClicked(InSelectedBranch);
+	}
+}
+
+void SPlasticSourceControlBranchesWidget::HandleSourceControlStateChanged()
+{
+	if (WorkspaceSelector != FPlasticSourceControlModule::Get().GetProvider().GetWorkspaceSelector())
+	{
+		bShouldRefresh = true;
 	}
 }
 

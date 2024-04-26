@@ -85,6 +85,9 @@ private:
 	void OnDeleteBranchesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
 
+	/** Delegate handler for when source control state changes */
+	void HandleSourceControlStateChanged();
+
 	SListView<FPlasticSourceControlBranchRef>* GetListView() const
 	{
 		return BranchesListView.Get();
@@ -128,6 +131,9 @@ private:
 
 	TArray<FPlasticSourceControlBranchRef> SourceControlBranches; // Full list from source (filtered by date)
 	TArray<FPlasticSourceControlBranchRef> BranchRows; // Filtered list to display based on the search text filter
+
+	/** Delegate handle for the HandleSourceControlStateChanged function callback */
+	FDelegateHandle SourceControlStateChangedDelegateHandle;
 
 	/** The dialog Window that opens when the user click on any context menu entry */
 	TSharedPtr<SWindow> DialogWindowPtr;

@@ -39,7 +39,7 @@
 void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 {
 	ISourceControlModule::Get().RegisterProviderChanged(FSourceControlProviderChanged::FDelegate::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSourceControlProviderChanged));
-	// register for any source control change to detect new local Changesets on check-out, and release of them on check-in
+	// register for any source control change to detect new local Changesets on check-in
 	SourceControlStateChangedDelegateHandle = ISourceControlModule::Get().GetProvider().RegisterSourceControlStateChanged_Handle(FSourceControlStateChanged::FDelegate::CreateSP(this, &SPlasticSourceControlChangesetsWidget::HandleSourceControlStateChanged));
 
 	CurrentChangesetId = FPlasticSourceControlModule::Get().GetProvider().GetChangesetNumber();
