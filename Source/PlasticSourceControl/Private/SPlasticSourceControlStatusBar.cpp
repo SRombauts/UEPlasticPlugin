@@ -65,7 +65,7 @@ void SPlasticSourceControlStatusBar::Construct(const FArguments& InArgs)
 
 FText SPlasticSourceControlStatusBar::GetStatusBarText() const
 {;
-	return FText::FromString(FPlasticSourceControlModule::Get().GetProvider().GetBranchName());
+	return FText::FromString(FPlasticSourceControlModule::Get().GetProvider().GetWorkspaceSelector());
 }
 
 FReply SPlasticSourceControlStatusBar::OnClicked()

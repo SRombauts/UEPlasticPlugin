@@ -271,7 +271,7 @@ bool FPlasticConnectWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		if (InCommand.bCommandSuccessful)
 		{
 			// Get current branch, repository, server URL and check the connection
-			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCheckConnection(InCommand.BranchName, InCommand.RepositoryName, InCommand.ServerUrl, InCommand.InfoMessages, InCommand.ErrorMessages);
+			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCheckConnection(InCommand.WorkspaceSelector, InCommand.BranchName, InCommand.RepositoryName, InCommand.ServerUrl, InCommand.InfoMessages, InCommand.ErrorMessages);
 			if (InCommand.bCommandSuccessful)
 			{
 				InCommand.InfoMessages.Add(TEXT("Connected successfully"));
@@ -1139,7 +1139,7 @@ bool FPlasticGetLocksWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	{
 		FString RepositoryName, ServerUrl;
-		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(InCommand.BranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(InCommand.WorkspaceSelector, InCommand.BranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
 	}
 
 	return InCommand.bCommandSuccessful;
@@ -1220,7 +1220,7 @@ bool FPlasticGetBranchesWorker::Execute(FPlasticSourceControlCommand& InCommand)
 
 	{
 		FString RepositoryName, ServerUrl;
-		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(InCommand.BranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetWorkspaceInfo(InCommand.WorkspaceSelector, InCommand.BranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
 	}
 
 	return InCommand.bCommandSuccessful;
@@ -1250,7 +1250,8 @@ bool FPlasticSwitchWorker::Execute(FPlasticSourceControlCommand& InCommand)
 	if (InCommand.bCommandSuccessful && Operation->UpdatedFiles.Num())
 	{
 		// the current branch is used to asses the status of Retained Locks
-		GetProvider().SetBranchName(Operation->BranchName);
+		const FString& WorkspaceSelector = Operation->BranchName.IsEmpty() ? FString::FromInt(Operation->ChangesetId) : Operation->BranchName;
+		GetProvider().SetWorkspaceSelector(Operation->BranchName, WorkspaceSelector);
 		PlasticSourceControlUtils::InvalidateLocksCache();
 		PlasticSourceControlUtils::RunUpdateStatus(Operation->UpdatedFiles, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber);
 	}
@@ -1418,7 +1419,7 @@ bool FPlasticUpdateStatusWorker::Execute(FPlasticSourceControlCommand& InCommand
 		{
 			// In case of error, execute a 'checkconnection' command to check the connection to the server.
 			UE_LOG(LogSourceControl, Warning, TEXT("Error on 'status', execute a 'checkconnection' to test the connection to the server"));
-			InCommand.bConnectionDropped = !PlasticSourceControlUtils::RunCheckConnection(InCommand.BranchName, InCommand.RepositoryName, InCommand.ServerUrl, InCommand.InfoMessages, InCommand.ErrorMessages);
+			InCommand.bConnectionDropped = !PlasticSourceControlUtils::RunCheckConnection(InCommand.WorkspaceSelector, InCommand.BranchName, InCommand.RepositoryName, InCommand.ServerUrl, InCommand.InfoMessages, InCommand.ErrorMessages);
 			return false;
 		}
 

@@ -115,7 +115,7 @@ private:
 	bool bIsRefreshing = false;
 	double RefreshStatusStartSecs;
 
-	FString CurrentBranchName;
+	FString WorkspaceSelector;
 
 	/** Ongoing notification for a long-running asynchronous source control operation, if any */
 	FNotification Notification;

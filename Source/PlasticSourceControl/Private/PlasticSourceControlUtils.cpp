@@ -298,13 +298,13 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName,
 	return bResult;
 }
 
-bool GetWorkspaceInfo(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages)
+bool GetWorkspaceInfo(FString& OutWorkspaceSelector, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Results;
 	bool bResult = RunCommand(TEXT("workspaceinfo"), TArray<FString>(), TArray<FString>(), Results, OutErrorMessages);
 	if (bResult)
 	{
-		bResult = PlasticSourceControlParsers::ParseWorkspaceInfo(Results, OutBranchName, OutRepositoryName, OutServerUrl);
+		bResult = PlasticSourceControlParsers::ParseWorkspaceInfo(Results, OutWorkspaceSelector, OutBranchName, OutRepositoryName, OutServerUrl);
 	}
 
 	return bResult;
@@ -326,10 +326,10 @@ bool GetChangesetNumber(int32& OutChangesetNumber, TArray<FString>& OutErrorMess
 	return bResult;
 }
 
-bool RunCheckConnection(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutInfoMessages, TArray<FString>& OutErrorMessages)
+bool RunCheckConnection(FString& OutWorkspaceSelector, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutInfoMessages, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Parameters;
-	if (PlasticSourceControlUtils::GetWorkspaceInfo(OutBranchName, OutRepositoryName, OutServerUrl, OutErrorMessages))
+	if (PlasticSourceControlUtils::GetWorkspaceInfo(OutWorkspaceSelector, OutBranchName, OutRepositoryName, OutServerUrl, OutErrorMessages))
 	{
 		Parameters.Add(FString::Printf(TEXT("--server=%s"), *OutServerUrl));
 	}
@@ -518,6 +518,7 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bI
 	// For displaying Locks as a status overlay icon in the Content Browser, restricts the Locks to only those applying to the current branch so there can be only one and never any ambiguity
 	if (!bInForAllDestBranches && (InProvider.GetPlasticScmVersion() >= PlasticSourceControlVersions::WorkingBranch))
 	{
+		// Note: here is one of the rare places where we need to use a branch name, not a workspace selector
 		Parameters.Add(FString::Printf(TEXT("--workingbranch=%s"), *InProvider.GetBranchName()));
 	}
 	const bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);

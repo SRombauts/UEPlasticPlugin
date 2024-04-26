@@ -46,7 +46,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 {
 	ISourceControlModule::Get().RegisterProviderChanged(FSourceControlProviderChanged::FDelegate::CreateSP(this, &SPlasticSourceControlBranchesWidget::OnSourceControlProviderChanged));
 
-	CurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
+	WorkspaceSelector = FPlasticSourceControlModule::Get().GetProvider().GetWorkspaceSelector();
 
 	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlBranch&>>(TTextFilter<const FPlasticSourceControlBranch&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings));
 	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlBranchesWidget::OnRefreshUI);
@@ -134,7 +134,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 				.HAlign(HAlign_Right)
 				[
 					SNew(STextBlock)
-					.Text_Lambda([this]() { return FText::FromString(CurrentBranchName); })
+					.Text_Lambda([this]() { return FText::FromString(WorkspaceSelector); })
 					.ToolTipText(LOCTEXT("PlasticBranchCurrent_Tooltip", "Current branch."))
 				]
 			]
@@ -252,7 +252,7 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateContentPanel()
 
 TSharedRef<ITableRow> SPlasticSourceControlBranchesWidget::OnGenerateRow(FPlasticSourceControlBranchRef InBranch, const TSharedRef<STableViewBase>& OwnerTable)
 {
-	const bool bIsCurrentBranch = InBranch->Name == CurrentBranchName;
+	const bool bIsCurrentBranch = InBranch->Name == WorkspaceSelector;
 	return SNew(SPlasticSourceControlBranchRow, OwnerTable)
 		.BranchToVisualize(InBranch)
 		.bIsCurrentBranch(bIsCurrentBranch)
@@ -546,7 +546,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		return nullptr;
 	}
 	const bool bSingleSelection = !SelectedBranch.IsEmpty();
-	const bool bSingleNotCurrent = bSingleSelection && (SelectedBranch != CurrentBranchName);
+	const bool bSingleNotCurrent = bSingleSelection && (SelectedBranch != WorkspaceSelector);
 
 	const bool bMergeXml = FPlasticSourceControlModule::Get().GetProvider().GetPlasticScmVersion() >= PlasticSourceControlVersions::MergeXml;
 
@@ -602,7 +602,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 	Section.AddSeparator("PlasticSeparator1");
 
 	const FText MergeBranchTooltip(FText::Format(LOCTEXT("MergeBranchTooltip", "Merge this branch {0} into the current branch {1}"),
-		FText::FromString(SelectedBranch), FText::FromString(CurrentBranchName)));
+		FText::FromString(SelectedBranch), FText::FromString(WorkspaceSelector)));
 	const FText& MergeBranchTooltipDynamic =
 		!bMergeXml ? UpdateUVCSTooltip :
 		bSingleNotCurrent ? MergeBranchTooltip :
@@ -759,7 +759,7 @@ void SPlasticSourceControlBranchesWidget::OnSwitchToBranchClicked(FString InBran
 
 void SPlasticSourceControlBranchesWidget::OnMergeBranchClicked(FString InBranchName)
 {
-	const FText MergeBranchQuestion = FText::Format(LOCTEXT("MergeBranchDialog", "Merge branch {0} into the current branch {1}?"), FText::FromString(InBranchName), FText::FromString(CurrentBranchName));
+	const FText MergeBranchQuestion = FText::Format(LOCTEXT("MergeBranchDialog", "Merge branch {0} into the current branch {1}?"), FText::FromString(InBranchName), FText::FromString(WorkspaceSelector));
 	const EAppReturnType::Type Choice = FMessageDialog::Open(
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
 		EAppMsgCategory::Info,
@@ -986,7 +986,7 @@ void SPlasticSourceControlBranchesWidget::OnGetBranchesOperationComplete(const F
 	TSharedRef<FPlasticGetBranches, ESPMode::ThreadSafe> OperationGetBranches = StaticCastSharedRef<FPlasticGetBranches>(InOperation);
 	SourceControlBranches = MoveTemp(OperationGetBranches->Branches);
 
-	CurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
+	WorkspaceSelector = FPlasticSourceControlModule::Get().GetProvider().GetWorkspaceSelector();
 
 	EndRefreshStatus();
 	OnRefreshUI();
@@ -1106,7 +1106,7 @@ void SPlasticSourceControlBranchesWidget::SwitchToBranchWithConfirmation(const F
 void SPlasticSourceControlBranchesWidget::OnItemDoubleClicked(FPlasticSourceControlBranchRef InBranch)
 {
 	// Double click switches to the selected branch (with a confirmation dialog)
-	if (InBranch->Name != CurrentBranchName)
+	if (InBranch->Name != WorkspaceSelector)
 	{
 		SwitchToBranchWithConfirmation(InBranch->Name);
 	}
@@ -1124,7 +1124,7 @@ FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometr
 	{
 		// Pressing Enter switches to the selected branch (with a confirmation dialog)
 		const TArray<FString> SelectedBranches = GetSelectedBranches();
-		if (SelectedBranches.Num() == 1 && SelectedBranches[0] != CurrentBranchName)
+		if (SelectedBranches.Num() == 1 && SelectedBranches[0] != WorkspaceSelector)
 		{
 			SwitchToBranchWithConfirmation(SelectedBranches[0]);
 		}

@@ -42,7 +42,7 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 	// register for any source control change to detect new local locks on check-out, and release of them on check-in
 	SourceControlStateChangedDelegateHandle = ISourceControlModule::Get().GetProvider().RegisterSourceControlStateChanged_Handle(FSourceControlStateChanged::FDelegate::CreateSP(this, &SPlasticSourceControlLocksWidget::HandleSourceControlStateChanged));
 
-	CurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
+	WorkspaceSelector = FPlasticSourceControlModule::Get().GetProvider().GetWorkspaceSelector();
 
 	const FString OrganizationName = FPlasticSourceControlModule::Get().GetProvider().GetCloudOrganization();
 
@@ -162,7 +162,7 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 				.HAlign(HAlign_Right)
 				[
 					SNew(STextBlock)
-					.Text_Lambda([this]() { return FText::FromString(CurrentBranchName); })
+					.Text_Lambda([this]() { return FText::FromString(WorkspaceSelector); })
 					.ToolTipText(LOCTEXT("PlasticBranchCurrent_Tooltip", "Current branch."))
 				]
 			]
@@ -785,7 +785,7 @@ void SPlasticSourceControlLocksWidget::OnGetLocksOperationComplete(const FSource
 	TSharedRef<FPlasticGetLocks, ESPMode::ThreadSafe> OperationGetLocks = StaticCastSharedRef<FPlasticGetLocks>(InOperation);
 	SourceControlLocks = MoveTemp(OperationGetLocks->Locks);
 
-	CurrentBranchName = FPlasticSourceControlModule::Get().GetProvider().GetBranchName();
+	WorkspaceSelector = FPlasticSourceControlModule::Get().GetProvider().GetWorkspaceSelector();
 
 	EndRefreshStatus();
 	OnRefreshUI();

@@ -59,9 +59,10 @@ bool ParseProfileInfo(TArray<FString>& InResults, const FString& InServerUrl, FS
  * Parse  workspace information, in the form "Branch /main@UE5PlasticPluginDev@localhost:8087"
  *                                        or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected to the cloud)
  *                                        or "Branch /main@rep:UE5OpenWorldPerfTest@repserver:test@cloud"
- *                                        or "Changeset 1234@UE5PlasticPluginDev@test@cloud" (when the workspace is switched on a changeset instead of a branch)
+ *                                        or "Changeset 1234@UE5PlasticPluginDev@test@cloud" (when the workspace is switched to a changeset instead of a branch)
+ *                                        or "Label 1.10.0@UE5PlasticPluginDev@test@cloud" (when the workspace is switched to a label instead of a branch)
 */
-bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
+bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutWorkspaceSelector, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl)
 {
 	if (InResults.Num() == 0)
 	{
@@ -73,9 +74,11 @@ bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FStr
 	static const FString LabelPrefix(TEXT("Label "));
 	static const FString RepPrefix(TEXT("rep:"));
 	static const FString RepserverPrefix(TEXT("repserver:"));
+	bool bIsABranch = false;
 	FString& WorkspaceInfo = InResults[0];
 	if (WorkspaceInfo.StartsWith(BranchPrefix, ESearchCase::CaseSensitive))
 	{
+		bIsABranch = true;
 		WorkspaceInfo.RightChopInline(BranchPrefix.Len());
 	}
 	else if (WorkspaceInfo.StartsWith(ChangesetPrefix, ESearchCase::CaseSensitive))
@@ -95,7 +98,11 @@ bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutBranchName, FStr
 	WorkspaceInfo.ParseIntoArray(WorkspaceInfos, TEXT("@"), false); // Don't cull empty values
 	if (WorkspaceInfos.Num() >= 3)
 	{
-		OutBranchName = MoveTemp(WorkspaceInfos[0]);
+		OutWorkspaceSelector = MoveTemp(WorkspaceInfos[0]);
+		if (bIsABranch)
+		{
+			OutBranchName = OutWorkspaceSelector;
+		}
 		OutRepositoryName = MoveTemp(WorkspaceInfos[1]);
 		OutServerUrl = MoveTemp(WorkspaceInfos[2]);
 
@@ -536,6 +543,7 @@ void ParseFileinfoResults(const TArray<FString>& InResults, TArray<FPlasticSourc
 	ensureMsgf(InResults.Num() == InOutStates.Num(), TEXT("The fileinfo command should gives the same number of infos as the status command"));
 
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	// Note: here is one of the rare places where we need to use a branch name, not a workspace selector
 	const FString& BranchName = Provider.GetBranchName();
 
 	TArray<FPlasticSourceControlLockRef> Locks;

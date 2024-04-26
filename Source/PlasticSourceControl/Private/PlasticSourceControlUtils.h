@@ -145,12 +145,13 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName,
 /**
  * Get workspace info: the current branch, repository name, and server URL
  *
+ * @param	OutWorkspaceSelector	Name of the current branch, changeset or label depending on the workspace selector
  * @param	OutBranchName		Name of the current branch
  * @param	OutRepositoryName	Name of the repository of the current workspace
  * @param	OutServerUrl		URL/Port of the server of the repository
  * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
  */
-bool GetWorkspaceInfo(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages);
+bool GetWorkspaceInfo(FString& OutWorkspaceSelector, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages);
 
 
 /**
@@ -164,13 +165,14 @@ bool GetChangesetNumber(int32& OutChangesetNumber, TArray<FString>& OutErrorMess
 /**
  * Get workspace info and check the connection to the server
  *
- * @param	OutBranchName		Name of the current branch
- * @param	OutRepositoryName	Name of the repository of the current workspace
- * @param	OutServerUrl		URL/Port of the server of the repository
- * @param	OutInfoMessages		Result of the connection test
- * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+ * @param	OutWorkspaceSelector	Name of the current branch, changeset or label depending on the workspace selector
+ * @param	OutBranchName			Name of the current branch when available
+ * @param	OutRepositoryName		Name of the repository of the current workspace
+ * @param	OutServerUrl			URL/Port of the server of the repository
+ * @param	OutInfoMessages			Result of the connection test
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
  */
-bool RunCheckConnection(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutInfoMessages, TArray<FString>& OutErrorMessages);
+bool RunCheckConnection(FString& OutWorkspaceSelector, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutInfoMessages, TArray<FString>& OutErrorMessages);
 
 /**
  * Use the Project Settings to replace Unity Version Control full username/e-mail by a shorter version for display.
