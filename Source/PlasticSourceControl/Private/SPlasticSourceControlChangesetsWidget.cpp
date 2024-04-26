@@ -715,20 +715,40 @@ void SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetClicked(FPlasticS
 			// Find and Unlink all loaded packages in Content directory to allow to update them
 			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
 
-			TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToChangesetOperation = ISourceControlOperation::Create<FPlasticSwitch>();
-			SwitchToChangesetOperation->ChangesetId = InSelectedChangeset->ChangesetId;
 			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-			const ECommandResult::Type Result = Provider.Execute(SwitchToChangesetOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete));
-			if (Result == ECommandResult::Succeeded)
+			if (!Provider.IsPartialWorkspace())
 			{
-				// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
-				Notification.DisplayInProgress(SwitchToChangesetOperation->GetInProgressString());
-				StartRefreshStatus();
+				TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToChangesetOperation = ISourceControlOperation::Create<FPlasticSwitch>();
+				SwitchToChangesetOperation->ChangesetId = InSelectedChangeset->ChangesetId;
+				const ECommandResult::Type Result = Provider.Execute(SwitchToChangesetOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete));
+				if (Result == ECommandResult::Succeeded)
+				{
+					// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+					Notification.DisplayInProgress(SwitchToChangesetOperation->GetInProgressString());
+					StartRefreshStatus();
+				}
+				else
+				{
+					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+					FNotification::DisplayFailure(SwitchToChangesetOperation.Get());
+				}
 			}
 			else
 			{
-				// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
-				FNotification::DisplayFailure(SwitchToChangesetOperation.Get());
+				TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> UpdateToChangesetOperation = ISourceControlOperation::Create<FPlasticSyncAll>();
+				UpdateToChangesetOperation->SetRevision(FString::Printf(TEXT("%d"), InSelectedChangeset->ChangesetId));
+				const ECommandResult::Type Result = Provider.Execute(UpdateToChangesetOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete));
+				if (Result == ECommandResult::Succeeded)
+				{
+					// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+					Notification.DisplayInProgress(UpdateToChangesetOperation->GetInProgressString());
+					StartRefreshStatus();
+				}
+				else
+				{
+					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+					FNotification::DisplayFailure(UpdateToChangesetOperation.Get());
+				}
 			}
 		}
 		else
@@ -842,8 +862,16 @@ void SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete
 	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete);
 
 	// Reload packages that where updated by the SwitchToChangeset operation (and the current map if needed)
-	TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToChangesetOperation = StaticCastSharedRef<FPlasticSwitch>(InOperation);
-	PackageUtils::ReloadPackages(SwitchToChangesetOperation->UpdatedFiles);
+	if (!FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace())
+	{
+		TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToChangesetOperation = StaticCastSharedRef<FPlasticSwitch>(InOperation);
+		PackageUtils::ReloadPackages(SwitchToChangesetOperation->UpdatedFiles);
+	}
+	else
+	{
+		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> UpdateToChangesetOperation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
+		PackageUtils::ReloadPackages(UpdateToChangesetOperation->UpdatedFiles);
+	}
 
 	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
 	bShouldRefresh = true;

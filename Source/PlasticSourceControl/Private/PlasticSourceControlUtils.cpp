@@ -1290,6 +1290,7 @@ bool RunSwitch(const FString& InBranchName, const int32 InChangesetId, const boo
 	TArray<FString> Parameters;
 	if (InChangesetId != ISourceControlState::INVALID_REVISION)
 	{
+		// NOTE: not supported by Gluon/partial workspaces
 		Parameters.Add(FString::Printf(TEXT("cs:%d"), InChangesetId));
 	}
 	else
