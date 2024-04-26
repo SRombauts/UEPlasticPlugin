@@ -1014,7 +1014,6 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 			Parameters.Add(FString::Printf(TEXT("--changeset=%s"), *InChangesetId));
 		}
 		Parameters.Add(TEXT("--report"));
-		Parameters.Add(TEXT("--noinput"));
 		Parameters.Add(TEXT("--machinereadable"));
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InFiles, Results, OutErrorMessages);
 		if (bResult)
