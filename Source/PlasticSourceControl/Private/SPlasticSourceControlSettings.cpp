@@ -15,6 +15,7 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SCheckBox.h"
 #include "Widgets/Input/SEditableTextBox.h"
+#include "Widgets/Input/SHyperlink.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SSeparator.h"
@@ -81,7 +82,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 				.Font(Font)
 			]
 		]
-		// Unity Version Control command line tool not available warning
+		// Unity Version Control command line tool not available warning and download link
 		+SVerticalBox::Slot()
 		.FillHeight(1.0f)
 		.Padding(2.0f)
@@ -92,6 +93,30 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			.Text(LOCTEXT("PlasticNotAvailable", "Unity Version Control Command Line tool 'cm' failed to start."))
 			.Font(Font)
 			.ColorAndOpacity(FLinearColor::Red)
+		]
+		+SVerticalBox::Slot()
+		.FillHeight(1.0f)
+		.Padding(2.0f)
+		[
+			SNew(SHorizontalBox)
+			+SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(SHyperlink)
+				.Visibility(this, &SPlasticSourceControlSettings::PlasticNotAvailable)
+				.ToolTipText(LOCTEXT("PlasticDownload_Tooltip", "Download Unity Version Control (Plastic SCM)"))
+				.Text(LOCTEXT("PlasticDownload", "https://www.plasticscm.com/download/downloadinstaller/..."))
+				.OnNavigate(FSimpleDelegate::CreateLambda([]()
+				{
+#if PLATFORM_WINDOWS
+					FPlatformProcess::LaunchURL(TEXT("https://www.plasticscm.com/download/downloadinstaller/last/plasticscm/windows/cloudedition"), NULL, NULL);
+#elif PLATFORM_MAC
+					FPlatformProcess::LaunchURL(TEXT("https://www.plasticscm.com/download/downloadinstaller/last/plasticscm/macosx/cloudedition"), NULL, NULL);
+#elif PLATFORM_LINUX
+					FPlatformProcess::LaunchURL(TEXT("https://www.plasticscm.com/plastic-for-linux"), NULL, NULL);
+#endif
+				}))
+			]
 		]
 		// Path to the Unity Version Control binary
 		+SVerticalBox::Slot()
