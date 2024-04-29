@@ -454,6 +454,10 @@ static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const ESt
 class FLocksCache
 {
 public:
+	FLocksCache(double InRefreshIntervalSeconds) :
+		RefreshIntervalSeconds(InRefreshIntervalSeconds)
+	{}
+
 	void Reset()
 	{
 		FScopeLock Lock(&CriticalSection);
@@ -468,11 +472,17 @@ public:
 		Timestamp = FDateTime::Now();
 	}
 
-	bool GetLocks(TArray<FPlasticSourceControlLockRef>& OutLocks)
+	TArray<FPlasticSourceControlLockRef> GetLocks()
+	{
+		FScopeLock Lock(&CriticalSection);
+		return Locks;
+	}
+
+	bool GetLocksIfFresh(TArray<FPlasticSourceControlLockRef>& OutLocks)
 	{
 		FScopeLock Lock(&CriticalSection);
 		const FTimespan ElapsedTime = FDateTime::Now() - Timestamp;
-		if (ElapsedTime.GetTotalSeconds() < 60.0)
+		if (ElapsedTime.GetTotalSeconds() < RefreshIntervalSeconds)
 		{
 			OutLocks = Locks;
 			return true;
@@ -482,12 +492,13 @@ public:
 
 private:
 	TArray<FPlasticSourceControlLockRef> Locks;
+	double RefreshIntervalSeconds;
 	FDateTime Timestamp;
 	FCriticalSection CriticalSection;
 };
 
-static FLocksCache LocksCacheForAllDestBranches;
-static FLocksCache LocksCacheForWorkingBranch;
+static FLocksCache LocksCacheForAllDestBranches(60.0);
+static FLocksCache LocksCacheForWorkingBranch(60.0);
 
 void InvalidateLocksCache()
 {
@@ -501,7 +512,7 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bI
 
 	FLocksCache& LocksCache = bInForAllDestBranches ? LocksCacheForAllDestBranches : LocksCacheForWorkingBranch;
 
-	if (LocksCache.GetLocks(OutLocks))
+	if (LocksCache.GetLocksIfFresh(OutLocks))
 		return true;
 
 	TArray<FString> Results;
@@ -541,16 +552,12 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bI
 
 TArray<FPlasticSourceControlLockRef> GetLocksForWorkingBranch(const FPlasticSourceControlProvider& InProvider, const TArray<FString>& InFiles)
 {
-	TArray<FPlasticSourceControlLockRef> Locks;
+	// Get locks for the current working branch, only relying on the cache as this is called from the UI main thread)
+	TArray<FPlasticSourceControlLockRef> Locks = LocksCacheForWorkingBranch.GetLocks();
 
-	// Only get locks for the current working branch
-	const bool bInForAllDestBranches = false;
-	RunListLocks(InProvider, bInForAllDestBranches, Locks);
-
+	// Only return locks matching the list of specified files
 	TArray<FPlasticSourceControlLockRef> MatchingLocks;
 	MatchingLocks.Reserve(InFiles.Num());
-
-	// Only return locks for the specified files
 	for (const FString& File : InFiles)
 	{
 		for (const FPlasticSourceControlLockRef& Lock : Locks)
