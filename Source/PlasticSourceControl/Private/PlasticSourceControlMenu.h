@@ -61,7 +61,7 @@ private:
 	/** Extends the content browser asset context menu with Admin revision control options. */
 	void ExtendAssetContextMenu();
 	/** Called to generate concert asset context menu. */
-	void GeneratePlasticAssetContextMenu(FMenuBuilder& MenuBuilder, TArray<FAssetData> InAssetObjectPaths);
+	void GeneratePlasticAssetContextMenu(FMenuBuilder& MenuBuilder, TArray<FPlasticSourceControlLockRef> InSelectedLocks);
 
 	bool CanRemoveLocks(TArray<FPlasticSourceControlLockRef> InSelectedLocks) const;
 	bool CanReleaseLocks(TArray<FPlasticSourceControlLockRef> InSelectedLocks) const;

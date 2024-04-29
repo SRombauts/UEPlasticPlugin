@@ -167,33 +167,34 @@ void FPlasticSourceControlMenu::ExtendAssetContextMenu()
 			}
 			TArray<FAssetData> AssetObjectPaths = Context->SelectedAssets;
 #endif
-
-			InSection.AddSubMenu(
-				TEXT("PlasticActionsSubMenu"),
+			const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+			const TArray<FString> Files = PackageUtils::AssetDataToFileNames(AssetObjectPaths);
+			TArray<FPlasticSourceControlLockRef> SelectedLocks = PlasticSourceControlUtils::GetLocksForWorkingBranch(Provider, Files);
+			if (SelectedLocks.Num() > 0)
+			{
+				InSection.AddSubMenu(
+					TEXT("PlasticActionsSubMenu"),
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2
-				LOCTEXT("Plastic_ContextMenu", "Revision Control Locks"),
+					LOCTEXT("Plastic_ContextMenu", "Revision Control Locks"),
 #else
-				LOCTEXT("Plastic_ContextMenu", "Source Control Locks"),
+					LOCTEXT("Plastic_ContextMenu", "Source Control Locks"),
 #endif
-				FText::GetEmpty(),
-				FNewMenuDelegate::CreateRaw(this, &FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu, MoveTemp(AssetObjectPaths)),
-				false,
+					FText::GetEmpty(),
+					FNewMenuDelegate::CreateRaw(this, &FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu, MoveTemp(SelectedLocks)),
+					false,
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
-				FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked")
+					FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked")
 #else
-				FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked")
+					FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked")
 #endif
-			);
+				);
+			}
 		}));
 	}
 }
 
-void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& MenuBuilder, TArray<FAssetData> InAssetObjectPaths)
+void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& MenuBuilder, TArray<FPlasticSourceControlLockRef> InSelectedLocks)
 {
-	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
-	const TArray<FString> Files = PackageUtils::AssetDataToFileNames(InAssetObjectPaths);
-	const TArray<FPlasticSourceControlLockRef> SelectedLocks = PlasticSourceControlUtils::GetLocksForWorkingBranch(Provider, Files);
-
 	MenuBuilder.BeginSection("AssetPlasticActions", LOCTEXT("UnityVersionControlAssetContextLocksMenuHeading", "Unity Version Control Locks"));
 
 	{
@@ -206,8 +207,8 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Unlocked"),
 #endif
 			FUIAction(
-				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ExecuteReleaseLocks, SelectedLocks),
-				FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanReleaseLocks, SelectedLocks)
+				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ExecuteReleaseLocks, InSelectedLocks),
+				FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanReleaseLocks, InSelectedLocks)
 			)
 		);
 	}
@@ -222,8 +223,8 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Unlocked"),
 #endif
 			FUIAction(
-				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ExecuteRemoveLocks, SelectedLocks),
-				FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanRemoveLocks, SelectedLocks)
+				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::ExecuteRemoveLocks, InSelectedLocks),
+				FCanExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::CanRemoveLocks, InSelectedLocks)
 			)
 		);
 	}
