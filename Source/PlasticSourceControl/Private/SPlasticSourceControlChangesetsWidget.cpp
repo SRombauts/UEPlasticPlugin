@@ -71,38 +71,91 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 			[
 				SNew(SHorizontalBox)
 				+SHorizontalBox::Slot()
-				.HAlign(HAlign_Left)
+				.FillWidth(1.0f)
+				[
+					SNew(SHorizontalBox)
+					+SHorizontalBox::Slot()
+					.HAlign(HAlign_Left)
+					.VAlign(VAlign_Center)
+					.AutoWidth()
+					[
+						CreateToolBar()
+					]
+					+SHorizontalBox::Slot()
+					.MaxWidth(10.0f)
+					[
+						SNew(SSpacer)
+					]
+					+SHorizontalBox::Slot()
+					.VAlign(VAlign_Center)
+					.MaxWidth(300.0f)
+					[
+						SAssignNew(FileSearchBox, SSearchBox)
+						.HintText(LOCTEXT("SearchChangesets", "Search changesets"))
+						.ToolTipText(LOCTEXT("PlasticChangesetsSearch_Tooltip", "Filter the list of changesets by keyword."))
+						.OnTextChanged(this, &SPlasticSourceControlChangesetsWidget::OnSearchTextChanged)
+					]
+					+SHorizontalBox::Slot()
+					.VAlign(VAlign_Center)
+					.MaxWidth(125.0f)
+					.Padding(10.f, 0.f)
+					[
+						SNew(SComboButton)
+						.ToolTipText(LOCTEXT("PlasticChangesetesDate_Tooltip", "Filter the list of changesets by date of creation."))
+						.OnGetMenuContent(this, &SPlasticSourceControlChangesetsWidget::BuildFromDateDropDownMenu)
+						.ButtonContent()
+						[
+							SNew(STextBlock)
+							.Text_Lambda([this]() { return FromDateInDaysValues[FromDateInDays]; })
+						]
+					]
+				]
+				+SHorizontalBox::Slot()
+				.HAlign(HAlign_Right)
 				.VAlign(VAlign_Center)
 				.AutoWidth()
 				[
-					CreateToolBar()
-				]
-				+SHorizontalBox::Slot()
-				.MaxWidth(10.0f)
-				[
-					SNew(SSpacer)
-				]
-				+SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
-				.MaxWidth(300.0f)
-				[
-					SAssignNew(FileSearchBox, SSearchBox)
-					.HintText(LOCTEXT("SearchChangesets", "Search changesets"))
-					.ToolTipText(LOCTEXT("PlasticChangesetsSearch_Tooltip", "Filter the list of changesets by keyword."))
-					.OnTextChanged(this, &SPlasticSourceControlChangesetsWidget::OnSearchTextChanged)
-				]
-				+SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
-				.MaxWidth(125.0f)
-				.Padding(10.f, 0.f)
-				[
-					SNew(SComboButton)
-					.ToolTipText(LOCTEXT("PlasticChangesetesDate_Tooltip", "Filter the list of changesets by date of creation."))
-					.OnGetMenuContent(this, &SPlasticSourceControlChangesetsWidget::BuildFromDateDropDownMenu)
-					.ButtonContent()
+					// Button to open the Branches View
+					SNew(SButton)
+					.ContentPadding(FMargin(6.0f, 0.0f))
+					.ToolTipText(LOCTEXT("PlasticBranchesWindowTooltip", "Open the Branches window."))
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+#else
+					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
+#endif
+					.OnClicked_Lambda([]()
+						{
+							FPlasticSourceControlModule::Get().GetBranchesWindow().OpenTab();
+							return FReply::Handled();
+						})
 					[
-						SNew(STextBlock)
-						.Text_Lambda([this]() { return FromDateInDaysValues[FromDateInDays]; })
+						SNew(SHorizontalBox)
+						+SHorizontalBox::Slot()
+						.AutoWidth()
+						.VAlign(VAlign_Center)
+						.HAlign(HAlign_Center)
+						[
+							SNew(SImage)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+							.Image(FAppStyle::GetBrush("SourceControl.Branch"))
+#else
+							.Image(FEditorStyle::GetBrush("SourceControl.Branch"))
+#endif
+						]
+						+SHorizontalBox::Slot()
+						.AutoWidth()
+						.VAlign(VAlign_Center)
+						.Padding(5.0f, 0.0f, 0.0f, 0.0f)
+						[
+							SNew(STextBlock)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+							.TextStyle(&FAppStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
+#else
+							.TextStyle(&FEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
+#endif
+							.Text(LOCTEXT("PlasticBranchesWindow", "Branches"))
+						]
 					]
 				]
 			]
