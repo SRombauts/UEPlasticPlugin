@@ -228,6 +228,22 @@ void FPlasticSourceControlMenu::GeneratePlasticAssetContextMenu(FMenuBuilder& Me
 		);
 	}
 
+	{
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT("PlasticLocksWindow", "View Locks"),
+			LOCTEXT("PlasticLocksWindowTooltip", "Open the Locks window."),
+			#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+			FSlateIcon(FAppStyle::GetAppStyleSetName(), "PropertyWindow.Locked"),
+#else
+			FSlateIcon(FEditorStyle::GetStyleSetName(), "PropertyWindow.Locked"),
+#endif
+			FUIAction(
+				FExecuteAction::CreateRaw(this, &FPlasticSourceControlMenu::OpenLocksWindow),
+				FCanExecuteAction()
+			)
+		);
+	}
+
 	FString OrganizationName = FPlasticSourceControlModule::Get().GetProvider().GetCloudOrganization();
 	if (!OrganizationName.IsEmpty())
 	{
