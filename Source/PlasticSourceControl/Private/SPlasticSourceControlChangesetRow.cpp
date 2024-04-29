@@ -83,8 +83,12 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetRow::GenerateWidgetForColumn(c
 	}
 	else if (InColumnId == PlasticSourceControlChangesetsListViewColumn::Comment::Id())
 	{
+		// Make each comment fit on a single line to preserve the table layout
+		FString CommentOnOneLine = ChangesetToVisualize->Comment;
+		CommentOnOneLine.ReplaceCharInline(TEXT('\n'), TEXT(' '), ESearchCase::CaseSensitive);
+
 		return SNew(STextBlock)
-			.Text(FText::FromString(ChangesetToVisualize->Comment))
+			.Text(FText::FromString(MoveTemp(CommentOnOneLine)))
 			.ToolTipText(FText::FromString(ChangesetToVisualize->Comment))
 			.Margin(FMargin(6.f, 1.f))
 #if ENGINE_MAJOR_VERSION >= 5
