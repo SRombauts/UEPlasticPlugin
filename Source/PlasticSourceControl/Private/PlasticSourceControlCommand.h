@@ -78,6 +78,9 @@ public:
 	/** Name of the current branch */
 	FString BranchName;
 
+	/** Name of the object that the workspace is switched to: usually the branch, sometimes a changeset or a label */
+	FString WorkspaceSelector;
+
 	/** Current Changeset Number */
 	int32 ChangesetNumber;
 

@@ -126,8 +126,14 @@ public:
 	{
 		return BranchName;
 	}
-	inline void SetBranchName(const FString& InBranchName)
+	/** Get the Name of the current selector */
+	inline const FString& GetWorkspaceSelector() const
 	{
+		return WorkspaceSelector;
+	}
+	inline void SetWorkspaceSelector(const FString& InWorkspaceSelector, const FString& InBranchName)
+	{
+		WorkspaceSelector = InWorkspaceSelector;
 		BranchName = InBranchName;
 	}
 
@@ -268,6 +274,9 @@ private:
 
 	/** Name of the current branch */
 	FString BranchName;
+
+	/** Name of the object that the workspace is switched to: usually the branch, sometimes a changeset or a label */
+	FString WorkspaceSelector;
 
 	/** Current Changeset Number */
 	int32 ChangesetNumber = 0;

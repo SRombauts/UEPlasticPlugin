@@ -26,8 +26,9 @@ typedef TSharedRef<class FPlasticSourceControlLock, ESPMode::ThreadSafe> FPlasti
 
 /**
  * Internal operation used to revert checked-out unchanged files
+ *
+ * NOTE: added to Engine in Unreal Engine 5 for changelists
 */
-// NOTE: added to Engine in Unreal Engine 5 for changelists
 class FPlasticRevertUnchanged final : public FSourceControlOperationBase
 {
 public:
@@ -40,12 +41,16 @@ public:
 
 /**
  * Internal operation used to sync all files in the workspace
+ *
+ * NOTE: override the standard "Sync" operation to provide a list of updated files and a custom progress string
 */
 class FPlasticSyncAll final : public FSync
 {
 public:
 	// ISourceControlOperation interface
 	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
 
 	/** List of files updated by the operation */
 	TArray<FString> UpdatedFiles;
@@ -154,9 +159,9 @@ public:
 
 
 /**
- * Internal operation used to switch the workspace to another branch
+ * Internal operation used to switch the workspace to a branch or a changeset
 */
-class FPlasticSwitchToBranch final : public FSourceControlOperationBase
+class FPlasticSwitch final : public FSourceControlOperationBase
 {
 public:
 	// ISourceControlOperation interface
@@ -164,8 +169,11 @@ public:
 
 	virtual FText GetInProgressString() const override;
 
-	// Branch to switch the workspace to
+	// Branch to switch the workspace to (optional, only apply if ChangesetId is not set)
 	FString BranchName;
+
+	// Changeset to switch the workspace to (optional, overrides the BranchName if set)
+	int32 ChangesetId = ISourceControlState::INVALID_REVISION;
 
 	/** List of files updated by the operation */
 	TArray<FString> UpdatedFiles;
@@ -509,13 +517,13 @@ public:
 };
 
 /** Switch workspace to another branch. */
-class FPlasticSwitchToBranchWorker final : public IPlasticSourceControlWorker
+class FPlasticSwitchWorker final : public IPlasticSourceControlWorker
 {
 public:
-	explicit FPlasticSwitchToBranchWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+	explicit FPlasticSwitchWorker(FPlasticSourceControlProvider& InSourceControlProvider)
 		: IPlasticSourceControlWorker(InSourceControlProvider)
 	{}
-	virtual ~FPlasticSwitchToBranchWorker() = default;
+	virtual ~FPlasticSwitchWorker() = default;
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;

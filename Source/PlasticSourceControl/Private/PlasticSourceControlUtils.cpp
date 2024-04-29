@@ -66,7 +66,7 @@ FString FindPlasticBinaryPath()
 #endif
 }
 
-FString FindDesktopApplicationPath()
+static FString FindDesktopApplicationPath()
 {
 	FString DesktopAppPath;
 
@@ -92,6 +92,68 @@ FString FindDesktopApplicationPath()
 #endif
 
 	return DesktopAppPath;
+}
+
+static bool OpenDesktopApplication(const FString& InCommandLineArguments)
+{
+	const FString DesktopAppPath = FindDesktopApplicationPath();
+
+	UE_LOG(LogSourceControl, Log, TEXT("Opening the Desktop application (%s %s)"), *DesktopAppPath, *InCommandLineArguments);
+
+	FProcHandle Proc = FPlatformProcess::CreateProc(*DesktopAppPath, *InCommandLineArguments, true, false, false, nullptr, 0, nullptr, nullptr, nullptr);
+	if (!Proc.IsValid())
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("Opening the Desktop application (%s %s) failed."), *DesktopAppPath, *InCommandLineArguments);
+		FPlatformProcess::CloseProc(Proc);
+		return false;
+	}
+
+	return true;
+}
+
+bool OpenDesktopApplication(const bool bInBranchExplorer)
+{
+	const FString CommandLineArguments = FString::Printf(TEXT("--wk=\"%s\" %s"),
+		*FPlasticSourceControlModule::Get().GetProvider().GetPathToWorkspaceRoot(),
+		bInBranchExplorer ? TEXT("--view=BranchExplorerView") : TEXT(""));
+
+	return OpenDesktopApplication(CommandLineArguments);
+}
+
+static FString GetFullSpec(const int32 InChangesetId)
+{
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	return FString::Printf(TEXT("cs:%d@%s@%s"), InChangesetId, *Provider.GetRepositoryName(), *Provider.GetServerUrl());
+}
+
+static FString GetFullSpec(const FString& InBranchName)
+{
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	return FString::Printf(TEXT("br:%s@%s@%s"), *InBranchName, *Provider.GetRepositoryName(), *Provider.GetServerUrl());
+}
+
+bool OpenDesktopApplicationForDiff(const int32 InChangesetId)
+{
+	const FString CommandLineArguments = FString::Printf(TEXT("--diffchangeset=\"%s\""),
+		*GetFullSpec(InChangesetId));
+
+	return OpenDesktopApplication(CommandLineArguments);
+}
+
+bool OpenDesktopApplicationForDiff(const int32 InChangesetIdSrc, const int32 InChangesetIdDst)
+{
+	const FString CommandLineArguments = FString::Printf(TEXT("--diffchangesetsrc=\"%s\" --diffchangesetdst=\"%s\""),
+		*GetFullSpec(InChangesetIdSrc), *GetFullSpec(InChangesetIdDst));
+
+	return OpenDesktopApplication(CommandLineArguments);
+}
+
+bool OpenDesktopApplicationForDiff(const FString& InBranchName)
+{
+	const FString CommandLineArguments = FString::Printf(TEXT("--diffbranch=\"%s\""),
+		*GetFullSpec(InBranchName));
+
+	return OpenDesktopApplication(CommandLineArguments);
 }
 
 void OpenLockRulesInCloudDashboard(const FString& InOrganizationName)
@@ -236,13 +298,13 @@ bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName,
 	return bResult;
 }
 
-bool GetWorkspaceInfo(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages)
+bool GetWorkspaceInfo(FString& OutWorkspaceSelector, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Results;
 	bool bResult = RunCommand(TEXT("workspaceinfo"), TArray<FString>(), TArray<FString>(), Results, OutErrorMessages);
 	if (bResult)
 	{
-		bResult = PlasticSourceControlParsers::ParseWorkspaceInfo(Results, OutBranchName, OutRepositoryName, OutServerUrl);
+		bResult = PlasticSourceControlParsers::ParseWorkspaceInfo(Results, OutWorkspaceSelector, OutBranchName, OutRepositoryName, OutServerUrl);
 	}
 
 	return bResult;
@@ -264,10 +326,10 @@ bool GetChangesetNumber(int32& OutChangesetNumber, TArray<FString>& OutErrorMess
 	return bResult;
 }
 
-bool RunCheckConnection(FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutInfoMessages, TArray<FString>& OutErrorMessages)
+bool RunCheckConnection(FString& OutWorkspaceSelector, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutInfoMessages, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Parameters;
-	if (PlasticSourceControlUtils::GetWorkspaceInfo(OutBranchName, OutRepositoryName, OutServerUrl, OutErrorMessages))
+	if (PlasticSourceControlUtils::GetWorkspaceInfo(OutWorkspaceSelector, OutBranchName, OutRepositoryName, OutServerUrl, OutErrorMessages))
 	{
 		Parameters.Add(FString::Printf(TEXT("--server=%s"), *OutServerUrl));
 	}
@@ -306,9 +368,8 @@ FString UserNameToDisplayName(const FString& InUserName)
  * @param[out]	OutErrorMessages	Error messages from the "status" command
  * @param[out]	OutStates			States of files for witch the status has been gathered (distinct than InFiles in case of a "directory status")
  * @param[out]	OutChangeset		The current Changeset Number
- * @param[out]	OutBranchName		Name of the current checked-out branch
  */
-static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const EStatusSearchType InSearchType, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
+static bool RunStatus(const FString& InDir, TArray<FString>&& InFiles, const EStatusSearchType InSearchType, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunStatus);
 
@@ -457,6 +518,7 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bI
 	// For displaying Locks as a status overlay icon in the Content Browser, restricts the Locks to only those applying to the current branch so there can be only one and never any ambiguity
 	if (!bInForAllDestBranches && (InProvider.GetPlasticScmVersion() >= PlasticSourceControlVersions::WorkingBranch))
 	{
+		// Note: here is one of the rare places where we need to use a branch name, not a workspace selector
 		Parameters.Add(FString::Printf(TEXT("--workingbranch=%s"), *InProvider.GetBranchName()));
 	}
 	const bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
@@ -713,7 +775,7 @@ struct FFilesInCommonDir
 };
 
 // Run a batch of Plastic "status" and "fileinfo" commands to update status of given files and directories.
-bool RunUpdateStatus(const TArray<FString>& InFiles, const EStatusSearchType InSearchType, const bool bInUpdateHistory, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset, FString& OutBranchName)
+bool RunUpdateStatus(const TArray<FString>& InFiles, const EStatusSearchType InSearchType, const bool bInUpdateHistory, TArray<FString>& OutErrorMessages, TArray<FPlasticSourceControlState>& OutStates, int32& OutChangeset)
 {
 	bool bResults = true;
 
@@ -808,7 +870,7 @@ bool RunUpdateStatus(const TArray<FString>& InFiles, const EStatusSearchType InS
 		// Run a "status" command on the directory to get workspace file states.
 		// (ie. Changed, CheckedOut, Copied, Replaced, Added, Private, Ignored, Deleted, LocallyDeleted, Moved, LocallyMoved)
 		TArray<FPlasticSourceControlState> States;
-		const bool bGroupOk = RunStatus(Group.Value.CommonDir, MoveTemp(Group.Value.Files), InSearchType, OutErrorMessages, States, OutChangeset, OutBranchName);
+		const bool bGroupOk = RunStatus(Group.Value.CommonDir, MoveTemp(Group.Value.Files), InSearchType, OutErrorMessages, States, OutChangeset);
 		if (!bGroupOk)
 		{
 			bResults = false;
@@ -910,7 +972,7 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 }
 
 // Run a Plastic "update" command to sync the workspace and parse its XML results.
-bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
+bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace, const FString& InChangesetId, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
 {
 	bool bResult = false;
 
@@ -921,10 +983,18 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 	{
 		const FScopedTempFile UpdateResultFile;
 		TArray<FString> InfoMessages;
+		if (!InChangesetId.IsEmpty())
+		{
+			Parameters.Add(FString::Printf(TEXT("--changeset=%s"), *InChangesetId));
+		}
+		else
+		{
+			Parameters.Add(TEXT("--last"));
+		}
+		Parameters.Add(TEXT("--dontmerge"));
+		Parameters.Add(TEXT("--noinput"));
 		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *UpdateResultFile.GetFilename()));
 		Parameters.Add(TEXT("--encoding=\"utf-8\""));
-		Parameters.Add(TEXT("--last"));
-		Parameters.Add(TEXT("--dontmerge"));
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("update"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
 		if (bResult)
 		{
@@ -939,6 +1009,10 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 	else
 	{
 		TArray<FString> Results;
+		if (!InChangesetId.IsEmpty())
+		{
+			Parameters.Add(FString::Printf(TEXT("--changeset=%s"), *InChangesetId));
+		}
 		Parameters.Add(TEXT("--report"));
 		Parameters.Add(TEXT("--machinereadable"));
 		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial update"), Parameters, InFiles, Results, OutErrorMessages);
@@ -1207,22 +1281,45 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 	return bCommandSuccessful;
 }
 
-bool RunSwitchToBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
+bool RunSwitch(const FString& InBranchName, const int32 InChangesetId, const bool bInIsPartialWorkspace, TArray<FString>& OutUpdatedFiles, TArray<FString>& OutErrorMessages)
 {
 	bool bResult = false;
 
 	const FScopedTempFile SwitchResultFile;
 	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
-	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *SwitchResultFile.GetFilename()));
-	Parameters.Add(TEXT("--encoding=\"utf-8\""));
-	Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InBranchName));
-	bResult = PlasticSourceControlUtils::RunCommand(TEXT("switch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
-	if (bResult)
+	if (InChangesetId != ISourceControlState::INVALID_REVISION)
 	{
-		// Load and parse the result of the update command
-		FString Results;
-		if (FFileHelper::LoadFileToString(Results, *SwitchResultFile.GetFilename()))
+		// NOTE: not supported by Gluon/partial workspaces
+		Parameters.Add(FString::Printf(TEXT("cs:%d"), InChangesetId));
+	}
+	else
+	{
+		Parameters.Add(FString::Printf(TEXT("\"br:%s\""), *InBranchName));
+	}
+	Parameters.Add(TEXT("--noinput"));
+	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
+	if (!bInIsPartialWorkspace)
+	{
+		Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *SwitchResultFile.GetFilename()));
+		Parameters.Add(TEXT("--encoding=\"utf-8\""));
+		bResult = PlasticSourceControlUtils::RunCommand(TEXT("switch"), Parameters, TArray<FString>(), InfoMessages, OutErrorMessages);
+		if (bResult)
+		{
+			// Load and parse the result of the update command
+			FString Results;
+			if (FFileHelper::LoadFileToString(Results, *SwitchResultFile.GetFilename()))
+			{
+				bResult = PlasticSourceControlParsers::ParseUpdateResults(Results, OutUpdatedFiles);
+			}
+		}
+	}
+	else
+	{
+		TArray<FString> Results;
+		Parameters.Add(TEXT("--report"));
+		bResult = PlasticSourceControlUtils::RunCommand(TEXT("partial switch"), Parameters, TArray<FString>(), Results, OutErrorMessages);
+		if (bResult)
 		{
 			bResult = PlasticSourceControlParsers::ParseUpdateResults(Results, OutUpdatedFiles);
 		}

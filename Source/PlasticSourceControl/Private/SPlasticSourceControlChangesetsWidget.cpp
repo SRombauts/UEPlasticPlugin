@@ -39,12 +39,10 @@
 void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 {
 	ISourceControlModule::Get().RegisterProviderChanged(FSourceControlProviderChanged::FDelegate::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSourceControlProviderChanged));
-	// register for any source control change to detect new local Changesets on check-out, and release of them on check-in
+	// register for any source control change to detect new local Changesets on check-in
 	SourceControlStateChangedDelegateHandle = ISourceControlModule::Get().GetProvider().RegisterSourceControlStateChanged_Handle(FSourceControlStateChanged::FDelegate::CreateSP(this, &SPlasticSourceControlChangesetsWidget::HandleSourceControlStateChanged));
 
 	CurrentChangesetId = FPlasticSourceControlModule::Get().GetProvider().GetChangesetNumber();
-
-	const FString OrganizationName = FPlasticSourceControlModule::Get().GetProvider().GetCloudOrganization();
 
 	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlChangeset&>>(TTextFilter<const FPlasticSourceControlChangeset&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlChangesetsWidget::PopulateItemSearchStrings));
 	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlChangesetsWidget::OnRefreshUI);
@@ -191,9 +189,8 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateContentPanel()
 		.ListItemsSource(&ChangesetRows)
 		.OnGenerateRow(this, &SPlasticSourceControlChangesetsWidget::OnGenerateRow)
 		.SelectionMode(ESelectionMode::Multi)
-		// TODO menu
-		// .OnContextMenuOpening(this, &SPlasticSourceControlChangesetsWidget::OnOpenContextMenu)
-		// .OnMouseButtonDoubleClick(this, &SPlasticSourceControlChangesetsWidget::OnItemDoubleClicked)
+		.OnContextMenuOpening(this, &SPlasticSourceControlChangesetsWidget::OnOpenContextMenu)
+		.OnMouseButtonDoubleClick(this, &SPlasticSourceControlChangesetsWidget::OnItemDoubleClicked)
 		.OnItemToString_Debug_Lambda([this](FPlasticSourceControlChangesetRef Changeset) { return FString::FromInt(Changeset->ChangesetId); })
 		.HeaderRow
 		(
@@ -520,6 +517,249 @@ void SPlasticSourceControlChangesetsWidget::SortChangesetView()
 	}
 }
 
+TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenContextMenu()
+{
+	const TArray<FPlasticSourceControlChangesetRef> SelectedChangesets = ChangesetsListView->GetSelectedItems();
+	if (SelectedChangesets.Num() == 0)
+	{
+		return nullptr;
+	}
+
+	// Detect if all selected changesets are from the same branch
+	bool bSingleBranchSelected = false;
+	FPlasticSourceControlChangesetPtr SelectedChangeset;
+	if (SelectedChangesets.Num() >= 1)
+	{
+		SelectedChangeset = SelectedChangesets[0];
+		bSingleBranchSelected = true;
+		for (int32 i = 1; i < SelectedChangesets.Num(); i++)
+		{
+			if (SelectedChangesets[i]->Branch != SelectedChangeset->Branch)
+			{
+				bSingleBranchSelected = false;
+				SelectedChangeset.Reset();
+				break;
+			}
+		}
+	}
+	const bool bSingleSelection = (SelectedChangesets.Num() == 1);
+	const bool bDoubleSelection = (SelectedChangesets.Num() == 2);
+	const bool bSingleNotCurrent = bSingleSelection && (SelectedChangeset->ChangesetId != CurrentChangesetId);
+
+	static const FText SelectASingleChangesetTooltip(LOCTEXT("SelectASingleChangesetTooltip", "Select a single changeset."));
+	static const FText SelectADifferentChangesetTooltip(LOCTEXT("SelectADifferentChangesetTooltip", "Select a changeset that is not the current one."));
+	static const FText SelectASingleBranchTooltip(LOCTEXT("SelectASingleBranchTooltip", "Select changesets from a single branch."));
+
+	UToolMenus* ToolMenus = UToolMenus::Get();
+	static const FName MenuName = "PlasticSourceControl.ChangesetsContextMenu";
+	if (!ToolMenus->IsMenuRegistered(MenuName))
+	{
+		UToolMenu* RegisteredMenu = ToolMenus->RegisterMenu(MenuName);
+		// Add section so it can be used as insert position for menu extensions
+		RegisteredMenu->AddSection("Source Control");
+	}
+
+	// Build up the menu
+	FToolMenuContext Context;
+	UToolMenu* Menu = ToolMenus->GenerateMenu(MenuName, Context);
+
+	FToolMenuSection& Section = *Menu->FindSection("Source Control");
+
+	Section.AddMenuEntry(
+		TEXT("DiffChangeset"),
+		bSingleSelection ? FText::Format(LOCTEXT("DiffChangesetDynamic", "Diff changeset {0}"), FText::AsNumber(SelectedChangeset->ChangesetId)) : LOCTEXT("DiffChangeset", "Diff changeset"),
+		bSingleSelection ? LOCTEXT("DiffChangesetTooltip", "Launch the Desktop application diff window showing changes in this changeset.") : SelectASingleChangesetTooltip,
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnDiffChangesetClicked, SelectedChangeset),
+			FCanExecuteAction::CreateLambda([bSingleSelection]() { return bSingleSelection; })
+		)
+	);
+
+	Section.AddMenuEntry(
+		TEXT("DiffChangesets"),
+		LOCTEXT("DiffChangesets", "Diff selected changesets"),
+		bDoubleSelection ? LOCTEXT("DiffChangesetTooltip", "Launch the Desktop application diff window showing changes between the two selected changesets.") : LOCTEXT("DoubleSelection", "Select a couple of changesets."),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnDiffChangesetsClicked, SelectedChangesets),
+			FCanExecuteAction::CreateLambda([bDoubleSelection]() { return bDoubleSelection; })
+		)
+	);
+
+	Section.AddSeparator("PlasticSeparator1");
+
+	Section.AddMenuEntry(
+		TEXT("DiffBranch"),
+		bSingleBranchSelected ? FText::Format(LOCTEXT("DiffBranchDynamic", "Diff branch {0}"), FText::FromString(SelectedChangeset->Branch)) : LOCTEXT("DiffBranch", "Diff branch"),
+		bSingleBranchSelected ? LOCTEXT("DiffChangesetTooltip", "Launch the Desktop application diff window showing all changes in the selected branch.") : SelectASingleBranchTooltip,
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnDiffBranchClicked, SelectedChangeset),
+			FCanExecuteAction::CreateLambda([bSingleBranchSelected]() { return bSingleBranchSelected; })
+		)
+	);
+
+	Section.AddSeparator("PlasticSeparator2");
+
+	Section.AddMenuEntry(
+		TEXT("SwitchToBranch"),
+		bSingleBranchSelected ? FText::Format(LOCTEXT("SwitchToBranchDynamic", "Switch workspace to the branch {0}"), FText::FromString(SelectedChangeset->Branch)) : LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
+		bSingleBranchSelected ? LOCTEXT("SwitchToBranchTooltip", "Switch the workspace to the head of the branch with this changeset.") : SelectASingleBranchTooltip,
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSwitchToBranchClicked, SelectedChangeset),
+			FCanExecuteAction::CreateLambda([bSingleBranchSelected]() { return bSingleBranchSelected; })
+		)
+	);
+
+	Section.AddMenuEntry(
+		TEXT("SwitchToChangeset"),
+		bSingleSelection ? FText::Format(LOCTEXT("SwitchToChangesetDynamic", "Switch workspace to this changeset {0}"), FText::AsNumber(SelectedChangeset->ChangesetId)) : LOCTEXT("SwitchToChangeset", "Switch workspace to this changeset"),
+		bSingleNotCurrent ? LOCTEXT("SwitchToChangesetsTooltip", "Switch the workspace to the specific changeset instead of a branch.\nSome information related to smart locks and to incoming changes won't be available.") :
+		bSingleSelection ? SelectADifferentChangesetTooltip : SelectASingleChangesetTooltip,
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetClicked, SelectedChangeset),
+			FCanExecuteAction::CreateLambda([bSingleNotCurrent]() { return bSingleNotCurrent; })
+		)
+	);
+
+	return ToolMenus->GenerateWidget(Menu);
+}
+
+void SPlasticSourceControlChangesetsWidget::OnDiffChangesetClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset)
+{
+	if (InSelectedChangeset.IsValid())
+	{
+		PlasticSourceControlUtils::OpenDesktopApplicationForDiff(InSelectedChangeset->ChangesetId);
+	}
+}
+
+void SPlasticSourceControlChangesetsWidget::OnDiffChangesetsClicked(TArray<FPlasticSourceControlChangesetRef> InSelectedChangesets)
+{
+	if (InSelectedChangesets.Num() == 2)
+	{
+		PlasticSourceControlUtils::OpenDesktopApplicationForDiff(InSelectedChangesets[0]->ChangesetId, InSelectedChangesets[1]->ChangesetId);
+	}
+}
+
+void SPlasticSourceControlChangesetsWidget::OnDiffBranchClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset)
+{
+	if (InSelectedChangeset.IsValid())
+	{
+		PlasticSourceControlUtils::OpenDesktopApplicationForDiff(InSelectedChangeset->Branch);
+	}
+}
+
+void SPlasticSourceControlChangesetsWidget::OnSwitchToBranchClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset)
+{
+	if (!InSelectedChangeset.IsValid())
+		return;
+
+	if (!Notification.IsInProgress())
+	{
+		// Warn the user about any unsaved assets (risk of losing work) but don't enforce saving them. Saving and checking out these assets will make the switch to the branch fail.
+		PackageUtils::SaveDirtyPackages();
+
+		// Find and Unlink all loaded packages in Content directory to allow to update them
+		PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+
+		// Launch a custom "Switch" operation
+		FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+		TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToBranchOperation = ISourceControlOperation::Create<FPlasticSwitch>();
+		SwitchToBranchOperation->BranchName = InSelectedChangeset->Branch;
+		const ECommandResult::Type Result = Provider.Execute(SwitchToBranchOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSwitchToBranchOperationComplete));
+		if (Result == ECommandResult::Succeeded)
+		{
+			// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+			Notification.DisplayInProgress(SwitchToBranchOperation->GetInProgressString());
+			StartRefreshStatus();
+		}
+		else
+		{
+			// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+			FNotification::DisplayFailure(SwitchToBranchOperation.Get());
+		}
+	}
+	else
+	{
+		FMessageLog SourceControlLog("SourceControl");
+		SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+		SourceControlLog.Notify();
+	}
+}
+
+void SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset)
+{
+	const FText SwitchConfirmation = FText::Format(LOCTEXT("SwitchToChangesetDialog", "Are you sure you want to switch the workspace to the changeset {0} instead of a branch?\nSome information related to smart locks and to incoming changes won't be available."),
+		FText::AsNumber(InSelectedChangeset->ChangesetId));
+	const EAppReturnType::Type Choice = FMessageDialog::Open(
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		EAppMsgCategory::Info,
+#endif
+		EAppMsgType::YesNo, SwitchConfirmation
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		, LOCTEXT("SwitchToChangesetTitle", "Switch to changeset?")
+#endif
+	);
+	if (Choice == EAppReturnType::Yes)
+	{
+		if (!Notification.IsInProgress())
+		{
+			// Launch a custom "Switch" operation
+
+			// Warn the user about any unsaved assets (risk of losing work) but don't enforce saving them. Saving and checking out these assets will make the switch to the branch fail.
+			PackageUtils::SaveDirtyPackages();
+
+			// Find and Unlink all loaded packages in Content directory to allow to update them
+			PackageUtils::UnlinkPackages(PackageUtils::ListAllPackages());
+
+			FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+			if (!Provider.IsPartialWorkspace())
+			{
+				TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToChangesetOperation = ISourceControlOperation::Create<FPlasticSwitch>();
+				SwitchToChangesetOperation->ChangesetId = InSelectedChangeset->ChangesetId;
+				const ECommandResult::Type Result = Provider.Execute(SwitchToChangesetOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete));
+				if (Result == ECommandResult::Succeeded)
+				{
+					// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+					Notification.DisplayInProgress(SwitchToChangesetOperation->GetInProgressString());
+					StartRefreshStatus();
+				}
+				else
+				{
+					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+					FNotification::DisplayFailure(SwitchToChangesetOperation.Get());
+				}
+			}
+			else
+			{
+				TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> UpdateToChangesetOperation = ISourceControlOperation::Create<FPlasticSyncAll>();
+				UpdateToChangesetOperation->SetRevision(FString::Printf(TEXT("%d"), InSelectedChangeset->ChangesetId));
+				const ECommandResult::Type Result = Provider.Execute(UpdateToChangesetOperation, TArray<FString>(), EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete));
+				if (Result == ECommandResult::Succeeded)
+				{
+					// Display an ongoing notification during the whole operation (packages will be reloaded at the completion of the operation)
+					Notification.DisplayInProgress(UpdateToChangesetOperation->GetInProgressString());
+					StartRefreshStatus();
+				}
+				else
+				{
+					// Report failure with a notification (but nothing need to be reloaded since no local change is expected)
+					FNotification::DisplayFailure(UpdateToChangesetOperation.Get());
+				}
+			}
+		}
+		else
+		{
+			FMessageLog SourceControlLog("SourceControl");
+			SourceControlLog.Warning(LOCTEXT("SourceControlMenu_InProgress", "Source control operation already in progress"));
+			SourceControlLog.Notify();
+		}
+	}
+}
+
 void SPlasticSourceControlChangesetsWidget::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
 	if (!ISourceControlModule::Get().IsEnabled() || (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
@@ -601,6 +841,46 @@ void SPlasticSourceControlChangesetsWidget::OnGetChangesetsOperationComplete(con
 	OnRefreshUI();
 }
 
+void SPlasticSourceControlChangesetsWidget::OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::OnSwitchToBranchOperationComplete);
+
+	// Reload packages that where updated by the SwitchToBranch operation (and the current map if needed)
+	TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToBranchOperation = StaticCastSharedRef<FPlasticSwitch>(InOperation);
+	PackageUtils::ReloadPackages(SwitchToBranchOperation->UpdatedFiles);
+
+	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
+	bShouldRefresh = true;
+
+	Notification.RemoveInProgress();
+
+	FNotification::DisplayResult(InOperation, InResult);
+}
+
+void SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete);
+
+	// Reload packages that where updated by the SwitchToChangeset operation (and the current map if needed)
+	if (!FPlasticSourceControlModule::Get().GetProvider().IsPartialWorkspace())
+	{
+		TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToChangesetOperation = StaticCastSharedRef<FPlasticSwitch>(InOperation);
+		PackageUtils::ReloadPackages(SwitchToChangesetOperation->UpdatedFiles);
+	}
+	else
+	{
+		TSharedRef<FPlasticSyncAll, ESPMode::ThreadSafe> UpdateToChangesetOperation = StaticCastSharedRef<FPlasticSyncAll>(InOperation);
+		PackageUtils::ReloadPackages(UpdateToChangesetOperation->UpdatedFiles);
+	}
+
+	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
+	bShouldRefresh = true;
+
+	Notification.RemoveInProgress();
+
+	FNotification::DisplayResult(InOperation, InResult);
+}
+
 void SPlasticSourceControlChangesetsWidget::OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider)
 {
 	bSourceControlAvailable = NewProvider.IsAvailable(); // Check if it is connected.
@@ -625,12 +905,27 @@ void SPlasticSourceControlChangesetsWidget::HandleSourceControlStateChanged()
 	}
 }
 
+void SPlasticSourceControlChangesetsWidget::OnItemDoubleClicked(FPlasticSourceControlChangesetRef InChangeset)
+{
+	OnDiffChangesetClicked(InChangeset);
+}
+
 FReply SPlasticSourceControlChangesetsWidget::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
 {
 	if (InKeyEvent.GetKey() == EKeys::F5)
 	{
 		// Pressing F5 refreshes the list of changesets
 		RequestChangesetsRefresh();
+		return FReply::Handled();
+	}
+	else if (InKeyEvent.GetKey() == EKeys::Enter)
+	{
+		// Pressing Enter open the diff for the selected changeset (like a double click)
+		const TArray<FPlasticSourceControlChangesetRef> SelectedChangesets = ChangesetsListView->GetSelectedItems();
+		if (SelectedChangesets.Num() == 1)
+		{
+			OnDiffChangesetClicked(SelectedChangesets[0]);
+		}
 		return FReply::Handled();
 	}
 
