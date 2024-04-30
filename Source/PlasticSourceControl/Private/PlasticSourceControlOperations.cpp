@@ -1251,6 +1251,7 @@ bool FPlasticSwitchWorker::Execute(FPlasticSourceControlCommand& InCommand)
 		FString RepositoryName, ServerUrl;
 		PlasticSourceControlUtils::GetWorkspaceInfo(InCommand.WorkspaceSelector, InCommand.BranchName, RepositoryName, ServerUrl, InCommand.ErrorMessages);
 		GetProvider().SetWorkspaceSelector(InCommand.WorkspaceSelector, InCommand.BranchName);
+		PlasticSourceControlUtils::InvalidateLocksCache();
 	}
 
 	// now update the status of the updated files
