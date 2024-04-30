@@ -1249,6 +1249,30 @@ bool RunGetChangesets(const FDateTime& InFromDate, TArray<FPlasticSourceControlC
 	return bCommandSuccessful;
 }
 
+bool RunGetChangesetFiles(FPlasticSourceControlChangesetRef& InOutChangeset, TArray<FString>& OutErrorMessages)
+{
+	bool bCommandSuccessful = false;
+
+	const FScopedTempFile LogResultFile;
+	FString Results;
+	FString Errors;
+	TArray<FString> Parameters;
+	Parameters.Add(FString::Printf(TEXT("cs:%d"), InOutChangeset->ChangesetId));
+	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *LogResultFile.GetFilename()));
+	Parameters.Add(TEXT("--encoding=\"utf-8\""));
+	bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("log"), Parameters, TArray<FString>(), Results, Errors);
+	if (bCommandSuccessful && FPaths::FileExists(LogResultFile.GetFilename()))
+	{
+		bCommandSuccessful = PlasticSourceControlParsers::ParseLogResults(LogResultFile.GetFilename(), InOutChangeset);
+	}
+	if (!Errors.IsEmpty())
+	{
+		OutErrorMessages.Add(MoveTemp(Errors));
+	}
+
+	return bCommandSuccessful;
+}
+
 bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBranchRef>& OutBranches, TArray<FString>& OutErrorMessages)
 {
 	bool bCommandSuccessful;

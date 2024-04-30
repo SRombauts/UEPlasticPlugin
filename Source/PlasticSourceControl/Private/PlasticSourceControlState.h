@@ -119,6 +119,8 @@ public:
 	// debug log utility
 	const TCHAR* ToString() const;
 
+	FText ToText() const;
+
 	/** ISourceControlState interface */
 	virtual int32 GetHistorySize() const override;
 	virtual TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> GetHistoryItem(int32 HistoryIndex) const override;

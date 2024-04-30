@@ -84,6 +84,7 @@ bool ParseShelvesResult(const FString& InResults, FString& OutComment, FDateTime
 #endif
 
 bool ParseChangesetsResults(const FString& InXmlFilename, TArray<FPlasticSourceControlChangesetRef>& OutChangesets);
+bool ParseLogResults(const FString& InXmlFilename, FPlasticSourceControlChangesetRef& InOutChangeset);
 
 bool ParseBranchesResults(const FString& InXmlFilename, TArray<FPlasticSourceControlBranchRef>& OutBranches);
 
