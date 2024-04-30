@@ -750,8 +750,6 @@ static FString DecodeXmlEntities(const FString& InString)
 */
 static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InXmlResult, TArray<FPlasticSourceControlState>& InOutStates)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseHistoryResults);
-
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
 
@@ -948,11 +946,12 @@ bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InXmlFilena
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseHistoryResults::FXmlFile::LoadFile);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseHistoryResults::LoadXml);
 		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseHistoryResults::ParseXml);
 		bResult = ParseHistoryResults(bInUpdateHistory, XmlFile, InOutStates);
 	}
 	else
@@ -979,8 +978,6 @@ bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InXmlFilena
 */
 static bool ParseUpdateResults(const FXmlFile& InXmlResult, TArray<FString>& OutFiles)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseUpdateResults);
-
 	static const FString UpdatedItems(TEXT("UpdatedItems"));
 	static const FString List(TEXT("List"));
 	static const FString UpdatedItem(TEXT("UpdatedItem"));
@@ -1021,11 +1018,12 @@ bool ParseUpdateResults(const FString& InResults, TArray<FString>& OutFiles)
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseUpdateResults::FXmlFile::LoadFile);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseUpdateResults::LoadXml);
 		bResult = XmlFile.LoadFile(InResults, EConstructMethod::ConstructFromBuffer);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseUpdateResults::ParseXml);
 		bResult = ParseUpdateResults(XmlFile, OutFiles);
 	}
 	else
@@ -1072,6 +1070,8 @@ bool ParseUpdateResults(const TArray<FString>& InResults, TArray<FString>& OutFi
 /// Parse checkin result, usually looking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
 FText ParseCheckInResults(const TArray<FString>& InResults)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseCheckInResults);
+
 	if (InResults.Num() > 0)
 	{
 		static const FString ChangesetPrefix(TEXT("Created changeset "));
@@ -1133,8 +1133,6 @@ FText ParseCheckInResults(const TArray<FString>& InResults)
 */
 static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults);
-
 	static const FString StatusOutput(TEXT("StatusOutput"));
 	static const FString WkConfigType(TEXT("WkConfigType"));
 	static const FString WkConfigName(TEXT("WkConfigName"));
@@ -1227,11 +1225,12 @@ bool ParseChangelistsResults(const FString& InXmlFilename, TArray<FPlasticSource
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults::FXmlFile::LoadFile);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults::LoadXml);
 		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults::ParseXml);
 		bResult = ParseChangelistsResults(XmlFile, OutChangelistsStates, OutCLFilesStates);
 	}
 	else
@@ -1396,11 +1395,12 @@ bool ParseShelvesResults(const FString& InResults, TArray<FPlasticSourceControlC
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResults);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResults::LoadXml);
 		bResult = XmlFile.LoadFile(InResults, EConstructMethod::ConstructFromBuffer);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResults::ParseXml);
 		bResult = ParseShelvesResults(XmlFile, InOutChangelistsStates);
 	}
 	else
@@ -1422,6 +1422,8 @@ M;-1;"Content\ThirdPerson\Blueprints\BP_ThirdPersonCharacterRenamed.uasset"
 */
 bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InResults, TArray<FPlasticSourceControlRevision>& OutBaseRevisions)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelveDiffResults);
+
 	bool bResult = true;
 
 	OutBaseRevisions.Reset(InResults.Num());
@@ -1535,11 +1537,12 @@ bool ParseShelvesResult(const FString& InResults, FString& OutComment, FDateTime
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResult);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResult::LoadXml);
 		bResult = XmlFile.LoadFile(InResults, EConstructMethod::ConstructFromBuffer);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResult::ParseXml);
 		int32 ShelveId;
 		bResult = PlasticSourceControlParsers::ParseShelvesResult(XmlFile, ShelveId, OutComment, OutDate, OutOwner);
 	}
@@ -1638,11 +1641,12 @@ bool ParseChangesetsResults(const FString& InXmlFilename, TArray<FPlasticSourceC
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangesetesResults);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangesetesResults::LoadXml);
 		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangesetesResults::ParseXml);
 		bResult = ParseChangesetesResults(XmlFile, OutChangesets);
 	}
 	else
@@ -1742,11 +1746,12 @@ bool ParseBranchesResults(const FString& InXmlFilename, TArray<FPlasticSourceCon
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseBranchesResults);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseBranchesResults::LoadXml);
 		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseBranchesResults::ParseXml);
 		bResult = ParseBranchesResults(XmlFile, OutBranches);
 	}
 	else
@@ -1781,8 +1786,6 @@ bool ParseBranchesResults(const FString& InXmlFilename, TArray<FPlasticSourceCon
 */
 static bool ParseMergeResults(const FXmlFile& InXmlResult, TArray<FString>& OutFiles)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseMergeResults);
-
 	static const FString Merge(TEXT("Merge"));
 	static const FString Added(TEXT("Added"));
 	static const FString Deleted(TEXT("Deleted"));
@@ -1831,11 +1834,12 @@ bool ParseMergeResults(const FString& InResult, TArray<FString>& OutFiles)
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseMergeResults::FXmlFile::LoadFile);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseMergeResults::LoadXml);
 		bResult = XmlFile.LoadFile(InResult, EConstructMethod::ConstructFromBuffer);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseMergeResults::ParseXml);
 		bResult = ParseMergeResults(XmlFile, OutFiles);
 	}
 	else
