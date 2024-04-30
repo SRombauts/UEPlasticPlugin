@@ -196,7 +196,7 @@ enc_temp_folder
 .idea
 .vscode
 .vs
-.vsconfig
+.ignore
 *.VC.db
 *.opensdf
 *.opendb
