@@ -265,6 +265,22 @@ public:
 };
 
 
+/**
+ * Internal operation to list files in a changeset, using "cm log cs:<ChangesetId>"
+*/
+class FPlasticGetChangesetFiles final : public FSourceControlOperationBase
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	// Changeset to list files from
+	FPlasticSourceControlChangesetRef Changeset;
+};
+
+
 /** Called when first activated on a project, and then at project load time.
  *  Look for the root directory of the Plastic workspace (where the ".plastic/" subdirectory is located). */
 class FPlasticConnectWorker final : public IPlasticSourceControlWorker
@@ -602,6 +618,23 @@ public:
 		: IPlasticSourceControlWorker(InSourceControlProvider)
 	{}
 	virtual ~FPlasticGetChangesetsWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+	// Current changeset the workspace is on (at the end of the operation)
+	int32 CurrentChangesetId;
+};
+
+/** list files in changeset. */
+class FPlasticGetChangesetFilesWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticGetChangesetFilesWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticGetChangesetFilesWorker() = default;
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;

@@ -58,6 +58,7 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("RenameBranch", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRenameBranchWorker>));
 	PlasticSourceControlProvider.RegisterWorker("DeleteBranches", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteBranchesWorker>));
 	PlasticSourceControlProvider.RegisterWorker("GetChangesets", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetChangesetsWorker>));
+	PlasticSourceControlProvider.RegisterWorker("GetChangesetFiles", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetChangesetFilesWorker>));
 	PlasticSourceControlProvider.RegisterWorker("MakeWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticMakeWorkspaceWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Sync", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SyncAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
@@ -240,6 +241,17 @@ FText FPlasticGetChangesets::GetInProgressString() const
 {
 	return LOCTEXT("SourceControl_GetChangesets", "Getting the list of changesets...");
 }
+
+FName FPlasticGetChangesetFiles::GetName() const
+{
+	return "GetChangesetFiles";
+}
+
+FText FPlasticGetChangesetFiles::GetInProgressString() const
+{
+	return FText::Format(LOCTEXT("SourceControl_GetChangesetFiles", "Getting the list of files in changeset {0}..."), FText::AsNumber(Changeset->ChangesetId));
+}
+
 
 static bool AreAllFiles(const TArray<FString>& InFiles)
 {
@@ -1391,6 +1403,36 @@ bool FPlasticGetChangesetsWorker::Execute(FPlasticSourceControlCommand& InComman
 }
 
 bool FPlasticGetChangesetsWorker::UpdateStates()
+{
+	return false;
+}
+
+
+
+FName FPlasticGetChangesetFilesWorker::GetName() const
+{
+	return "GetChangesetFiles";
+}
+
+bool FPlasticGetChangesetFilesWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetChangesetFilesWorker::Execute);
+
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticGetChangesetFiles, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetChangesetFiles>(InCommand.Operation);
+
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetChangesetFiles(Operation->Changeset, InCommand.ErrorMessages);
+	}
+
+	{
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::GetChangesetNumber(InCommand.ChangesetNumber, InCommand.ErrorMessages);
+	}
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticGetChangesetFilesWorker::UpdateStates()
 {
 	return false;
 }
@@ -2566,6 +2608,7 @@ bool FPlasticUnshelveWorker::Execute(FPlasticSourceControlCommand& InCommand)
 			TArray<FString> Parameters;
 			Parameters.Add(TEXT("apply"));
 			Parameters.Add(FString::Printf(TEXT("sh:%d"), ChangelistState->ShelveId));
+			// TODO --noinput
 			InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("shelveset"), Parameters, FilesToUnshelve, InCommand.InfoMessages, InCommand.ErrorMessages);
 		}
 
