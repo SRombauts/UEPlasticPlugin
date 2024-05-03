@@ -77,7 +77,7 @@ private:
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
 private:
-	TSharedPtr<SSearchBox> FileSearchBox;
+	TSharedPtr<SSearchBox> LockSearchBox;
 
 	FName PrimarySortedColumn;
 	FName SecondarySortedColumn;
@@ -87,6 +87,7 @@ private:
 	TArray<FName> HiddenColumnsList;
 
 	bool bShouldRefresh = false;
+	bool bShouldInvalidateLocksCache = false;
 	bool bSourceControlAvailable = false;
 
 	FText RefreshStatus;

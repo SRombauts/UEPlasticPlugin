@@ -97,7 +97,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 					.VAlign(VAlign_Center)
 					.MaxWidth(300.0f)
 					[
-						SAssignNew(FileSearchBox, SSearchBox)
+						SAssignNew(BranchSearchBox, SSearchBox)
 						.HintText(LOCTEXT("SearchBranches", "Search Branches"))
 						.ToolTipText(LOCTEXT("PlasticBranchesSearch_Tooltip", "Filter the list of branches by keyword."))
 						.OnTextChanged(this, &SPlasticSourceControlBranchesWidget::OnSearchTextChanged)
@@ -255,8 +255,7 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateToolBar()
 #endif
 
 	ToolBarBuilder.AddToolBarButton(
-		FUIAction(
-			FExecuteAction::CreateLambda([this]() { RequestBranchesRefresh(); })),
+		FUIAction(FExecuteAction::CreateLambda([this]() { bShouldRefresh = true; })),
 		NAME_None,
 		LOCTEXT("SourceControl_RefreshButton", "Refresh"),
 		LOCTEXT("SourceControl_RefreshButton_Tooltip", "Refreshes branches from revision control provider."),
@@ -360,7 +359,7 @@ TSharedRef<ITableRow> SPlasticSourceControlBranchesWidget::OnGenerateRow(FPlasti
 	return SNew(SPlasticSourceControlBranchRow, OwnerTable)
 		.BranchToVisualize(InBranch)
 		.bIsCurrentBranch(bIsCurrentBranch)
-		.HighlightText_Lambda([this]() { return FileSearchBox->GetText(); });
+		.HighlightText_Lambda([this]() { return BranchSearchBox->GetText(); });
 }
 
 void SPlasticSourceControlBranchesWidget::OnHiddenColumnsListChanged()
@@ -400,7 +399,7 @@ void SPlasticSourceControlBranchesWidget::OnHiddenColumnsListChanged()
 void SPlasticSourceControlBranchesWidget::OnSearchTextChanged(const FText& InFilterText)
 {
 	SearchTextFilter->SetRawFilterText(InFilterText);
-	FileSearchBox->SetError(SearchTextFilter->GetFilterErrorText());
+	BranchSearchBox->SetError(SearchTextFilter->GetFilterErrorText());
 }
 
 void SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings(const FPlasticSourceControlBranch& InItem, TArray<FString>& OutStrings)
@@ -411,8 +410,7 @@ void SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings(const FPlast
 void SPlasticSourceControlBranchesWidget::OnFromDateChanged(int32 InFromDateInDays)
 {
 	FromDateInDays = InFromDateInDays;
-
-	RequestBranchesRefresh();
+	bShouldRefresh = true;
 }
 
 TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::BuildFromDateDropDownMenu()
@@ -1229,7 +1227,7 @@ FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometr
 	if (InKeyEvent.GetKey() == EKeys::F5)
 	{
 		// Pressing F5 refreshes the list of branches
-		RequestBranchesRefresh();
+		bShouldRefresh = true;
 		return FReply::Handled();
 	}
 	else if (InKeyEvent.GetKey() == EKeys::Enter)

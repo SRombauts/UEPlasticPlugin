@@ -84,7 +84,7 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 					.VAlign(VAlign_Center)
 					.MaxWidth(300.0f)
 					[
-						SAssignNew(FileSearchBox, SSearchBox)
+						SAssignNew(LockSearchBox, SSearchBox)
 						.HintText(LOCTEXT("SearchLocks", "Search Locks"))
 						.ToolTipText(LOCTEXT("PlasticLocksSearch_Tooltip", "Filter the list of locks by keyword."))
 						.OnTextChanged(this, &SPlasticSourceControlLocksWidget::OnSearchTextChanged)
@@ -179,8 +179,11 @@ TSharedRef<SWidget> SPlasticSourceControlLocksWidget::CreateToolBar()
 #endif
 
 	ToolBarBuilder.AddToolBarButton(
-		FUIAction(
-			FExecuteAction::CreateLambda([this]() { RequestLocksRefresh(true); })),
+		FUIAction(FExecuteAction::CreateLambda([this]()
+		{
+			bShouldRefresh = true;
+			bShouldInvalidateLocksCache = true;
+		})),
 		NAME_None,
 		LOCTEXT("SourceControl_RefreshButton", "Refresh"),
 		LOCTEXT("SourceControl_RefreshButton_Tooltip", "Refreshes locks from revision control provider."),
@@ -308,7 +311,7 @@ TSharedRef<ITableRow> SPlasticSourceControlLocksWidget::OnGenerateRow(FPlasticSo
 {
 	return SNew(SPlasticSourceControlLockRow, OwnerTable)
 		.LockToVisualize(InLock)
-		.HighlightText_Lambda([this]() { return FileSearchBox->GetText(); });
+		.HighlightText_Lambda([this]() { return LockSearchBox->GetText(); });
 }
 
 void SPlasticSourceControlLocksWidget::OnHiddenColumnsListChanged()
@@ -348,7 +351,7 @@ void SPlasticSourceControlLocksWidget::OnHiddenColumnsListChanged()
 void SPlasticSourceControlLocksWidget::OnSearchTextChanged(const FText& InFilterText)
 {
 	SearchTextFilter->SetRawFilterText(InFilterText);
-	FileSearchBox->SetError(SearchTextFilter->GetFilterErrorText());
+	LockSearchBox->SetError(SearchTextFilter->GetFilterErrorText());
 }
 
 void SPlasticSourceControlLocksWidget::PopulateItemSearchStrings(const FPlasticSourceControlLock& InItem, TArray<FString>& OutStrings)
@@ -727,8 +730,9 @@ void SPlasticSourceControlLocksWidget::Tick(const FGeometry& AllottedGeometry, c
 
 	if (bShouldRefresh)
 	{
-		RequestLocksRefresh(false);
+		RequestLocksRefresh(bShouldInvalidateLocksCache);
 		bShouldRefresh = false;
+		bShouldInvalidateLocksCache = false;
 	}
 
 	if (bIsRefreshing)
@@ -830,7 +834,8 @@ FReply SPlasticSourceControlLocksWidget::OnKeyDown(const FGeometry& MyGeometry, 
 	if (InKeyEvent.GetKey() == EKeys::F5)
 	{
 		// Pressing F5 refreshes the list of locks
-		RequestLocksRefresh(true);
+		bShouldRefresh = true;
+		bShouldInvalidateLocksCache = true;
 		return FReply::Handled();
 	}
 	else if ((InKeyEvent.GetKey() == EKeys::Delete) || (InKeyEvent.GetKey() == EKeys::BackSpace))

@@ -102,7 +102,7 @@ private:
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
 private:
-	TSharedPtr<SSearchBox> FileSearchBox;
+	TSharedPtr<SSearchBox> BranchSearchBox;
 
 	FName PrimarySortedColumn;
 	FName SecondarySortedColumn;
