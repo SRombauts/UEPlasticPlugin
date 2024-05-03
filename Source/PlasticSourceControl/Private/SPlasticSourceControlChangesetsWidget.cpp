@@ -8,6 +8,7 @@
 #include "PlasticSourceControlProjectSettings.h"
 #include "PlasticSourceControlUtils.h"
 #include "SPlasticSourceControlChangesetRow.h"
+#include "SPlasticSourceControlChangesetFileRow.h"
 
 #include "PackageUtils.h"
 
@@ -27,6 +28,7 @@
 #else
 #include "EditorStyleSet.h"
 #endif
+#include "Widgets/Images/SImage.h"
 #include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Layout/SSpacer.h"
@@ -44,8 +46,11 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 
 	CurrentChangesetId = FPlasticSourceControlModule::Get().GetProvider().GetChangesetNumber();
 
-	SearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlChangeset&>>(TTextFilter<const FPlasticSourceControlChangeset&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlChangesetsWidget::PopulateItemSearchStrings));
-	SearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlChangesetsWidget::OnRefreshUI);
+	ChangesetsSearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlChangeset&>>(TTextFilter<const FPlasticSourceControlChangeset&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlChangesetsWidget::PopulateItemSearchStrings));
+	ChangesetsSearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlChangesetsWidget::OnChangesetsRefreshUI);
+
+	FilesSearchTextFilter = MakeShared<TTextFilter<const FPlasticSourceControlState&>>(TTextFilter<const FPlasticSourceControlState&>::FItemToStringArray::CreateSP(this, &SPlasticSourceControlChangesetsWidget::PopulateItemSearchStrings));
+	FilesSearchTextFilter->OnChanged().AddSP(this, &SPlasticSourceControlChangesetsWidget::OnFilesRefreshUI);
 
 	FromDateInDaysValues.Add(TPair<int32, FText>(7, FText::FromString(TEXT("Last week"))));
 	FromDateInDaysValues.Add(TPair<int32, FText>(15, FText::FromString(TEXT("Last 15 days"))));
@@ -54,6 +59,10 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 	FromDateInDaysValues.Add(TPair<int32, FText>(182, FText::FromString(TEXT("Last 6 months"))));
 	FromDateInDaysValues.Add(TPair<int32, FText>(365, FText::FromString(TEXT("Last year"))));
 	FromDateInDaysValues.Add(TPair<int32, FText>(-1, FText::FromString(TEXT("All time"))));
+
+	// Min/Max prevents making the Changeset Area too small
+	const float ChangesetAreaRatio = 0.6f;
+	const float FileAreaRatio = 1.0f - ChangesetAreaRatio;
 
 	ChildSlot
 	[
@@ -90,10 +99,10 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 					.VAlign(VAlign_Center)
 					.MaxWidth(300.0f)
 					[
-						SAssignNew(FileSearchBox, SSearchBox)
+						SAssignNew(ChangesetsSearchBox, SSearchBox)
 						.HintText(LOCTEXT("SearchChangesets", "Search changesets"))
 						.ToolTipText(LOCTEXT("PlasticChangesetsSearch_Tooltip", "Filter the list of changesets by keyword."))
-						.OnTextChanged(this, &SPlasticSourceControlChangesetsWidget::OnSearchTextChanged)
+						.OnTextChanged(this, &SPlasticSourceControlChangesetsWidget::OnChangesetsSearchTextChanged)
 					]
 					+SHorizontalBox::Slot()
 					.VAlign(VAlign_Center)
@@ -160,9 +169,44 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 				]
 			]
 		]
-		+SVerticalBox::Slot() // The main content: the list of changesets
+		+SVerticalBox::Slot() // The main content: the splitter with the list of changesets, and the list of files in the selected changeset
 		[
-			CreateContentPanel()
+			SNew(SSplitter)
+			.Orientation(EOrientation::Orient_Horizontal)
+			.ResizeMode(ESplitterResizeMode::FixedPosition)
+
+			// Left slot: Changesets area.
+			+SSplitter::Slot()
+			.Resizable(true)
+			.SizeRule(SSplitter::FractionOfParent)
+			.Value(ChangesetAreaRatio)
+			[
+				CreateChangesetsListView()
+			]
+
+			// Right slot: Files associated to the selected changeset.
+			+SSplitter::Slot()
+			.Resizable(true)
+			.SizeRule(SSplitter::FractionOfParent)
+			.Value(FileAreaRatio)
+			[
+				SNew(SVerticalBox)
+				+SVerticalBox::Slot()
+				.Padding(5.0f)
+				.AutoHeight()
+				[
+					SAssignNew(FilesSearchBox, SSearchBox)
+					.MinDesiredWidth(200.0f)
+					.HintText(LOCTEXT("SearchFiles", "Search the files"))
+					.ToolTipText(LOCTEXT("PlasticFilesSearch_Tooltip", "Filter the list of files changed by keyword."))
+					.OnTextChanged(this, &SPlasticSourceControlChangesetsWidget::OnFilesSearchTextChanged)
+				]
+				+SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					CreateFilesListView()
+				]
+			]
 		]
 		+SVerticalBox::Slot() // Status bar (Always visible)
 		.AutoHeight()
@@ -200,8 +244,7 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateToolBar()
 #endif
 
 	ToolBarBuilder.AddToolBarButton(
-		FUIAction(
-			FExecuteAction::CreateLambda([this]() { RequestChangesetsRefresh(); })),
+		FUIAction(FExecuteAction::CreateLambda([this]() { bShouldRefresh = true; })),
 		NAME_None,
 		LOCTEXT("SourceControl_RefreshButton", "Refresh"),
 		LOCTEXT("SourceControl_RefreshButton_Tooltip", "Refreshes changesets from revision control provider."),
@@ -214,7 +257,7 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateToolBar()
 	return ToolBarBuilder.MakeWidget();
 }
 
-TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateContentPanel()
+TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateChangesetsListView()
 {
 	// Inspired by Engine\Source\Editor\SourceControlWindows\Private\SSourceControlChangelists.cpp
 	// TSharedRef<SListView<FChangelistTreeItemPtr>> SSourceControlChangelistsWidget::CreateChangelistFilesView()
@@ -222,19 +265,19 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateContentPanel()
 	UPlasticSourceControlProjectSettings* Settings = GetMutableDefault<UPlasticSourceControlProjectSettings>();
 	if (!Settings->bShowChangesetCreatedByColumn)
 	{
-		HiddenColumnsList.Add(PlasticSourceControlChangesetsListViewColumn::CreatedBy::Id());
+		ChangesetsHiddenColumnsList.Add(PlasticSourceControlChangesetsListViewColumn::CreatedBy::Id());
 	}
 	if (!Settings->bShowChangesetDateColumn)
 	{
-		HiddenColumnsList.Add(PlasticSourceControlChangesetsListViewColumn::Date::Id());
+		ChangesetsHiddenColumnsList.Add(PlasticSourceControlChangesetsListViewColumn::Date::Id());
 	}
 	if (!Settings->bShowChangesetCommentColumn)
 	{
-		HiddenColumnsList.Add(PlasticSourceControlChangesetsListViewColumn::Comment::Id());
+		ChangesetsHiddenColumnsList.Add(PlasticSourceControlChangesetsListViewColumn::Comment::Id());
 	}
 	if (!Settings->bShowChangesetBranchColumn)
 	{
-		HiddenColumnsList.Add(PlasticSourceControlChangesetsListViewColumn::Branch::Id());
+		ChangesetsHiddenColumnsList.Add(PlasticSourceControlChangesetsListViewColumn::Branch::Id());
 	}
 
 	TSharedRef<SListView<FPlasticSourceControlChangesetRef>> ChangesetView = SNew(SListView<FPlasticSourceControlChangesetRef>)
@@ -242,6 +285,7 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateContentPanel()
 		.ListItemsSource(&ChangesetRows)
 		.OnGenerateRow(this, &SPlasticSourceControlChangesetsWidget::OnGenerateRow)
 		.SelectionMode(ESelectionMode::Multi)
+		.OnSelectionChanged(this, &SPlasticSourceControlChangesetsWidget::OnSelectionChanged)
 		.OnContextMenuOpening(this, &SPlasticSourceControlChangesetsWidget::OnOpenContextMenu)
 		.OnMouseButtonDoubleClick(this, &SPlasticSourceControlChangesetsWidget::OnItemDoubleClicked)
 		.OnItemToString_Debug_Lambda([this](FPlasticSourceControlChangesetRef Changeset) { return FString::FromInt(Changeset->ChangesetId); })
@@ -249,7 +293,7 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateContentPanel()
 		(
 			SNew(SHeaderRow)
 			.CanSelectGeneratedColumn(true)
-			.HiddenColumnsList(HiddenColumnsList)
+			.HiddenColumnsList(ChangesetsHiddenColumnsList)
 			.OnHiddenColumnsListChanged(this, &SPlasticSourceControlChangesetsWidget::OnHiddenColumnsListChanged)
 
 			+SHeaderRow::Column(PlasticSourceControlChangesetsListViewColumn::ChangesetId::Id())
@@ -257,46 +301,111 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateContentPanel()
 			.DefaultTooltip(PlasticSourceControlChangesetsListViewColumn::ChangesetId::GetToolTipText())
 			.ShouldGenerateWidget(true) // Ensure the column cannot be hidden (grayed out in the show/hide drop down menu)
 			.FillWidth(0.6f)
-			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetColumnSortPriority, PlasticSourceControlChangesetsListViewColumn::ChangesetId::Id())
-			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetColumnSortMode, PlasticSourceControlChangesetsListViewColumn::ChangesetId::Id())
-			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnColumnSortModeChanged)
+			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortPriority, PlasticSourceControlChangesetsListViewColumn::ChangesetId::Id())
+			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortMode, PlasticSourceControlChangesetsListViewColumn::ChangesetId::Id())
+			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnChangesetsColumnSortModeChanged)
 
 			+SHeaderRow::Column(PlasticSourceControlChangesetsListViewColumn::CreatedBy::Id())
 			.DefaultLabel(PlasticSourceControlChangesetsListViewColumn::CreatedBy::GetDisplayText())
 			.DefaultTooltip(PlasticSourceControlChangesetsListViewColumn::CreatedBy::GetToolTipText())
 			.FillWidth(2.5f)
-			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetColumnSortPriority, PlasticSourceControlChangesetsListViewColumn::CreatedBy::Id())
-			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetColumnSortMode, PlasticSourceControlChangesetsListViewColumn::CreatedBy::Id())
-			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnColumnSortModeChanged)
+			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortPriority, PlasticSourceControlChangesetsListViewColumn::CreatedBy::Id())
+			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortMode, PlasticSourceControlChangesetsListViewColumn::CreatedBy::Id())
+			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnChangesetsColumnSortModeChanged)
 
 			+SHeaderRow::Column(PlasticSourceControlChangesetsListViewColumn::Date::Id())
 			.DefaultLabel(PlasticSourceControlChangesetsListViewColumn::Date::GetDisplayText())
 			.DefaultTooltip(PlasticSourceControlChangesetsListViewColumn::Date::GetToolTipText())
-			.FillWidth(1.5f)
-			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetColumnSortPriority, PlasticSourceControlChangesetsListViewColumn::Date::Id())
-			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetColumnSortMode, PlasticSourceControlChangesetsListViewColumn::Date::Id())
-			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnColumnSortModeChanged)
+			.FillWidth(2.0f)
+			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortPriority, PlasticSourceControlChangesetsListViewColumn::Date::Id())
+			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortMode, PlasticSourceControlChangesetsListViewColumn::Date::Id())
+			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnChangesetsColumnSortModeChanged)
 
 			+SHeaderRow::Column(PlasticSourceControlChangesetsListViewColumn::Comment::Id())
 			.DefaultLabel(PlasticSourceControlChangesetsListViewColumn::Comment::GetDisplayText())
 			.DefaultTooltip(PlasticSourceControlChangesetsListViewColumn::Comment::GetToolTipText())
 			.FillWidth(5.0f)
-			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetColumnSortPriority, PlasticSourceControlChangesetsListViewColumn::Comment::Id())
-			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetColumnSortMode, PlasticSourceControlChangesetsListViewColumn::Comment::Id())
-			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnColumnSortModeChanged)
+			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortPriority, PlasticSourceControlChangesetsListViewColumn::Comment::Id())
+			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortMode, PlasticSourceControlChangesetsListViewColumn::Comment::Id())
+			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnChangesetsColumnSortModeChanged)
 
 			+SHeaderRow::Column(PlasticSourceControlChangesetsListViewColumn::Branch::Id())
 			.DefaultLabel(PlasticSourceControlChangesetsListViewColumn::Branch::GetDisplayText())
 			.DefaultTooltip(PlasticSourceControlChangesetsListViewColumn::Branch::GetToolTipText())
 			.FillWidth(2.0f)
-			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetColumnSortPriority, PlasticSourceControlChangesetsListViewColumn::Branch::Id())
-			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetColumnSortMode, PlasticSourceControlChangesetsListViewColumn::Branch::Id())
-			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnColumnSortModeChanged)
+			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortPriority, PlasticSourceControlChangesetsListViewColumn::Branch::Id())
+			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortMode, PlasticSourceControlChangesetsListViewColumn::Branch::Id())
+			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnChangesetsColumnSortModeChanged)
 		);
 
 	ChangesetsListView = ChangesetView;
 
 	return ChangesetView;
+}
+
+TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateFilesListView()
+{
+	// Note: array of file States, each with one Revision for Diffing (like for Files and ShelvedFiles in FPlasticSourceControlChangelist)
+	TSharedRef<SListView<FPlasticSourceControlStateRef>> FilesView = SNew(SListView<FPlasticSourceControlStateRef>)
+		.ListItemsSource(&FileRows)
+		.OnGenerateRow(this, &SPlasticSourceControlChangesetsWidget::OnGenerateRow)
+		.SelectionMode(ESelectionMode::None)
+		.OnItemToString_Debug_Lambda([this](FPlasticSourceControlStateRef FileState) { return FileState->LocalFilename; })
+		.HeaderRow
+		(
+			SNew(SHeaderRow)
+			.CanSelectGeneratedColumn(true)
+
+			+SHeaderRow::Column(PlasticSourceControlChangesetFilesListViewColumn::Icon::Id())
+			.DefaultLabel(PlasticSourceControlChangesetFilesListViewColumn::Icon::GetDisplayText()) // Displayed in the drop down menu to show/hide columns
+			.DefaultTooltip(PlasticSourceControlChangesetFilesListViewColumn::Icon::GetToolTipText())
+			.ShouldGenerateWidget(true) // Ensure the column cannot be hidden (grayed out in the show/hide drop down menu)
+			.FillSized(18)
+			.HeaderContentPadding(FMargin(0))
+			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetFilesColumnSortPriority, PlasticSourceControlChangesetFilesListViewColumn::Icon::Id())
+			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetFilesColumnSortMode, PlasticSourceControlChangesetFilesListViewColumn::Icon::Id())
+			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnFilesColumnSortModeChanged)
+			[
+				SNew(SHorizontalBox)
+				+SHorizontalBox::Slot()
+				.Padding(1, 0)
+				[
+					SNew(SBox)
+					.WidthOverride(16)
+					.HeightOverride(16)
+					.HAlign(HAlign_Center)
+					.VAlign(VAlign_Center)
+					.Visibility_Lambda([this](){ return GetFilesColumnSortMode(PlasticSourceControlChangesetFilesListViewColumn::Icon::Id()) == EColumnSortMode::None ? EVisibility::Visible : EVisibility::Collapsed; })
+					[
+						SNew(SImage)
+						.Image(FAppStyle::Get().GetBrush("SourceControl.ChangelistsTab"))
+						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
+					]
+				]
+			]
+
+			+SHeaderRow::Column(PlasticSourceControlChangesetFilesListViewColumn::Name::Id())
+			.DefaultLabel(PlasticSourceControlChangesetFilesListViewColumn::Name::GetDisplayText())
+			.DefaultTooltip(PlasticSourceControlChangesetFilesListViewColumn::Name::GetToolTipText())
+			.ShouldGenerateWidget(true) // Ensure the column cannot be hidden (grayed out in the show/hide drop down menu)
+			.FillWidth(0.7f)
+			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetFilesColumnSortPriority, PlasticSourceControlChangesetFilesListViewColumn::Name::Id())
+			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetFilesColumnSortMode, PlasticSourceControlChangesetFilesListViewColumn::Name::Id())
+			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnFilesColumnSortModeChanged)
+
+			+SHeaderRow::Column(PlasticSourceControlChangesetFilesListViewColumn::Path::Id())
+			.DefaultLabel(PlasticSourceControlChangesetFilesListViewColumn::Path::GetDisplayText())
+			.DefaultTooltip(PlasticSourceControlChangesetFilesListViewColumn::Path::GetToolTipText())
+			.ShouldGenerateWidget(true) // Ensure the column cannot be hidden (grayed out in the show/hide drop down menu)
+			.FillWidth(2.0f)
+			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetFilesColumnSortPriority, PlasticSourceControlChangesetFilesListViewColumn::Path::Id())
+			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetFilesColumnSortMode, PlasticSourceControlChangesetFilesListViewColumn::Path::Id())
+			.OnSort(this, &SPlasticSourceControlChangesetsWidget::OnFilesColumnSortModeChanged)
+		);
+
+	FilesListView = FilesView;
+
+	return FilesView;
 }
 
 TSharedRef<ITableRow> SPlasticSourceControlChangesetsWidget::OnGenerateRow(FPlasticSourceControlChangesetRef InChangeset, const TSharedRef<STableViewBase>& OwnerTable)
@@ -305,7 +414,14 @@ TSharedRef<ITableRow> SPlasticSourceControlChangesetsWidget::OnGenerateRow(FPlas
 	return SNew(SPlasticSourceControlChangesetRow, OwnerTable)
 		.ChangesetToVisualize(InChangeset)
 		.bIsCurrentChangeset(bIsCurrentChangeset)
-		.HighlightText_Lambda([this]() { return FileSearchBox->GetText(); });
+		.HighlightText_Lambda([this]() { return ChangesetsSearchBox->GetText(); });
+}
+
+TSharedRef<ITableRow> SPlasticSourceControlChangesetsWidget::OnGenerateRow(FPlasticSourceControlStateRef InFile, const TSharedRef<STableViewBase>& OwnerTable)
+{
+	return SNew(SPlasticSourceControlChangesetFileRow, OwnerTable)
+		.FileToVisualize(InFile)
+		.HighlightText_Lambda([this]() { return FilesSearchBox->GetText(); });
 }
 
 void SPlasticSourceControlChangesetsWidget::OnHiddenColumnsListChanged()
@@ -342,10 +458,16 @@ void SPlasticSourceControlChangesetsWidget::OnHiddenColumnsListChanged()
 	}
 }
 
-void SPlasticSourceControlChangesetsWidget::OnSearchTextChanged(const FText& InFilterText)
+void SPlasticSourceControlChangesetsWidget::OnChangesetsSearchTextChanged(const FText& InFilterText)
 {
-	SearchTextFilter->SetRawFilterText(InFilterText);
-	FileSearchBox->SetError(SearchTextFilter->GetFilterErrorText());
+	ChangesetsSearchTextFilter->SetRawFilterText(InFilterText);
+	ChangesetsSearchBox->SetError(ChangesetsSearchTextFilter->GetFilterErrorText());
+}
+
+void SPlasticSourceControlChangesetsWidget::OnFilesSearchTextChanged(const FText& InFilterText)
+{
+	FilesSearchTextFilter->SetRawFilterText(InFilterText);
+	FilesSearchBox->SetError(FilesSearchTextFilter->GetFilterErrorText());
 }
 
 void SPlasticSourceControlChangesetsWidget::PopulateItemSearchStrings(const FPlasticSourceControlChangeset& InItem, TArray<FString>& OutStrings)
@@ -353,11 +475,15 @@ void SPlasticSourceControlChangesetsWidget::PopulateItemSearchStrings(const FPla
 	InItem.PopulateSearchString(OutStrings);
 }
 
+void SPlasticSourceControlChangesetsWidget::PopulateItemSearchStrings(const FPlasticSourceControlState& InItem, TArray<FString>& OutStrings)
+{
+	InItem.PopulateSearchString(OutStrings);
+}
+
 void SPlasticSourceControlChangesetsWidget::OnFromDateChanged(int32 InFromDateInDays)
 {
 	FromDateInDays = InFromDateInDays;
-
-	RequestChangesetsRefresh();
+	bShouldRefresh = true;
 }
 
 TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::BuildFromDateDropDownMenu()
@@ -373,35 +499,63 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::BuildFromDateDropDown
 	return MenuBuilder.MakeWidget();
 }
 
-void SPlasticSourceControlChangesetsWidget::OnRefreshUI()
+void SPlasticSourceControlChangesetsWidget::OnChangesetsRefreshUI()
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::OnRefreshUI);
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::OnChangesetsRefreshUI);
 
 	const int32 ItemCount = SourceControlChangesets.Num();
 	ChangesetRows.Empty(ItemCount);
 	for (int32 ItemIndex = 0; ItemIndex < ItemCount; ++ItemIndex)
 	{
 		const FPlasticSourceControlChangesetRef& Item = SourceControlChangesets[ItemIndex];
-		if (SearchTextFilter->PassesFilter(Item.Get()))
+		if (ChangesetsSearchTextFilter->PassesFilter(Item.Get()))
 		{
 			ChangesetRows.Emplace(Item);
 		}
 	}
 
-	if (GetListView())
+	if (ChangesetsListView)
 	{
-		SortChangesetView();
-		GetListView()->RequestListRefresh();
+		SortChangesetsView();
+		ChangesetsListView->RequestListRefresh();
+	}
+
+	// And also refresh the list of files
+	OnFilesRefreshUI();
+}
+
+void SPlasticSourceControlChangesetsWidget::OnFilesRefreshUI()
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::OnFilesRefreshUI);
+
+	if (SourceSelectedChangeset.IsValid())
+	{
+		const int32 ItemCount = SourceSelectedChangeset->Files.Num();
+		FileRows.Empty(ItemCount);
+		for (int32 ItemIndex = 0; ItemIndex < ItemCount; ++ItemIndex)
+		{
+			const FPlasticSourceControlStateRef& Item = SourceSelectedChangeset->Files[ItemIndex];
+			if (FilesSearchTextFilter->PassesFilter(Item.Get()))
+			{
+				FileRows.Emplace(Item);
+			}
+		}
+	}
+
+	if (FilesListView)
+	{
+		SortFilesView();
+		FilesListView->RequestListRefresh();
 	}
 }
 
-EColumnSortPriority::Type SPlasticSourceControlChangesetsWidget::GetColumnSortPriority(const FName InColumnId) const
+EColumnSortPriority::Type SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortPriority(const FName InColumnId) const
 {
-	if (InColumnId == PrimarySortedColumn)
+	if (InColumnId == ChangesetsPrimarySortedColumn)
 	{
 		return EColumnSortPriority::Primary;
 	}
-	else if (InColumnId == SecondarySortedColumn)
+	else if (InColumnId == ChangesetsSecondarySortedColumn)
 	{
 		return EColumnSortPriority::Secondary;
 	}
@@ -409,51 +563,51 @@ EColumnSortPriority::Type SPlasticSourceControlChangesetsWidget::GetColumnSortPr
 	return EColumnSortPriority::Max; // No specific priority.
 }
 
-EColumnSortMode::Type SPlasticSourceControlChangesetsWidget::GetColumnSortMode(const FName InColumnId) const
+EColumnSortMode::Type SPlasticSourceControlChangesetsWidget::GetChangesetsColumnSortMode(const FName InColumnId) const
 {
-	if (InColumnId == PrimarySortedColumn)
+	if (InColumnId == ChangesetsPrimarySortedColumn)
 	{
-		return PrimarySortMode;
+		return ChangesetsPrimarySortMode;
 	}
-	else if (InColumnId == SecondarySortedColumn)
+	else if (InColumnId == ChangesetsSecondarySortedColumn)
 	{
-		return SecondarySortMode;
+		return ChangesetsSecondarySortMode;
 	}
 
 	return EColumnSortMode::None;
 }
 
-void SPlasticSourceControlChangesetsWidget::OnColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode)
+void SPlasticSourceControlChangesetsWidget::OnChangesetsColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode)
 {
 	if (InSortPriority == EColumnSortPriority::Primary)
 	{
-		PrimarySortedColumn = InColumnId;
-		PrimarySortMode = InSortMode;
+		ChangesetsPrimarySortedColumn = InColumnId;
+		ChangesetsPrimarySortMode = InSortMode;
 
-		if (InColumnId == SecondarySortedColumn) // Cannot be primary and secondary at the same time.
+		if (InColumnId == ChangesetsSecondarySortedColumn) // Cannot be primary and secondary at the same time.
 		{
-			SecondarySortedColumn = FName();
-			SecondarySortMode = EColumnSortMode::None;
+			ChangesetsSecondarySortedColumn = FName();
+			ChangesetsSecondarySortMode = EColumnSortMode::None;
 		}
 	}
 	else if (InSortPriority == EColumnSortPriority::Secondary)
 	{
-		SecondarySortedColumn = InColumnId;
-		SecondarySortMode = InSortMode;
+		ChangesetsSecondarySortedColumn = InColumnId;
+		ChangesetsSecondarySortMode = InSortMode;
 	}
 
-	if (GetListView())
+	if (ChangesetsListView)
 	{
-		SortChangesetView();
-		GetListView()->RequestListRefresh();
+		SortChangesetsView();
+		ChangesetsListView->RequestListRefresh();
 	}
 }
 
-void SPlasticSourceControlChangesetsWidget::SortChangesetView()
+void SPlasticSourceControlChangesetsWidget::SortChangesetsView()
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::SortChangesetView);
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::SortChangesetsView);
 
-	if (PrimarySortedColumn.IsNone() || ChangesetRows.Num() == 0)
+	if (ChangesetsPrimarySortedColumn.IsNone() || ChangesetRows.Num() == 0)
 	{
 		return; // No column selected for sorting or nothing to sort.
 	}
@@ -512,14 +666,14 @@ void SPlasticSourceControlChangesetsWidget::SortChangesetView()
 		};
 	};
 
-	TFunction<int32(const FPlasticSourceControlChangeset*, const FPlasticSourceControlChangeset*)> PrimaryCompare = GetCompareFunc(PrimarySortedColumn);
+	TFunction<int32(const FPlasticSourceControlChangeset*, const FPlasticSourceControlChangeset*)> PrimaryCompare = GetCompareFunc(ChangesetsPrimarySortedColumn);
 	TFunction<int32(const FPlasticSourceControlChangeset*, const FPlasticSourceControlChangeset*)> SecondaryCompare;
-	if (!SecondarySortedColumn.IsNone())
+	if (!ChangesetsSecondarySortedColumn.IsNone())
 	{
-		SecondaryCompare = GetCompareFunc(SecondarySortedColumn);
+		SecondaryCompare = GetCompareFunc(ChangesetsSecondarySortedColumn);
 	}
 
-	if (PrimarySortMode == EColumnSortMode::Ascending)
+	if (ChangesetsPrimarySortMode == EColumnSortMode::Ascending)
 	{
 		// NOTE: StableSort() would give a better experience when the sorted columns(s) has the same values and new values gets added, but it is slower
 		//       with large changelists (7600 items was about 1.8x slower in average measured with Unreal Insight). Because this code runs in the main
@@ -535,7 +689,7 @@ void SPlasticSourceControlChangesetsWidget::SortChangesetView()
 			{
 				return false;
 			}
-			else if (SecondarySortMode == EColumnSortMode::Ascending)
+			else if (ChangesetsSecondarySortMode == EColumnSortMode::Ascending)
 			{
 				return SecondaryCompare(static_cast<FPlasticSourceControlChangeset*>(Lhs.Get()), static_cast<FPlasticSourceControlChangeset*>(Rhs.Get())) < 0;
 			}
@@ -558,13 +712,172 @@ void SPlasticSourceControlChangesetsWidget::SortChangesetView()
 			{
 				return false;
 			}
-			else if (SecondarySortMode == EColumnSortMode::Ascending)
+			else if (ChangesetsSecondarySortMode == EColumnSortMode::Ascending)
 			{
 				return SecondaryCompare(static_cast<FPlasticSourceControlChangeset*>(Lhs.Get()), static_cast<FPlasticSourceControlChangeset*>(Rhs.Get())) < 0;
 			}
 			else
 			{
 				return SecondaryCompare(static_cast<FPlasticSourceControlChangeset*>(Lhs.Get()), static_cast<FPlasticSourceControlChangeset*>(Rhs.Get())) > 0;
+			}
+		});
+	}
+}
+
+EColumnSortPriority::Type SPlasticSourceControlChangesetsWidget::GetFilesColumnSortPriority(const FName InColumnId) const
+{
+	if (InColumnId == FilesPrimarySortedColumn)
+	{
+		return EColumnSortPriority::Primary;
+	}
+	else if (InColumnId == FilesSecondarySortedColumn)
+	{
+		return EColumnSortPriority::Secondary;
+	}
+
+	return EColumnSortPriority::Max; // No specific priority.
+}
+
+EColumnSortMode::Type SPlasticSourceControlChangesetsWidget::GetFilesColumnSortMode(const FName InColumnId) const
+{
+	if (InColumnId == FilesPrimarySortedColumn)
+	{
+		return FilesPrimarySortMode;
+	}
+	else if (InColumnId == FilesSecondarySortedColumn)
+	{
+		return FilesSecondarySortMode;
+	}
+
+	return EColumnSortMode::None;
+}
+
+void SPlasticSourceControlChangesetsWidget::OnFilesColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode)
+{
+	if (InSortPriority == EColumnSortPriority::Primary)
+	{
+		FilesPrimarySortedColumn = InColumnId;
+		FilesPrimarySortMode = InSortMode;
+
+		if (InColumnId == FilesSecondarySortedColumn) // Cannot be primary and secondary at the same time.
+		{
+			FilesSecondarySortedColumn = FName();
+			FilesSecondarySortMode = EColumnSortMode::None;
+		}
+	}
+	else if (InSortPriority == EColumnSortPriority::Secondary)
+	{
+		FilesSecondarySortedColumn = InColumnId;
+		FilesSecondarySortMode = InSortMode;
+	}
+
+	if (FilesListView)
+	{
+		SortFilesView();
+		FilesListView->RequestListRefresh();
+	}
+}
+
+void SPlasticSourceControlChangesetsWidget::SortFilesView()
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::SortFilesView);
+
+	if (FilesPrimarySortedColumn.IsNone() || FileRows.Num() == 0)
+	{
+		return; // No column selected for sorting or nothing to sort.
+	}
+
+	auto CompareIcons = [](const FPlasticSourceControlState* Lhs, const FPlasticSourceControlState* Rhs)
+	{
+		const int32 LhsVal = static_cast<int32>(Lhs->WorkspaceState);
+		const int32 RhsVal = static_cast<int32>(Rhs->WorkspaceState);
+		return LhsVal < RhsVal ? -1 : (LhsVal == RhsVal ? 0 : 1);
+	};
+
+	auto CompareNames = [](const FPlasticSourceControlState* Lhs, const FPlasticSourceControlState* Rhs)
+	{
+		return FCString::Stricmp(*FPaths::GetBaseFilename(Lhs->LocalFilename), *FPaths::GetBaseFilename(Rhs->LocalFilename));
+	};
+
+	auto ComparePaths = [](const FPlasticSourceControlState* Lhs, const FPlasticSourceControlState* Rhs)
+	{
+		return FCString::Stricmp(*Lhs->LocalFilename, *Rhs->LocalFilename);
+	};
+
+	auto GetCompareFunc = [&](const FName& ColumnId)
+	{
+		if (ColumnId == PlasticSourceControlChangesetFilesListViewColumn::Icon::Id())
+		{
+			return TFunction<int32(const FPlasticSourceControlState*, const FPlasticSourceControlState*)>(CompareIcons);
+		}
+		else if (ColumnId == PlasticSourceControlChangesetFilesListViewColumn::Name::Id())
+		{
+			return TFunction<int32(const FPlasticSourceControlState*, const FPlasticSourceControlState*)>(CompareNames);
+		}
+		else if (ColumnId == PlasticSourceControlChangesetFilesListViewColumn::Path::Id())
+		{
+			return TFunction<int32(const FPlasticSourceControlState*, const FPlasticSourceControlState*)>(ComparePaths);
+		}
+		else
+		{
+			checkNoEntry();
+			return TFunction<int32(const FPlasticSourceControlState*, const FPlasticSourceControlState*)>();
+		};
+	};
+
+	TFunction<int32(const FPlasticSourceControlState*, const FPlasticSourceControlState*)> PrimaryCompare = GetCompareFunc(FilesPrimarySortedColumn);
+	TFunction<int32(const FPlasticSourceControlState*, const FPlasticSourceControlState*)> SecondaryCompare;
+	if (!FilesSecondarySortedColumn.IsNone())
+	{
+		SecondaryCompare = GetCompareFunc(FilesSecondarySortedColumn);
+	}
+
+	if (FilesPrimarySortMode == EColumnSortMode::Ascending)
+	{
+		// NOTE: StableSort() would give a better experience when the sorted columns(s) has the same values and new values gets added, but it is slower
+		//       with large changelists (7600 items was about 1.8x slower in average measured with Unreal Insight). Because this code runs in the main
+		//       thread and can be invoked a lot, the trade off went if favor of speed.
+		FileRows.Sort([this, &PrimaryCompare, &SecondaryCompare](const FPlasticSourceControlStatePtr& Lhs, const FPlasticSourceControlStatePtr& Rhs)
+		{
+			int32 Result = PrimaryCompare(static_cast<FPlasticSourceControlState*>(Lhs.Get()), static_cast<FPlasticSourceControlState*>(Rhs.Get()));
+			if (Result < 0)
+			{
+				return true;
+			}
+			else if (Result > 0 || !SecondaryCompare)
+			{
+				return false;
+			}
+			else if (FilesSecondarySortMode == EColumnSortMode::Ascending)
+			{
+				return SecondaryCompare(static_cast<FPlasticSourceControlState*>(Lhs.Get()), static_cast<FPlasticSourceControlState*>(Rhs.Get())) < 0;
+			}
+			else
+			{
+				return SecondaryCompare(static_cast<FPlasticSourceControlState*>(Lhs.Get()), static_cast<FPlasticSourceControlState*>(Rhs.Get())) > 0;
+			}
+		});
+	}
+	else
+	{
+		FileRows.Sort([this, &PrimaryCompare, &SecondaryCompare](const FPlasticSourceControlStatePtr& Lhs, const FPlasticSourceControlStatePtr& Rhs)
+		{
+			int32 Result = PrimaryCompare(static_cast<FPlasticSourceControlState*>(Lhs.Get()), static_cast<FPlasticSourceControlState*>(Rhs.Get()));
+			if (Result > 0)
+			{
+				return true;
+			}
+			else if (Result < 0 || !SecondaryCompare)
+			{
+				return false;
+			}
+			else if (FilesSecondarySortMode == EColumnSortMode::Ascending)
+			{
+				return SecondaryCompare(static_cast<FPlasticSourceControlState*>(Lhs.Get()), static_cast<FPlasticSourceControlState*>(Rhs.Get())) < 0;
+			}
+			else
+			{
+				return SecondaryCompare(static_cast<FPlasticSourceControlState*>(Lhs.Get()), static_cast<FPlasticSourceControlState*>(Rhs.Get())) > 0;
 			}
 		});
 	}
@@ -829,6 +1142,14 @@ void SPlasticSourceControlChangesetsWidget::Tick(const FGeometry& AllottedGeomet
 		bShouldRefresh = true;
 	}
 
+	// Auto refresh at regular intervals
+	const double CurrentTime = FPlatformTime::Seconds();
+	if (CurrentTime - LastRefreshTime > (10 * 60))
+	{
+		LastRefreshTime = CurrentTime;
+		bShouldRefresh = true;
+	}
+
 	if (bShouldRefresh)
 	{
 		RequestChangesetsRefresh();
@@ -883,15 +1204,14 @@ void SPlasticSourceControlChangesetsWidget::RequestChangesetsRefresh()
 
 void SPlasticSourceControlChangesetsWidget::OnGetChangesetsOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(SPlasticSourceControlChangesetsWidget::OnGetChangesetsOperationComplete);
-
-	TSharedRef<FPlasticGetChangesets, ESPMode::ThreadSafe> OperationGetChangesets = StaticCastSharedRef<FPlasticGetChangesets>(InOperation);
-	SourceControlChangesets = MoveTemp(OperationGetChangesets->Changesets);
+	TSharedRef<FPlasticGetChangesets, ESPMode::ThreadSafe> GetChangesetsOperation = StaticCastSharedRef<FPlasticGetChangesets>(InOperation);
+	SourceControlChangesets = MoveTemp(GetChangesetsOperation->Changesets);
+	SourceSelectedChangeset.Reset();
 
 	CurrentChangesetId = FPlasticSourceControlModule::Get().GetProvider().GetChangesetNumber();
 
 	EndRefreshStatus();
-	OnRefreshUI();
+	OnChangesetsRefreshUI();
 }
 
 void SPlasticSourceControlChangesetsWidget::OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
@@ -902,7 +1222,7 @@ void SPlasticSourceControlChangesetsWidget::OnSwitchToBranchOperationComplete(co
 	TSharedRef<FPlasticSwitch, ESPMode::ThreadSafe> SwitchToBranchOperation = StaticCastSharedRef<FPlasticSwitch>(InOperation);
 	PackageUtils::ReloadPackages(SwitchToBranchOperation->UpdatedFiles);
 
-	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
+	// Ask for a full refresh of the list of changesets (and don't call EndRefreshStatus() yet)
 	bShouldRefresh = true;
 
 	Notification.RemoveInProgress();
@@ -926,7 +1246,7 @@ void SPlasticSourceControlChangesetsWidget::OnSwitchToChangesetOperationComplete
 		PackageUtils::ReloadPackages(UpdateToChangesetOperation->UpdatedFiles);
 	}
 
-	// Ask for a full refresh of the list of branches (and don't call EndRefreshStatus() yet)
+	// Ask for a full refresh of the list of changesets (and don't call EndRefreshStatus() yet)
 	bShouldRefresh = true;
 
 	Notification.RemoveInProgress();
@@ -942,9 +1262,15 @@ void SPlasticSourceControlChangesetsWidget::OnSourceControlProviderChanged(ISour
 	if (&NewProvider != &OldProvider)
 	{
 		ChangesetRows.Reset();
-		if (GetListView())
+		if (ChangesetsListView)
 		{
-			GetListView()->RequestListRefresh();
+			ChangesetsListView->RequestListRefresh();
+		}
+
+		FileRows.Reset();
+		if (FilesListView)
+		{
+			FilesListView->RequestListRefresh();
 		}
 	}
 }
@@ -952,9 +1278,38 @@ void SPlasticSourceControlChangesetsWidget::OnSourceControlProviderChanged(ISour
 void SPlasticSourceControlChangesetsWidget::HandleSourceControlStateChanged()
 {
 	bShouldRefresh = true;
-	if (GetListView())
+	if (ChangesetsListView)
 	{
-		GetListView()->RequestListRefresh();
+		ChangesetsListView->RequestListRefresh();
+	}
+	if (FilesListView)
+	{
+		FilesListView->RequestListRefresh();
+	}
+}
+
+// on item selected, we could show the list of files changed in the changeset
+void SPlasticSourceControlChangesetsWidget::OnSelectionChanged(FPlasticSourceControlChangesetPtr InSelectedChangeset, ESelectInfo::Type SelectInfo)
+{
+	if (!InSelectedChangeset.IsValid())
+		return;
+
+	SourceSelectedChangeset = InSelectedChangeset;
+
+	// TODO: make all this asynchronous like the list of changesets
+	if (SourceSelectedChangeset->Files.IsEmpty())
+	{
+		// Get the list of files changed in the changeset
+		TArray<FString> ErrorMessages;
+		FPlasticSourceControlChangesetRef ChangesetRef = SourceSelectedChangeset.ToSharedRef();
+		PlasticSourceControlUtils::RunGetChangesetFiles(ChangesetRef, ErrorMessages);
+		// TODO: to call on async completion
+		OnFilesRefreshUI();
+	}
+	else
+	{
+		// Just refresh the list of files
+		OnFilesRefreshUI();
 	}
 }
 
@@ -968,16 +1323,19 @@ FReply SPlasticSourceControlChangesetsWidget::OnKeyDown(const FGeometry& MyGeome
 	if (InKeyEvent.GetKey() == EKeys::F5)
 	{
 		// Pressing F5 refreshes the list of changesets
-		RequestChangesetsRefresh();
+		bShouldRefresh = true;
 		return FReply::Handled();
 	}
 	else if (InKeyEvent.GetKey() == EKeys::Enter)
 	{
 		// Pressing Enter open the diff for the selected changeset (like a double click)
-		const TArray<FPlasticSourceControlChangesetRef> SelectedChangesets = ChangesetsListView->GetSelectedItems();
-		if (SelectedChangesets.Num() == 1)
+		if (ChangesetsListView)
 		{
-			OnDiffChangesetClicked(SelectedChangesets[0]);
+			const TArray<FPlasticSourceControlChangesetRef> SelectedChangesets = ChangesetsListView->GetSelectedItems();
+			if (SelectedChangesets.Num() == 1)
+			{
+				OnDiffChangesetClicked(SelectedChangesets[0]);
+			}
 		}
 		return FReply::Handled();
 	}

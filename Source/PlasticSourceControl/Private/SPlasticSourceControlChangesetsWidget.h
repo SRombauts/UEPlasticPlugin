@@ -16,6 +16,7 @@
 
 typedef TSharedRef<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetRef;
 typedef TSharedPtr<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetPtr;
+typedef TSharedRef<class FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlStateRef;
 
 class SSearchBox;
 
@@ -31,24 +32,34 @@ class SPlasticSourceControlChangesetsWidget : public SCompoundWidget
 
 private:
 	TSharedRef<SWidget> CreateToolBar();
-	TSharedRef<SWidget> CreateContentPanel();
+	TSharedRef<SWidget> CreateChangesetsListView();
+	TSharedRef<SWidget> CreateFilesListView();
 
 	TSharedRef<ITableRow> OnGenerateRow(FPlasticSourceControlChangesetRef InChangeset, const TSharedRef<STableViewBase>& OwnerTable);
+	TSharedRef<ITableRow> OnGenerateRow(FPlasticSourceControlStateRef InChangeset, const TSharedRef<STableViewBase>& OwnerTable);
 	void OnHiddenColumnsListChanged();
 
-	void OnSearchTextChanged(const FText& InFilterText);
+	void OnChangesetsSearchTextChanged(const FText& InFilterText);
+	void OnFilesSearchTextChanged(const FText& InFilterText);
 	void PopulateItemSearchStrings(const FPlasticSourceControlChangeset& InItem, TArray<FString>& OutStrings);
+	void PopulateItemSearchStrings(const FPlasticSourceControlState& InItem, TArray<FString>& OutStrings);
 
 	TSharedRef<SWidget> BuildFromDateDropDownMenu();
 	void OnFromDateChanged(int32 InFromDateInDays);
 
-	void OnRefreshUI();
+	void OnChangesetsRefreshUI();
+	void OnFilesRefreshUI();
 
-	EColumnSortPriority::Type GetColumnSortPriority(const FName InColumnId) const;
-	EColumnSortMode::Type GetColumnSortMode(const FName InColumnId) const;
-	void OnColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode);
+	EColumnSortPriority::Type GetChangesetsColumnSortPriority(const FName InColumnId) const;
+	EColumnSortMode::Type GetChangesetsColumnSortMode(const FName InColumnId) const;
+	void OnChangesetsColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode);
 
-	void SortChangesetView();
+	EColumnSortPriority::Type GetFilesColumnSortPriority(const FName InColumnId) const;
+	EColumnSortMode::Type GetFilesColumnSortMode(const FName InColumnId) const;
+	void OnFilesColumnSortModeChanged(const EColumnSortPriority::Type InSortPriority, const FName& InColumnId, const EColumnSortMode::Type InSortMode);
+
+	void SortChangesetsView();
+	void SortFilesView();
 
 	TSharedPtr<SWidget> OnOpenContextMenu();
 
@@ -73,26 +84,29 @@ private:
 	/** Delegate handler for when source control state changes */
 	void HandleSourceControlStateChanged();
 
-	SListView<FPlasticSourceControlChangesetRef>* GetListView() const
-	{
-		return ChangesetsListView.Get();
-	}
+	void OnSelectionChanged(FPlasticSourceControlChangesetPtr InSelectedChangeset, ESelectInfo::Type SelectInfo);
 
 	/** Double click to diff the selected changeset */
-	void OnItemDoubleClicked(FPlasticSourceControlChangesetRef InBranch);
+	void OnItemDoubleClicked(FPlasticSourceControlChangesetRef InChangeset);
 
 	/** Interpret F5 and Enter keys */
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
 private:
-	TSharedPtr<SSearchBox> FileSearchBox;
+	TSharedPtr<SSearchBox> ChangesetsSearchBox;
+	TSharedPtr<SSearchBox> FilesSearchBox;
 
-	FName PrimarySortedColumn;
-	FName SecondarySortedColumn;
-	EColumnSortMode::Type PrimarySortMode = EColumnSortMode::Ascending;
-	EColumnSortMode::Type SecondarySortMode = EColumnSortMode::None;
+	FName ChangesetsPrimarySortedColumn;
+	FName ChangesetsSecondarySortedColumn;
+	EColumnSortMode::Type ChangesetsPrimarySortMode = EColumnSortMode::Ascending;
+	EColumnSortMode::Type ChangesetsSecondarySortMode = EColumnSortMode::None;
 
-	TArray<FName> HiddenColumnsList;
+	FName FilesPrimarySortedColumn;
+	FName FilesSecondarySortedColumn;
+	EColumnSortMode::Type FilesPrimarySortMode = EColumnSortMode::Ascending;
+	EColumnSortMode::Type FilesSecondarySortMode = EColumnSortMode::None;
+
+	TArray<FName> ChangesetsHiddenColumnsList;
 
 	bool bShouldRefresh = false;
 	bool bSourceControlAvailable = false;
@@ -100,6 +114,7 @@ private:
 	FText RefreshStatus;
 	bool bIsRefreshing = false;
 	double RefreshStatusStartSecs;
+	double LastRefreshTime = 0.0;
 
 	int32 CurrentChangesetId;
 
@@ -107,13 +122,19 @@ private:
 	FNotification Notification;
 
 	TSharedPtr<SListView<FPlasticSourceControlChangesetRef>> ChangesetsListView;
-	TSharedPtr<TTextFilter<const FPlasticSourceControlChangeset&>> SearchTextFilter;
+	TSharedPtr<TTextFilter<const FPlasticSourceControlChangeset&>> ChangesetsSearchTextFilter;
 
 	TMap<int32, FText> FromDateInDaysValues;
 	int32 FromDateInDays = 30;
 
 	TArray<FPlasticSourceControlChangesetRef> SourceControlChangesets; // Full list from source (filtered by date)
 	TArray<FPlasticSourceControlChangesetRef> ChangesetRows; // Filtered list to display based on the search text filter
+
+	TSharedPtr<SListView<FPlasticSourceControlStateRef>> FilesListView;
+	TSharedPtr<TTextFilter<const FPlasticSourceControlState&>> FilesSearchTextFilter;
+
+	FPlasticSourceControlChangesetPtr SourceSelectedChangeset; // Current selected changeset from source control if any, with full list of files
+	TArray<FPlasticSourceControlStateRef> FileRows; // Filtered list to display based on the search text filter
 
 	/** Delegate handle for the HandleSourceControlStateChanged function callback */
 	FDelegateHandle SourceControlStateChangedDelegateHandle;

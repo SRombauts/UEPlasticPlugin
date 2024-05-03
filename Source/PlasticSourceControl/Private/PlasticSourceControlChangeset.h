@@ -15,7 +15,7 @@ public:
 	FString Comment;
 	FString Branch;
 	// Note: array of file States, each with one Revision for Diffing (like for Files and ShelvedFiles in FPlasticSourceControlChangelist)
-	TArray<TSharedRef<class FPlasticSourceControlState, ESPMode::ThreadSafe>> Files;
+	TArray<FPlasticSourceControlStateRef> Files;
 
 	void PopulateSearchString(TArray<FString>& OutStrings) const
 	{

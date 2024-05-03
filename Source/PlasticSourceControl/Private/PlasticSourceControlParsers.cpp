@@ -1693,7 +1693,7 @@ static EWorkspaceState StateFromType(const FString& InChangeType)
 
 	if (InChangeType.Equals(Changed))
 	{
-		return EWorkspaceState::Changed;
+		return EWorkspaceState::CheckedOutChanged;
 	}
 	else if (InChangeType.Equals(Added))
 	{
@@ -1744,10 +1744,18 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, FPlasticSou
 			{
 				const EWorkspaceState WorkspaceState = StateFromType(TypeNode->GetContent());
 
-				TSharedRef<class FPlasticSourceControlState, ESPMode::ThreadSafe> State = MakeShareable(new FPlasticSourceControlState(MoveTemp(FileName), WorkspaceState));
+				FPlasticSourceControlStateRef State = MakeShareable(new FPlasticSourceControlState(MoveTemp(FileName), WorkspaceState));
+
+				if (WorkspaceState == EWorkspaceState::Moved)
+				{
+					if (const FXmlNode* SrcNode = ItemNode->FindChildNode(SrcCmPath))
+					{
+						State->MovedFrom = SrcNode->GetContent();
+					}
+				}
 
 				// Add one revision to be able to fetch the file content for diff, if it's not marked for deletion.
-				if (WorkspaceState != EWorkspaceState::Deleted)
+				if ((WorkspaceState != EWorkspaceState::Deleted) && State->History.IsEmpty())
 				{
 					const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
 					SourceControlRevision->State = &State.Get();
@@ -1758,7 +1766,20 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, FPlasticSou
 					State->History.Add(SourceControlRevision);
 				}
 
-				InOutChangeset->Files.Add(MoveTemp(State));
+				// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
+				if (FPlasticSourceControlStateRef* ExistingState = InOutChangeset->Files.FindByPredicate(
+					[&State](const TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe>& InState)
+					{
+						return InState->GetFilename().Equals(State->GetFilename());
+					}))
+				{
+					(*ExistingState)->WorkspaceState = State->WorkspaceState;
+					(*ExistingState)->MovedFrom = State->MovedFrom;
+				}
+				else
+				{
+					InOutChangeset->Files.Add(MoveTemp(State));
+				}
 			}
 		}
 	}

@@ -121,6 +121,11 @@ public:
 
 	FText ToText() const;
 
+	void PopulateSearchString(TArray<FString>& OutStrings) const
+	{
+		OutStrings.Emplace(LocalFilename);
+	}
+
 	/** ISourceControlState interface */
 	virtual int32 GetHistorySize() const override;
 	virtual TSharedPtr<class ISourceControlRevision, ESPMode::ThreadSafe> GetHistoryItem(int32 HistoryIndex) const override;
@@ -253,3 +258,6 @@ public:
 	/** The change list of the last modification */
 	int32 HeadChangeList;
 };
+
+typedef TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlStateRef;
+typedef TSharedPtr<FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlStatePtr;
