@@ -21,6 +21,7 @@
 class FPlasticSourceControlProvider;
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
 typedef TSharedRef<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetRef;
+typedef TSharedPtr<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetPtr;
 typedef TSharedRef<class FPlasticSourceControlLock, ESPMode::ThreadSafe> FPlasticSourceControlLockRef;
 
 
@@ -277,7 +278,10 @@ public:
 	virtual FText GetInProgressString() const override;
 
 	// Changeset to list files from
-	FPlasticSourceControlChangesetRef Changeset;
+	FPlasticSourceControlChangesetPtr Changeset;
+
+	// List of files changed in the changeset
+	TArray<FPlasticSourceControlStateRef> Files;
 };
 
 
@@ -639,9 +643,6 @@ public:
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
 	virtual bool UpdateStates() override;
-
-	// Current changeset the workspace is on (at the end of the operation)
-	int32 CurrentChangesetId;
 };
 
 /** Plastic update the workspace to latest changes */

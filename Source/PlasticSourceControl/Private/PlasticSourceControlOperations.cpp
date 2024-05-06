@@ -1421,8 +1421,13 @@ bool FPlasticGetChangesetFilesWorker::Execute(FPlasticSourceControlCommand& InCo
 	check(InCommand.Operation->GetName() == GetName());
 	TSharedRef<FPlasticGetChangesetFiles, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetChangesetFiles>(InCommand.Operation);
 
+	if (!Operation->Changeset.IsValid())
 	{
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetChangesetFiles(Operation->Changeset, InCommand.ErrorMessages);
+		return false;
+	}
+
+	{
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetChangesetFiles(Operation->Changeset.ToSharedRef(), Operation->Files, InCommand.ErrorMessages);
 	}
 
 	{

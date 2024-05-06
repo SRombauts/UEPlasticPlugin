@@ -74,9 +74,11 @@ private:
 	void EndRefreshStatus();
 
 	void RequestChangesetsRefresh();
+	void RequestGetChangesetFiles(const FPlasticSourceControlChangesetPtr& InSelectedChangeset);
 
 	/** Source control callbacks */
 	void OnGetChangesetsOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnGetChangesetFilesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSwitchToChangesetOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);

@@ -1202,6 +1202,21 @@ void SPlasticSourceControlChangesetsWidget::RequestChangesetsRefresh()
 	Provider.Execute(GetChangesetsOperation, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnGetChangesetsOperationComplete));
 }
 
+void SPlasticSourceControlChangesetsWidget::RequestGetChangesetFiles(const FPlasticSourceControlChangesetPtr& InSelectedChangeset)
+{
+	if (!ISourceControlModule::Get().IsEnabled() || (!FPlasticSourceControlModule::Get().GetProvider().IsAvailable()))
+	{
+		return;
+	}
+
+	StartRefreshStatus();
+
+	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	TSharedRef<FPlasticGetChangesetFiles, ESPMode::ThreadSafe> GetChangesetFilesOperation = ISourceControlOperation::Create<FPlasticGetChangesetFiles>();
+	GetChangesetFilesOperation->Changeset = InSelectedChangeset;
+	Provider.Execute(GetChangesetFilesOperation, EConcurrency::Asynchronous, FSourceControlOperationComplete::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnGetChangesetFilesOperationComplete));
+}
+
 void SPlasticSourceControlChangesetsWidget::OnGetChangesetsOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	TSharedRef<FPlasticGetChangesets, ESPMode::ThreadSafe> GetChangesetsOperation = StaticCastSharedRef<FPlasticGetChangesets>(InOperation);
@@ -1212,6 +1227,15 @@ void SPlasticSourceControlChangesetsWidget::OnGetChangesetsOperationComplete(con
 
 	EndRefreshStatus();
 	OnChangesetsRefreshUI();
+}
+
+void SPlasticSourceControlChangesetsWidget::OnGetChangesetFilesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
+{
+	TSharedRef<FPlasticGetChangesetFiles, ESPMode::ThreadSafe> GetChangesetFilesOperation = StaticCastSharedRef<FPlasticGetChangesetFiles>(InOperation);
+	SourceSelectedChangeset->Files = MoveTemp(GetChangesetFilesOperation->Files);
+
+	EndRefreshStatus();
+	OnFilesRefreshUI();
 }
 
 void SPlasticSourceControlChangesetsWidget::OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
@@ -1296,15 +1320,10 @@ void SPlasticSourceControlChangesetsWidget::OnSelectionChanged(FPlasticSourceCon
 
 	SourceSelectedChangeset = InSelectedChangeset;
 
-	// TODO: make all this asynchronous like the list of changesets
 	if (SourceSelectedChangeset->Files.IsEmpty())
 	{
-		// Get the list of files changed in the changeset
-		TArray<FString> ErrorMessages;
-		FPlasticSourceControlChangesetRef ChangesetRef = SourceSelectedChangeset.ToSharedRef();
-		PlasticSourceControlUtils::RunGetChangesetFiles(ChangesetRef, ErrorMessages);
-		// TODO: to call on async completion
-		OnFilesRefreshUI();
+		// Asynchronously get the list of files changed in the changeset
+		RequestGetChangesetFiles(SourceSelectedChangeset);
 	}
 	else
 	{

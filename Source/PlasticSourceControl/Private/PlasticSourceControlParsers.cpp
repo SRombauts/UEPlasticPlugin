@@ -1714,7 +1714,7 @@ static EWorkspaceState StateFromType(const FString& InChangeType)
 /**
  * Parse file changes in a changeset.
  */
-static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, FPlasticSourceControlChangesetRef& InOutChangeset)
+static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlasticSourceControlChangesetRef& InChangeset, TArray<FPlasticSourceControlStateRef>& OutFiles)
 {
 	static const FString Changes(TEXT("Changes"));
 	static const FString Item(TEXT("Item"));
@@ -1725,7 +1725,7 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, FPlasticSou
 	if (const FXmlNode* ChangesNode = InChangesetNode->FindChildNode(Changes))
 	{
 		const TArray<FXmlNode*>& ItemNodes = ChangesNode->GetChildrenNodes();
-		InOutChangeset->Files.Reserve(ItemNodes.Num());
+		OutFiles.Reserve(ItemNodes.Num());
 		for (const FXmlNode* ItemNode : ItemNodes)
 		{
 			check(ItemNode);
@@ -1760,14 +1760,14 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, FPlasticSou
 					const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
 					SourceControlRevision->State = &State.Get();
 					SourceControlRevision->Filename = State->GetFilename();
-					SourceControlRevision->ChangesetNumber = InOutChangeset->ChangesetId; // Note: for display in the diff window only
-					SourceControlRevision->Date = InOutChangeset->Date; // Note: not yet used for display as of UE5.2
+					SourceControlRevision->ChangesetNumber = InChangeset->ChangesetId; // Note: for display in the diff window only
+					SourceControlRevision->Date = InChangeset->Date; // Note: not yet used for display as of UE5.2
 
 					State->History.Add(SourceControlRevision);
 				}
 
 				// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
-				if (FPlasticSourceControlStateRef* ExistingState = InOutChangeset->Files.FindByPredicate(
+				if (FPlasticSourceControlStateRef* ExistingState = OutFiles.FindByPredicate(
 					[&State](const TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe>& InState)
 					{
 						return InState->GetFilename().Equals(State->GetFilename());
@@ -1778,7 +1778,7 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, FPlasticSou
 				}
 				else
 				{
-					InOutChangeset->Files.Add(MoveTemp(State));
+					OutFiles.Add(MoveTemp(State));
 				}
 			}
 		}
@@ -1818,7 +1818,7 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, FPlasticSou
   </Changeset>
 </LogList>
 */
-static bool ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlChangesetRef& InOutChangeset)
+static bool ParseLogResults(const FXmlFile& InXmlResult, const FPlasticSourceControlChangesetRef& InChangeset, TArray<FPlasticSourceControlStateRef>& OutFiles)
 {
 	static const FString LogList(TEXT("LogList"));
 	static const FString ChangesetId(TEXT("ChangesetId"));
@@ -1841,18 +1841,18 @@ static bool ParseLogResults(const FXmlFile& InXmlResult, FPlasticSourceControlCh
 
 	FXmlNode* ChangesetNode = ChangesetsNodes[0];
 	const FXmlNode* ChangesetIdNode = ChangesetNode->FindChildNode(ChangesetId);
-	if (ChangesetIdNode == nullptr || InOutChangeset->ChangesetId != FCString::Atoi(*ChangesetIdNode->GetContent()))
+	if (ChangesetIdNode == nullptr || InChangeset->ChangesetId != FCString::Atoi(*ChangesetIdNode->GetContent()))
 	{
 		return false;
 	}
 
 	// List Files States and create a Revision
-	ParseChangesInChangeset(ChangesetNode, InOutChangeset);
+	ParseChangesInChangeset(ChangesetNode, InChangeset, OutFiles);
 
 	return true;
 }
 
-bool ParseLogResults(const FString& InXmlFilename, FPlasticSourceControlChangesetRef& InOutChangeset)
+bool ParseLogResults(const FString& InXmlFilename, const FPlasticSourceControlChangesetRef& InChangeset, TArray<FPlasticSourceControlStateRef>& OutFiles)
 {
 	bool bResult = false;
 
@@ -1864,7 +1864,7 @@ bool ParseLogResults(const FString& InXmlFilename, FPlasticSourceControlChangese
 	if (bResult)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseLogResults::ParseXml);
-		bResult = ParseLogResults(XmlFile, InOutChangeset);
+		bResult = ParseLogResults(XmlFile, InChangeset, OutFiles);
 	}
 	else
 	{
