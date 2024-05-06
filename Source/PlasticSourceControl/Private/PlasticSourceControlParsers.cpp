@@ -1144,6 +1144,7 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 	static const FString Change(TEXT("Change"));
 	static const FString Type(TEXT("Type"));
 	static const FString Path(TEXT("Path"));
+	static const FString OldPath(TEXT("OldPath"));
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
@@ -1198,7 +1199,29 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 					{
 						FileState.WorkspaceState = StateFromStatus(TypeNode->GetContent(), bUsesCheckedOutChanged);
 					}
-					OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
+
+					if (FileState.WorkspaceState == EWorkspaceState::Moved)
+					{
+						if (const FXmlNode* OldPathNode = ChangeNode->FindChildNode(OldPath))
+						{
+							FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, OldPathNode->GetContent());
+						}
+					}
+
+					// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
+					if (FPlasticSourceControlState* ExistingState = OutCLFilesStates[ChangelistIndex].FindByPredicate(
+						[&FileState](const FPlasticSourceControlState& InState)
+						{
+							return InState.GetFilename().Equals(FileState.GetFilename());
+						}))
+					{
+						ExistingState->WorkspaceState = FileState.WorkspaceState;
+						ExistingState->MovedFrom = FileState.MovedFrom;
+					}
+					else
+					{
+						OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
+					}
 				}
 			}
 
@@ -1416,7 +1439,7 @@ bool ParseShelvesResults(const FString& InResults, TArray<FPlasticSourceControlC
  *
  * Results of the diff command looks like that:
 C;666;Content\NewFolder\BP_CheckedOut.uasset
- * but for Moved assets there are two entires that we need to merge:
+ * but for Moved assets there are two entries that we need to merge:
 C;266;"Content\ThirdPerson\Blueprints\BP_ThirdPersonCharacterRenamed.uasset"
 M;-1;"Content\ThirdPerson\Blueprints\BP_ThirdPersonCharacterRenamed.uasset"
 */
@@ -1443,7 +1466,7 @@ bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InR
 
 			if (ShelveState == EWorkspaceState::Moved)
 			{
-				// In case of a Moved file, it appears twice in the list, so update the first entry (set as a "Changed" but has the Base Revision Id) and update it with the "Move" status
+				// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
 				if (FPlasticSourceControlRevision* ExistingShelveRevision = OutBaseRevisions.FindByPredicate(
 					[&AbsoluteFilename](const FPlasticSourceControlRevision& State)
 					{
