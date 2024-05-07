@@ -1232,7 +1232,7 @@ void SPlasticSourceControlChangesetsWidget::OnGetChangesetsOperationComplete(con
 void SPlasticSourceControlChangesetsWidget::OnGetChangesetFilesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult)
 {
 	TSharedRef<FPlasticGetChangesetFiles, ESPMode::ThreadSafe> GetChangesetFilesOperation = StaticCastSharedRef<FPlasticGetChangesetFiles>(InOperation);
-	SourceSelectedChangeset->Files = MoveTemp(GetChangesetFilesOperation->Files);
+	GetChangesetFilesOperation->Changeset->Files = MoveTemp(GetChangesetFilesOperation->Files);
 
 	EndRefreshStatus();
 	OnFilesRefreshUI();
