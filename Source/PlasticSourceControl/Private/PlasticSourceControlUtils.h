@@ -16,6 +16,7 @@ struct FSoftwareVersion;
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
 typedef TSharedRef<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetRef;
 typedef TSharedRef<class FPlasticSourceControlLock, ESPMode::ThreadSafe> FPlasticSourceControlLockRef;
+typedef TSharedRef<class FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlStateRef;
 
 enum class EWorkspaceState;
 
@@ -304,12 +305,22 @@ void AddShelvedFileToChangelist(FPlasticSourceControlChangelistState& InOutChang
 #endif
 
 /**
- * Run find "changesets where date >= 'YYYY-MM-DD'" and "log --xml" and parse the results.
+ * Run find "changesets where date >= 'YYYY-MM-DD'" and parse the results.
  * @param	InFromDate				The date to search from
- * @param	OutChangesets			The list of changesets, with files and their states
+ * @param	OutChangesets			The list of changesets, without their files
  * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ *
+ * @see RunGetChangesetFiles() below used to populated a specific changeset with its list of files
  */
 bool RunGetChangesets(const FDateTime& InFromDate, TArray<FPlasticSourceControlChangesetRef>& OutChangesets, TArray<FString>& OutErrorMessages);
+
+/**
+ * Run "log cs:<ChangesetId> --xml" and parse the results to populate the files from the specified changeset.
+ * @param	InChangeset				The changeset to get the files changed
+ * @param	OutFiles				The files changed in the specified changeset
+ * @param	OutErrorMessages		Any errors (from StdErr) as an array per-line
+ */
+bool RunGetChangesetFiles(const FPlasticSourceControlChangesetRef& InChangeset, TArray<FPlasticSourceControlStateRef>& OutFiles, TArray<FString>& OutErrorMessages);
 
 /**
  * Run find "branches where date >= 'YYYY-MM-DD' or changesets >= 'YYYY-MM-DD'" and parse the results.

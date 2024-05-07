@@ -750,8 +750,6 @@ static FString DecodeXmlEntities(const FString& InString)
 */
 static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InXmlResult, TArray<FPlasticSourceControlState>& InOutStates)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseHistoryResults);
-
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
 
@@ -948,11 +946,12 @@ bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InXmlFilena
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseHistoryResults::FXmlFile::LoadFile);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseHistoryResults::LoadXml);
 		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseHistoryResults::ParseXml);
 		bResult = ParseHistoryResults(bInUpdateHistory, XmlFile, InOutStates);
 	}
 	else
@@ -979,8 +978,6 @@ bool ParseHistoryResults(const bool bInUpdateHistory, const FString& InXmlFilena
 */
 static bool ParseUpdateResults(const FXmlFile& InXmlResult, TArray<FString>& OutFiles)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseUpdateResults);
-
 	static const FString UpdatedItems(TEXT("UpdatedItems"));
 	static const FString List(TEXT("List"));
 	static const FString UpdatedItem(TEXT("UpdatedItem"));
@@ -1021,11 +1018,12 @@ bool ParseUpdateResults(const FString& InResults, TArray<FString>& OutFiles)
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseUpdateResults::FXmlFile::LoadFile);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseUpdateResults::LoadXml);
 		bResult = XmlFile.LoadFile(InResults, EConstructMethod::ConstructFromBuffer);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseUpdateResults::ParseXml);
 		bResult = ParseUpdateResults(XmlFile, OutFiles);
 	}
 	else
@@ -1072,6 +1070,8 @@ bool ParseUpdateResults(const TArray<FString>& InResults, TArray<FString>& OutFi
 /// Parse checkin result, usually looking like "Created changeset cs:8@br:/main@MyProject@SRombauts@cloud (mount:'/')"
 FText ParseCheckInResults(const TArray<FString>& InResults)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseCheckInResults);
+
 	if (InResults.Num() > 0)
 	{
 		static const FString ChangesetPrefix(TEXT("Created changeset "));
@@ -1133,8 +1133,6 @@ FText ParseCheckInResults(const TArray<FString>& InResults)
 */
 static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlasticSourceControlChangelistState>& OutChangelistsStates, TArray<TArray<FPlasticSourceControlState>>& OutCLFilesStates)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults);
-
 	static const FString StatusOutput(TEXT("StatusOutput"));
 	static const FString WkConfigType(TEXT("WkConfigType"));
 	static const FString WkConfigName(TEXT("WkConfigName"));
@@ -1146,6 +1144,7 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 	static const FString Change(TEXT("Change"));
 	static const FString Type(TEXT("Type"));
 	static const FString Path(TEXT("Path"));
+	static const FString OldPath(TEXT("OldPath"));
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
@@ -1200,7 +1199,29 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 					{
 						FileState.WorkspaceState = StateFromStatus(TypeNode->GetContent(), bUsesCheckedOutChanged);
 					}
-					OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
+
+					if (FileState.WorkspaceState == EWorkspaceState::Moved)
+					{
+						if (const FXmlNode* OldPathNode = ChangeNode->FindChildNode(OldPath))
+						{
+							FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, OldPathNode->GetContent());
+						}
+					}
+
+					// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
+					if (FPlasticSourceControlState* ExistingState = OutCLFilesStates[ChangelistIndex].FindByPredicate(
+						[&FileState](const FPlasticSourceControlState& InState)
+						{
+							return InState.GetFilename().Equals(FileState.GetFilename());
+						}))
+					{
+						ExistingState->WorkspaceState = FileState.WorkspaceState;
+						ExistingState->MovedFrom = FileState.MovedFrom;
+					}
+					else
+					{
+						OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
+					}
 				}
 			}
 
@@ -1227,11 +1248,12 @@ bool ParseChangelistsResults(const FString& InXmlFilename, TArray<FPlasticSource
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults::FXmlFile::LoadFile);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults::LoadXml);
 		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangelistsResults::ParseXml);
 		bResult = ParseChangelistsResults(XmlFile, OutChangelistsStates, OutCLFilesStates);
 	}
 	else
@@ -1396,11 +1418,12 @@ bool ParseShelvesResults(const FString& InResults, TArray<FPlasticSourceControlC
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResults);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResults::LoadXml);
 		bResult = XmlFile.LoadFile(InResults, EConstructMethod::ConstructFromBuffer);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResults::ParseXml);
 		bResult = ParseShelvesResults(XmlFile, InOutChangelistsStates);
 	}
 	else
@@ -1416,12 +1439,14 @@ bool ParseShelvesResults(const FString& InResults, TArray<FPlasticSourceControlC
  *
  * Results of the diff command looks like that:
 C;666;Content\NewFolder\BP_CheckedOut.uasset
- * but for Moved assets there are two entires that we need to merge:
+ * but for Moved assets there are two entries that we need to merge:
 C;266;"Content\ThirdPerson\Blueprints\BP_ThirdPersonCharacterRenamed.uasset"
 M;-1;"Content\ThirdPerson\Blueprints\BP_ThirdPersonCharacterRenamed.uasset"
 */
 bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InResults, TArray<FPlasticSourceControlRevision>& OutBaseRevisions)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelveDiffResults);
+
 	bool bResult = true;
 
 	OutBaseRevisions.Reset(InResults.Num());
@@ -1441,7 +1466,7 @@ bool ParseShelveDiffResults(const FString InWorkspaceRoot, TArray<FString>&& InR
 
 			if (ShelveState == EWorkspaceState::Moved)
 			{
-				// In case of a Moved file, it appears twice in the list, so update the first entry (set as a "Changed" but has the Base Revision Id) and update it with the "Move" status
+				// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
 				if (FPlasticSourceControlRevision* ExistingShelveRevision = OutBaseRevisions.FindByPredicate(
 					[&AbsoluteFilename](const FPlasticSourceControlRevision& State)
 					{
@@ -1535,11 +1560,12 @@ bool ParseShelvesResult(const FString& InResults, FString& OutComment, FDateTime
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResult);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResult::LoadXml);
 		bResult = XmlFile.LoadFile(InResults, EConstructMethod::ConstructFromBuffer);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseShelvesResult::ParseXml);
 		int32 ShelveId;
 		bResult = PlasticSourceControlParsers::ParseShelvesResult(XmlFile, ShelveId, OutComment, OutDate, OutOwner);
 	}
@@ -1638,16 +1664,211 @@ bool ParseChangesetsResults(const FString& InXmlFilename, TArray<FPlasticSourceC
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangesetesResults);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangesetesResults::LoadXml);
 		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseChangesetesResults::ParseXml);
 		bResult = ParseChangesetesResults(XmlFile, OutChangesets);
 	}
 	else
 	{
 		UE_LOG(LogSourceControl, Error, TEXT("ParseChangesetesResults: XML parse error '%s'"), *XmlFile.GetLastError())
+	}
+
+	return bResult;
+}
+
+
+/**
+ * Convert the type of change in the log of changesets to a state.
+ */
+static EWorkspaceState StateFromType(const FString& InChangeType)
+{
+	static const FString Added(TEXT("Added"));
+	static const FString Changed(TEXT("Changed"));
+	static const FString Deleted(TEXT("Deleted"));
+	static const FString Moved(TEXT("Moved"));
+
+	if (InChangeType.Equals(Changed))
+	{
+		return EWorkspaceState::CheckedOutChanged;
+	}
+	else if (InChangeType.Equals(Added))
+	{
+		return EWorkspaceState::Added;
+	}
+	else if (InChangeType.Equals(Moved))
+	{
+		return EWorkspaceState::Moved;
+	}
+	else if (InChangeType.Equals(Deleted))
+	{
+		return EWorkspaceState::Deleted;
+	}
+
+	return EWorkspaceState::Unknown;
+}
+
+/**
+ * Parse file changes in a changeset.
+ */
+static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlasticSourceControlChangesetRef& InChangeset, TArray<FPlasticSourceControlStateRef>& OutFiles)
+{
+	static const FString Changes(TEXT("Changes"));
+	static const FString Item(TEXT("Item"));
+	static const FString Type(TEXT("Type"));
+	static const FString SrcCmPath(TEXT("SrcCmPath"));
+	static const FString DstCmPath(TEXT("DstCmPath"));
+
+	if (const FXmlNode* ChangesNode = InChangesetNode->FindChildNode(Changes))
+	{
+		const TArray<FXmlNode*>& ItemNodes = ChangesNode->GetChildrenNodes();
+		OutFiles.Reserve(ItemNodes.Num());
+		for (const FXmlNode* ItemNode : ItemNodes)
+		{
+			check(ItemNode);
+
+			const FXmlNode* PathNode = ItemNode->FindChildNode(DstCmPath);
+			const FXmlNode* TypeNode = ItemNode->FindChildNode(Type);
+			if ((PathNode == nullptr) || (TypeNode == nullptr))
+			{
+				continue;
+			}
+
+			// Here we make sure to only collect file states, not directories, since we shouldn't display the added directories to the Editor
+			FString FileName = PathNode->GetContent();
+			int32 DotIndex;
+			if (FileName.FindChar(TEXT('.'), DotIndex))
+			{
+				const EWorkspaceState WorkspaceState = StateFromType(TypeNode->GetContent());
+
+				FPlasticSourceControlStateRef State = MakeShareable(new FPlasticSourceControlState(MoveTemp(FileName), WorkspaceState));
+
+				if (WorkspaceState == EWorkspaceState::Moved)
+				{
+					if (const FXmlNode* SrcNode = ItemNode->FindChildNode(SrcCmPath))
+					{
+						State->MovedFrom = SrcNode->GetContent();
+					}
+				}
+
+				// Add one revision to be able to fetch the file content for diff, if it's not marked for deletion.
+				if ((WorkspaceState != EWorkspaceState::Deleted) && State->History.IsEmpty())
+				{
+					const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
+					SourceControlRevision->State = &State.Get();
+					SourceControlRevision->Filename = State->GetFilename();
+					SourceControlRevision->ChangesetNumber = InChangeset->ChangesetId; // Note: for display in the diff window only
+					SourceControlRevision->Date = InChangeset->Date; // Note: not yet used for display as of UE5.2
+
+					State->History.Add(SourceControlRevision);
+				}
+
+				// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
+				if (FPlasticSourceControlStateRef* ExistingState = OutFiles.FindByPredicate(
+					[&State](const TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe>& InState)
+					{
+						return InState->GetFilename().Equals(State->GetFilename());
+					}))
+				{
+					(*ExistingState)->WorkspaceState = State->WorkspaceState;
+					(*ExistingState)->MovedFrom = State->MovedFrom;
+				}
+				else
+				{
+					OutFiles.Add(MoveTemp(State));
+				}
+			}
+		}
+	}
+}
+
+/**
+ * Parse results of the 'cm log cs:<ChangesetId> --xml --encoding="utf-8"' command.
+ *
+ * Results of the find command looks like the following:
+<?xml version="1.0" encoding="utf-8"?>
+<LogList>
+  <Changeset>
+	<ObjId>2674</ObjId>
+	<ChangesetId>73</ChangesetId>
+	<Branch>/main/test</Branch>
+	<Comment>private files and folders</Comment>
+	<Owner>sebastien.rombauts@unity3d.com</Owner>
+	<GUID>cd803bd1-7d59-4573-b9de-1a4e684d573a</GUID>
+	<Changes>
+	  <Item>
+		<Branch>/main/test</Branch>
+		<RevNo>72</RevNo>
+		<Owner>sebastien.rombauts@unity3d.com</Owner>
+		<RevId>2861</RevId>
+		<ParentRevId>-1</ParentRevId>
+		<SrcCmPath>/Private/Private.md</SrcCmPath>
+		<SrcParentItemId>2868</SrcParentItemId>
+		<DstCmPath>/Private/Private.md</DstCmPath>
+		<DstParentItemId>2868</DstParentItemId>
+		<Date>2024-04-03T14:59:31+02:00</Date>
+		<Type>Added</Type>
+	  </Item>
+	[...]
+	</Changes>
+	<Date>2024-04-02T16:20:11+02:00</Date>
+  </Changeset>
+</LogList>
+*/
+static bool ParseLogResults(const FXmlFile& InXmlResult, const FPlasticSourceControlChangesetRef& InChangeset, TArray<FPlasticSourceControlStateRef>& OutFiles)
+{
+	static const FString LogList(TEXT("LogList"));
+	static const FString ChangesetId(TEXT("ChangesetId"));
+	static const FString Branch(TEXT("Branch"));
+	static const FString Comment(TEXT("Comment"));
+	static const FString Owner(TEXT("Owner"));
+	static const FString Date(TEXT("Date"));
+
+	const FXmlNode* LogListNode = InXmlResult.GetRootNode();
+	if (LogListNode == nullptr || LogListNode->GetTag() != LogList)
+	{
+		return false;
+	}
+
+	const TArray<FXmlNode*>& ChangesetsNodes = LogListNode->GetChildrenNodes();
+	if (ChangesetsNodes.Num() != 1 || ChangesetsNodes[0] == nullptr)
+	{
+		return false;
+	}
+
+	FXmlNode* ChangesetNode = ChangesetsNodes[0];
+	const FXmlNode* ChangesetIdNode = ChangesetNode->FindChildNode(ChangesetId);
+	if (ChangesetIdNode == nullptr || InChangeset->ChangesetId != FCString::Atoi(*ChangesetIdNode->GetContent()))
+	{
+		return false;
+	}
+
+	// List Files States and create a Revision
+	ParseChangesInChangeset(ChangesetNode, InChangeset, OutFiles);
+
+	return true;
+}
+
+bool ParseLogResults(const FString& InXmlFilename, const FPlasticSourceControlChangesetRef& InChangeset, TArray<FPlasticSourceControlStateRef>& OutFiles)
+{
+	bool bResult = false;
+
+	FXmlFile XmlFile;
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseLogResults::LoadXml);
+		bResult = XmlFile.LoadFile(InXmlFilename);
+	}
+	if (bResult)
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseLogResults::ParseXml);
+		bResult = ParseLogResults(XmlFile, InChangeset, OutFiles);
+	}
+	else
+	{
+		UE_LOG(LogSourceControl, Error, TEXT("ParseLogResults: XML parse error '%s'"), *XmlFile.GetLastError())
 	}
 
 	return bResult;
@@ -1742,11 +1963,12 @@ bool ParseBranchesResults(const FString& InXmlFilename, TArray<FPlasticSourceCon
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseBranchesResults);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseBranchesResults::LoadXml);
 		bResult = XmlFile.LoadFile(InXmlFilename);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseBranchesResults::ParseXml);
 		bResult = ParseBranchesResults(XmlFile, OutBranches);
 	}
 	else
@@ -1781,8 +2003,6 @@ bool ParseBranchesResults(const FString& InXmlFilename, TArray<FPlasticSourceCon
 */
 static bool ParseMergeResults(const FXmlFile& InXmlResult, TArray<FString>& OutFiles)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::ParseMergeResults);
-
 	static const FString Merge(TEXT("Merge"));
 	static const FString Added(TEXT("Added"));
 	static const FString Deleted(TEXT("Deleted"));
@@ -1831,11 +2051,12 @@ bool ParseMergeResults(const FString& InResult, TArray<FString>& OutFiles)
 
 	FXmlFile XmlFile;
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseMergeResults::FXmlFile::LoadFile);
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseMergeResults::LoadXml);
 		bResult = XmlFile.LoadFile(InResult, EConstructMethod::ConstructFromBuffer);
 	}
 	if (bResult)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlParsers::ParseMergeResults::ParseXml);
 		bResult = ParseMergeResults(XmlFile, OutFiles);
 	}
 	else

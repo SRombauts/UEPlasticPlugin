@@ -14,28 +14,61 @@
 
 const TCHAR* FPlasticSourceControlState::ToString() const
 {
-	const TCHAR* WorkspaceStateStr = nullptr;
 	switch (WorkspaceState)
 	{
-		case EWorkspaceState::Unknown: WorkspaceStateStr = TEXT("Unknown"); break;
-		case EWorkspaceState::Ignored: WorkspaceStateStr = TEXT("Ignored"); break;
-		case EWorkspaceState::Controlled: WorkspaceStateStr = TEXT("Controlled"); break;
-		case EWorkspaceState::CheckedOutChanged: WorkspaceStateStr = TEXT("CheckedOutChanged"); break;
-		case EWorkspaceState::CheckedOutUnchanged: WorkspaceStateStr = TEXT("CheckedOutUnchanged"); break;
-		case EWorkspaceState::Added: WorkspaceStateStr = TEXT("Added"); break;
-		case EWorkspaceState::Moved: WorkspaceStateStr = TEXT("Moved"); break;
-		case EWorkspaceState::Copied: WorkspaceStateStr = TEXT("Copied"); break;
-		case EWorkspaceState::Replaced: WorkspaceStateStr = TEXT("Replaced"); break;
-		case EWorkspaceState::Deleted: WorkspaceStateStr = TEXT("Deleted"); break;
-		case EWorkspaceState::LocallyDeleted: WorkspaceStateStr = TEXT("LocallyDeleted"); break;
-		case EWorkspaceState::Changed: WorkspaceStateStr = TEXT("Changed"); break;
-		case EWorkspaceState::Conflicted: WorkspaceStateStr = TEXT("Conflicted"); break;
-		case EWorkspaceState::Private: WorkspaceStateStr = TEXT("Private"); break;
-		default: WorkspaceStateStr = TEXT("???"); break;
+		case EWorkspaceState::Ignored: return TEXT("Ignored");
+		case EWorkspaceState::Controlled: return TEXT("Controlled");
+		case EWorkspaceState::CheckedOutChanged: return TEXT("Checked-out (changed)");
+		case EWorkspaceState::CheckedOutUnchanged: return TEXT("Checked-out (unchanged)");
+		case EWorkspaceState::Added: return TEXT("Added");
+		case EWorkspaceState::Moved: return TEXT("Moved");
+		case EWorkspaceState::Copied: return TEXT("Copied");
+		case EWorkspaceState::Replaced: return TEXT("Replaced");
+		case EWorkspaceState::Deleted: return TEXT("Deleted");
+		case EWorkspaceState::LocallyDeleted: return TEXT("LocallyDeleted");
+		case EWorkspaceState::Changed: return TEXT("Changed");
+		case EWorkspaceState::Conflicted: return TEXT("Conflicted");
+		case EWorkspaceState::Private: return TEXT("Private");
+		case EWorkspaceState::Unknown:
+		default: return TEXT("Unknown");
 	}
-	return WorkspaceStateStr;
 }
 
+FText FPlasticSourceControlState::ToText() const
+{
+	static const FText Ignored = LOCTEXT("Ignored", "Ignored");
+	static const FText Controlled = LOCTEXT("Controlled", "Controlled");
+	static const FText CheckedOutChanged = LOCTEXT("CheckedOutChanged", "Checked-out (changed)");
+	static const FText CheckedOutUnchanged = LOCTEXT("CheckedOutUnchanged", "Checked-out (unchanged)");
+	static const FText Added = LOCTEXT("Added", "Added");
+	static const FText Moved = LOCTEXT("Moved", "Moved");
+	static const FText Copied = LOCTEXT("Copied", "Copied");
+	static const FText Replaced = LOCTEXT("Replaced", "Replaced");
+	static const FText Deleted = LOCTEXT("Deleted", "Deleted");
+	static const FText LocallyDeleted = LOCTEXT("LocallyDeleted", "LocallyDeleted");
+	static const FText Changed = LOCTEXT("Changed", "Changed");
+	static const FText Conflicted = LOCTEXT("Conflicted", "Conflicted");
+	static const FText Private = LOCTEXT("Private", "Private");
+	static const FText Unknown = LOCTEXT("Unknown", "Unknown");
+	switch (WorkspaceState)
+	{
+		case EWorkspaceState::Ignored: return Ignored;
+		case EWorkspaceState::Controlled: return Controlled;
+		case EWorkspaceState::CheckedOutChanged: return CheckedOutChanged;
+		case EWorkspaceState::CheckedOutUnchanged: return CheckedOutUnchanged;
+		case EWorkspaceState::Added: return Added;
+		case EWorkspaceState::Moved: return Moved;
+		case EWorkspaceState::Copied: return Copied;
+		case EWorkspaceState::Replaced: return Replaced;
+		case EWorkspaceState::Deleted: return Deleted;
+		case EWorkspaceState::LocallyDeleted: return LocallyDeleted;
+		case EWorkspaceState::Changed: return Changed;
+		case EWorkspaceState::Conflicted: return Conflicted;
+		case EWorkspaceState::Private: return Private;
+		case EWorkspaceState::Unknown:
+		default: return Unknown;
+	}
+}
 
 int32 FPlasticSourceControlState::GetHistorySize() const
 {

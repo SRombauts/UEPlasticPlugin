@@ -21,6 +21,7 @@
 class FPlasticSourceControlProvider;
 typedef TSharedRef<class FPlasticSourceControlBranch, ESPMode::ThreadSafe> FPlasticSourceControlBranchRef;
 typedef TSharedRef<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetRef;
+typedef TSharedPtr<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetPtr;
 typedef TSharedRef<class FPlasticSourceControlLock, ESPMode::ThreadSafe> FPlasticSourceControlLockRef;
 
 
@@ -262,6 +263,25 @@ public:
 
 	// List of changesets found
 	TArray<FPlasticSourceControlChangesetRef> Changesets;
+};
+
+
+/**
+ * Internal operation to list files in a changeset, using "cm log cs:<ChangesetId>"
+*/
+class FPlasticGetChangesetFiles final : public FSourceControlOperationBase
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	// Changeset to list files from
+	FPlasticSourceControlChangesetPtr Changeset;
+
+	// List of files changed in the changeset
+	TArray<FPlasticSourceControlStateRef> Files;
 };
 
 
@@ -609,6 +629,20 @@ public:
 
 	// Current changeset the workspace is on (at the end of the operation)
 	int32 CurrentChangesetId;
+};
+
+/** list files in changeset. */
+class FPlasticGetChangesetFilesWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticGetChangesetFilesWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticGetChangesetFilesWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
 };
 
 /** Plastic update the workspace to latest changes */

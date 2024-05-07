@@ -6,6 +6,7 @@
 #include "PlasticSourceControlOperations.h"
 #include "PlasticSourceControlProjectSettings.h"
 #include "PlasticSourceControlBranch.h"
+#include "PlasticSourceControlUtils.h"
 #include "PlasticSourceControlVersions.h"
 #include "SPlasticSourceControlBranchRow.h"
 #include "SPlasticSourceControlCreateBranch.h"
@@ -32,6 +33,7 @@
 #endif
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/Docking/TabManager.h"
+#include "Widgets/Images/SImage.h"
 #include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Layout/SSpacer.h"
@@ -77,45 +79,162 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 			[
 				SNew(SHorizontalBox)
 				+SHorizontalBox::Slot()
-				.HAlign(HAlign_Left)
+				.FillWidth(1.0f)
+				[
+					SNew(SHorizontalBox)
+					+SHorizontalBox::Slot()
+					.HAlign(HAlign_Left)
+					.VAlign(VAlign_Center)
+					.AutoWidth()
+					[
+						CreateToolBar()
+					]
+					+SHorizontalBox::Slot()
+					.MaxWidth(10.0f)
+					[
+						SNew(SSpacer)
+					]
+					+SHorizontalBox::Slot()
+					.VAlign(VAlign_Center)
+					.MaxWidth(300.0f)
+					[
+						SAssignNew(BranchSearchBox, SSearchBox)
+						.HintText(LOCTEXT("SearchBranches", "Search Branches"))
+						.ToolTipText(LOCTEXT("PlasticBranchesSearch_Tooltip", "Filter the list of branches by keyword."))
+						.OnTextChanged(this, &SPlasticSourceControlBranchesWidget::OnSearchTextChanged)
+					]
+					+SHorizontalBox::Slot()
+					.VAlign(VAlign_Center)
+					.MaxWidth(125.0f)
+					.Padding(10.f, 0.f)
+					[
+						SNew(SComboButton)
+						.ToolTipText(LOCTEXT("PlasticBranchesDate_Tooltip", "Filter the list of branches by date of activity."))
+						.OnGetMenuContent(this, &SPlasticSourceControlBranchesWidget::BuildFromDateDropDownMenu)
+						.ButtonContent()
+						[
+							SNew(STextBlock)
+							.Text_Lambda([this]() { return FromDateInDaysValues[FromDateInDays]; })
+						]
+					]
+				]
+				+SHorizontalBox::Slot()
+				.HAlign(HAlign_Right)
 				.VAlign(VAlign_Center)
 				.AutoWidth()
 				[
-					CreateToolBar()
-				]
-				+SHorizontalBox::Slot()
-				.MaxWidth(10.0f)
-				[
-					SNew(SSpacer)
-				]
-				+SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
-				.MaxWidth(300.0f)
-				[
-					SAssignNew(FileSearchBox, SSearchBox)
-					.HintText(LOCTEXT("SearchBranches", "Search Branches"))
-					.ToolTipText(LOCTEXT("PlasticBranchesSearch_Tooltip", "Filter the list of branches by keyword."))
-					.OnTextChanged(this, &SPlasticSourceControlBranchesWidget::OnSearchTextChanged)
-				]
-				+SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
-				.MaxWidth(125.0f)
-				.Padding(10.f, 0.f)
-				[
-					SNew(SComboButton)
-					.ToolTipText(LOCTEXT("PlasticBranchesDate_Tooltip", "Filter the list of branches by date of creation."))
-					.OnGetMenuContent(this, &SPlasticSourceControlBranchesWidget::BuildFromDateDropDownMenu)
-					.ButtonContent()
+					// Button to open the Changesets View
+					SNew(SButton)
+					.ContentPadding(FMargin(6.0f, 0.0f))
+					.ToolTipText(LOCTEXT("PlasticChangesetsWindowTooltip", "Open the Changesets window."))
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+#else
+					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
+#endif
+					.OnClicked_Lambda([]()
+						{
+							FPlasticSourceControlModule::Get().GetChangesetsWindow().OpenTab();
+							return FReply::Handled();
+						})
 					[
-						SNew(STextBlock)
-						.Text_Lambda([this]() { return FromDateInDaysValues[FromDateInDays]; })
+						SNew(SHorizontalBox)
+						+SHorizontalBox::Slot()
+						.AutoWidth()
+						.VAlign(VAlign_Center)
+						.HAlign(HAlign_Center)
+						[
+							SNew(SImage)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+							.Image(FAppStyle::GetBrush("SourceControl.Actions.History"))
+#else
+							.Image(FEditorStyle::GetBrush("SourceControl.Actions.History"))
+#endif
+						]
+						+SHorizontalBox::Slot()
+						.AutoWidth()
+						.VAlign(VAlign_Center)
+						.Padding(5.0f, 0.0f, 0.0f, 0.0f)
+						[
+							SNew(STextBlock)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+							.TextStyle(&FAppStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
+#else
+							.TextStyle(&FEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
+#endif
+							.Text(LOCTEXT("PlasticChangesetsWindow", "Changesets"))
+						]
+					]
+				]
+				+SHorizontalBox::Slot()
+				.HAlign(HAlign_Right)
+				.VAlign(VAlign_Center)
+				.AutoWidth()
+				[
+					// Button to open the Branch Explorer
+					SNew(SButton)
+					.ContentPadding(FMargin(6.0f, 0.0f))
+					.ToolTipText(LOCTEXT("PlasticBranchExplorerTooltip", "Open the Branch Explorer of the Desktop Application for the current workspace."))
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+#else
+					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
+#endif
+					.OnClicked_Lambda([]()
+						{
+							PlasticSourceControlUtils::OpenDesktopApplication(true);
+							return FReply::Handled();
+						})
+					[
+						SNew(SHorizontalBox)
+						+SHorizontalBox::Slot()
+						.AutoWidth()
+						.VAlign(VAlign_Center)
+						.HAlign(HAlign_Center)
+						[
+							SNew(SImage)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+							.Image(FAppStyle::GetBrush("SourceControl.Branch"))
+#else
+							.Image(FEditorStyle::GetBrush("SourceControl.Branch"))
+#endif
+						]
+						+SHorizontalBox::Slot()
+						.AutoWidth()
+						.VAlign(VAlign_Center)
+						.Padding(5.0f, 0.0f, 0.0f, 0.0f)
+						[
+							SNew(STextBlock)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+							.TextStyle(&FAppStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
+#else
+							.TextStyle(&FEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText"))
+#endif
+							.Text(LOCTEXT("OpenBranchExplorer", "Branch Explorer"))
+						]
 					]
 				]
 			]
 		]
 		+SVerticalBox::Slot() // The main content: the list of branches
 		[
-			CreateContentPanel()
+			SNew(SVerticalBox)
+			+SVerticalBox::Slot()
+			.Padding(5.0f)
+			.AutoHeight()
+			[
+				CreateContentPanel()
+			]
+			+SVerticalBox::Slot()
+			.VAlign(VAlign_Center)
+			.HAlign(HAlign_Center)
+			.FillHeight(1.0f)
+			[
+				// Text to display when there is no branch displayed
+				SNew(STextBlock)
+				.Text(LOCTEXT("NoBranch", "There is no branch to display."))
+				.Visibility_Lambda([this]() { return SourceControlBranches.Num() ? EVisibility::Collapsed : EVisibility::Visible; })
+			]
 		]
 		+SVerticalBox::Slot() // Status bar (Always visible)
 		.AutoHeight()
@@ -153,8 +272,7 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateToolBar()
 #endif
 
 	ToolBarBuilder.AddToolBarButton(
-		FUIAction(
-			FExecuteAction::CreateLambda([this]() { RequestBranchesRefresh(); })),
+		FUIAction(FExecuteAction::CreateLambda([this]() { bShouldRefresh = true; })),
 		NAME_None,
 		LOCTEXT("SourceControl_RefreshButton", "Refresh"),
 		LOCTEXT("SourceControl_RefreshButton_Tooltip", "Refreshes branches from revision control provider."),
@@ -258,7 +376,7 @@ TSharedRef<ITableRow> SPlasticSourceControlBranchesWidget::OnGenerateRow(FPlasti
 	return SNew(SPlasticSourceControlBranchRow, OwnerTable)
 		.BranchToVisualize(InBranch)
 		.bIsCurrentBranch(bIsCurrentBranch)
-		.HighlightText_Lambda([this]() { return FileSearchBox->GetText(); });
+		.HighlightText_Lambda([this]() { return BranchSearchBox->GetText(); });
 }
 
 void SPlasticSourceControlBranchesWidget::OnHiddenColumnsListChanged()
@@ -298,7 +416,7 @@ void SPlasticSourceControlBranchesWidget::OnHiddenColumnsListChanged()
 void SPlasticSourceControlBranchesWidget::OnSearchTextChanged(const FText& InFilterText)
 {
 	SearchTextFilter->SetRawFilterText(InFilterText);
-	FileSearchBox->SetError(SearchTextFilter->GetFilterErrorText());
+	BranchSearchBox->SetError(SearchTextFilter->GetFilterErrorText());
 }
 
 void SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings(const FPlasticSourceControlBranch& InItem, TArray<FString>& OutStrings)
@@ -309,8 +427,7 @@ void SPlasticSourceControlBranchesWidget::PopulateItemSearchStrings(const FPlast
 void SPlasticSourceControlBranchesWidget::OnFromDateChanged(int32 InFromDateInDays)
 {
 	FromDateInDays = InFromDateInDays;
-
-	RequestBranchesRefresh();
+	bShouldRefresh = true;
 }
 
 TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::BuildFromDateDropDownMenu()
@@ -1127,7 +1244,7 @@ FReply SPlasticSourceControlBranchesWidget::OnKeyDown(const FGeometry& MyGeometr
 	if (InKeyEvent.GetKey() == EKeys::F5)
 	{
 		// Pressing F5 refreshes the list of branches
-		RequestBranchesRefresh();
+		bShouldRefresh = true;
 		return FReply::Handled();
 	}
 	else if (InKeyEvent.GetKey() == EKeys::Enter)
