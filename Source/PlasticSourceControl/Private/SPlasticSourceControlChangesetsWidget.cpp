@@ -567,6 +567,10 @@ void SPlasticSourceControlChangesetsWidget::OnFilesRefreshUI()
 			}
 		}
 	}
+	else
+	{
+		FileRows.Reset();
+	}
 
 	if (FilesListView)
 	{
@@ -1340,12 +1344,9 @@ void SPlasticSourceControlChangesetsWidget::HandleSourceControlStateChanged()
 // on item selected, we could show the list of files changed in the changeset
 void SPlasticSourceControlChangesetsWidget::OnSelectionChanged(FPlasticSourceControlChangesetPtr InSelectedChangeset, ESelectInfo::Type SelectInfo)
 {
-	if (!InSelectedChangeset.IsValid())
-		return;
-
 	SourceSelectedChangeset = InSelectedChangeset;
 
-	if (SourceSelectedChangeset->Files.IsEmpty())
+	if (InSelectedChangeset.IsValid() && SourceSelectedChangeset->Files.IsEmpty())
 	{
 		// Asynchronously get the list of files changed in the changeset
 		RequestGetChangesetFiles(SourceSelectedChangeset);
