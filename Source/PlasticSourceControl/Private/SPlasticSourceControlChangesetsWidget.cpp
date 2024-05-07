@@ -230,7 +230,7 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 					// Text to display when there is no changeset selected
 					SNew(STextBlock)
 					.Text(LOCTEXT("NoChangesetSelected", "Select a changeset from the left panel to see its files."))
-					.Visibility_Lambda([this]() { return SourceSelectedChangeset ? EVisibility::Collapsed : EVisibility::Visible; })
+					.Visibility_Lambda([this]() { return SourceControlChangesets.IsEmpty() || SourceSelectedChangeset ? EVisibility::Collapsed : EVisibility::Visible; })
 				]
 			]
 		]

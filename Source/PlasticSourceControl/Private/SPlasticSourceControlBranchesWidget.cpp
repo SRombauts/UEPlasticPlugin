@@ -218,7 +218,23 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 		]
 		+SVerticalBox::Slot() // The main content: the list of branches
 		[
-			CreateContentPanel()
+			SNew(SVerticalBox)
+			+SVerticalBox::Slot()
+			.Padding(5.0f)
+			.AutoHeight()
+			[
+				CreateContentPanel()
+			]
+			+SVerticalBox::Slot()
+			.VAlign(VAlign_Center)
+			.HAlign(HAlign_Center)
+			.FillHeight(1.0f)
+			[
+				// Text to display when there is no branch displayed
+				SNew(STextBlock)
+				.Text(LOCTEXT("NoBranch", "There is no branch to display."))
+				.Visibility_Lambda([this]() { return SourceControlBranches.Num() ? EVisibility::Collapsed : EVisibility::Visible; })
+			]
 		]
 		+SVerticalBox::Slot() // Status bar (Always visible)
 		.AutoHeight()

@@ -142,7 +142,23 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 		]
 		+SVerticalBox::Slot() // The main content: the list of locks
 		[
-			CreateContentPanel()
+			SNew(SVerticalBox)
+			+SVerticalBox::Slot()
+			.Padding(5.0f)
+			.AutoHeight()
+			[
+				CreateContentPanel()
+			]
+			+SVerticalBox::Slot()
+			.VAlign(VAlign_Center)
+			.HAlign(HAlign_Center)
+			.FillHeight(1.0f)
+			[
+				// Text to display when there is no lock displayed
+				SNew(STextBlock)
+				.Text(LOCTEXT("NoLock", "There is no lock to display."))
+				.Visibility_Lambda([this]() { return SourceControlLocks.Num() ? EVisibility::Collapsed : EVisibility::Visible; })
+			]
 		]
 		+SVerticalBox::Slot() // Status bar (Always visible)
 		.AutoHeight()
