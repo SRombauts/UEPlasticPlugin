@@ -181,7 +181,23 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 			.SizeRule(SSplitter::FractionOfParent)
 			.Value(ChangesetAreaRatio)
 			[
-				CreateChangesetsListView()
+				SNew(SVerticalBox)
+				+SVerticalBox::Slot()
+				.Padding(5.0f)
+				.AutoHeight()
+				[
+					CreateChangesetsListView()
+				]
+				+SVerticalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Center)
+				.FillHeight(1.0f)
+				[
+					// Text to display when there is no changesets displayed
+					SNew(STextBlock)
+					.Text(LOCTEXT("NoChangeset", "There is no changeset to display."))
+					.Visibility_Lambda([this]() { return SourceControlChangesets.Num() ? EVisibility::Collapsed : EVisibility::Visible; })
+				]
 			]
 
 			// Right slot: Files associated to the selected changeset.
@@ -205,6 +221,16 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 				.AutoHeight()
 				[
 					CreateFilesListView()
+				]
+				+SVerticalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Center)
+				.FillHeight(1.0f)
+				[
+					// Text to display when there is no changeset selected
+					SNew(STextBlock)
+					.Text(LOCTEXT("NoChangesetSelected", "Select a changeset from the left panel to see its files."))
+					.Visibility_Lambda([this]() { return SourceSelectedChangeset ? EVisibility::Collapsed : EVisibility::Visible; })
 				]
 			]
 		]
@@ -1221,7 +1247,6 @@ void SPlasticSourceControlChangesetsWidget::OnGetChangesetsOperationComplete(con
 {
 	TSharedRef<FPlasticGetChangesets, ESPMode::ThreadSafe> GetChangesetsOperation = StaticCastSharedRef<FPlasticGetChangesets>(InOperation);
 	SourceControlChangesets = MoveTemp(GetChangesetsOperation->Changesets);
-	SourceSelectedChangeset.Reset();
 
 	CurrentChangesetId = FPlasticSourceControlModule::Get().GetProvider().GetChangesetNumber();
 
