@@ -230,7 +230,7 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 					// Text to display when there is no changeset selected
 					SNew(STextBlock)
 					.Text(LOCTEXT("NoChangesetSelected", "Select a changeset from the left panel to see its files."))
-					.Visibility_Lambda([this]() { return SourceControlChangesets.IsEmpty() || SourceSelectedChangeset ? EVisibility::Collapsed : EVisibility::Visible; })
+					.Visibility_Lambda([this]() { return SourceControlChangesets.IsEmpty() || SourceSelectedChangeset.IsValid() ? EVisibility::Collapsed : EVisibility::Visible; })
 				]
 			]
 		]
@@ -544,6 +544,26 @@ void SPlasticSourceControlChangesetsWidget::OnChangesetsRefreshUI()
 	{
 		SortChangesetsView();
 		ChangesetsListView->RequestListRefresh();
+
+		// On changesets list refreshed, auto re-select the previously selected changeset if it still exists in the new list of SourceControlChangesets
+		if (SourceSelectedChangeset.IsValid())
+		{
+			if (const FPlasticSourceControlChangesetRef* SelectedChangeset = SourceControlChangesets.FindByPredicate([this](const FPlasticSourceControlChangesetRef& Changeset) { return Changeset->ChangesetId == SourceSelectedChangeset->ChangesetId; }))
+			{
+				SourceSelectedChangeset = *SelectedChangeset;
+				ChangesetsListView->SetSelection(*SelectedChangeset, ESelectInfo::Direct);
+			}
+			else
+			{
+				SourceSelectedChangeset.Reset();
+			}
+		}
+		// Else, select the first changeset in the list
+		if (!SourceSelectedChangeset.IsValid() && (ChangesetRows.Num() > 0))
+		{
+			SourceSelectedChangeset = ChangesetRows[0];
+			ChangesetsListView->SetSelection(ChangesetRows[0], ESelectInfo::Direct);
+		}
 	}
 
 	// And also refresh the list of files
@@ -1341,7 +1361,7 @@ void SPlasticSourceControlChangesetsWidget::HandleSourceControlStateChanged()
 	}
 }
 
-// on item selected, we could show the list of files changed in the changeset
+// On changeset selected, show its list of files changed
 void SPlasticSourceControlChangesetsWidget::OnSelectionChanged(FPlasticSourceControlChangesetPtr InSelectedChangeset, ESelectInfo::Type SelectInfo)
 {
 	SourceSelectedChangeset = InSelectedChangeset;
