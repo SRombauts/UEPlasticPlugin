@@ -1176,13 +1176,13 @@ void SPlasticSourceControlChangesetsWidget::Tick(const FGeometry& AllottedGeomet
 	const double CurrentTime = FPlatformTime::Seconds();
 	if (CurrentTime - LastRefreshTime > (10 * 60))
 	{
-		LastRefreshTime = CurrentTime;
 		bShouldRefresh = true;
 	}
 
 	if (bShouldRefresh)
 	{
 		RequestChangesetsRefresh();
+		LastRefreshTime = CurrentTime;
 		bShouldRefresh = false;
 	}
 
