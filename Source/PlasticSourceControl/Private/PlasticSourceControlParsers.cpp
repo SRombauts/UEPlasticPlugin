@@ -1188,40 +1188,34 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 					continue;
 				}
 
-				// Here we make sure to only collect file states, not directories, since we shouldn't display the added directories to the Editor
-				FString FileName = PathNode->GetContent();
-				int32 DotIndex;
-				if (FileName.FindChar(TEXT('.'), DotIndex))
+				FPlasticSourceControlState FileState(FPaths::ConvertRelativePathToFull(WorkspaceRoot, PathNode->GetContent()));
+				FileState.Changelist = ChangelistState.Changelist;
+				if (const FXmlNode* TypeNode = ChangeNode->FindChildNode(Type))
 				{
-					FPlasticSourceControlState FileState(FPaths::ConvertRelativePathToFull(WorkspaceRoot, MoveTemp(FileName)));
-					FileState.Changelist = ChangelistState.Changelist;
-					if (const FXmlNode* TypeNode = ChangeNode->FindChildNode(Type))
-					{
-						FileState.WorkspaceState = StateFromStatus(TypeNode->GetContent(), bUsesCheckedOutChanged);
-					}
+					FileState.WorkspaceState = StateFromStatus(TypeNode->GetContent(), bUsesCheckedOutChanged);
+				}
 
-					if (FileState.WorkspaceState == EWorkspaceState::Moved)
+				if (FileState.WorkspaceState == EWorkspaceState::Moved)
+				{
+					if (const FXmlNode* OldPathNode = ChangeNode->FindChildNode(OldPath))
 					{
-						if (const FXmlNode* OldPathNode = ChangeNode->FindChildNode(OldPath))
-						{
-							FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, OldPathNode->GetContent());
-						}
+						FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, OldPathNode->GetContent());
 					}
+				}
 
-					// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
-					if (FPlasticSourceControlState* ExistingState = OutCLFilesStates[ChangelistIndex].FindByPredicate(
-						[&FileState](const FPlasticSourceControlState& InState)
-						{
-							return InState.GetFilename().Equals(FileState.GetFilename());
-						}))
+				// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
+				if (FPlasticSourceControlState* ExistingState = OutCLFilesStates[ChangelistIndex].FindByPredicate(
+					[&FileState](const FPlasticSourceControlState& InState)
 					{
-						ExistingState->WorkspaceState = FileState.WorkspaceState;
-						ExistingState->MovedFrom = FileState.MovedFrom;
-					}
-					else
-					{
-						OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
-					}
+						return InState.GetFilename().Equals(FileState.GetFilename());
+					}))
+				{
+					ExistingState->WorkspaceState = FileState.WorkspaceState;
+					ExistingState->MovedFrom = FileState.MovedFrom;
+				}
+				else
+				{
+					OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
 				}
 			}
 
@@ -1737,49 +1731,43 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlas
 				continue;
 			}
 
-			// Here we make sure to only collect file states, not directories, since we shouldn't display the added directories to the Editor
 			FString FileName = PathNode->GetContent();
-			int32 DotIndex;
-			if (FileName.FindChar(TEXT('.'), DotIndex))
+			const EWorkspaceState WorkspaceState = StateFromType(TypeNode->GetContent());
+			FPlasticSourceControlStateRef State = MakeShareable(new FPlasticSourceControlState(MoveTemp(FileName), WorkspaceState));
+
+			if (WorkspaceState == EWorkspaceState::Moved)
 			{
-				const EWorkspaceState WorkspaceState = StateFromType(TypeNode->GetContent());
-
-				FPlasticSourceControlStateRef State = MakeShareable(new FPlasticSourceControlState(MoveTemp(FileName), WorkspaceState));
-
-				if (WorkspaceState == EWorkspaceState::Moved)
+				if (const FXmlNode* SrcNode = ItemNode->FindChildNode(SrcCmPath))
 				{
-					if (const FXmlNode* SrcNode = ItemNode->FindChildNode(SrcCmPath))
-					{
-						State->MovedFrom = SrcNode->GetContent();
-					}
+					State->MovedFrom = SrcNode->GetContent();
 				}
+			}
 
-				// Add one revision to be able to fetch the file content for diff, if it's not marked for deletion.
-				if ((WorkspaceState != EWorkspaceState::Deleted) && State->History.IsEmpty())
-				{
-					const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
-					SourceControlRevision->State = &State.Get();
-					SourceControlRevision->Filename = State->GetFilename();
-					SourceControlRevision->ChangesetNumber = InChangeset->ChangesetId; // Note: for display in the diff window only
-					SourceControlRevision->Date = InChangeset->Date; // Note: not yet used for display as of UE5.2
+			// Add one revision to be able to fetch the file content for diff, if it's not marked for deletion.
+			if ((WorkspaceState != EWorkspaceState::Deleted) && State->History.IsEmpty())
+			{
+				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
+				SourceControlRevision->State = &State.Get();
+				SourceControlRevision->Filename = State->GetFilename();
+				SourceControlRevision->ChangesetNumber = InChangeset->ChangesetId; // Note: for display in the diff window only
+				SourceControlRevision->Date = InChangeset->Date; // Note: not yet used for display as of UE5.2
 
-					State->History.Add(SourceControlRevision);
-				}
+				State->History.Add(SourceControlRevision);
+			}
 
-				// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
-				if (FPlasticSourceControlStateRef* ExistingState = OutFiles.FindByPredicate(
-					[&State](const TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe>& InState)
-					{
-						return InState->GetFilename().Equals(State->GetFilename());
-					}))
+			// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
+			if (FPlasticSourceControlStateRef* ExistingState = OutFiles.FindByPredicate(
+				[&State](const TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe>& InState)
 				{
-					(*ExistingState)->WorkspaceState = State->WorkspaceState;
-					(*ExistingState)->MovedFrom = State->MovedFrom;
-				}
-				else
-				{
-					OutFiles.Add(MoveTemp(State));
-				}
+					return InState->GetFilename().Equals(State->GetFilename());
+				}))
+			{
+				(*ExistingState)->WorkspaceState = State->WorkspaceState;
+				(*ExistingState)->MovedFrom = State->MovedFrom;
+			}
+			else
+			{
+				OutFiles.Add(MoveTemp(State));
 			}
 		}
 	}
