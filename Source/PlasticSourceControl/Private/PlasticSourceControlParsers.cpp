@@ -1744,9 +1744,9 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlas
 			}
 
 			// Add one revision to be able to fetch the file content for diff, if it's not marked for deletion.
-			if ((WorkspaceState != EWorkspaceState::Deleted) && State->History.IsEmpty())
+			if ((WorkspaceState != EWorkspaceState::Deleted) && (State->History.Num() == 0))
 			{
-				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
+				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShareable(new FPlasticSourceControlRevision);
 				SourceControlRevision->State = &State.Get();
 				SourceControlRevision->Filename = State->GetFilename();
 				SourceControlRevision->ChangesetNumber = InChangeset->ChangesetId; // Note: for display in the diff window only

@@ -74,7 +74,7 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
 #else
-			.BorderImage(FEditorStyle::GetBrush("DetailsView.CategoryBottom"))
+			.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
 #endif
 			.Padding(4.0f)
 			[
@@ -130,7 +130,7 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 					.ToolTipText(LOCTEXT("PlasticBranchesWindowTooltip", "Open the Branches window."))
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
-#else
+#elif ENGINE_MAJOR_VERSION == 5
 					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
 #endif
 					.OnClicked_Lambda([]()
@@ -177,7 +177,9 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 
 			// Left slot: Changesets area.
 			+SSplitter::Slot()
+#if ENGINE_MAJOR_VERSION == 5
 			.Resizable(true)
+#endif
 			.SizeRule(SSplitter::FractionOfParent)
 			.Value(ChangesetAreaRatio)
 			[
@@ -202,7 +204,9 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 
 			// Right slot: Files associated to the selected changeset.
 			+SSplitter::Slot()
+#if ENGINE_MAJOR_VERSION == 5
 			.Resizable(true)
+#endif
 			.SizeRule(SSplitter::FractionOfParent)
 			.Value(FileAreaRatio)
 			[
@@ -230,7 +234,7 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 					// Text to display when there is no changeset selected
 					SNew(STextBlock)
 					.Text(LOCTEXT("NoChangesetSelected", "Select a changeset from the left panel to see its files."))
-					.Visibility_Lambda([this]() { return SourceControlChangesets.IsEmpty() || SourceSelectedChangeset.IsValid() ? EVisibility::Collapsed : EVisibility::Visible; })
+					.Visibility_Lambda([this]() { return SourceControlChangesets.Num() == 0 || SourceSelectedChangeset.IsValid() ? EVisibility::Collapsed : EVisibility::Visible; })
 				]
 			]
 		]
@@ -386,7 +390,11 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateFilesListView()
 			.DefaultLabel(PlasticSourceControlChangesetFilesListViewColumn::Icon::GetDisplayText()) // Displayed in the drop down menu to show/hide columns
 			.DefaultTooltip(PlasticSourceControlChangesetFilesListViewColumn::Icon::GetToolTipText())
 			.ShouldGenerateWidget(true) // Ensure the column cannot be hidden (grayed out in the show/hide drop down menu)
+#if ENGINE_MAJOR_VERSION >= 5
 			.FillSized(18)
+#else
+			.FixedWidth(18.0f)
+#endif
 			.HeaderContentPadding(FMargin(0))
 			.SortPriority(this, &SPlasticSourceControlChangesetsWidget::GetFilesColumnSortPriority, PlasticSourceControlChangesetFilesListViewColumn::Icon::Id())
 			.SortMode(this, &SPlasticSourceControlChangesetsWidget::GetFilesColumnSortMode, PlasticSourceControlChangesetFilesListViewColumn::Icon::Id())
@@ -404,7 +412,13 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateFilesListView()
 					.Visibility_Lambda([this](){ return GetFilesColumnSortMode(PlasticSourceControlChangesetFilesListViewColumn::Icon::Id()) == EColumnSortMode::None ? EVisibility::Visible : EVisibility::Collapsed; })
 					[
 						SNew(SImage)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 						.Image(FAppStyle::Get().GetBrush("SourceControl.ChangelistsTab"))
+#elif ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION == 0
+						.Image(FEditorStyle::GetBrush("SourceControl.ChangelistsTab"))
+#else
+						.Image(FEditorStyle::GetBrush("SourceControl.StatusIcon.On"))
+#endif
 						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
 					]
 				]
@@ -1366,7 +1380,7 @@ void SPlasticSourceControlChangesetsWidget::OnSelectionChanged(FPlasticSourceCon
 {
 	SourceSelectedChangeset = InSelectedChangeset;
 
-	if (InSelectedChangeset.IsValid() && SourceSelectedChangeset->Files.IsEmpty())
+	if (InSelectedChangeset.IsValid() && SourceSelectedChangeset->Files.Num() == 0)
 	{
 		// Asynchronously get the list of files changed in the changeset
 		RequestGetChangesetFiles(SourceSelectedChangeset);

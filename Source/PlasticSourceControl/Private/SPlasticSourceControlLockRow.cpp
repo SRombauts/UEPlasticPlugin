@@ -8,11 +8,6 @@
 #include "Widgets/Text/STextBlock.h"
 
 #include "Runtime/Launch/Resources/Version.h"
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
-#include "Styling/AppStyle.h"
-#else
-#include "EditorStyleSet.h"
-#endif
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControlLockWindow"
 

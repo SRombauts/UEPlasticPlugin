@@ -73,7 +73,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
 #else
-			.BorderImage(FEditorStyle::GetBrush("DetailsView.CategoryBottom"))
+			.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
 #endif
 			.Padding(4.0f)
 			[
@@ -129,7 +129,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 					.ToolTipText(LOCTEXT("PlasticChangesetsWindowTooltip", "Open the Changesets window."))
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
-#else
+#elif ENGINE_MAJOR_VERSION == 5
 					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
 #endif
 					.OnClicked_Lambda([]()
@@ -177,8 +177,8 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 					.ToolTipText(LOCTEXT("PlasticBranchExplorerTooltip", "Open the Branch Explorer of the Desktop Application for the current workspace."))
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
-#else
-					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
+#elif ENGINE_MAJOR_VERSION == 5
+					.ButtonStyle(FFEditorStyle::Get(), "SimpleButton")
 #endif
 					.OnClicked_Lambda([]()
 						{

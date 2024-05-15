@@ -2,6 +2,8 @@
 
 #include "SPlasticSourceControlStatusBar.h"
 
+#if ENGINE_MAJOR_VERSION == 5
+
 #include "PlasticSourceControlModule.h"
 
 #include "Runtime/Launch/Resources/Version.h"
@@ -76,3 +78,5 @@ FReply SPlasticSourceControlStatusBar::OnClicked()
 }
 
 #undef LOCTEXT_NAMESPACE
+
+#endif // ENGINE_MAJOR_VERSION == 5

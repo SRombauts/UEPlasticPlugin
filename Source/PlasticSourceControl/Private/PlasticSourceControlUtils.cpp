@@ -1241,7 +1241,7 @@ bool RunGetChangesets(const FDateTime& InFromDate, TArray<FPlasticSourceControlC
 	{
 		bCommandSuccessful = PlasticSourceControlParsers::ParseChangesetsResults(ChangesetResultFile.GetFilename(), OutChangesets);
 	}
-	if (!Errors.IsEmpty())
+	if (Errors.Num() > 0)
 	{
 		OutErrorMessages.Append(MoveTemp(Errors));
 	}

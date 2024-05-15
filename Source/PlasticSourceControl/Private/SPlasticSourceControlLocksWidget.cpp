@@ -60,7 +60,7 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
 #else
-			.BorderImage(FEditorStyle::GetBrush("DetailsView.CategoryBottom"))
+			.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
 #endif
 			.Padding(4.0f)
 			[
@@ -105,7 +105,7 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 						LOCTEXT("PlasticLockRulesURLTooltipEnabled", "Navigate to lock rules configuration page in the Unity Dashboard."))
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
-#else
+#elif ENGINE_MAJOR_VERSION == 5
 					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
 #endif
 					.OnClicked(this, &SPlasticSourceControlLocksWidget::OnConfigureLockRulesClicked, OrganizationName)
