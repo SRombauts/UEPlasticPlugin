@@ -698,7 +698,11 @@ void SPlasticSourceControlChangesetsWidget::SortChangesetsView()
 
 	auto CompareBranches = [](const FPlasticSourceControlChangeset* Lhs, const FPlasticSourceControlChangeset* Rhs)
 	{
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		return UE::ComparisonUtility::CompareNaturalOrder(*Lhs->Branch, *Rhs->Branch);
+#else
 		return FCString::Stricmp(*Lhs->Branch, *Rhs->Branch);
+#endif
 	};
 
 	auto GetCompareFunc = [&](const FName& ColumnId)

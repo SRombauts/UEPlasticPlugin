@@ -539,7 +539,11 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 
 	auto CompareRepository = [](const FPlasticSourceControlBranch* Lhs, const FPlasticSourceControlBranch* Rhs)
 	{
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		return UE::ComparisonUtility::CompareNaturalOrder(*Lhs->Repository, *Rhs->Repository);
+#else
 		return FCString::Stricmp(*Lhs->Repository, *Rhs->Repository);
+#endif
 	};
 
 	auto CompareCreatedBy = [](const FPlasticSourceControlBranch* Lhs, const FPlasticSourceControlBranch* Rhs)
