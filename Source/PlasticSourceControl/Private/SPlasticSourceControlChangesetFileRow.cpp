@@ -5,6 +5,7 @@
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
 
+#include "Misc/Paths.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Images/SLayeredImage.h"
 #include "Widgets/Text/STextBlock.h"
@@ -50,7 +51,7 @@ TSharedRef<SWidget> GetSCCFileWidget(FPlasticSourceControlState* InFileState)
 
 	// Make icon overlays (eg, SCC and dirty status) a reasonable size in relation to the icon size (note: it is assumed this icon is square)
 	const float ICON_SCALING_FACTOR = 0.7f;
-	const float IconOverlaySize = IconBrush->ImageSize.X * ICON_SCALING_FACTOR;
+	const float IconOverlaySize = static_cast<float>(IconBrush->ImageSize.X * ICON_SCALING_FACTOR);
 
 	return SNew(SOverlay)
 		// The actual icon

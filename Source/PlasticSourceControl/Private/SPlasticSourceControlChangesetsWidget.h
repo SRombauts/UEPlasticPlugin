@@ -14,9 +14,12 @@
 #include "ISourceControlOperation.h"
 #include "ISourceControlProvider.h"
 
+class FPlasticSourceControlChangeset;
+class FPlasticSourceControlState;
 typedef TSharedRef<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetRef;
 typedef TSharedPtr<class FPlasticSourceControlChangeset, ESPMode::ThreadSafe> FPlasticSourceControlChangesetPtr;
 typedef TSharedRef<class FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlStateRef;
+typedef TSharedPtr<class FPlasticSourceControlState, ESPMode::ThreadSafe> FPlasticSourceControlStatePtr;
 
 class SSearchBox;
 
@@ -61,13 +64,24 @@ private:
 	void SortChangesetsView();
 	void SortFilesView();
 
-	TSharedPtr<SWidget> OnOpenContextMenu();
+	TSharedPtr<SWidget> OnOpenChangesetContextMenu();
+	TSharedPtr<SWidget> OnOpenFileContextMenu();
 
 	void OnDiffChangesetClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset);
 	void OnDiffChangesetsClicked(TArray<FPlasticSourceControlChangesetRef> InSelectedChangesets);
 	void OnDiffBranchClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset);
 	void OnSwitchToBranchClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset);
 	void OnSwitchToChangesetClicked(FPlasticSourceControlChangesetPtr InSelectedChangeset);
+	void OnLocateFileClicked(FPlasticSourceControlStateRef InSelectedFile);
+	void OnDiffRevisionClicked(FPlasticSourceControlStateRef InSelectedFile);
+	void OnDiffAgainstWorkspaceClicked(FPlasticSourceControlStateRef InSelectedFile);
+	void OnSaveRevisionClicked(FPlasticSourceControlStateRef InSelectedFile);
+	void OnRevertToRevisionClicked(TArray<FPlasticSourceControlStateRef> InSelectedFiles);
+	void OnShowHistoryClicked(TArray<FPlasticSourceControlStateRef> InSelectedFiles);
+
+	void SelectActors(const TArray<FAssetData> ActorsToSelect);
+	void FocusActors(const TArray<FAssetData> ActorToFocus);
+	void BrowseToAssets(const TArray<FAssetData> Assets);
 
 	void StartRefreshStatus();
 	void TickRefreshStatus(double InDeltaTime);
@@ -81,6 +95,7 @@ private:
 	void OnGetChangesetFilesOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSwitchToBranchOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSwitchToChangesetOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	void OnRevertToRevisionOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
 	void OnSourceControlProviderChanged(ISourceControlProvider& OldProvider, ISourceControlProvider& NewProvider);
 
 	/** Delegate handler for when source control state changes */

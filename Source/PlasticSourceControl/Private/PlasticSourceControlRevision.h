@@ -84,3 +84,6 @@ public:
 
 /** History composed of the last 100 revisions of the file */
 typedef TArray<TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe>>	TPlasticSourceControlHistory;
+
+typedef TSharedPtr<FPlasticSourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlRevisionPtr;
+typedef TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> FPlasticSourceControlRevisionRef;
