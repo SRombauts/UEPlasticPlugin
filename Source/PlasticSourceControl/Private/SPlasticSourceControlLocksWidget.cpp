@@ -144,8 +144,6 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 		[
 			SNew(SVerticalBox)
 			+SVerticalBox::Slot()
-			.Padding(5.0f)
-			.AutoHeight()
 			[
 				CreateContentPanel()
 			]

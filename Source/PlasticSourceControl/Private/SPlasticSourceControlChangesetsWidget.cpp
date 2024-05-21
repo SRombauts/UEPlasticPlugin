@@ -185,8 +185,6 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 			[
 				SNew(SVerticalBox)
 				+SVerticalBox::Slot()
-				.Padding(5.0f)
-				.AutoHeight()
 				[
 					CreateChangesetsListView()
 				]
@@ -222,7 +220,6 @@ void SPlasticSourceControlChangesetsWidget::Construct(const FArguments& InArgs)
 					.OnTextChanged(this, &SPlasticSourceControlChangesetsWidget::OnFilesSearchTextChanged)
 				]
 				+SVerticalBox::Slot()
-				.AutoHeight()
 				[
 					CreateFilesListView()
 				]
