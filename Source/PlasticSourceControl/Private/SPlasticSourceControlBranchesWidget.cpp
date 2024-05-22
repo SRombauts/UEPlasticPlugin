@@ -694,7 +694,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		FText::FromString(SelectedBranch)));
 	const FText& CreateChildBranchTooltipDynamic = bSingleSelection ? CreateChildBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
-		TEXT("CreateChildBranch"),
+		"CreateChildBranch",
 		LOCTEXT("CreateChildBranch", "Create child branch..."),
 		CreateChildBranchTooltipDynamic,
 		FSlateIcon(),
@@ -710,7 +710,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		bSingleNotCurrent ? SwitchToBranchTooltip :
 		bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
-		TEXT("SwitchToBranch"),
+		"SwitchToBranch",
 		LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
 		SwitchToBranchTooltipDynamic,
 		FSlateIcon(),
@@ -729,7 +729,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		bSingleNotCurrent ? MergeBranchTooltip :
 		bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
-		TEXT("MergeBranch"),
+		"MergeBranch",
 		LOCTEXT("MergeBranch", "Merge from this branch..."),
 		MergeBranchTooltipDynamic,
 		FSlateIcon(),
@@ -745,7 +745,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		FText::FromString(SelectedBranch)));
 	const FText& RenameBranchTooltipDynamic = bSingleSelection ? RenameBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
-		TEXT("RenameBranch"),
+		"RenameBranch",
 		LOCTEXT("RenameBranch", "Rename..."),
 		RenameBranchTooltipDynamic,
 		FSlateIcon(),
@@ -758,7 +758,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		FText::Format(LOCTEXT("DeleteBranchTooltip", "Delete the branch {0}"), FText::FromString(SelectedBranch)) :
 		LOCTEXT("DeleteBranchesTooltip", "Delete the selected branches.");
 	Section.AddMenuEntry(
-		TEXT("DeleteBranch"),
+		"DeleteBranch",
 		LOCTEXT("DeleteBranch", "Delete"),
 		DeleteBranchTooltip,
 		FSlateIcon(),

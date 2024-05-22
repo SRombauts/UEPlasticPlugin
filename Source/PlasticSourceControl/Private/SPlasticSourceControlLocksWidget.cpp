@@ -640,7 +640,7 @@ TSharedPtr<SWidget> SPlasticSourceControlLocksWidget::OnOpenContextMenu()
 	FToolMenuSection& Section = *Menu->FindSection("Source Control");
 
 	Section.AddMenuEntry(
-		TEXT("ReleaseLock"),
+		"ReleaseLock",
 		LOCTEXT("ReleaseLock", "Release"),
 		LOCTEXT("ReleaseLocksTooltip", "Release Lock(s) on the selected assets.\nReleasing locks will allow other users to keep working on these files and retrieve locks (on the same branch, in the latest revision)."),
 		FSlateIcon(),
@@ -650,7 +650,7 @@ TSharedPtr<SWidget> SPlasticSourceControlLocksWidget::OnOpenContextMenu()
 		)
 	);
 	Section.AddMenuEntry(
-		TEXT("RemoveLock"),
+		"RemoveLock",
 		LOCTEXT("RemoveLock", "Remove"),
 		LOCTEXT("RemoveLocksTooltip", "Remove Lock(s) on the selected assets.\nRemoving locks will allow other users to edit these files anywhere (on any branch) increasing the risk of future merge conflicts."),
 		FSlateIcon(),

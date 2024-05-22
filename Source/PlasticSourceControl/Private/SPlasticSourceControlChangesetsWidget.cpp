@@ -997,7 +997,7 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenContextMenu()
 	FToolMenuSection& Section = *Menu->FindSection("Source Control");
 
 	Section.AddMenuEntry(
-		TEXT("DiffChangeset"),
+		"DiffChangeset",
 		bSingleSelection ? FText::Format(LOCTEXT("DiffChangesetDynamic", "Diff changeset {0}"), FText::AsNumber(SelectedChangeset->ChangesetId)) : LOCTEXT("DiffChangeset", "Diff changeset"),
 		bSingleSelection ? LOCTEXT("DiffChangesetTooltip", "Launch the Desktop application diff window showing changes in this changeset.") : SelectASingleChangesetTooltip,
 		FSlateIcon(),
@@ -1008,7 +1008,7 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenContextMenu()
 	);
 
 	Section.AddMenuEntry(
-		TEXT("DiffChangesets"),
+		"DiffChangesets",
 		LOCTEXT("DiffChangesets", "Diff selected changesets"),
 		bDoubleSelection ? LOCTEXT("DiffChangesetTooltip", "Launch the Desktop application diff window showing changes between the two selected changesets.") : LOCTEXT("DoubleSelection", "Select a couple of changesets."),
 		FSlateIcon(),
@@ -1021,7 +1021,7 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenContextMenu()
 	Section.AddSeparator("PlasticSeparator1");
 
 	Section.AddMenuEntry(
-		TEXT("DiffBranch"),
+		"DiffBranch",
 		bSingleBranchSelected ? FText::Format(LOCTEXT("DiffBranchDynamic", "Diff branch {0}"), FText::FromString(SelectedChangeset->Branch)) : LOCTEXT("DiffBranch", "Diff branch"),
 		bSingleBranchSelected ? LOCTEXT("DiffChangesetTooltip", "Launch the Desktop application diff window showing all changes in the selected branch.") : SelectASingleBranchTooltip,
 		FSlateIcon(),
@@ -1034,7 +1034,7 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenContextMenu()
 	Section.AddSeparator("PlasticSeparator2");
 
 	Section.AddMenuEntry(
-		TEXT("SwitchToBranch"),
+		"SwitchToBranch",
 		bSingleBranchSelected ? FText::Format(LOCTEXT("SwitchToBranchDynamic", "Switch workspace to the branch {0}"), FText::FromString(SelectedChangeset->Branch)) : LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
 		bSingleBranchSelected ? LOCTEXT("SwitchToBranchTooltip", "Switch the workspace to the head of the branch with this changeset.") : SelectASingleBranchTooltip,
 		FSlateIcon(),
@@ -1045,7 +1045,7 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenContextMenu()
 	);
 
 	Section.AddMenuEntry(
-		TEXT("SwitchToChangeset"),
+		"SwitchToChangeset",
 		bSingleSelection ? FText::Format(LOCTEXT("SwitchToChangesetDynamic", "Switch workspace to this changeset {0}"), FText::AsNumber(SelectedChangeset->ChangesetId)) : LOCTEXT("SwitchToChangeset", "Switch workspace to this changeset"),
 		bSingleNotCurrent ? LOCTEXT("SwitchToChangesetsTooltip", "Switch the workspace to the specific changeset instead of a branch.\nSome information related to smart locks and to incoming changes won't be available.") :
 		bSingleSelection ? SelectADifferentChangesetTooltip : SelectASingleChangesetTooltip,
