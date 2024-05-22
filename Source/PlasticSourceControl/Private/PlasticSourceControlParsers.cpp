@@ -1706,7 +1706,32 @@ static EWorkspaceState StateFromType(const FString& InChangeType)
 }
 
 /**
- * Parse file changes in a changeset.
+ * Parse Changes child node in a Changeset.
+ *
+ * Results of the log command looks like the following:
+<?xml version="1.0" encoding="utf-8"?>
+<LogList>
+  <Changeset>
+	[...]
+	<Changes>
+	  <Item>
+		<Branch>/main/test</Branch>
+		<RevNo>72</RevNo>
+		<Owner>sebastien.rombauts@unity3d.com</Owner>
+		<RevId>2861</RevId>
+		<ParentRevId>-1</ParentRevId>
+		<SrcCmPath>/Private/Private.md</SrcCmPath>
+		<SrcParentItemId>2868</SrcParentItemId>
+		<DstCmPath>/Private/Private.md</DstCmPath>
+		<DstParentItemId>2868</DstParentItemId>
+		<Date>2024-04-03T14:59:31+02:00</Date>
+		<Type>Added</Type>
+	  </Item>
+	[...]
+	</Changes>
+	[...]
+  </Changeset>
+</LogList>
  */
 static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlasticSourceControlChangesetRef& InChangeset, TArray<FPlasticSourceControlStateRef>& OutFiles)
 {
@@ -1715,6 +1740,9 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlas
 	static const FString Type(TEXT("Type"));
 	static const FString SrcCmPath(TEXT("SrcCmPath"));
 	static const FString DstCmPath(TEXT("DstCmPath"));
+
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
 
 	if (const FXmlNode* ChangesNode = InChangesetNode->FindChildNode(Changes))
 	{
@@ -1731,15 +1759,17 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlas
 				continue;
 			}
 
-			FString FileName = PathNode->GetContent();
+			// Note: remove the leading '/' from the server path to make it relative to the root of the workspace
+			FString FileName = PathNode->GetContent().RightChop(1);
 			const EWorkspaceState WorkspaceState = StateFromType(TypeNode->GetContent());
 			FPlasticSourceControlStateRef State = MakeShareable(new FPlasticSourceControlState(MoveTemp(FileName), WorkspaceState));
+			State->RepSpec = RootRepSpec;
 
 			if (WorkspaceState == EWorkspaceState::Moved)
 			{
 				if (const FXmlNode* SrcNode = ItemNode->FindChildNode(SrcCmPath))
 				{
-					State->MovedFrom = SrcNode->GetContent();
+					State->MovedFrom = SrcNode->GetContent().RightChop(1); // remove the leading '/' character from the server path
 				}
 			}
 
@@ -1749,6 +1779,7 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlas
 				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShareable(new FPlasticSourceControlRevision);
 				SourceControlRevision->State = &State.Get();
 				SourceControlRevision->Filename = State->GetFilename();
+				SourceControlRevision->Revision = FString::Printf(TEXT("cs:%d"), InChangeset->ChangesetId);
 				SourceControlRevision->ChangesetNumber = InChangeset->ChangesetId; // Note: for display in the diff window only
 				SourceControlRevision->Date = InChangeset->Date; // Note: not yet used for display as of UE5.2
 
@@ -1776,7 +1807,7 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlas
 /**
  * Parse results of the 'cm log cs:<ChangesetId> --xml --encoding="utf-8"' command.
  *
- * Results of the find command looks like the following:
+ * Results of the log command looks like the following:
 <?xml version="1.0" encoding="utf-8"?>
 <LogList>
   <Changeset>
