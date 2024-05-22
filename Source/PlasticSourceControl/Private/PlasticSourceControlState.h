@@ -75,7 +75,10 @@ public:
 
 	void Move(FPlasticSourceControlState&& InState)
 	{
-		History = MoveTemp(InState.History);
+		if (InState.History.Num() > 0)
+		{
+			History = MoveTemp(InState.History);
+		}
 		LocalFilename = MoveTemp(InState.LocalFilename);
 		WorkspaceState = InState.WorkspaceState;
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
