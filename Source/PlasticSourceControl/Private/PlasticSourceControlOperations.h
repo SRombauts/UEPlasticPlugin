@@ -75,6 +75,25 @@ public:
 
 
 /**
+ * Internal operation used to revert files to a previous revision
+*/
+class FPlasticRevertToRevision final : public FSourceControlOperationBase
+{
+public:
+	// ISourceControlOperation interface
+	virtual FName GetName() const override;
+
+	virtual FText GetInProgressString() const override;
+
+	/** List of files updated by the operation */
+	TArray<FString> UpdatedFiles;
+
+	// Changeset to revert the files to
+	int32 ChangesetId = ISourceControlState::INVALID_REVISION;
+};
+
+
+/**
 * Internal operation used to create a new Workspace and a new Repository
 */
 class FPlasticMakeWorkspace final : public FSourceControlOperationBase
@@ -448,6 +467,24 @@ public:
 		: IPlasticSourceControlWorker(InSourceControlProvider)
 	{}
 	virtual ~FPlasticRevertAllWorker() = default;
+	// IPlasticSourceControlWorker interface
+	virtual FName GetName() const override;
+	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;
+	virtual bool UpdateStates() override;
+
+public:
+	/** Temporary states for results */
+	TArray<FPlasticSourceControlState> States;
+};
+
+/** Revert file(s) to selected revision. */
+class FPlasticRevertToRevisionWorker final : public IPlasticSourceControlWorker
+{
+public:
+	explicit FPlasticRevertToRevisionWorker(FPlasticSourceControlProvider& InSourceControlProvider)
+		: IPlasticSourceControlWorker(InSourceControlProvider)
+	{}
+	virtual ~FPlasticRevertToRevisionWorker() = default;
 	// IPlasticSourceControlWorker interface
 	virtual FName GetName() const override;
 	virtual bool Execute(class FPlasticSourceControlCommand& InCommand) override;

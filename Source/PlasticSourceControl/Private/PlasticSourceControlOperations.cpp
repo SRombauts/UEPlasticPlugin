@@ -48,6 +48,7 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("Revert", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRevertWorker>));
 	PlasticSourceControlProvider.RegisterWorker("RevertUnchanged", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRevertUnchangedWorker>));
 	PlasticSourceControlProvider.RegisterWorker("RevertAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRevertAllWorker>));
+	PlasticSourceControlProvider.RegisterWorker("RevertToRevision", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticRevertToRevisionWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SwitchToPartialWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSwitchToPartialWorkspaceWorker>));
 	PlasticSourceControlProvider.RegisterWorker("GetLocks", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetLocksWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Unlock", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticUnlockWorker>));
@@ -126,6 +127,16 @@ FText FPlasticRevertAll::GetInProgressString() const
 #else
 	return LOCTEXT("SourceControl_RevertAll", "Reverting checked-out file(s) in Source Control...");
 #endif
+}
+
+FName FPlasticRevertToRevision::GetName() const
+{
+	return "RevertToRevision";
+}
+
+FText FPlasticRevertToRevision::GetInProgressString() const
+{
+	return FText::Format(LOCTEXT("SourceControl_RevertToRevision", "Reverting selected file(s) to revision {0}..."), FText::AsNumber(ChangesetId));
 }
 
 FName FPlasticMakeWorkspace::GetName() const
@@ -1049,6 +1060,43 @@ bool FPlasticRevertAllWorker::UpdateStates()
 	}
 #endif
 
+	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
+}
+
+FName FPlasticRevertToRevisionWorker::GetName() const
+{
+	return "RevertToRevision";
+}
+
+bool FPlasticRevertToRevisionWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticRevertToRevisionWorker::Execute);
+
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticRevertToRevision, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticRevertToRevision>(InCommand.Operation);
+
+	InCommand.bCommandSuccessful = true;
+	for (const FString& File : InCommand.Files)
+	{
+		TArray<FString> Parameters;
+		Parameters.Add(FString::Printf(TEXT("\"%s#cs:%d\""), *File, Operation->ChangesetId));
+
+		InCommand.bCommandSuccessful &= PlasticSourceControlUtils::RunCommand(TEXT("revert"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+	}
+
+	if (InCommand.bCommandSuccessful)
+	{
+		Operation->UpdatedFiles = InCommand.Files;
+	}
+
+	// now update the status of our files
+	PlasticSourceControlUtils::RunUpdateStatus(InCommand.Files, PlasticSourceControlUtils::EStatusSearchType::ControlledOnly, false, InCommand.ErrorMessages, States, InCommand.ChangesetNumber);
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticRevertToRevisionWorker::UpdateStates()
+{
 	return PlasticSourceControlUtils::UpdateCachedStates(MoveTemp(States));
 }
 
