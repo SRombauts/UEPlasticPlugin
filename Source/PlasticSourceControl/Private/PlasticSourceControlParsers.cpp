@@ -679,6 +679,31 @@ static FString DecodeXmlEntities(const FString& InString)
 }
 
 /**
+ * Parse one specific node of the result of the 'cm history --moveddeleted' command.
+ *
+ * Results of the history command in case of a move looks like that:
+ <Branch>Moved from /Content/FirstPersonBP/Blueprints/BP_ToRename.uasset to /Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset</Branch>
+*/
+static FString ParseMovedFrom(const FXmlNode* InBranchNode)
+{
+	FString MovedFrom;
+
+	if (InBranchNode != nullptr)
+	{
+		static const int32 MovedFromPrefixLen = FString("Moved from /").Len();
+		MovedFrom = InBranchNode->GetContent().RightChop(MovedFromPrefixLen);
+
+		const int32 MovedToIndex = MovedFrom.Find(TEXT(" to "), ESearchCase::CaseSensitive);
+		if (MovedToIndex != INDEX_NONE)
+		{
+			MovedFrom.LeftInline(MovedToIndex);
+		}
+	}
+
+	return MovedFrom; // Convert server path to absolute
+}
+
+/**
  * Parse results of the 'cm history --moveddeleted --xml --encoding="utf-8"' command.
  *
  * Results of the history command looks like that:
@@ -751,6 +776,7 @@ static FString DecodeXmlEntities(const FString& InString)
 static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InXmlResult, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
 	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
 
 	static const FString RevisionHistoriesResult(TEXT("RevisionHistoriesResult"));
@@ -789,7 +815,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 			continue;
 		}
 
-		const FString Filename = ItemNameNode->GetContent();
+		FString Filename = ItemNameNode->GetContent();
 		FPlasticSourceControlState* InOutStatePtr = InOutStates.FindByPredicate(
 			[&Filename](const FPlasticSourceControlState& State) { return State.LocalFilename == Filename; }
 		);
@@ -811,12 +837,9 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 			InOutState.History.Reserve(RevisionNodes.Num());
 		}
 
-		// parse history in reverse: needed to get most recent at the top (implied by the UI)
-		// Note: limit to last 100 changes, like Perforce
-		static const int32 MaxRevisions = 100;
-		const int32 MinIndex = FMath::Max(0, RevisionNodes.Num() - MaxRevisions);
-		bool bNextEntryIsAMove = false;
-		for (int32 RevisionIndex = RevisionNodes.Num() - 1; RevisionIndex >= MinIndex; RevisionIndex--)
+		// parse history in reverse: needed to get most recent at the top (required by Unreal Editor for the "Diff with depot" using the index 0)
+		FString NextEntryMovedFrom;
+		for (int32 RevisionIndex = RevisionNodes.Num() - 1; RevisionIndex >= 0; RevisionIndex--)
 		{
 			const FXmlNode* RevisionNode = RevisionNodes[RevisionIndex];
 			check(RevisionNode);
@@ -833,16 +856,21 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				// => Since the parsing is done in reverse order, the detection of a Move need to apply to the next entry
 				if (RevisionTypeNode->GetContent().IsEmpty())
 				{
-					// Empty RevisionType signals a Move: Raises a flag to treat the next entry as a Move, and skip this one as it is empty (it's just an additional entry with data for the move)
-					bNextEntryIsAMove = true;
+					// An empty <RevisionType> signals a Move: save the "MovedFrom" filename to treat the next entry as a Move and update the Filename accordingly for next (older) entries
+					NextEntryMovedFrom = FPaths::Combine(WorkspaceRoot, ParseMovedFrom(RevisionNode->FindChildNode(Branch)));
+
+					// and skip this revision as it is empty (it's just an additional entry with data for the move)
 					continue;
 				}
 				else
 				{
-					if (bNextEntryIsAMove)
+					// If this entry was flagged as a move:
+					if (NextEntryMovedFrom.Len() > 0)
 					{
-						bNextEntryIsAMove = false;
+						// Set this revision as a Move
 						SourceControlRevision->Action = SourceControlActionMoved;
+						// Update Filename for next (older) entries in the history and clear the NextEntryMovedFrom used as a flag
+						Filename = MoveTemp(NextEntryMovedFrom);
 					}
 					else if (RevisionIndex == 0)
 					{
