@@ -924,7 +924,7 @@ bool RunGetHistory(const bool bInUpdateHistory, TArray<FPlasticSourceControlStat
 	{
 		Parameters.Add(TEXT("--moveddeleted"));
 	}
-	const FScopedTempFile HistoryResultFile;
+	const FScopedTempFile HistoryResultFile(TEXT("History-"), TEXT(".xml"));
 	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *HistoryResultFile.GetFilename()));
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
@@ -981,7 +981,7 @@ bool RunUpdate(const TArray<FString>& InFiles, const bool bInIsPartialWorkspace,
 	// Detect special case for a partial checkout (CS:-1 in Gluon mode)!
 	if (!bInIsPartialWorkspace)
 	{
-		const FScopedTempFile UpdateResultFile;
+		const FScopedTempFile UpdateResultFile(TEXT("Update-"), TEXT(".xml"));
 		TArray<FString> InfoMessages;
 		if (!InChangesetId.IsEmpty())
 		{
@@ -1036,7 +1036,7 @@ bool RunGetChangelists(TArray<FPlasticSourceControlChangelistState>& OutChangeli
 
 	FString Results;
 	FString Errors;
-	const FScopedTempFile GetChangelistFile;
+	const FScopedTempFile GetChangelistFile(TEXT("StatusChangelist-"), TEXT(".xml"));
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("--changelists"));
 	Parameters.Add(TEXT("--controlledchanged"));
@@ -1144,7 +1144,7 @@ bool RunGetShelves(TArray<FPlasticSourceControlChangelistState>& InOutChangelist
 	FString Errors;
 	TArray<FString> Parameters;
 	Parameters.Add(TEXT("\"shelves where owner = 'me'\""));
-	Parameters.Add(TEXT("--xml"));
+	Parameters.Add(TEXT("--xml")); // TODO convert to -xml=<FScopedTempFile>
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("find"), Parameters, TArray<FString>(), Results, Errors);
 	if (bCommandSuccessful)
@@ -1199,7 +1199,7 @@ bool RunGetShelve(const int32 InShelveId, FString& OutComment, FDateTime& OutDat
 	FString Errors;
 	TArray<FString> Parameters;
 	Parameters.Add(FString::Printf(TEXT("\"shelves where ShelveId = %d\""), InShelveId));
-	Parameters.Add(TEXT("--xml"));
+	Parameters.Add(TEXT("--xml")); // TODO convert to -xml=<FScopedTempFile>
 	Parameters.Add(TEXT("--encoding=\"utf-8\""));
 	bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("find"), Parameters, TArray<FString>(), Results, Errors);
 	if (bCommandSuccessful)
@@ -1224,7 +1224,7 @@ bool RunGetChangesets(const FDateTime& InFromDate, TArray<FPlasticSourceControlC
 {
 	bool bCommandSuccessful = false;
 
-	const FScopedTempFile ChangesetResultFile;
+	const FScopedTempFile ChangesetResultFile(TEXT("FindChangeset-"), TEXT(".xml"));
 	TArray<FString> Results;
 	TArray<FString> Errors;
 	TArray<FString> Parameters;
@@ -1253,7 +1253,7 @@ bool RunGetChangesetFiles(const FPlasticSourceControlChangesetRef& InChangeset, 
 {
 	bool bCommandSuccessful = false;
 
-	const FScopedTempFile LogResultFile;
+	const FScopedTempFile LogResultFile(TEXT("Log-"), TEXT(".xml"));
 	FString Results;
 	FString Errors;
 	TArray<FString> Parameters;
@@ -1277,7 +1277,7 @@ bool RunGetBranches(const FDateTime& InFromDate, TArray<FPlasticSourceControlBra
 {
 	bool bCommandSuccessful;
 
-	const FScopedTempFile BranchResultFile;
+	const FScopedTempFile BranchResultFile(TEXT("FindBranches-"), TEXT(".xml"));
 	FString Results;
 	FString Errors;
 	TArray<FString> Parameters;
@@ -1309,7 +1309,7 @@ bool RunSwitch(const FString& InBranchName, const int32 InChangesetId, const boo
 {
 	bool bResult = false;
 
-	const FScopedTempFile SwitchResultFile;
+	const FScopedTempFile SwitchResultFile(TEXT("Switch-"), TEXT(".xml"));
 	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
 	if (InChangesetId != ISourceControlState::INVALID_REVISION)
@@ -1356,7 +1356,7 @@ bool RunMergeBranch(const FString& InBranchName, TArray<FString>& OutUpdatedFile
 {
 	bool bResult = false;
 
-	const FScopedTempFile MergeResultFile;
+	const FScopedTempFile MergeResultFile(TEXT("Merge-"), TEXT(".xml"));
 	TArray<FString> InfoMessages;
 	TArray<FString> Parameters;
 	Parameters.Add(FString::Printf(TEXT("--xml=\"%s\""), *MergeResultFile.GetFilename()));

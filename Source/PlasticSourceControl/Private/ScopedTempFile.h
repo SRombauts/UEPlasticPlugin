@@ -12,6 +12,7 @@ class FScopedTempFile
 public:
 	/** Default constructor - only hold a temp filename */
 	FScopedTempFile();
+	FScopedTempFile(const FString& InPrefix, const FString& InExtension);
 
 	/** Constructor - open & write string to temp file */
 	explicit FScopedTempFile(const FString& InText);
