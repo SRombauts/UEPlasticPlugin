@@ -1076,6 +1076,8 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenChangesetContex
 		)
 	);
 
+	// TODO: "Create branch from this changeset..." like in the Desktop application!
+
 	return ToolMenus->GenerateWidget(Menu);
 }
 
@@ -1218,29 +1220,36 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenFileContextMenu
 		);
 	}
 
-	Section.AddMenuEntry(
-		"SaveRevision",
-		LOCTEXT("SaveRevision", "Save this revision as..."),
-		bSingleSelection ? LOCTEXT("SaveRevisionTooltip", "Save the selected revision of the file.") : SelectASingleFileTooltip,
-		FSlateIcon(),
-		FUIAction(
-			FExecuteAction::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSaveRevisionClicked, SelectedFile),
-			FCanExecuteAction::CreateLambda([bSingleSelection]() { return bSingleSelection; })
-		)
-	);
+	if (SelectedFile->History.Num() > 0)
+	{
+		Section.AddMenuEntry(
+			"SaveRevision",
+			LOCTEXT("SaveRevision", "Save this revision as..."),
+			bSingleSelection ? LOCTEXT("SaveRevisionTooltip", "Save the selected revision of the file.") : SelectASingleFileTooltip,
+			FSlateIcon(),
+			FUIAction(
+				FExecuteAction::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnSaveRevisionClicked, SelectedFile),
+				FCanExecuteAction::CreateLambda([bSingleSelection]() { return bSingleSelection; })
+			)
+		);
+	}
 
-	Section.AddSeparator("PlasticSeparator0");
+	// Note: this is a simplified heuristic, we might want to check that all files have a revision...
+	if (SelectedFiles[0]->History.Num() > 0)
+	{
+		Section.AddSeparator("PlasticSeparator0");
 
-	Section.AddMenuEntry(
-		"RevertToRevision",
-		LOCTEXT("RevertToRevision", "Revert files to this revision"),
-		LOCTEXT("RevertToRevisionTooltip", "Revert these files to this revision, undoing any other changes done afterward."),
-		FSlateIcon(),
-		FUIAction(
-			FExecuteAction::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnRevertToRevisionClicked, SelectedFiles),
-			FCanExecuteAction()
-		)
-	);
+		Section.AddMenuEntry(
+			"RevertToRevision",
+			LOCTEXT("RevertToRevision", "Revert files to this revision"),
+			LOCTEXT("RevertToRevisionTooltip", "Revert these files to this revision, undoing any other changes done afterward."),
+			FSlateIcon(),
+			FUIAction(
+				FExecuteAction::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnRevertToRevisionClicked, SelectedFiles),
+				FCanExecuteAction()
+			)
+		);
+	}
 
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 	// Only show the "Diff Against Workspace" option if the selected asset is found in the workspace
@@ -1660,6 +1669,8 @@ static bool SaveFile(const FString& Title, const FString& FileTypes, FString& In
 
 void SPlasticSourceControlChangesetsWidget::OnSaveRevisionClicked(FPlasticSourceControlStateRef InSelectedFile)
 {
+	check(InSelectedFile->History.Num() > 0);
+
 	FPlasticSourceControlRevisionRef SelectedRevision = InSelectedFile->History[0];
 
 	// Filter files based on the actual extension of the asset
@@ -1690,6 +1701,7 @@ void SPlasticSourceControlChangesetsWidget::OnSaveRevisionClicked(FPlasticSource
 void SPlasticSourceControlChangesetsWidget::OnRevertToRevisionClicked(TArray<FPlasticSourceControlStateRef> InSelectedFiles)
 {
 	check(InSelectedFiles.Num() > 0);
+	check(InSelectedFiles[0]->History.Num() > 0);
 
 	if (!Notification.IsInProgress())
 	{
