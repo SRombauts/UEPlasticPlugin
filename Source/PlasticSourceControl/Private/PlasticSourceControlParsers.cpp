@@ -778,6 +778,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
 	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
+	const FString CurrentBranch = Provider.GetBranchName();
 
 	static const FString RevisionHistoriesResult(TEXT("RevisionHistoriesResult"));
 	static const FString RevisionHistories(TEXT("RevisionHistories"));
@@ -935,6 +936,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 			// since we usually don't want to display changes from other branches in the History window...
 			// except in case of a merge conflict, where the Editor expects the tip of the "source (remote)" branch to be at the top of the history!
 			if (   (SourceControlRevision->ChangesetNumber > InOutState.DepotRevisionChangeset)
+				&& (SourceControlRevision->Branch != CurrentBranch)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
 				&& (SourceControlRevision->GetRevision() != InOutState.PendingResolveInfo.RemoteRevision))
 #else
