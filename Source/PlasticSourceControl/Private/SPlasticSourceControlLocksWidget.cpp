@@ -235,7 +235,6 @@ TSharedRef<SWidget> SPlasticSourceControlLocksWidget::CreateContentPanel()
 	}
 
 	TSharedRef<SListView<FPlasticSourceControlLockRef>> LockView = SNew(SListView<FPlasticSourceControlLockRef>)
-		.ItemHeight(24.0f)
 		.ListItemsSource(&LockRows)
 		.OnGenerateRow(this, &SPlasticSourceControlLocksWidget::OnGenerateRow)
 		.SelectionMode(ESelectionMode::Multi)

@@ -322,7 +322,6 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetsWidget::CreateChangesetsListV
 	}
 
 	TSharedRef<SListView<FPlasticSourceControlChangesetRef>> ChangesetView = SNew(SListView<FPlasticSourceControlChangesetRef>)
-		.ItemHeight(24.0f)
 		.ListItemsSource(&ChangesetRows)
 		.OnGenerateRow(this, &SPlasticSourceControlChangesetsWidget::OnGenerateRow)
 		.SelectionMode(ESelectionMode::Multi)

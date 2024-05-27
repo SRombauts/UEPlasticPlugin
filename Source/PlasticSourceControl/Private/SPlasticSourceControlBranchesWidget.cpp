@@ -307,7 +307,6 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateContentPanel()
 	}
 
 	TSharedRef<SListView<FPlasticSourceControlBranchRef>> BranchView = SNew(SListView<FPlasticSourceControlBranchRef>)
-		.ItemHeight(24.0f)
 		.ListItemsSource(&BranchRows)
 		.OnGenerateRow(this, &SPlasticSourceControlBranchesWidget::OnGenerateRow)
 		.SelectionMode(ESelectionMode::Multi)
