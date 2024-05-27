@@ -178,7 +178,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
 #elif ENGINE_MAJOR_VERSION == 5
-					.ButtonStyle(FFEditorStyle::Get(), "SimpleButton")
+					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
 #endif
 					.OnClicked_Lambda([]()
 						{
