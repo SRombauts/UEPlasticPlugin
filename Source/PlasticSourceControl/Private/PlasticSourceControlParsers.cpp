@@ -469,6 +469,7 @@ FPlasticSourceControlLock ParseLockInfo(const FString& InResult)
 		// Note: keeping the full email address as the owner name so we can display both the short and full name in the tooltip
 		Lock.Owner = MoveTemp(SmartLockInfos[9]);
 		Lock.Workspace = MoveTemp(SmartLockInfos[10]);
+		// TODO: either rename that to ServerPath or even better make it a RelativePath like the Fileinfo below
 		Lock.Path = MoveTemp(SmartLockInfos[11]);
 	}
 	return Lock;
@@ -490,6 +491,7 @@ public:
 			RepSpec = MoveTemp(Fileinfos[2]);
 			LockedBy = PlasticSourceControlUtils::UserNameToDisplayName(MoveTemp(Fileinfos[3]));
 			LockedWhere = MoveTemp(Fileinfos[4]);
+			// TODO: make it a RelativePath like the Locks above
 			ServerPath = MoveTemp(Fileinfos[5]);
 		}
 	}
