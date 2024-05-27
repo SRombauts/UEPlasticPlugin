@@ -3,10 +3,11 @@
 #include "PlasticSourceControlChangesetsWindow.h"
 
 #include "Framework/Docking/TabManager.h"
+#include "RevisionControlStyle/RevisionControlStyle.h"
 #include "Widgets/Docking/SDockTab.h"
 
-#include "PlasticSourceControlStyle.h"
 #include "SPlasticSourceControlChangesetsWidget.h"
+
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControlChangesetsWindow"
 
@@ -14,20 +15,15 @@ static const FName PlasticSourceControlChangesetsWindowTabName("PlasticSourceCon
 
 void FPlasticSourceControlChangesetsWindow::Register()
 {
-	FPlasticSourceControlStyle::Initialize();
-	FPlasticSourceControlStyle::ReloadTextures();
-
 	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(PlasticSourceControlChangesetsWindowTabName, FOnSpawnTab::CreateRaw(this, &FPlasticSourceControlChangesetsWindow::OnSpawnTab))
 		.SetDisplayName(LOCTEXT("PlasticSourceControlChangesetsWindowTabTitle", "View Changesets"))
 		.SetMenuType(ETabSpawnerMenuType::Hidden)
-		.SetIcon(FSlateIcon(FPlasticSourceControlStyle::Get().GetStyleSetName(), "PlasticSourceControl.PluginIcon.Small"));
+		.SetIcon(FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.Actions.History"));
 }
 
 void FPlasticSourceControlChangesetsWindow::Unregister()
 {
 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(PlasticSourceControlChangesetsWindowTabName);
-
-	FPlasticSourceControlStyle::Shutdown();
 }
 
 TSharedRef<SDockTab> FPlasticSourceControlChangesetsWindow::OnSpawnTab(const FSpawnTabArgs& SpawnTabArgs)

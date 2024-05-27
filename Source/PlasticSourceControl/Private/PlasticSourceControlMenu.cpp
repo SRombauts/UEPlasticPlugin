@@ -48,6 +48,9 @@ void FPlasticSourceControlMenu::Register()
 		return;
 	}
 
+	FPlasticSourceControlStyle::Initialize();
+	FPlasticSourceControlStyle::ReloadTextures();
+
 	// Register the menu extensions with the level editor
 	ExtendRevisionControlMenu();
 	ExtendAssetContextMenu();
@@ -82,6 +85,8 @@ void FPlasticSourceControlMenu::Unregister()
 		bHasRegistered = false;
 	}
 #endif
+
+	FPlasticSourceControlStyle::Shutdown();
 }
 
 void FPlasticSourceControlMenu::ExtendToolbarWithStatusBarWidget()
