@@ -1678,7 +1678,7 @@ void SPlasticSourceControlChangesetsWidget::OnSaveRevisionClicked(FPlasticSource
 
 	// Customize the filename with the revision number
 	const FString BaseFilename = FPaths::GetBaseFilename(InSelectedFile->LocalFilename);
-	const FString ProposedFilename = FString::Printf(TEXT("%s#%d.%s"), *BaseFilename, SelectedRevision->ChangesetNumber, *Extension);
+	const FString ProposedFilename = FString::Printf(TEXT("%s_cs%d.%s"), *BaseFilename, SelectedRevision->ChangesetNumber, *Extension);
 
 	FString Filename;
 	FString LastDirectory = FEditorDirectories::Get().GetLastDirectory(ELastDirectory::UNR);
