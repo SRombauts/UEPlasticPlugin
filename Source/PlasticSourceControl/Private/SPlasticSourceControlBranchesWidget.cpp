@@ -73,7 +73,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
 #else
-			.BorderImage(FEditorStyle::GetBrush("DetailsView.CategoryBottom"))
+			.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
 #endif
 			.Padding(4.0f)
 			[
@@ -129,7 +129,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 					.ToolTipText(LOCTEXT("PlasticChangesetsWindowTooltip", "Open the Changesets window."))
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
-#else
+#elif ENGINE_MAJOR_VERSION == 5
 					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
 #endif
 					.OnClicked_Lambda([]()
@@ -177,7 +177,7 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 					.ToolTipText(LOCTEXT("PlasticBranchExplorerTooltip", "Open the Branch Explorer of the Desktop Application for the current workspace."))
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
-#else
+#elif ENGINE_MAJOR_VERSION == 5
 					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
 #endif
 					.OnClicked_Lambda([]()
@@ -220,8 +220,6 @@ void SPlasticSourceControlBranchesWidget::Construct(const FArguments& InArgs)
 		[
 			SNew(SVerticalBox)
 			+SVerticalBox::Slot()
-			.Padding(5.0f)
-			.AutoHeight()
 			[
 				CreateContentPanel()
 			]
@@ -309,7 +307,6 @@ TSharedRef<SWidget> SPlasticSourceControlBranchesWidget::CreateContentPanel()
 	}
 
 	TSharedRef<SListView<FPlasticSourceControlBranchRef>> BranchView = SNew(SListView<FPlasticSourceControlBranchRef>)
-		.ItemHeight(24.0f)
 		.ListItemsSource(&BranchRows)
 		.OnGenerateRow(this, &SPlasticSourceControlBranchesWidget::OnGenerateRow)
 		.SelectionMode(ESelectionMode::Multi)
@@ -539,7 +536,11 @@ void SPlasticSourceControlBranchesWidget::SortBranchView()
 
 	auto CompareRepository = [](const FPlasticSourceControlBranch* Lhs, const FPlasticSourceControlBranch* Rhs)
 	{
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+		return UE::ComparisonUtility::CompareNaturalOrder(*Lhs->Repository, *Rhs->Repository);
+#else
 		return FCString::Stricmp(*Lhs->Repository, *Rhs->Repository);
+#endif
 	};
 
 	auto CompareCreatedBy = [](const FPlasticSourceControlBranch* Lhs, const FPlasticSourceControlBranch* Rhs)
@@ -692,7 +693,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		FText::FromString(SelectedBranch)));
 	const FText& CreateChildBranchTooltipDynamic = bSingleSelection ? CreateChildBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
-		TEXT("CreateChildBranch"),
+		"CreateChildBranch",
 		LOCTEXT("CreateChildBranch", "Create child branch..."),
 		CreateChildBranchTooltipDynamic,
 		FSlateIcon(),
@@ -708,7 +709,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		bSingleNotCurrent ? SwitchToBranchTooltip :
 		bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
-		TEXT("SwitchToBranch"),
+		"SwitchToBranch",
 		LOCTEXT("SwitchToBranch", "Switch workspace to this branch"),
 		SwitchToBranchTooltipDynamic,
 		FSlateIcon(),
@@ -727,7 +728,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		bSingleNotCurrent ? MergeBranchTooltip :
 		bSingleSelection ? SelectADifferentBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
-		TEXT("MergeBranch"),
+		"MergeBranch",
 		LOCTEXT("MergeBranch", "Merge from this branch..."),
 		MergeBranchTooltipDynamic,
 		FSlateIcon(),
@@ -743,7 +744,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		FText::FromString(SelectedBranch)));
 	const FText& RenameBranchTooltipDynamic = bSingleSelection ? RenameBranchTooltip : SelectASingleBranchTooltip;
 	Section.AddMenuEntry(
-		TEXT("RenameBranch"),
+		"RenameBranch",
 		LOCTEXT("RenameBranch", "Rename..."),
 		RenameBranchTooltipDynamic,
 		FSlateIcon(),
@@ -756,7 +757,7 @@ TSharedPtr<SWidget> SPlasticSourceControlBranchesWidget::OnOpenContextMenu()
 		FText::Format(LOCTEXT("DeleteBranchTooltip", "Delete the branch {0}"), FText::FromString(SelectedBranch)) :
 		LOCTEXT("DeleteBranchesTooltip", "Delete the selected branches.");
 	Section.AddMenuEntry(
-		TEXT("DeleteBranch"),
+		"DeleteBranch",
 		LOCTEXT("DeleteBranch", "Delete"),
 		DeleteBranchTooltip,
 		FSlateIcon(),

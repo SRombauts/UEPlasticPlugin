@@ -4,8 +4,9 @@
 
 #include "Async/Async.h"
 #include "Editor.h"
-#include "ISourceControlModule.h" // LogSourceControl
 #include "FileHelpers.h"
+#include "ISourceControlModule.h" // LogSourceControl
+#include "Misc/Paths.h"
 #include "PackageTools.h"
 #include "UObject/Linker.h"
 

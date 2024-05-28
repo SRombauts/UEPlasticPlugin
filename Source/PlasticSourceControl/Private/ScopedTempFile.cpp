@@ -8,9 +8,14 @@
 
 #include "ISourceControlModule.h" // LogSourceControl
 
-FScopedTempFile::FScopedTempFile()
+FScopedTempFile::FScopedTempFile() :
+	FScopedTempFile(TEXT("Temp-"), TEXT(".xml"))
 {
-	Filename = FPaths::CreateTempFilename(*FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()), TEXT("Temp-"), TEXT(".xml"));
+}
+
+FScopedTempFile::FScopedTempFile(const FString& InPrefix, const FString& InExtension)
+{
+	Filename = FPaths::CreateTempFilename(*FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()), *InPrefix, *InExtension);
 }
 
 FScopedTempFile::FScopedTempFile(const FString& InText)

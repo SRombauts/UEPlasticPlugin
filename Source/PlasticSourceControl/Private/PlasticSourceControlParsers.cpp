@@ -679,6 +679,31 @@ static FString DecodeXmlEntities(const FString& InString)
 }
 
 /**
+ * Parse one specific node of the result of the 'cm history --moveddeleted' command.
+ *
+ * Results of the history command in case of a move looks like that:
+ <Branch>Moved from /Content/FirstPersonBP/Blueprints/BP_ToRename.uasset to /Content/FirstPersonBP/Blueprints/BP_TestsRenamed.uasset</Branch>
+*/
+static FString ParseMovedFrom(const FXmlNode* InBranchNode)
+{
+	FString MovedFrom;
+
+	if (InBranchNode != nullptr)
+	{
+		static const int32 MovedFromPrefixLen = FString("Moved from /").Len();
+		MovedFrom = InBranchNode->GetContent().RightChop(MovedFromPrefixLen);
+
+		const int32 MovedToIndex = MovedFrom.Find(TEXT(" to "), ESearchCase::CaseSensitive);
+		if (MovedToIndex != INDEX_NONE)
+		{
+			MovedFrom.LeftInline(MovedToIndex);
+		}
+	}
+
+	return MovedFrom; // Convert server path to absolute
+}
+
+/**
  * Parse results of the 'cm history --moveddeleted --xml --encoding="utf-8"' command.
  *
  * Results of the history command looks like that:
@@ -751,7 +776,9 @@ static FString DecodeXmlEntities(const FString& InString)
 static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InXmlResult, TArray<FPlasticSourceControlState>& InOutStates)
 {
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString& WorkspaceRoot = Provider.GetPathToWorkspaceRoot();
 	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
+	const FString CurrentBranch = Provider.GetBranchName();
 
 	static const FString RevisionHistoriesResult(TEXT("RevisionHistoriesResult"));
 	static const FString RevisionHistories(TEXT("RevisionHistories"));
@@ -789,7 +816,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 			continue;
 		}
 
-		const FString Filename = ItemNameNode->GetContent();
+		FString Filename = ItemNameNode->GetContent();
 		FPlasticSourceControlState* InOutStatePtr = InOutStates.FindByPredicate(
 			[&Filename](const FPlasticSourceControlState& State) { return State.LocalFilename == Filename; }
 		);
@@ -811,12 +838,9 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 			InOutState.History.Reserve(RevisionNodes.Num());
 		}
 
-		// parse history in reverse: needed to get most recent at the top (implied by the UI)
-		// Note: limit to last 100 changes, like Perforce
-		static const int32 MaxRevisions = 100;
-		const int32 MinIndex = FMath::Max(0, RevisionNodes.Num() - MaxRevisions);
-		bool bNextEntryIsAMove = false;
-		for (int32 RevisionIndex = RevisionNodes.Num() - 1; RevisionIndex >= MinIndex; RevisionIndex--)
+		// parse history in reverse: needed to get most recent at the top (required by Unreal Editor for the "Diff with depot" using the index 0)
+		FString NextEntryMovedFrom;
+		for (int32 RevisionIndex = RevisionNodes.Num() - 1; RevisionIndex >= 0; RevisionIndex--)
 		{
 			const FXmlNode* RevisionNode = RevisionNodes[RevisionIndex];
 			check(RevisionNode);
@@ -833,16 +857,21 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 				// => Since the parsing is done in reverse order, the detection of a Move need to apply to the next entry
 				if (RevisionTypeNode->GetContent().IsEmpty())
 				{
-					// Empty RevisionType signals a Move: Raises a flag to treat the next entry as a Move, and skip this one as it is empty (it's just an additional entry with data for the move)
-					bNextEntryIsAMove = true;
+					// An empty <RevisionType> signals a Move: save the "MovedFrom" filename to treat the next entry as a Move and update the Filename accordingly for next (older) entries
+					NextEntryMovedFrom = FPaths::Combine(WorkspaceRoot, ParseMovedFrom(RevisionNode->FindChildNode(Branch)));
+
+					// and skip this revision as it is empty (it's just an additional entry with data for the move)
 					continue;
 				}
 				else
 				{
-					if (bNextEntryIsAMove)
+					// If this entry was flagged as a move:
+					if (NextEntryMovedFrom.Len() > 0)
 					{
-						bNextEntryIsAMove = false;
+						// Set this revision as a Move
 						SourceControlRevision->Action = SourceControlActionMoved;
+						// Update Filename for next (older) entries in the history and clear the NextEntryMovedFrom used as a flag
+						Filename = MoveTemp(NextEntryMovedFrom);
 					}
 					else if (RevisionIndex == 0)
 					{
@@ -907,6 +936,7 @@ static bool ParseHistoryResults(const bool bInUpdateHistory, const FXmlFile& InX
 			// since we usually don't want to display changes from other branches in the History window...
 			// except in case of a merge conflict, where the Editor expects the tip of the "source (remote)" branch to be at the top of the history!
 			if (   (SourceControlRevision->ChangesetNumber > InOutState.DepotRevisionChangeset)
+				&& (SourceControlRevision->Branch != CurrentBranch)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
 				&& (SourceControlRevision->GetRevision() != InOutState.PendingResolveInfo.RemoteRevision))
 #else
@@ -1188,40 +1218,34 @@ static bool ParseChangelistsResults(const FXmlFile& InXmlResult, TArray<FPlastic
 					continue;
 				}
 
-				// Here we make sure to only collect file states, not directories, since we shouldn't display the added directories to the Editor
-				FString FileName = PathNode->GetContent();
-				int32 DotIndex;
-				if (FileName.FindChar(TEXT('.'), DotIndex))
+				FPlasticSourceControlState FileState(FPaths::ConvertRelativePathToFull(WorkspaceRoot, PathNode->GetContent()));
+				FileState.Changelist = ChangelistState.Changelist;
+				if (const FXmlNode* TypeNode = ChangeNode->FindChildNode(Type))
 				{
-					FPlasticSourceControlState FileState(FPaths::ConvertRelativePathToFull(WorkspaceRoot, MoveTemp(FileName)));
-					FileState.Changelist = ChangelistState.Changelist;
-					if (const FXmlNode* TypeNode = ChangeNode->FindChildNode(Type))
-					{
-						FileState.WorkspaceState = StateFromStatus(TypeNode->GetContent(), bUsesCheckedOutChanged);
-					}
+					FileState.WorkspaceState = StateFromStatus(TypeNode->GetContent(), bUsesCheckedOutChanged);
+				}
 
-					if (FileState.WorkspaceState == EWorkspaceState::Moved)
+				if (FileState.WorkspaceState == EWorkspaceState::Moved)
+				{
+					if (const FXmlNode* OldPathNode = ChangeNode->FindChildNode(OldPath))
 					{
-						if (const FXmlNode* OldPathNode = ChangeNode->FindChildNode(OldPath))
-						{
-							FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, OldPathNode->GetContent());
-						}
+						FileState.MovedFrom = FPaths::ConvertRelativePathToFull(WorkspaceRoot, OldPathNode->GetContent());
 					}
+				}
 
-					// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
-					if (FPlasticSourceControlState* ExistingState = OutCLFilesStates[ChangelistIndex].FindByPredicate(
-						[&FileState](const FPlasticSourceControlState& InState)
-						{
-							return InState.GetFilename().Equals(FileState.GetFilename());
-						}))
+				// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
+				if (FPlasticSourceControlState* ExistingState = OutCLFilesStates[ChangelistIndex].FindByPredicate(
+					[&FileState](const FPlasticSourceControlState& InState)
 					{
-						ExistingState->WorkspaceState = FileState.WorkspaceState;
-						ExistingState->MovedFrom = FileState.MovedFrom;
-					}
-					else
-					{
-						OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
-					}
+						return InState.GetFilename().Equals(FileState.GetFilename());
+					}))
+				{
+					ExistingState->WorkspaceState = FileState.WorkspaceState;
+					ExistingState->MovedFrom = FileState.MovedFrom;
+				}
+				else
+				{
+					OutCLFilesStates[ChangelistIndex].Add(MoveTemp(FileState));
 				}
 			}
 
@@ -1712,7 +1736,32 @@ static EWorkspaceState StateFromType(const FString& InChangeType)
 }
 
 /**
- * Parse file changes in a changeset.
+ * Parse Changes child node in a Changeset.
+ *
+ * Results of the log command looks like the following:
+<?xml version="1.0" encoding="utf-8"?>
+<LogList>
+  <Changeset>
+	[...]
+	<Changes>
+	  <Item>
+		<Branch>/main/test</Branch>
+		<RevNo>72</RevNo>
+		<Owner>sebastien.rombauts@unity3d.com</Owner>
+		<RevId>2861</RevId>
+		<ParentRevId>-1</ParentRevId>
+		<SrcCmPath>/Private/Private.md</SrcCmPath>
+		<SrcParentItemId>2868</SrcParentItemId>
+		<DstCmPath>/Private/Private.md</DstCmPath>
+		<DstParentItemId>2868</DstParentItemId>
+		<Date>2024-04-03T14:59:31+02:00</Date>
+		<Type>Added</Type>
+	  </Item>
+	[...]
+	</Changes>
+	[...]
+  </Changeset>
+</LogList>
  */
 static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlasticSourceControlChangesetRef& InChangeset, TArray<FPlasticSourceControlStateRef>& OutFiles)
 {
@@ -1721,6 +1770,9 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlas
 	static const FString Type(TEXT("Type"));
 	static const FString SrcCmPath(TEXT("SrcCmPath"));
 	static const FString DstCmPath(TEXT("DstCmPath"));
+
+	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
+	const FString RootRepSpec = FString::Printf(TEXT("%s@%s"), *Provider.GetRepositoryName(), *Provider.GetServerUrl());
 
 	if (const FXmlNode* ChangesNode = InChangesetNode->FindChildNode(Changes))
 	{
@@ -1737,49 +1789,46 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlas
 				continue;
 			}
 
-			// Here we make sure to only collect file states, not directories, since we shouldn't display the added directories to the Editor
-			FString FileName = PathNode->GetContent();
-			int32 DotIndex;
-			if (FileName.FindChar(TEXT('.'), DotIndex))
+			// Note: remove the leading '/' from the server path to make it relative to the root of the workspace
+			FString FileName = PathNode->GetContent().RightChop(1);
+			const EWorkspaceState WorkspaceState = StateFromType(TypeNode->GetContent());
+			FPlasticSourceControlStateRef State = MakeShareable(new FPlasticSourceControlState(MoveTemp(FileName), WorkspaceState));
+			State->RepSpec = RootRepSpec;
+
+			if (WorkspaceState == EWorkspaceState::Moved)
 			{
-				const EWorkspaceState WorkspaceState = StateFromType(TypeNode->GetContent());
-
-				FPlasticSourceControlStateRef State = MakeShareable(new FPlasticSourceControlState(MoveTemp(FileName), WorkspaceState));
-
-				if (WorkspaceState == EWorkspaceState::Moved)
+				if (const FXmlNode* SrcNode = ItemNode->FindChildNode(SrcCmPath))
 				{
-					if (const FXmlNode* SrcNode = ItemNode->FindChildNode(SrcCmPath))
-					{
-						State->MovedFrom = SrcNode->GetContent();
-					}
+					State->MovedFrom = SrcNode->GetContent().RightChop(1); // remove the leading '/' character from the server path
 				}
+			}
 
-				// Add one revision to be able to fetch the file content for diff, if it's not marked for deletion.
-				if ((WorkspaceState != EWorkspaceState::Deleted) && State->History.IsEmpty())
-				{
-					const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShared<FPlasticSourceControlRevision>();
-					SourceControlRevision->State = &State.Get();
-					SourceControlRevision->Filename = State->GetFilename();
-					SourceControlRevision->ChangesetNumber = InChangeset->ChangesetId; // Note: for display in the diff window only
-					SourceControlRevision->Date = InChangeset->Date; // Note: not yet used for display as of UE5.2
+			// Add one revision to be able to fetch the file content for diff, if it's not marked for deletion.
+			if ((WorkspaceState != EWorkspaceState::Deleted) && (State->History.Num() == 0))
+			{
+				const TSharedRef<FPlasticSourceControlRevision, ESPMode::ThreadSafe> SourceControlRevision = MakeShareable(new FPlasticSourceControlRevision);
+				SourceControlRevision->State = &State.Get();
+				SourceControlRevision->Filename = State->GetFilename();
+				SourceControlRevision->Revision = FString::Printf(TEXT("cs:%d"), InChangeset->ChangesetId);
+				SourceControlRevision->ChangesetNumber = InChangeset->ChangesetId; // Note: for display in the diff window only
+				SourceControlRevision->Date = InChangeset->Date; // Note: not yet used for display as of UE5.2
 
-					State->History.Add(SourceControlRevision);
-				}
+				State->History.Add(SourceControlRevision);
+			}
 
-				// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
-				if (FPlasticSourceControlStateRef* ExistingState = OutFiles.FindByPredicate(
-					[&State](const TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe>& InState)
-					{
-						return InState->GetFilename().Equals(State->GetFilename());
-					}))
+			// Note: in case of a Moved file, it appears twice in the list; just update the first entry (set as a "Changed") with the "Move" status
+			if (FPlasticSourceControlStateRef* ExistingState = OutFiles.FindByPredicate(
+				[&State](const TSharedRef<FPlasticSourceControlState, ESPMode::ThreadSafe>& InState)
 				{
-					(*ExistingState)->WorkspaceState = State->WorkspaceState;
-					(*ExistingState)->MovedFrom = State->MovedFrom;
-				}
-				else
-				{
-					OutFiles.Add(MoveTemp(State));
-				}
+					return InState->GetFilename().Equals(State->GetFilename());
+				}))
+			{
+				(*ExistingState)->WorkspaceState = State->WorkspaceState;
+				(*ExistingState)->MovedFrom = State->MovedFrom;
+			}
+			else
+			{
+				OutFiles.Add(MoveTemp(State));
 			}
 		}
 	}
@@ -1788,7 +1837,7 @@ static void ParseChangesInChangeset(const FXmlNode* InChangesetNode, const FPlas
 /**
  * Parse results of the 'cm log cs:<ChangesetId> --xml --encoding="utf-8"' command.
  *
- * Results of the find command looks like the following:
+ * Results of the log command looks like the following:
 <?xml version="1.0" encoding="utf-8"?>
 <LogList>
   <Changeset>

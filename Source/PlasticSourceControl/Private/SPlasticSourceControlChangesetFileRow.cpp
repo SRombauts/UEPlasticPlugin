@@ -5,6 +5,7 @@
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlUtils.h"
 
+#include "Misc/Paths.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Images/SLayeredImage.h"
 #include "Widgets/Text/STextBlock.h"
@@ -42,11 +43,15 @@ void SPlasticSourceControlChangesetFileRow::Construct(const FArguments& InArgs, 
 
 TSharedRef<SWidget> GetSCCFileWidget(FPlasticSourceControlState* InFileState)
 {
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 	const FSlateBrush* IconBrush = FAppStyle::GetBrush("ContentBrowser.ColumnViewAssetIcon");
+#else
+	const FSlateBrush* IconBrush = FEditorStyle::GetBrush("ContentBrowser.ColumnViewAssetIcon");
+#endif
 
 	// Make icon overlays (eg, SCC and dirty status) a reasonable size in relation to the icon size (note: it is assumed this icon is square)
 	const float ICON_SCALING_FACTOR = 0.7f;
-	const float IconOverlaySize = IconBrush->ImageSize.X * ICON_SCALING_FACTOR;
+	const float IconOverlaySize = static_cast<float>(IconBrush->ImageSize.X * ICON_SCALING_FACTOR);
 
 	return SNew(SOverlay)
 		// The actual icon
@@ -64,7 +69,11 @@ TSharedRef<SWidget> GetSCCFileWidget(FPlasticSourceControlState* InFileState)
 			.WidthOverride(IconOverlaySize)
 			.HeightOverride(IconOverlaySize)
 			[
+#if ENGINE_MAJOR_VERSION >= 5
 				SNew(SLayeredImage, InFileState->GetIcon())
+#else
+				SNew(SLayeredImage, FEditorStyle::GetBrush(InFileState->GetSmallIconName()), FSlateColor())
+#endif
 				.ToolTipText(InFileState->GetDisplayTooltip())
 			]
 		];
@@ -76,7 +85,7 @@ TSharedRef<SWidget> SPlasticSourceControlChangesetFileRow::GenerateWidgetForColu
 	if (InColumnId == PlasticSourceControlChangesetFilesListViewColumn::Icon::Id())
 	{
 		return SNew(SBox)
-			.WidthOverride(16) // Small Icons are usually 16x16
+			.WidthOverride(16.f) // Small Icons are usually 16x16
 			.ToolTipText(FileToVisualize->ToText())
 			.HAlign(HAlign_Center)
 			[

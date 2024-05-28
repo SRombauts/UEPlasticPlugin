@@ -2,6 +2,8 @@
 
 #include "PlasticSourceControlState.h"
 #include "PlasticSourceControlProjectSettings.h"
+
+#include "Misc/Paths.h"
 #include "ISourceControlModule.h"
 #if ENGINE_MAJOR_VERSION == 5
 #include "Styling/AppStyle.h"

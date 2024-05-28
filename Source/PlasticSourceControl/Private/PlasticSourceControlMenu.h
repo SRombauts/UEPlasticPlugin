@@ -43,6 +43,7 @@ private:
 #if ENGINE_MAJOR_VERSION == 4
 	void AddMenuExtension(FMenuBuilder& Menu);
 	void AddViewBranches(FMenuBuilder& Menu);
+	void AddViewChangesets(FMenuBuilder& Menu);
 	void AddViewLocks(FMenuBuilder& Menu);
 
 	TSharedRef<class FExtender> OnExtendLevelEditorViewMenu(const TSharedRef<class FUICommandList> CommandList);

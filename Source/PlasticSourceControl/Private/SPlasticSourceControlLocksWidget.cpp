@@ -60,7 +60,7 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 			.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
 #else
-			.BorderImage(FEditorStyle::GetBrush("DetailsView.CategoryBottom"))
+			.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
 #endif
 			.Padding(4.0f)
 			[
@@ -105,7 +105,7 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 						LOCTEXT("PlasticLockRulesURLTooltipEnabled", "Navigate to lock rules configuration page in the Unity Dashboard."))
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
-#else
+#elif ENGINE_MAJOR_VERSION == 5
 					.ButtonStyle(FEditorStyle::Get(), "SimpleButton")
 #endif
 					.OnClicked(this, &SPlasticSourceControlLocksWidget::OnConfigureLockRulesClicked, OrganizationName)
@@ -144,8 +144,6 @@ void SPlasticSourceControlLocksWidget::Construct(const FArguments& InArgs)
 		[
 			SNew(SVerticalBox)
 			+SVerticalBox::Slot()
-			.Padding(5.0f)
-			.AutoHeight()
 			[
 				CreateContentPanel()
 			]
@@ -237,7 +235,6 @@ TSharedRef<SWidget> SPlasticSourceControlLocksWidget::CreateContentPanel()
 	}
 
 	TSharedRef<SListView<FPlasticSourceControlLockRef>> LockView = SNew(SListView<FPlasticSourceControlLockRef>)
-		.ItemHeight(24.0f)
 		.ListItemsSource(&LockRows)
 		.OnGenerateRow(this, &SPlasticSourceControlLocksWidget::OnGenerateRow)
 		.SelectionMode(ESelectionMode::Multi)
@@ -642,7 +639,7 @@ TSharedPtr<SWidget> SPlasticSourceControlLocksWidget::OnOpenContextMenu()
 	FToolMenuSection& Section = *Menu->FindSection("Source Control");
 
 	Section.AddMenuEntry(
-		TEXT("ReleaseLock"),
+		"ReleaseLock",
 		LOCTEXT("ReleaseLock", "Release"),
 		LOCTEXT("ReleaseLocksTooltip", "Release Lock(s) on the selected assets.\nReleasing locks will allow other users to keep working on these files and retrieve locks (on the same branch, in the latest revision)."),
 		FSlateIcon(),
@@ -652,7 +649,7 @@ TSharedPtr<SWidget> SPlasticSourceControlLocksWidget::OnOpenContextMenu()
 		)
 	);
 	Section.AddMenuEntry(
-		TEXT("RemoveLock"),
+		"RemoveLock",
 		LOCTEXT("RemoveLock", "Remove"),
 		LOCTEXT("RemoveLocksTooltip", "Remove Lock(s) on the selected assets.\nRemoving locks will allow other users to edit these files anywhere (on any branch) increasing the risk of future merge conflicts."),
 		FSlateIcon(),
