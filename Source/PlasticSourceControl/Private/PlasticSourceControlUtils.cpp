@@ -51,8 +51,18 @@ bool RunCommand(const FString& InCommand, const TArray<FString>& InParameters, c
 
 	const bool bResult = PlasticSourceControlShell::RunCommand(InCommand, InParameters, InFiles, Results, Errors);
 
-	Results.ParseIntoArray(OutResults, PlasticSourceControlShell::pchDelim, true);
-	Errors.ParseIntoArray(OutErrorMessages, PlasticSourceControlShell::pchDelim, true);
+	if (!Results.IsEmpty())
+	{
+		TArray<FString> ParsedResults;
+		Results.ParseIntoArray(ParsedResults, PlasticSourceControlShell::pchDelim, true);
+		OutResults.Append(MoveTemp(ParsedResults));
+	}
+	if (!Errors.IsEmpty())
+	{
+		TArray<FString> ParsedErrors;
+		Errors.ParseIntoArray(ParsedErrors, PlasticSourceControlShell::pchDelim, true);
+		OutErrorMessages.Append(MoveTemp(ParsedErrors));
+	}
 
 	return bResult;
 }
