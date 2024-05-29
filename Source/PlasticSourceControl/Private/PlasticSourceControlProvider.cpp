@@ -532,10 +532,13 @@ bool FPlasticSourceControlProvider::UsesCheckout() const
 
 bool FPlasticSourceControlProvider::UsesFileRevisions() const
 {
-	// This API introduced in UE5.1 is still broken as of UE5.3
+	// This API introduced in UE5.1 was broken until they finally merged our PR in UE5.5
 	// (preventing the user to use the source control context menu for checkin if returning false)
-	// return IsPartialWorkspace();
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 5
+	return IsPartialWorkspace();
+#else
 	return true;
+#endif
 }
 
 bool FPlasticSourceControlProvider::UsesSnapshots() const
