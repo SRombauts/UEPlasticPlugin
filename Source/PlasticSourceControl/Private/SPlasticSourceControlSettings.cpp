@@ -84,7 +84,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		]
 		// Unity Version Control command line tool not available warning and download link
 		+SVerticalBox::Slot()
-		.FillHeight(1.0f)
+		.AutoHeight()
 		.Padding(2.0f)
 		[
 			SNew(STextBlock)
@@ -95,7 +95,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 			.ColorAndOpacity(FLinearColor::Red)
 		]
 		+SVerticalBox::Slot()
-		.FillHeight(1.0f)
+		.AutoHeight()
 		.Padding(2.0f)
 		[
 			SNew(SHorizontalBox)
@@ -199,7 +199,7 @@ void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 		]
 		// Explanation text
 		+SVerticalBox::Slot()
-		.FillHeight(1.0f)
+		.AutoHeight()
 		.Padding(2.0f, 5.0f)
 		[
 			SNew(STextBlock)
