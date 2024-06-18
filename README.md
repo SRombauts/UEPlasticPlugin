@@ -449,7 +449,7 @@ To open it, use the "View Changesets" menu item in the Revision Control menu.
 View history of Changesets window, with a context menu to interact with these changesets:
 ![View Changesets window](Screenshots/UEPlasticPlugin-Changesets-Menu.png)
 
-It displays the list of files changed in the selected changeset and 
+It displays the list of files changed in the selected changeset, with contextual operations:
 ![Files in Changeset context menu](Screenshots/UEPlasticPlugin-ChangesetsFiles-Menu.png)
 
 #### SmartLocks
