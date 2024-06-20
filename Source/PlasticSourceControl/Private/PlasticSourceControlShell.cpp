@@ -112,7 +112,7 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 	verify(FPlatformProcess::CreatePipe(ShellInputPipeRead, ShellInputPipeWrite, true));	// For writing commands to cm shell child process
 #endif
 
-#if PLATFORM_WINDOWS or PLATFORM_MAC
+#if !PLATFORM_LINUX // PLATFORM_WINDOWS || PLATFORM_MAC
 	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
 #else // PLATFORM_LINUX
 	// Update working directory
