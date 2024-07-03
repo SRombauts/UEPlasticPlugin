@@ -60,6 +60,8 @@ Quick tour "Branching with Unity Version Control (Plastic SCM) in Unreal Engine 
   - [Features not supported](#features-not-supported)
 - [Support](#support)
   - [Enable debug logs](#enable-debug-logs)
+    - [Enable Verbose logs in Unreal Engine](#enable-verbose-logs-in-unreal-engine)
+    - [Enable logging for Unity Version Control CLI](#enable-logging-for-unity-version-control-cli)
   - [Report an issue](#report-an-issue)
 - [Source code architecture](#source-code-architecture)
 - [Copyright](#copyright)
@@ -668,16 +670,20 @@ Some are reserved for internal use by Epic Games with Perforce only:
 
 #### Enable Verbose logs in Unreal Engine
 
-To help diagnose any issue related to the plugin or to the Editor, toggle Verbose logs in [Source Control settings](#source-control-settings).
+To help diagnose any issue related to the plugin or to the Editor, toggle Verbose logs for *LogSourceControl* in [Source Control settings](#source-control-settings).
 
 Unreal log files are in `<ProjectName>/Save/Logs/ProjectName.log`.
 
-#### Enable logging for Unity Version Control
+#### Enable logging for Unity Version Control CLI
 
 To help diagnose any issue related to the underlying Unity Version Control "cm" Command Line Interface,
-[enable logging for Unity Version Control](https://docs.plasticscm.com/technical-articles/kb-enabling-logging-for-plastic-scm-part-i).
+enable debug logs for the CLI client cm.exe:
 
-cm log files are typically in `<LOCALAPPDATA>\plastic4\logs\cm.log.txt`.
+Copy [the configuration file cm.log.conf](https://raw.githubusercontent.com/PlasticSCM/UEPlasticPlugin/master/cm.log.conf) in the directory where the cm.exe resides, by default in `C:\Program Files\PlasticSCM5\client\`.
+
+cm log files are then stored in `<LOCALAPPDATA>\plastic4\logs\cm.log.txt`.
+
+(from [enable logging for Plastic SCM](https://docs.plasticscm.com/technical-articles/kb-enabling-logging-for-plastic-scm-part-i))
 
 ### Report an issue
 
