@@ -1115,7 +1115,7 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 	{
 		TArray<FString> Parameters;
 		Parameters.Add(Operation->ServerUrl);
-		Parameters.Add(Operation->RepositoryName);
+		Parameters.Add(FString::Printf(TEXT("\"%s\""), *Operation->RepositoryName));
 		// Note: the whole operation should fail entirely if the repository creation failed (if the repository already exists, if the organization name is invalid, credential, autorizations etc.)
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("makerepository"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
 		// Specifically detect the specific error when the organization name is invalid, and add an more human readable message.
@@ -1127,9 +1127,9 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 	if (InCommand.bCommandSuccessful)
 	{
 		TArray<FString> Parameters;
-		Parameters.Add(Operation->WorkspaceName);
+		Parameters.Add(FString::Printf(TEXT("\"%s\""), *Operation->WorkspaceName));
 		Parameters.Add(TEXT(".")); // current path, ie. ProjectDir
-		Parameters.Add(FString::Printf(TEXT("--repository=rep:%s@repserver:%s"), *Operation->RepositoryName, *Operation->ServerUrl));
+		Parameters.Add(FString::Printf(TEXT("--repository=\"rep:%s@repserver:%s\""), *Operation->RepositoryName, *Operation->ServerUrl));
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
 	if (InCommand.bCommandSuccessful && Operation->bPartialWorkspace)
