@@ -1113,11 +1113,13 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 	TSharedRef<FPlasticMakeWorkspace, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticMakeWorkspace>(InCommand.Operation);
 
 	{
+		// cm repository "<repserverspec>" "<rep_name>"
 		TArray<FString> Parameters;
+		Parameters.Add(TEXT("create"));
 		Parameters.Add(Operation->ServerUrl);
 		Parameters.Add(FString::Printf(TEXT("\"%s\""), *Operation->RepositoryName));
-		// Note: the whole operation should fail entirely if the repository creation failed (if the repository already exists, if the organization name is invalid, credential, autorizations etc.)
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("makerepository"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+		// Note: the whole operation should fail entirely if the repository creation failed (if the repository already exists, if the organization name is invalid, credential, authorizations etc.)
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("repository"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
 		// Specifically detect the specific error when the organization name is invalid, and add an more human readable message.
 		if (InCommand.ErrorMessages.Contains(TEXT("Can't resolve DNS entry for cloud.plasticscm.com")))
 		{
@@ -1126,11 +1128,13 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 	}
 	if (InCommand.bCommandSuccessful)
 	{
+		// cm workspace create <wk_name> <wk_path> [<rep_spec>]
 		TArray<FString> Parameters;
+		Parameters.Add(TEXT("create"));
 		Parameters.Add(FString::Printf(TEXT("\"%s\""), *Operation->WorkspaceName));
 		Parameters.Add(TEXT(".")); // current path, ie. ProjectDir
-		Parameters.Add(FString::Printf(TEXT("--repository=\"rep:%s@repserver:%s\""), *Operation->RepositoryName, *Operation->ServerUrl));
-		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("makeworkspace"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
+		Parameters.Add(FString::Printf(TEXT("\"rep:%s@repserver:%s\""), *Operation->RepositoryName, *Operation->ServerUrl));
+		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("workspace"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
 	}
 	if (InCommand.bCommandSuccessful && Operation->bPartialWorkspace)
 	{
