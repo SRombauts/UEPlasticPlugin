@@ -529,7 +529,7 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bI
 	if (!bInForAllDestBranches && (InProvider.GetPlasticScmVersion() >= PlasticSourceControlVersions::WorkingBranch))
 	{
 		// Note: here is one of the rare places where we need to use a branch name, not a workspace selector
-		Parameters.Add(FString::Printf(TEXT("--workingbranch=%s"), *InProvider.GetBranchName()));
+		Parameters.Add(FString::Printf(TEXT("--workingbranch=\"%s\""), *InProvider.GetBranchName()));
 	}
 	const bool bResult = RunCommand(TEXT("lock"), Parameters, TArray<FString>(), Results, ErrorMessages);
 
