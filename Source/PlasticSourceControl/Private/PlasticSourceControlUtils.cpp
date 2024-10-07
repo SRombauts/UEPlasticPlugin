@@ -520,7 +520,7 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bI
 	Parameters.Add(TEXT("list"));
 	Parameters.Add(TEXT("--machinereadable"));
 	Parameters.Add(TEXT("--smartlocks"));
-	Parameters.Add(FString::Printf(TEXT("--repository=%s"), *InProvider.GetRepositoryName()));
+	Parameters.Add(FString::Printf(TEXT("--repository=\"%s\""), *InProvider.GetRepositoryName()));
 	Parameters.Add(TEXT("--anystatus"));
 	Parameters.Add(TEXT("--fieldseparator=\"") FILE_STATUS_SEPARATOR TEXT("\""));
 	// NOTE: --dateformat was added to smartlocks a couple of releases later in version 11.0.16.8133
