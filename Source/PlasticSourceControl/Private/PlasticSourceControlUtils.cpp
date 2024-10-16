@@ -482,7 +482,7 @@ public:
 	{
 		FScopeLock Lock(&CriticalSection);
 		const FTimespan ElapsedTime = FDateTime::Now() - Timestamp;
-		if (ElapsedTime.GetTotalSeconds() < 60.0)
+		if (ElapsedTime.GetTotalMinutes() < GetDefault<UPlasticSourceControlProjectSettings>()->LocksCacheExpirationDelayMinutes)
 		{
 			OutLocks = Locks;
 			return true;
