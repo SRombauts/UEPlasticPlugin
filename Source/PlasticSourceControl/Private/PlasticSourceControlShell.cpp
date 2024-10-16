@@ -55,7 +55,6 @@ static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
 namespace PlasticSourceControlShell
 {
 static const TCHAR* ShellCommandResultText = TEXT("CommandResult ");
-static const TCHAR* ShellUserInteractText = TEXT("Select your system [0-1]");
 
 // In/Out Pipes for the 'cm shell' persistent child process
 static void*			ShellOutputPipeRead = nullptr;
@@ -268,18 +267,6 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 					OutResults.RemoveAt(IndexCommandResult, OutResults.Len() - IndexCommandResult);
 					break;
 				}
-			}
-
-			// Search the output for a potential user interaction request (in case the authentication token isn't saved or valid anymore)
-			const uint32 IndexPrompt = OutResults.Find(ShellUserInteractText, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
-			if (INDEX_NONE != IndexPrompt)
-			{
-				const FText ShellRequiresInteractionError(LOCTEXT("SourceControlShell_AskAuthenticate", "Unity Version Control command line requires user interaction.\nSign in using the Unity Version Control client."));
-				FNotification::DisplayFailure(ShellRequiresInteractionError);
-
-				// Restart the shell without waiting, it is forever blocked waiting for user input
-				_RestartBackgroundCommandLineShell(true);
-				break; // and quit the loop
 			}
 		}
 		else if ((FPlatformTime::Seconds() - LastLog > LogInterval) && (PreviousLogLen < OutResults.Len()))
