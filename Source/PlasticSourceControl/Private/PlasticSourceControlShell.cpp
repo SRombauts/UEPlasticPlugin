@@ -253,8 +253,8 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 
 			LastActivity = FPlatformTime::Seconds(); // freshen the timestamp while cm is still actively outputting information
 			OutResults.Append(MoveTemp(Output));
-			// Search the output for the line containing the result code, also indicating the end of the command
-			const uint32 IndexCommandResult = OutResults.Find(ShellCommandResultText, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
+			// Search the output for the line containing the result code, also indicating the end of the command (only search in the last few characters, for approximately the last line)
+			const uint32 IndexCommandResult = OutResults.Find(ShellCommandResultText, ESearchCase::CaseSensitive, ESearchDir::FromStart, OutResults.Len() - 20);
 			if (INDEX_NONE != IndexCommandResult)
 			{
 				const uint32 IndexEndResult = OutResults.Find(pchDelim, ESearchCase::CaseSensitive, ESearchDir::FromStart, IndexCommandResult + 14);
