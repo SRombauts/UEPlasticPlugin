@@ -473,27 +473,28 @@ public:
 
 	void SetLocks(const TArray<FPlasticSourceControlLockRef>& InLocks)
 	{
-		FScopeLock Lock(&CriticalSection);
 		Locks = InLocks;
 		Timestamp = FDateTime::Now();
 	}
 
 	bool GetLocks(TArray<FPlasticSourceControlLockRef>& OutLocks)
 	{
-		FScopeLock Lock(&CriticalSection);
 		const FTimespan ElapsedTime = FDateTime::Now() - Timestamp;
 		if (ElapsedTime.GetTotalMinutes() < GetDefault<UPlasticSourceControlProjectSettings>()->LocksCacheExpirationDelayMinutes)
 		{
+			UE_LOG(LogSourceControl, Verbose, TEXT("FLocksCache::GetLocks(%d)"), Locks.Num());
 			OutLocks = Locks;
 			return true;
 		}
 		return false;
 	}
 
+public:
+	FCriticalSection CriticalSection;
+
 private:
 	TArray<FPlasticSourceControlLockRef> Locks;
 	FDateTime Timestamp;
-	FCriticalSection CriticalSection;
 };
 
 static FLocksCache LocksCacheForAllDestBranches;
@@ -501,6 +502,7 @@ static FLocksCache LocksCacheForWorkingBranch;
 
 void InvalidateLocksCache()
 {
+	UE_LOG(LogSourceControl, Verbose, TEXT("InvalidateLocksCache()"));
 	LocksCacheForAllDestBranches.Reset();
 	LocksCacheForWorkingBranch.Reset();
 }
@@ -510,6 +512,8 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bI
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlUtils::RunListLocks);
 
 	FLocksCache& LocksCache = bInForAllDestBranches ? LocksCacheForAllDestBranches : LocksCacheForWorkingBranch;
+
+	FScopeLock ScopeLock(&LocksCache.CriticalSection);
 
 	if (LocksCache.GetLocks(OutLocks))
 		return true;
@@ -544,6 +548,8 @@ bool RunListLocks(const FPlasticSourceControlProvider& InProvider, const bool bI
 		}
 
 		LocksCache.SetLocks(OutLocks);
+
+		UE_LOG(LogSourceControl, Verbose, TEXT("RunListLocks: %d locks"), OutLocks.Num());
 	}
 
 	return bResult;
