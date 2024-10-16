@@ -243,7 +243,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	const double StartTimestamp = FPlatformTime::Seconds();
 	double LastActivity = StartTimestamp;
 	double LastLog = StartTimestamp;
-	static const double LogInterval = 5.0;
+	static const double LogInterval = 10.0; // log interval for long running operation
 	int32 PreviousLogLen = 0;
 	while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
@@ -285,14 +285,14 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		else if ((FPlatformTime::Seconds() - LastLog > LogInterval) && (PreviousLogLen < OutResults.Len()))
 		{
 			// In case of long running operation, start to print intermediate output from cm shell (like percentage of progress)
-			UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' in progress for %.3lfs... (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len() - PreviousLogLen, *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' in progress for %.3lfs... (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len() - PreviousLogLen, *OutResults.Mid(PreviousLogLen, 4096)); // Limit result size to 4096 characters
 			PreviousLogLen = OutResults.Len();
 			LastLog = FPlatformTime::Seconds(); // freshen the timestamp of last log
 		}
 		else if (FPlatformTime::Seconds() - LastActivity > Timeout)
 		{
 			// In case of timeout, ask the blocking 'cm shell' process to exit, detach from it and restart it immediately
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' TIMEOUT after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len(), *OutResults.Mid(PreviousLogLen, 4096)); // Limit result size to 4096 characters
 			_RestartBackgroundCommandLineShell(true);
 			// Return output results as error so they get propagated to the Message Log window
 			OutErrors = MoveTemp(OutResults);
@@ -300,7 +300,7 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		}
 		else if (IsEngineExitRequested())
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' Engine Exit was requested after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len() - PreviousLogLen, *OutResults.Mid(PreviousLogLen));
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' Engine Exit was requested after %.3lfs output (%d chars):\n%s"), *InCommand, (FPlatformTime::Seconds() - StartTimestamp), OutResults.Len() - PreviousLogLen, *OutResults.Mid(PreviousLogLen, 4096)); // Limit result size to 4096 characters
 			_ExitBackgroundCommandLineShell();
 		}
 
@@ -314,17 +314,17 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 		if (!FPlatformProcess::IsProcRunning(ShellProcessHandle))
 		{
 			// 'cm shell' normally only terminates in case of 'exit' command. Will restart on next command.
-			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' 'cm shell' stopped after %.3lfs output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
+			UE_LOG(LogSourceControl, Error, TEXT("RunCommand: '%s' 'cm shell' stopped after %.3lfs output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Left(200)); // Limit long running intermediate log to 200 characters
 		}
 		else if (!bResult)
 		{
-			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' (in %.3lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Left(4096)); // Limit result size to 4096 characters
+			UE_LOG(LogSourceControl, Warning, TEXT("RunCommand: '%s' (in %.3lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Right(4096)); // Limit result size to 4096 characters
 		}
 		else
 		{
 			if (PreviousLogLen > 0)
 			{
-				UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' (in %.3lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Mid(PreviousLogLen).Left(4096)); // Limit result size to 4096 characters
+				UE_LOG(LogSourceControl, Log, TEXT("RunCommand: '%s' (in %.3lfs) output (%d chars):\n%s"), *LoggableCommand, ElapsedTime, OutResults.Len(), *OutResults.Mid(PreviousLogLen).Right(200)); // Limit long running intermediate log to 200 characters
 			}
 			else
 			{
