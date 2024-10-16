@@ -6,7 +6,7 @@
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 #include "Misc/AutomationTest.h"
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFindCommonDirectoryUnitTest, "PlasticSCM.FindCommonDirectory", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFindCommonDirectoryUnitTest, "PlasticSCM.FindCommonDirectory", EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FFindCommonDirectoryUnitTest::RunTest(const FString& Parameters)
 {
@@ -40,7 +40,7 @@ bool FFindCommonDirectoryUnitTest::RunTest(const FString& Parameters)
 	return true; // actual results are returned by TestXxx() macros
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSoftwareVersionUnitTest, "PlasticSCM.SoftwareVersion", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSoftwareVersionUnitTest, "PlasticSCM.SoftwareVersion", EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FSoftwareVersionUnitTest::RunTest(const FString& Parameters)
 {
@@ -56,7 +56,7 @@ bool FSoftwareVersionUnitTest::RunTest(const FString& Parameters)
 	return true; // actual results are returned by TestXxx() macros
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSoftwareVersionEqualUnitTest, "PlasticSCM.SoftwareVersionEqual", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSoftwareVersionEqualUnitTest, "PlasticSCM.SoftwareVersionEqual", EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FSoftwareVersionEqualUnitTest::RunTest(const FString& Parameters)
 {
@@ -75,7 +75,7 @@ bool FSoftwareVersionEqualUnitTest::RunTest(const FString& Parameters)
 	return true; // actual results are returned by TestXxx() macros
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSoftwareVersionLessUnitTest, "PlasticSCM.SoftwareVersionLess", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSoftwareVersionLessUnitTest, "PlasticSCM.SoftwareVersionLess", EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FSoftwareVersionLessUnitTest::RunTest(const FString& Parameters)
 {
@@ -121,7 +121,7 @@ bool FSoftwareVersionLessUnitTest::RunTest(const FString& Parameters)
 	return true; // actual results are returned by TestXxx() macros
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSoftwareVersionMoreOrEqualUnitTest, "PlasticSCM.SoftwareVersionMoreOrEqual", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSoftwareVersionMoreOrEqualUnitTest, "PlasticSCM.SoftwareVersionMoreOrEqual", EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FSoftwareVersionMoreOrEqualUnitTest::RunTest(const FString& Parameters)
 {
