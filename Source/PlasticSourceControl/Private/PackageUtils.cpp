@@ -10,6 +10,8 @@
 #include "PackageTools.h"
 #include "UObject/Linker.h"
 
+#include "Runtime/Launch/Resources/Version.h"
+
 namespace PackageUtils
 {
 

@@ -1,8 +1,8 @@
 // Copyright (c) 2024 Unity Technologies
 
-#if ENGINE_MAJOR_VERSION == 5
-
 #include "PlasticSourceControlChangelistState.h"
+
+#if ENGINE_MAJOR_VERSION == 5
 
 #define LOCTEXT_NAMESPACE "PlasticSourceControl.ChangelistState"
 
