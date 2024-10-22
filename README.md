@@ -658,6 +658,14 @@ Some are reserved for internal use by Epic Games with Perforce only:
 - tags: get labels (used for crash when the full Engine is under Perforce)
 - annotate: blame (used for crash when the full Engine is under Perforce)
 
+## Support
+
+You can always ask for support in:
+ - [Unity Version Control support](https://support.unity.com/hc/en-us/requests/new?ticket_form_id=360001051792)
+ - [Unity Version Control forums](https://forum.unity.com/forums/unity-version-control.605/)
+ - [Unreal Engine forums](https://forums.unrealengine.com/)
+ - [Unreal Slackers Discord community](https://discord.gg/unreal-slackers)
+
 ### Enable debug logs
 
 #### Enable Verbose logs in Unreal Engine
