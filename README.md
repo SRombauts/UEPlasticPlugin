@@ -3,7 +3,7 @@ Unity Version Control (formerly Plastic SCM) plugin for Unreal Engine
 
 [![release](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
 
-This is the **official [Unity Version Control (formerly Plastic SCM)](https://unity.com/solutions/version-control) plugin for Unreal Engine 5** (UE 5.0 to 5.5) with previous releases also supporting UE4.27.
+This is the **official [Unity Version Control (formerly Plastic SCM)](https://unity.com/solutions/version-control) plugin for Unreal Engine 5** (UE 5.0 to 5.5) with previous releases also [supporting UE4.27](https://github.com/PlasticSCM/UEPlasticPlugin/releases/tag/1.11.0).
 
 It is now [distributed in the Unreal Engine Marketplace as a Code Plugin, supporting Engine Versions 5.1 to 5.4 on Windows. ![Unity Version Control in the Unreal Engine Marketplace](Screenshots/Marketplace_UnityVersionControl.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
 
@@ -599,6 +599,10 @@ eg:
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
 ### Version 1.11.0 2024/06/18 for UE 5.0/5.1/5.2/5.3/5.4 and UE 4.27
+
+[![releases](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
+[![1.11.0](https://img.shields.io/github/v/tag/PlasticSCM/UEPlasticPlugin?filter=1.11.0)](https://github.com/PlasticSCM/UEPlasticPlugin/releases/tag/1.11.0)
+
  - manage connection to the server
  - display status icons to show controlled/checked-out/added/deleted/private/changed/ignored/not-up-to-date files
  - Smart Locks: manage Locks from a dockable window. Release or Remove them. Display status icons for locked files, retained locks, on what branch and by whom.
