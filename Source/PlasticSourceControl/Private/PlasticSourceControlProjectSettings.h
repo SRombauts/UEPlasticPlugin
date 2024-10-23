@@ -29,6 +29,10 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control", meta = (ClampMin = 0))
 	int32 LimitNumberOfRevisionsInHistory = 50;
 
+	/** Set an expiration time in minutes for the cache of SmartLocks, after which they need to be retrieved again from the server (default to 5 min) */
+	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control", meta = (ClampMin = 1))
+	double LocksCacheExpirationDelayMinutes = 5.0;
+
 	/** Show the repository where the branch is created (hidden by default) */
 	UPROPERTY(config, EditAnywhere, Category = "Unity Version Control|View Branches window")
 	bool bShowBranchRepositoryColumn = false;
