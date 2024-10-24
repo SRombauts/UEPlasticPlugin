@@ -8,6 +8,7 @@
 #include "Layout/Visibility.h"
 #include "Input/Reply.h"
 #include "Styling/SlateTypes.h"
+#include "ISourceControlOperation.h"
 
 #include "PlasticSourceControlWorkspaceCreation.h"
 
@@ -36,14 +37,36 @@ private:
 	FText GetUserName() const;
 
 	/** Delegate to create a new Plastic workspace and repository */
+	EVisibility IsWorkspaceFound() const;
 	EVisibility CanCreatePlasticWorkspace() const;
 	bool IsReadyToCreatePlasticWorkspace() const;
-	void OnWorkspaceNameCommited(const FText& InText, ETextCommit::Type InCommitType);
-	FText GetWorkspaceName() const;
+
+	FText GetRepositorySpec() const;
+
+	// Server/Organization, Project, Repository, Workspace names
+	EVisibility CanSelectServer() const;
+	EVisibility NoServerToSelect() const;
+	FText GetServerUrl() const;
+	TSharedRef<SWidget> BuildServerDropDownMenu();
+	void OnServerSelected(const FText InServerName);
+	void OnGetProjectsOperationComplete(const FSourceControlOperationRef& InOperation, ECommandResult::Type InResult);
+	TArray<FText> ServerNames;
+
+	bool bGetProjectsInProgress;
+
+	EVisibility CanSelectProject() const;
+	EVisibility NoProjectToSelect() const;
+	FText GetProjectName() const;
+	TSharedRef<SWidget> BuildProjectDropDownMenu();
+	void OnProjectSelected(const FText InProjectName);
+	TArray<FText> ProjectNames;
+
 	void OnRepositoryNameCommited(const FText& InText, ETextCommit::Type InCommitType);
 	FText GetRepositoryName() const;
-	void OnServerUrlCommited(const FText& InText, ETextCommit::Type InCommitType);
-	FText GetServerUrl() const;
+
+	void OnWorkspaceNameCommited(const FText& InText, ETextCommit::Type InCommitType);
+	FText GetWorkspaceName() const;
+
 	bool CreatePartialWorkspace() const;
 	void OnCheckedCreatePartialWorkspace(ECheckBoxState NewCheckedState);
 	bool CanAutoCreateIgnoreFile() const;
