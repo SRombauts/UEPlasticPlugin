@@ -1131,11 +1131,6 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 		Parameters.Add(FString::Printf(TEXT("\"%s\""), *Operation->RepositoryName));
 		// Note: the whole operation should fail entirely if the repository creation failed (if the repository already exists, if the organization name is invalid, credential, authorizations etc.)
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("repository"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
-		// Specifically detect the specific error when the organization name is invalid, and add an more human readable message.
-		if (InCommand.ErrorMessages.Contains(TEXT("Can't resolve DNS entry for cloud.plasticscm.com")))
-		{
-			InCommand.ErrorMessages.Add(TEXT("Invalid cloud organization name."));
-		}
 	}
 	if (InCommand.bCommandSuccessful)
 	{
