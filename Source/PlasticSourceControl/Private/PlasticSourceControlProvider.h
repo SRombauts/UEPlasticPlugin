@@ -127,6 +127,8 @@ public:
 		return ServerUrl;
 	}
 
+	void UpdateServerUrl(const FString& InServerUrl);
+
 	/** Get the Name of the current branch */
 	inline const FString& GetBranchName() const
 	{

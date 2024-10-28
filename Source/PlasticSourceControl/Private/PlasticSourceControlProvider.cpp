@@ -313,6 +313,12 @@ const FName& FPlasticSourceControlProvider::GetName(void) const
 	return ProviderName;
 }
 
+void FPlasticSourceControlProvider::UpdateServerUrl(const FString& InServerUrl)
+{
+	ServerUrl = InServerUrl;
+	UserName = PlasticSourceControlUtils::GetProfileUserName(Profiles, InServerUrl);
+}
+
 FString FPlasticSourceControlProvider::GetCloudOrganization() const
 {
 	const int32 CloudIndex = ServerUrl.Find(TEXT("@cloud"));
