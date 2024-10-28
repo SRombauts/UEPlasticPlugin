@@ -137,6 +137,14 @@ TMap<FString, FString> GetProfiles();
 FString GetProfileUserName(const TMap<FString, FString>& InProfiles, const FString& InServerUrl);
 
 /**
+ * Get the list of Projects for the specified Unity Organization
+ * @param	InServerUrl		    Name of the specified Unity Organization
+ * @returns	OutProjectNames     List of Projects for the specified Unity Organization
+ * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+*/
+bool RunGetProjects(const FString& InServerUrl, TArray<FString>& OutProjectNames, TArray<FString>& OutErrorMessages);
+
+/**
  * Get workspace name
  * @param	InWorkspaceRoot		The workspace from where to run the command - typically the Project path
  * @param	OutWorkspaceName	Name of the current workspace

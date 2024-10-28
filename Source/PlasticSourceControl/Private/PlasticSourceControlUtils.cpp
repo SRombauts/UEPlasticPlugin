@@ -283,6 +283,23 @@ FString GetProfileUserName(const TMap<FString, FString>& InProfiles, const FStri
 	return FString();
 }
 
+bool RunGetProjects(const FString& InServerUrl, TArray<FString>& OutProjectNames, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Results;
+	TArray<FString> Parameters;
+	Parameters.Add("list");
+	Parameters.Add(InServerUrl);
+	Parameters.Add(TEXT("--type=project"));
+	bool bResult = RunCommand(TEXT("repository"), Parameters, TArray<FString>(), Results, OutErrorMessages);
+	if (bResult)
+	{
+		OutProjectNames = PlasticSourceControlParsers::ParseRepository(Results);
+	}
+
+	return bResult;
+}
+
+
 bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Results;
