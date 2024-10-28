@@ -55,6 +55,8 @@ struct FRemoveRedundantErrors
 
 TMap<FString, FString> ParseProfileInfo(TArray<FString>& InResults);
 
+TArray<FString> ParseRepository(TArray<FString>& InResults);
+
 bool ParseWorkspaceInfo(TArray<FString>& InResults, FString& OutWorkspaceSelector, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl);
 
 bool GetChangesetFromWorkspaceStatus(const TArray<FString>& InResults, int32& OutChangeset);

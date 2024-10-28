@@ -56,6 +56,32 @@ TMap<FString, FString> ParseProfileInfo(TArray<FString>& InResults)
 }
 
 /**
+ * Parse the output of the command cm repository list --type=project"
+ *
+ * Example:
+My Project@SRombautsU@unity
+unreal-plugin@SRombautsU@unity
+*/
+TArray<FString> ParseRepository(TArray<FString>& InResults)
+{
+	TArray<FString> Repositories;
+
+	Repositories.Reserve(InResults.Num());
+
+	for (FString& Result : InResults)
+	{
+		int32 SeparatorIndex;
+		if (Result.FindChar(TEXT('@'), SeparatorIndex))
+		{
+			Result.LeftInline(SeparatorIndex);
+		}
+		Repositories.Add(MoveTemp(Result));
+	}
+
+	return Repositories;
+}
+
+/**
  * Parse  workspace information, in the form "Branch /main@UE5PlasticPluginDev@localhost:8087"
  *                                        or "Branch /main@UE5PlasticPluginDev@test@cloud" (when connected to the cloud)
  *                                        or "Branch /main@rep:UE5OpenWorldPerfTest@repserver:test@cloud"
