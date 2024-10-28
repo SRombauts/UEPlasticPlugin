@@ -104,9 +104,9 @@ public:
 
 	virtual FText GetInProgressString() const override;
 
-	FString WorkspaceName;
-	FString RepositoryName;
 	FString ServerUrl;
+	FString RepositoryName;
+	FString WorkspaceName;
 	bool bPartialWorkspace = false;
 };
 
