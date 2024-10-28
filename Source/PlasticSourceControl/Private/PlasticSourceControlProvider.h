@@ -97,6 +97,12 @@ public:
 		return PathToWorkspaceRoot;
 	}
 
+	/** List of configured profiles (known servers and their associated user name). */
+	inline const TMap<FString, FString>& GetProfiles() const
+	{
+		return Profiles;
+	}
+
 	/** Get the Plastic current user */
 	inline const FString& GetUserName() const
 	{
@@ -256,6 +262,9 @@ private:
 
 	/** Version of the Unity Version Control plugin */
 	FString PluginVersion;
+
+	/** List of configured profiles (servers and their corresponding user name). */
+	TMap<FString, FString> Profiles;
 
 	/** Path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory (found by the "Connect" operation) */
 	FString PathToWorkspaceRoot;

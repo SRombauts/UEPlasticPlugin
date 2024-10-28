@@ -139,11 +139,14 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		// Register Console Commands
 		PlasticSourceControlConsole.Register();
 
+		// List configured profiles (known servers and their associated user name)
+		Profiles = PlasticSourceControlUtils::GetProfiles();
+
 		if (bWorkspaceFound)
 		{
 			TArray<FString> ErrorMessages;
 			PlasticSourceControlUtils::GetWorkspaceInfo(WorkspaceSelector, BranchName, RepositoryName, ServerUrl, ErrorMessages);
-			UserName = PlasticSourceControlUtils::GetProfileUserName(ServerUrl);
+			UserName = PlasticSourceControlUtils::GetProfileUserName(Profiles, ServerUrl);
 		}
 		else
 		{
@@ -151,10 +154,6 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			FFormatNamedArguments Args;
 			Args.Add(TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot));
 			FMessageLog("SourceControl").Info(FText::Format(LOCTEXT("NotInAWorkspace", "{WorkspacePath} is not in a workspace."), Args));
-
-			// Get default server and user name (from the global client config)
-			ServerUrl = PlasticSourceControlUtils::GetConfigDefaultRepServer();
-			UserName = PlasticSourceControlUtils::GetDefaultUserName();
 		}
 	}
 }
