@@ -129,11 +129,18 @@ FString GetConfigDefaultRepServer();
 FString GetDefaultUserName();
 
 /**
- * Get Unity Version Control user for the specified server
+ * Get the list of configured profiles (known servers and their associated user name)
+ * @returns	List of configured profiles (known servers and their associated user name)
+ */
+TMap<FString, FString> GetProfiles();
+
+/**
+ * Get the configured user for the specified server
+ * @param	InProfiles		List of configured profiles
  * @param	InServerUrl		Name of the specified server
  * @returns	Name of the Unity Version Control user for the specified server
  */
-FString GetProfileUserName(const FString& InServerUrl);
+FString GetProfileUserName(const TMap<FString, FString>& InProfiles, const FString& InServerUrl);
 
 /**
  * Get workspace name

@@ -270,9 +270,8 @@ FString GetDefaultUserName()
 	return UserName;
 }
 
-FString GetProfileUserName(const FString& InServerUrl)
+TMap<FString, FString> GetProfiles()
 {
-	FString UserName;
 	TArray<FString> Results;
 	TArray<FString> Parameters;
 	TArray<FString> ErrorMessages;
@@ -281,10 +280,21 @@ FString GetProfileUserName(const FString& InServerUrl)
 	bool bResult = RunCommand(TEXT("profile"), Parameters, TArray<FString>(), Results, ErrorMessages);
 	if (bResult)
 	{
-		bResult = PlasticSourceControlParsers::ParseProfileInfo(Results, InServerUrl, UserName);
+		return PlasticSourceControlParsers::ParseProfileInfo(Results);
 	}
 
-	return UserName;
+	return TMap<FString, FString>();
+}
+
+
+FString GetProfileUserName(const TMap<FString, FString>& InProfiles, const FString& InServerUrl)
+{
+	if (const FString* UserName = InProfiles.Find(InServerUrl))
+	{
+		return *UserName;
+	}
+
+	return FString();
 }
 
 bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName, TArray<FString>& OutErrorMessages)
