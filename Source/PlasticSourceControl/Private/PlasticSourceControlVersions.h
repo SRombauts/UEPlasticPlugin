@@ -42,6 +42,10 @@ namespace PlasticSourceControlVersions
 	// https://plasticscm.com/download/releasenotes/11.0.16.7726 (2023/01/19)
 	static const FSoftwareVersion MergeXml(TEXT("11.0.16.7726"));
 
+	// 11.0.16.8044: Jun 08 2023! use cm shell "--enablestderr"
+	// https://plasticscm.com/download/releasenotes/11.0.16.8044 (2023/06/08)
+	static const FSoftwareVersion ShellStderr(TEXT("11.0.16.8044"));
+
 	// 11.0.16.8101 Introducing Smart Locks
 	// https://plasticscm.com/download/releasenotes/11.0.16.8101 (2023/07/06)
 	// 11.0.16.8133 add support for non-localized --datetimeformat

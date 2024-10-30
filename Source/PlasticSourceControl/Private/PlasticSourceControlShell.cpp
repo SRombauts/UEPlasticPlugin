@@ -5,6 +5,7 @@
 #include "Notification.h"
 #include "PlasticSourceControlModule.h"
 #include "PlasticSourceControlProvider.h"
+#include "PlasticSourceControlVersions.h"
 
 #include "ISourceControlModule.h"
 
@@ -25,33 +26,6 @@
 #define LOCTEXT_NAMESPACE "PlasticSourceControl"
 
 
-#if ENGINE_MAJOR_VERSION == 4
-
-// Needed to SetHandleInformation() on WritePipe for input (opposite of ReadPipe, for output) (idem FInteractiveProcess)
-// Note: this has been implemented in Unreal Engine 5.0 in January 2022
-static FORCEINLINE bool CreatePipeWrite(void*& ReadPipe, void*& WritePipe)
-{
-#if PLATFORM_WINDOWS
-	SECURITY_ATTRIBUTES Attr = { sizeof(SECURITY_ATTRIBUTES), NULL, true };
-
-	if (!::CreatePipe(&ReadPipe, &WritePipe, &Attr, 0))
-	{
-		return false;
-	}
-
-	if (!::SetHandleInformation(WritePipe, HANDLE_FLAG_INHERIT, 0))
-	{
-		return false;
-	}
-
-	return true;
-#else
-	return FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
-#endif // PLATFORM_WINDOWS
-}
-
-#endif
-
 namespace PlasticSourceControlShell
 {
 static const TCHAR* ShellCommandResultText = TEXT("CommandResult ");
@@ -59,6 +33,8 @@ static const TCHAR* ShellCommandResultText = TEXT("CommandResult ");
 // In/Out Pipes for the 'cm shell' persistent child process
 static void*			ShellOutputPipeRead = nullptr;
 static void*			ShellOutputPipeWrite = nullptr;
+static void*			ShellErrorPipeRead = nullptr;
+static void*			ShellErrorPipeWrite = nullptr;
 static void*			ShellInputPipeRead = nullptr;
 static void*			ShellInputPipeWrite = nullptr;
 static FProcHandle		ShellProcessHandle;
@@ -73,8 +49,10 @@ static bool             bShellIsWarmedUp = false;
 static void _CleanupBackgroundCommandLineShell()
 {
 	FPlatformProcess::ClosePipe(ShellOutputPipeRead, ShellOutputPipeWrite);
+	FPlatformProcess::ClosePipe(ShellErrorPipeRead, ShellErrorPipeWrite);
 	FPlatformProcess::ClosePipe(ShellInputPipeRead, ShellInputPipeWrite);
 	ShellOutputPipeRead = ShellOutputPipeWrite = nullptr;
+	ShellErrorPipeRead = ShellErrorPipeWrite = nullptr;
 	ShellInputPipeRead = ShellInputPipeWrite = nullptr;
 }
 
@@ -93,7 +71,7 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(PlasticSourceControlShell::_StartBackgroundPlasticShell);
 
-	const FString FullCommand(TEXT("shell --encoding=UTF-8"));
+	const FString FullCommand = FString::Printf(TEXT("shell --encoding=UTF-8 --enablestderr"));
 
 	const bool bLaunchDetached = false;				// the new process will NOT have its own window
 	const bool bLaunchHidden = true;				// the new process will be minimized in the task bar
@@ -103,23 +81,19 @@ static bool _StartBackgroundPlasticShell(const FString& InPathToPlasticBinary, c
 
 	const double StartTimestamp = FPlatformTime::Seconds();
 
-#if ENGINE_MAJOR_VERSION == 4
-	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite));		// For reading outputs from cm shell child process
-	verify(             CreatePipeWrite(ShellInputPipeRead, ShellInputPipeWrite));			// For writing commands to cm shell child process NOLINT
-#elif ENGINE_MAJOR_VERSION == 5
-	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite, false));	// For reading outputs from cm shell child process
-	verify(FPlatformProcess::CreatePipe(ShellInputPipeRead, ShellInputPipeWrite, true));	// For writing commands to cm shell child process
-#endif
+	verify(FPlatformProcess::CreatePipe(ShellOutputPipeRead, ShellOutputPipeWrite, false));	// For reading outputs (stdout) from cm shell child process
+	verify(FPlatformProcess::CreatePipe(ShellErrorPipeRead, ShellErrorPipeWrite, false));	// For reading errors (stderr) from cm shell child process
+	verify(FPlatformProcess::CreatePipe(ShellInputPipeRead, ShellInputPipeWrite, true));	// For writing commands (stdin) to cm shell child process
 
 #if !PLATFORM_LINUX // PLATFORM_WINDOWS || PLATFORM_MAC
-	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead);
+	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, *InWorkingDirectory, ShellOutputPipeWrite, ShellInputPipeRead, ShellErrorPipeWrite);
 #else // PLATFORM_LINUX
 	// Update working directory
 	char OriginalWorkingDirectory[PATH_MAX];
 	getcwd(OriginalWorkingDirectory, PATH_MAX);
 	chdir(TCHAR_TO_ANSI(*InWorkingDirectory));
 
-	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, nullptr, ShellOutputPipeWrite, ShellInputPipeRead);
+	ShellProcessHandle = FPlatformProcess::CreateProc(*InPathToPlasticBinary, *FullCommand, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, nullptr, 0, nullptr, ShellOutputPipeWrite, ShellInputPipeRead, ShellErrorPipeWrite, ShellErrorPipeWrite);
 
 	// Restore working directory
 	chdir(OriginalWorkingDirectory);
@@ -246,6 +220,11 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 	int32 PreviousLogLen = 0;
 	while (FPlatformProcess::IsProcRunning(ShellProcessHandle))
 	{
+		FString Errors = FPlatformProcess::ReadPipe(ShellErrorPipeRead);
+		if (!Errors.IsEmpty())
+		{
+			OutErrors.Append(Errors);
+		}
 		FString Output = FPlatformProcess::ReadPipe(ShellOutputPipeRead);
 		if (!Output.IsEmpty())
 		{
@@ -327,8 +306,13 @@ static bool _RunCommandInternal(const FString& InCommand, const TArray<FString>&
 			}
 		}
 	}
-	// Return output as error if result code is an error
-	if (!bResult)
+	// Return an error if any errors was outputted by the command, regardless of its CommandResult code
+	if (!OutErrors.IsEmpty())
+	{
+		bResult = false;
+	}
+	// Return output as error if result code is an error (for backward compatibility with old cm versions pre 8044)
+	else if (!bResult)
 	{
 		OutErrors = MoveTemp(OutResults);
 	}
