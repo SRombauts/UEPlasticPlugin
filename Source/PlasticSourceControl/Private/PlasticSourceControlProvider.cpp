@@ -446,9 +446,9 @@ void FPlasticSourceControlProvider::UnregisterSourceControlStateChanged_Handle(F
 	ECommandResult::Type FPlasticSourceControlProvider::Execute(const FSourceControlOperationRef& InOperation, const TArray<FString>& InFiles,	EConcurrency::Type InConcurrency, const FSourceControlOperationComplete& InOperationCompleteDelegate)
 #endif
 {
-	if (!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "MakeWorkspace"))
+	if (!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "GetProjects") && !(InOperation->GetName() == "MakeWorkspace"))
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("'%s': only Connect operation allowed without a workspace"), *InOperation->GetName().ToString());
+		UE_LOG(LogSourceControl, Warning, TEXT("'%s': only Connect, GetProjects and MakeWorkspace operations allowed without a workspace"), *InOperation->GetName().ToString());
 		InOperationCompleteDelegate.ExecuteIfBound(InOperation, ECommandResult::Failed);
 		return ECommandResult::Failed;
 	}
