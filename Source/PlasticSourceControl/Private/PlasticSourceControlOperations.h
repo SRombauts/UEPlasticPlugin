@@ -314,7 +314,7 @@ public:
 	virtual FName GetName() const override;
 
 	virtual FText GetInProgressString() const override;
-	
+
 	// Unity organization to list projects from
 	FString ServerUrl;
 

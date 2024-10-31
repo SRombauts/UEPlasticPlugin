@@ -780,12 +780,23 @@ void SPlasticSourceControlSettings::OnGetProjectsOperationComplete(const FSource
 
 		UE_LOG(LogSourceControl, Verbose, TEXT("OnGetProjectsOperationComplete: %d projects in %s"), GetProjectsOperation->ProjectNames.Num(), *GetProjectsOperation->ServerUrl);
 
+		// Sort project alphanumerically
+		GetProjectsOperation->ProjectNames.Sort();
 		ProjectNames.Reserve(GetProjectsOperation->ProjectNames.Num());
 		for (FString& Project : GetProjectsOperation->ProjectNames)
 		{
 			ProjectNames.Add(FText::FromString(Project));
 		}
-		WorkspaceParams.ProjectName = ProjectNames[0];
+		// Try to find an existing Unity project with the same name as the Unreal project (that is, the repository name)
+		int32 Index;
+		if (GetProjectsOperation->ProjectNames.Find(WorkspaceParams.RepositoryName.ToString(), Index))
+		{
+			WorkspaceParams.ProjectName = ProjectNames[Index];
+		}
+		else
+		{
+			WorkspaceParams.ProjectName = ProjectNames[0];
+		}
 	}
 }
 
