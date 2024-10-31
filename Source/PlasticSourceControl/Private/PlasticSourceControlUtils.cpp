@@ -256,20 +256,6 @@ FString GetConfigDefaultRepServer()
 	return ServerUrl;
 }
 
-FString GetDefaultUserName()
-{
-	FString UserName;
-	TArray<FString> Results;
-	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("whoami"), TArray<FString>(), TArray<FString>(), Results, ErrorMessages);
-	if (bResult && Results.Num() > 0)
-	{
-		UserName = MoveTemp(Results[0]);
-	}
-
-	return UserName;
-}
-
 TMap<FString, FString> GetProfiles()
 {
 	TArray<FString> Results;

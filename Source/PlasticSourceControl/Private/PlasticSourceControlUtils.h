@@ -123,12 +123,6 @@ bool GetConfigSetFilesAsReadOnly();
 FString GetConfigDefaultRepServer();
 
 /**
- * Get Unity Version Control user for the default server
- * @returns	Name of the Unity Version Control user configured globally
- */
-FString GetDefaultUserName();
-
-/**
  * Get the list of configured profiles (known servers and their associated user name)
  * @returns	List of configured profiles (known servers and their associated user name)
  */
