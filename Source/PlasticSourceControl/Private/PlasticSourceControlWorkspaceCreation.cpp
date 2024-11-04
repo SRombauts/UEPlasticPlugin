@@ -26,9 +26,16 @@ void FPlasticSourceControlWorkspaceCreation::MakeWorkspace(const FParameters& In
 void FPlasticSourceControlWorkspaceCreation::LaunchMakeWorkspaceOperation()
 {
 	TSharedRef<FPlasticMakeWorkspace, ESPMode::ThreadSafe> MakeWorkspaceOperation = ISourceControlOperation::Create<FPlasticMakeWorkspace>();
-	MakeWorkspaceOperation->WorkspaceName = WorkspaceParams.WorkspaceName.ToString();
-	MakeWorkspaceOperation->RepositoryName = WorkspaceParams.RepositoryName.ToString();
 	MakeWorkspaceOperation->ServerUrl = WorkspaceParams.ServerUrl.ToString();
+	if (!WorkspaceParams.ProjectName.IsEmpty())
+	{
+		MakeWorkspaceOperation->RepositoryName = FString::Printf(TEXT("%s/%s"), *WorkspaceParams.ProjectName.ToString(), *WorkspaceParams.RepositoryName.ToString());
+	}
+	else
+	{
+		MakeWorkspaceOperation->RepositoryName = WorkspaceParams.RepositoryName.ToString();
+	}
+	MakeWorkspaceOperation->WorkspaceName = WorkspaceParams.WorkspaceName.ToString();
 	MakeWorkspaceOperation->bPartialWorkspace = WorkspaceParams.bCreatePartialWorkspace;
 
 	FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();

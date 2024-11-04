@@ -60,6 +60,7 @@ void IPlasticSourceControlWorker::RegisterWorkers(FPlasticSourceControlProvider&
 	PlasticSourceControlProvider.RegisterWorker("DeleteBranches", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticDeleteBranchesWorker>));
 	PlasticSourceControlProvider.RegisterWorker("GetChangesets", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetChangesetsWorker>));
 	PlasticSourceControlProvider.RegisterWorker("GetChangesetFiles", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetChangesetFilesWorker>));
+	PlasticSourceControlProvider.RegisterWorker("GetProjects", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticGetProjectsWorker>));
 	PlasticSourceControlProvider.RegisterWorker("MakeWorkspace", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticMakeWorkspaceWorker>));
 	PlasticSourceControlProvider.RegisterWorker("Sync", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
 	PlasticSourceControlProvider.RegisterWorker("SyncAll", FGetPlasticSourceControlWorker::CreateStatic(&InstantiateWorker<FPlasticSyncWorker>));
@@ -261,6 +262,16 @@ FName FPlasticGetChangesetFiles::GetName() const
 FText FPlasticGetChangesetFiles::GetInProgressString() const
 {
 	return FText::Format(LOCTEXT("SourceControl_GetChangesetFiles", "Getting the list of files in changeset {0}..."), FText::AsNumber(Changeset->ChangesetId));
+}
+
+FName FPlasticGetProjects::GetName() const
+{
+	return "GetProjects";
+}
+
+FText FPlasticGetProjects::GetInProgressString() const
+{
+	return FText::Format(LOCTEXT("SourceControl_GetProjects", "Getting the projects in {0}..."), FText::FromString(ServerUrl));
 }
 
 
@@ -1120,11 +1131,6 @@ bool FPlasticMakeWorkspaceWorker::Execute(FPlasticSourceControlCommand& InComman
 		Parameters.Add(FString::Printf(TEXT("\"%s\""), *Operation->RepositoryName));
 		// Note: the whole operation should fail entirely if the repository creation failed (if the repository already exists, if the organization name is invalid, credential, authorizations etc.)
 		InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunCommand(TEXT("repository"), Parameters, TArray<FString>(), InCommand.InfoMessages, InCommand.ErrorMessages);
-		// Specifically detect the specific error when the organization name is invalid, and add an more human readable message.
-		if (InCommand.ErrorMessages.Contains(TEXT("Can't resolve DNS entry for cloud.plasticscm.com")))
-		{
-			InCommand.ErrorMessages.Add(TEXT("Invalid cloud organization name."));
-		}
 	}
 	if (InCommand.bCommandSuccessful)
 	{
@@ -1460,7 +1466,6 @@ bool FPlasticGetChangesetsWorker::UpdateStates()
 }
 
 
-
 FName FPlasticGetChangesetFilesWorker::GetName() const
 {
 	return "GetChangesetFiles";
@@ -1490,6 +1495,29 @@ bool FPlasticGetChangesetFilesWorker::Execute(FPlasticSourceControlCommand& InCo
 }
 
 bool FPlasticGetChangesetFilesWorker::UpdateStates()
+{
+	return false;
+}
+
+
+FName FPlasticGetProjectsWorker::GetName() const
+{
+	return "GetProjects";
+}
+
+bool FPlasticGetProjectsWorker::Execute(FPlasticSourceControlCommand& InCommand)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FPlasticGetProjectsWorker::Execute);
+
+	check(InCommand.Operation->GetName() == GetName());
+	TSharedRef<FPlasticGetProjects, ESPMode::ThreadSafe> Operation = StaticCastSharedRef<FPlasticGetProjects>(InCommand.Operation);
+
+    InCommand.bCommandSuccessful = PlasticSourceControlUtils::RunGetProjects(Operation->ServerUrl, Operation->ProjectNames, InCommand.ErrorMessages);
+
+	return InCommand.bCommandSuccessful;
+}
+
+bool FPlasticGetProjectsWorker::UpdateStates()
 {
 	return false;
 }

@@ -139,11 +139,14 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 		// Register Console Commands
 		PlasticSourceControlConsole.Register();
 
+		// List configured profiles (known servers and their associated user name)
+		Profiles = PlasticSourceControlUtils::GetProfiles();
+
 		if (bWorkspaceFound)
 		{
 			TArray<FString> ErrorMessages;
 			PlasticSourceControlUtils::GetWorkspaceInfo(WorkspaceSelector, BranchName, RepositoryName, ServerUrl, ErrorMessages);
-			UserName = PlasticSourceControlUtils::GetProfileUserName(ServerUrl);
+			UserName = PlasticSourceControlUtils::GetProfileUserName(Profiles, ServerUrl);
 		}
 		else
 		{
@@ -151,10 +154,6 @@ void FPlasticSourceControlProvider::CheckPlasticAvailability()
 			FFormatNamedArguments Args;
 			Args.Add(TEXT("WorkspacePath"), FText::FromString(PathToWorkspaceRoot));
 			FMessageLog("SourceControl").Info(FText::Format(LOCTEXT("NotInAWorkspace", "{WorkspacePath} is not in a workspace."), Args));
-
-			// Get default server and user name (from the global client config)
-			ServerUrl = PlasticSourceControlUtils::GetConfigDefaultRepServer();
-			UserName = PlasticSourceControlUtils::GetDefaultUserName();
 		}
 	}
 }
@@ -314,6 +313,12 @@ const FName& FPlasticSourceControlProvider::GetName(void) const
 	return ProviderName;
 }
 
+void FPlasticSourceControlProvider::UpdateServerUrl(const FString& InServerUrl)
+{
+	ServerUrl = InServerUrl;
+	UserName = PlasticSourceControlUtils::GetProfileUserName(Profiles, InServerUrl);
+}
+
 FString FPlasticSourceControlProvider::GetCloudOrganization() const
 {
 	const int32 CloudIndex = ServerUrl.Find(TEXT("@cloud"));
@@ -441,9 +446,9 @@ void FPlasticSourceControlProvider::UnregisterSourceControlStateChanged_Handle(F
 	ECommandResult::Type FPlasticSourceControlProvider::Execute(const FSourceControlOperationRef& InOperation, const TArray<FString>& InFiles,	EConcurrency::Type InConcurrency, const FSourceControlOperationComplete& InOperationCompleteDelegate)
 #endif
 {
-	if (!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "MakeWorkspace"))
+	if (!bWorkspaceFound && !(InOperation->GetName() == "Connect") && !(InOperation->GetName() == "GetProjects") && !(InOperation->GetName() == "MakeWorkspace"))
 	{
-		UE_LOG(LogSourceControl, Warning, TEXT("'%s': only Connect operation allowed without a workspace"), *InOperation->GetName().ToString());
+		UE_LOG(LogSourceControl, Warning, TEXT("'%s': only Connect, GetProjects and MakeWorkspace operations allowed without a workspace"), *InOperation->GetName().ToString());
 		InOperationCompleteDelegate.ExecuteIfBound(InOperation, ECommandResult::Failed);
 		return ECommandResult::Failed;
 	}

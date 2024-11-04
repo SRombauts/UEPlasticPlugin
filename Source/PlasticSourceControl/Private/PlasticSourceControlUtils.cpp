@@ -256,23 +256,8 @@ FString GetConfigDefaultRepServer()
 	return ServerUrl;
 }
 
-FString GetDefaultUserName()
+TMap<FString, FString> GetProfiles()
 {
-	FString UserName;
-	TArray<FString> Results;
-	TArray<FString> ErrorMessages;
-	const bool bResult = RunCommand(TEXT("whoami"), TArray<FString>(), TArray<FString>(), Results, ErrorMessages);
-	if (bResult && Results.Num() > 0)
-	{
-		UserName = MoveTemp(Results[0]);
-	}
-
-	return UserName;
-}
-
-FString GetProfileUserName(const FString& InServerUrl)
-{
-	FString UserName;
 	TArray<FString> Results;
 	TArray<FString> Parameters;
 	TArray<FString> ErrorMessages;
@@ -281,11 +266,39 @@ FString GetProfileUserName(const FString& InServerUrl)
 	bool bResult = RunCommand(TEXT("profile"), Parameters, TArray<FString>(), Results, ErrorMessages);
 	if (bResult)
 	{
-		bResult = PlasticSourceControlParsers::ParseProfileInfo(Results, InServerUrl, UserName);
+		return PlasticSourceControlParsers::ParseProfileInfo(Results);
 	}
 
-	return UserName;
+	return TMap<FString, FString>();
 }
+
+
+FString GetProfileUserName(const TMap<FString, FString>& InProfiles, const FString& InServerUrl)
+{
+	if (const FString* UserName = InProfiles.Find(InServerUrl))
+	{
+		return *UserName;
+	}
+
+	return FString();
+}
+
+bool RunGetProjects(const FString& InServerUrl, TArray<FString>& OutProjectNames, TArray<FString>& OutErrorMessages)
+{
+	TArray<FString> Results;
+	TArray<FString> Parameters;
+	Parameters.Add("list");
+	Parameters.Add(InServerUrl);
+	Parameters.Add(TEXT("--type=project"));
+	bool bResult = RunCommand(TEXT("repository"), Parameters, TArray<FString>(), Results, OutErrorMessages);
+	if (bResult)
+	{
+		OutProjectNames = PlasticSourceControlParsers::ParseRepository(Results);
+	}
+
+	return bResult;
+}
+
 
 bool GetWorkspaceName(const FString& InWorkspaceRoot, FString& OutWorkspaceName, TArray<FString>& OutErrorMessages)
 {

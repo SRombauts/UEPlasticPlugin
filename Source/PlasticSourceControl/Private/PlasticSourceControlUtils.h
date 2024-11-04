@@ -123,17 +123,26 @@ bool GetConfigSetFilesAsReadOnly();
 FString GetConfigDefaultRepServer();
 
 /**
- * Get Unity Version Control user for the default server
- * @returns	Name of the Unity Version Control user configured globally
+ * Get the list of configured profiles (known servers and their associated user name)
+ * @returns	List of configured profiles (known servers and their associated user name)
  */
-FString GetDefaultUserName();
+TMap<FString, FString> GetProfiles();
 
 /**
- * Get Unity Version Control user for the specified server
+ * Get the configured user for the specified server
+ * @param	InProfiles		List of configured profiles
  * @param	InServerUrl		Name of the specified server
  * @returns	Name of the Unity Version Control user for the specified server
  */
-FString GetProfileUserName(const FString& InServerUrl);
+FString GetProfileUserName(const TMap<FString, FString>& InProfiles, const FString& InServerUrl);
+
+/**
+ * Get the list of Projects for the specified Unity Organization
+ * @param	InServerUrl		    Name of the specified Unity Organization
+ * @returns	OutProjectNames     List of Projects for the specified Unity Organization
+ * @param	OutErrorMessages	Any errors (from StdErr) as an array per-line
+*/
+bool RunGetProjects(const FString& InServerUrl, TArray<FString>& OutProjectNames, TArray<FString>& OutErrorMessages);
 
 /**
  * Get workspace name

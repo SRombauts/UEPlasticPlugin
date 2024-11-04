@@ -29,30 +29,56 @@ namespace PlasticSourceControlParsers
 
 
 /**
- * Parse the output of the "cm profile list --format="{server};{user}" command
+ * Parse the output of the command cm profile list --format="{server};{user}"
  *
  * Example:
 localhost:8087|sebastien.rombauts
 local|sebastien.rombauts@unity3d.com
 SRombautsU@cloud|sebastien.rombauts@unity3d.com
 */
-bool ParseProfileInfo(TArray<FString>& InResults, const FString& InServerUrl, FString& OutUserName)
+TMap<FString, FString> ParseProfileInfo(TArray<FString>& InResults)
 {
+	TMap<FString, FString> Profiles;
+
+	Profiles.Reserve(InResults.Num());
+
 	for (const FString& Result : InResults)
 	{
 		TArray<FString> ProfileInfos;
 		Result.ParseIntoArray(ProfileInfos, FILE_STATUS_SEPARATOR, false); // Don't cull empty values
 		if (ProfileInfos.Num() == 2)
 		{
-			if (ProfileInfos[0] == InServerUrl)
-			{
-				OutUserName = ProfileInfos[1];
-				return true;
-			}
+			Profiles.Add({ MoveTemp(ProfileInfos[0]), MoveTemp(ProfileInfos[1]) });
 		}
 	}
 
-	return false;
+	return Profiles;
+}
+
+/**
+ * Parse the output of the command cm repository list --type=project"
+ *
+ * Example:
+My Project@SRombautsU@unity
+unreal-plugin@SRombautsU@unity
+*/
+TArray<FString> ParseRepository(TArray<FString>& InResults)
+{
+	TArray<FString> Repositories;
+
+	Repositories.Reserve(InResults.Num());
+
+	for (FString& Result : InResults)
+	{
+		int32 SeparatorIndex;
+		if (Result.FindChar(TEXT('@'), SeparatorIndex))
+		{
+			Result.LeftInline(SeparatorIndex);
+		}
+		Repositories.Add(MoveTemp(Result));
+	}
+
+	return Repositories;
 }
 
 /**
