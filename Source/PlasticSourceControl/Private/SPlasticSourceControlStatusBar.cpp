@@ -1,12 +1,11 @@
 // Copyright (c) 2024 Unity Technologies
 
 #include "SPlasticSourceControlStatusBar.h"
-
-#if ENGINE_MAJOR_VERSION == 5
-
 #include "PlasticSourceControlModule.h"
 
 #include "Runtime/Launch/Resources/Version.h"
+#if ENGINE_MAJOR_VERSION == 5
+
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
 #include "Styling/AppStyle.h"
 #else
