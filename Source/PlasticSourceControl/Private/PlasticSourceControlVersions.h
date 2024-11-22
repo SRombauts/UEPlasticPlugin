@@ -56,4 +56,8 @@ namespace PlasticSourceControlVersions
 	// https://plasticscm.com/download/releasenotes/11.0.16.8445 (2024/02/22)
 	static const FSoftwareVersion WorkingBranch(TEXT("11.0.16.8445"));
 
+	// 11.0.16.9055 checkconnection learned a new optional argument <repserverspec>.
+	// https://plasticscm.com/download/releasenotes/11.0.16.9055 (2024/11/28)
+	static const FSoftwareVersion CheckConnection(TEXT("11.0.16.9055"));
+
 } // namespace PlasticSourceControlVersions

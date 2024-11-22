@@ -354,7 +354,10 @@ bool RunCheckConnection(FString& OutWorkspaceSelector, FString& OutBranchName, F
 	TArray<FString> Parameters;
 	if (PlasticSourceControlUtils::GetWorkspaceInfo(OutWorkspaceSelector, OutBranchName, OutRepositoryName, OutServerUrl, OutErrorMessages))
 	{
-		Parameters.Add(FString::Printf(TEXT("--server=%s"), *OutServerUrl));
+		if ((FPlasticSourceControlModule::Get().GetProvider().GetPlasticScmVersion() >= PlasticSourceControlVersions::CheckConnection))
+		{
+			Parameters.Add(OutServerUrl);
+		}
 	}
 	return PlasticSourceControlUtils::RunCommand(TEXT("checkconnection"), Parameters, TArray<FString>(), OutInfoMessages, OutErrorMessages);
 }
