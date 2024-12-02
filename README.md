@@ -5,7 +5,7 @@ Unity Version Control (formerly Plastic SCM) plugin for Unreal Engine
 
 This is the **official [Unity Version Control (formerly Plastic SCM)](https://unity.com/solutions/version-control) plugin for Unreal Engine 5** (UE 5.0 to 5.5) with previous releases also [supporting UE4.27](https://github.com/PlasticSCM/UEPlasticPlugin/releases/tag/1.11.0).
 
-It is now [distributed in the Unreal Engine Marketplace as a Code Plugin, supporting Engine Versions 5.1 to 5.4 on Windows. ![Unity Version Control in the Unreal Engine Marketplace](Screenshots/Marketplace_UnityVersionControl.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
+It is now [distributed in the Unreal Engine Marketplace as a Code Plugin, supporting Engine Versions 5.1 to 5.5 on Windows. ![Unity Version Control in the Unreal Engine Marketplace](Screenshots/Marketplace_UnityVersionControl.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
 
 As a general rule, the Marketplace and GitHub versions of the plugin will always be the most up-to-date and recent versions.
 They're easier for us to patch by applying a hotfix, in case a bug is raised and something broken must be fixed quickly.
@@ -598,9 +598,11 @@ eg:
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.11.0 2024/06/18 for UE 5.0/5.1/5.2/5.3/5.4 and UE 4.27
+### Version 1.12.0 2024/12/02 for UE 5.0 to 5.5
 
 [![releases](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
+
+Note: Version 1.11.0 2024/06/18 is the last one supporting UE 4.27
 [![1.11.0](https://img.shields.io/github/v/tag/PlasticSCM/UEPlasticPlugin?filter=1.11.0)](https://github.com/PlasticSCM/UEPlasticPlugin/releases/tag/1.11.0)
 
  - manage connection to the server
