@@ -89,6 +89,13 @@ bool OpenDesktopApplicationForDiff(const FString& InBranchName);
 void OpenLockRulesInCloudDashboard(const FString& InOrganizationName);
 
 /**
+ * Check if the server URL is pointing to a Unity vs a Cloud organization, or an on-prem server
+ * @param	InServerUrl		The server URL to check
+ * @returns true if the server URL is a Unity Organization
+ */
+bool IsUnityOrganization(const FString& InServerUrl);
+
+/**
  * Find the root of the Plastic workspace, looking from the GameDir and upward in its parent directories
  * @param InPathToGameDir		The path to the Game Directory
  * @param OutWorkspaceRoot		The path to the root directory of the Plastic workspace if found, else the path to the GameDir

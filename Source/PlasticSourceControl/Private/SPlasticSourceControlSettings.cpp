@@ -32,11 +32,6 @@
 
 #define LOCTEXT_NAMESPACE "SPlasticSourceControlSettings"
 
-bool IsUnityOrganization(const FString& InServerUrl)
-{
-	return InServerUrl.EndsWith(TEXT("@unity"));
-}
-
 void SPlasticSourceControlSettings::Construct(const FArguments& InArgs)
 {
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
@@ -692,7 +687,7 @@ EVisibility SPlasticSourceControlSettings::CanSelectProject() const
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const bool bPlasticAvailable = Provider.IsPlasticAvailable();
 	const bool bPlasticWorkspaceFound = Provider.IsWorkspaceFound();
-	const bool bIsUnityOrganization = IsUnityOrganization(WorkspaceParams.ServerUrl.ToString());
+	const bool bIsUnityOrganization = PlasticSourceControlUtils::IsUnityOrganization(WorkspaceParams.ServerUrl.ToString());
 	const bool bHasProjects = !ProjectNames.IsEmpty();
 	return (bPlasticAvailable && !bPlasticWorkspaceFound && bIsUnityOrganization && bHasProjects) ? EVisibility::Visible : EVisibility::Collapsed;
 }
@@ -702,7 +697,7 @@ EVisibility SPlasticSourceControlSettings::NoProjectToSelect() const
 	const FPlasticSourceControlProvider& Provider = FPlasticSourceControlModule::Get().GetProvider();
 	const bool bPlasticAvailable = Provider.IsPlasticAvailable();
 	const bool bPlasticWorkspaceFound = Provider.IsWorkspaceFound();
-	const bool bIsUnityOrganization = IsUnityOrganization(WorkspaceParams.ServerUrl.ToString());
+	const bool bIsUnityOrganization = PlasticSourceControlUtils::IsUnityOrganization(WorkspaceParams.ServerUrl.ToString());
 	const bool bHasProjects = !ProjectNames.IsEmpty();
 	return (bPlasticAvailable && !bPlasticWorkspaceFound && bIsUnityOrganization && !bHasProjects && !bGetProjectsInProgress) ? EVisibility::Visible : EVisibility::Collapsed;
 }
@@ -714,7 +709,7 @@ bool SPlasticSourceControlSettings::IsReadyToCreatePlasticWorkspace() const
 	// RepositoryName and ServerUrl should also be filled
 	const bool bRepositoryNameOk = !WorkspaceParams.RepositoryName.IsEmpty() && !WorkspaceParams.ServerUrl.IsEmpty();
 	// And the Project is required if the server is a Unity Organization
-	const bool bProjectNameOk = !IsUnityOrganization(WorkspaceParams.ServerUrl.ToString()) || !WorkspaceParams.ProjectName.IsEmpty();
+	const bool bProjectNameOk = !PlasticSourceControlUtils::IsUnityOrganization(WorkspaceParams.ServerUrl.ToString()) || !WorkspaceParams.ProjectName.IsEmpty();
 	// If Initial Commit is requested, checkin message cannot be empty
 	const bool bInitialCommitOk = (!WorkspaceParams.bAutoInitialCommit || !WorkspaceParams.InitialCommitMessage.IsEmpty());
 	return bWorkspaceNameOk && bRepositoryNameOk && bProjectNameOk && bInitialCommitOk;
@@ -755,7 +750,7 @@ void SPlasticSourceControlSettings::OnServerSelected(const FText InServerName)
 	FPlasticSourceControlModule::Get().GetProvider().UpdateServerUrl(WorkspaceParams.ServerUrl.ToString());
 
 	// Get the Projects for the Unity Organization
-	if (IsUnityOrganization(WorkspaceParams.ServerUrl.ToString()))
+	if (PlasticSourceControlUtils::IsUnityOrganization(WorkspaceParams.ServerUrl.ToString()))
 	{
 		ProjectNames.Empty();
 

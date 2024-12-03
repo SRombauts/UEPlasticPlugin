@@ -349,6 +349,11 @@ bool GetChangesetNumber(int32& OutChangesetNumber, TArray<FString>& OutErrorMess
 	return bResult;
 }
 
+bool IsUnityOrganization(const FString& InServerUrl)
+{
+	return InServerUrl.EndsWith(TEXT("@unity"));
+}
+
 bool RunCheckConnection(FString& OutWorkspaceSelector, FString& OutBranchName, FString& OutRepositoryName, FString& OutServerUrl, TArray<FString>& OutInfoMessages, TArray<FString>& OutErrorMessages)
 {
 	TArray<FString> Parameters;
