@@ -8,8 +8,9 @@ public class PlasticSourceControl : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		// Note: from UE5.4 onward, replaced by IWYUSupport = IWYUSupport.Full;
+		// Note: from UE5.2 onward, bEnforceIWYU = true; is replaced by IWYUSupport = IWYUSupport.Full;
 		bEnforceIWYU = true;
+		// IWYUSupport = IWYUSupport.Full;
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
@@ -35,7 +36,7 @@ public class PlasticSourceControl : ModuleRules
 			}
 		);
 
-		// NOTE: this produce warnings in SListView Engine code in UE4.27
+		// NOTE: this produces warnings in Engine code in UE5.0
 		UnsafeTypeCastWarningLevel = WarningLevel.Warning;
 	}
 }
