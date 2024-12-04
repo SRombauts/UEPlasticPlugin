@@ -189,7 +189,6 @@ Content of the generated ignore.conf, to use as a starting point but to adjust t
 
 ```
 Binaries
-Build
 DerivedDataCache
 Intermediate
 Saved
@@ -208,6 +207,7 @@ enc_temp_folder
 *.code-workspace
 *.xcodeproj
 *.xcworkspace
+*.plastic.*
 ```
 
 ##### Sharing settings
