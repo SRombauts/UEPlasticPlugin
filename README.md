@@ -207,7 +207,7 @@ enc_temp_folder
 *.code-workspace
 *.xcodeproj
 *.xcworkspace
-*.plastic.*
+*.private.*
 ```
 
 ##### Sharing settings
