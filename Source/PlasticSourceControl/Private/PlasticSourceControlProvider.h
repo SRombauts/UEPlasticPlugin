@@ -80,85 +80,91 @@ public:
 	void CheckPlasticAvailability();
 
 	/** Is Plastic command line working. */
-	inline bool IsPlasticAvailable() const
+	bool IsPlasticAvailable() const
 	{
 		return bPlasticAvailable;
 	}
 
 	/** Is Plastic workspace found. */
-	inline bool IsWorkspaceFound() const
+	bool IsWorkspaceFound() const
 	{
 		return bWorkspaceFound;
 	}
 
 	/** Get the path to the root of the Plastic workspace: can be the GameDir itself, or any parent directory */
-	inline const FString& GetPathToWorkspaceRoot() const
+	const FString& GetPathToWorkspaceRoot() const
 	{
 		return PathToWorkspaceRoot;
 	}
 
 	/** List of configured profiles (known servers and their associated user name). */
-	inline const TMap<FString, FString>& GetProfiles() const
+	const TMap<FString, FString>& GetProfiles() const
 	{
 		return Profiles;
 	}
 
 	/** Get the Plastic current user */
-	inline const FString& GetUserName() const
+	const FString& GetUserName() const
 	{
 		return UserName;
 	}
 
 	/** Get the Plastic current workspace */
-	inline const FString& GetWorkspaceName() const
+	const FString& GetWorkspaceName() const
 	{
 		return WorkspaceName;
 	}
 
 	/** Get the Plastic current repository */
-	inline const FString& GetRepositoryName() const
+	const FString& GetRepositoryName() const
 	{
 		return RepositoryName;
 	}
 
 	/** Get the Plastic current server URL. See also GetCloudOrganization() */
-	inline const FString& GetServerUrl() const
+	const FString& GetServerUrl() const
 	{
 		return ServerUrl;
+	}
+
+	/** Get the current repository fully qualified specification */
+	const FString GetRepositorySpecification() const
+	{
+		return FString::Printf(TEXT("%s@%s"), *RepositoryName, *ServerUrl);
 	}
 
 	void UpdateServerUrl(const FString& InServerUrl);
 
 	/** Get the Name of the current branch */
-	inline const FString& GetBranchName() const
+	const FString& GetBranchName() const
 	{
 		return BranchName;
 	}
 	/** Get the Name of the current selector */
-	inline const FString& GetWorkspaceSelector() const
+	const FString& GetWorkspaceSelector() const
 	{
 		return WorkspaceSelector;
 	}
-	inline void SetWorkspaceSelector(const FString& InWorkspaceSelector, const FString& InBranchName)
+	void SetWorkspaceSelector(const FString& InWorkspaceSelector, const FString& InBranchName)
 	{
 		WorkspaceSelector = InWorkspaceSelector;
 		BranchName = InBranchName;
 	}
 
 	/** Get the current Changeset Number */
-	inline int32 GetChangesetNumber() const
+	int32 GetChangesetNumber() const
 	{
 		return ChangesetNumber;
 	}
 
 	/** A partial/Gluon workspace doesn't match with a single changeset, which is identified by -1 */
-	inline bool IsPartialWorkspace() const
+	bool IsPartialWorkspace() const
 	{
 		return (ChangesetNumber == -1);
 	}
 
 	/** Version of the Unity Version Control executable used */
-	inline const FSoftwareVersion& GetPlasticScmVersion() const
+	const FSoftwareVersion& GetPlasticScmVersion() const
 	{
 		return PlasticScmVersion;
 	}
