@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 120,
-	"VersionName": "1.12.0",
+	"VersionName": "1.12.0+dev",
 	"FriendlyName": "Unity Version Control",
 	"Description": "Unity Version Control (formerly Plastic SCM)",
 	"Category": "Source Control",
