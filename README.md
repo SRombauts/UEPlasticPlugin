@@ -7,7 +7,7 @@ This is the **official [Unity Version Control (formerly Plastic SCM)](https://un
 
 It is now [distributed in Fab in Tools & Plugins > Engine Tools, supporting Engine Versions 5.0 to 5.5 on Windows. ![Unity Version Control in Fab](Screenshots/Fab_UnityVersionControl.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
 
-As a general rule, the Marketplace and GitHub versions of the plugin will always be the most up-to-date and recent versions.
+As a general rule, the Fab and GitHub versions of the plugin will always be the most up-to-date and recent versions.
 They're easier for us to patch by applying a hotfix, in case a bug is raised and something broken must be fixed quickly.
 
 However, you can of course still use the "Plastic SCM" in-engine integration in Unreal.
@@ -28,7 +28,7 @@ Quick tour "Branching with Unity Version Control (Plastic SCM) in Unreal Engine 
 - [User Guide](#user-guide)
   - [Plugin Setup](#plugin-setup)
     - [In-Engine version of the plugin](#in-engine-version-of-the-plugin)
-    - [Install from Unreal Engine Marketplace](#install-from-unreal-engine-marketplace)
+    - [Install from Fab](#install-from-fab)
     - [Install from releases in Github](#install-from-releases-in-github)
     - [Build from sources](#build-from-sources)
   - [Project Setup](#project-setup)
@@ -73,32 +73,37 @@ Quick tour "Branching with Unity Version Control (Plastic SCM) in Unreal Engine 
 #### In-Engine version of the plugin
 
 Having a version of "Plastic SCM" integrated in-Engine helps with discoverability and it is the easiest way to get started with Unity Version Control.
-However the integrated version will always be lagging behind the latest release in Github and the Marketplace.
+However the integrated version will always be lagging behind the latest release in Github and Fab.
 
 - UE4.24 to 4.27 shipped with an old version 1.4.6 of this plugin
 - UE5.0 shipped with the same outdated version 1.4.6, not performing well overall with UE5, especially on OFPA
 - UE5.1 shipped with the version 1.6.2 with support for the new View Changelists window
-- UE5.2 shipped with the version 1.8.0 with support for the Shelves in the renamed View Changes window
-- UE5.3 shipped with the same version 1.8.0
-- UE5.4 shipped with the version 1.9.0 with a new View Branches window to create, switch to and merge branches.
+- UE5.2 & 5.3 shipped with the version 1.8.0 with support for the Shelves in the renamed View Changes window
+- UE5.4 & 5.5 shipped with the version 1.9.0 with a new View Branches window to create, switch to and merge branches.
 
-#### Install from Unreal Engine Marketplace
+#### Install from Fab
 
-As a general rule, the Marketplace and GitHub versions of the plugin will always be the most up-to-date and recent versions.
+As a general rule, the Fab and GitHub versions of the plugin will always be the most up-to-date and recent versions.
 They're easier for us to patch by applying a hotfix, in case a bug is raised and something broken must be fixed quickly.
 
-[In the Unreal Engine Marketplace, the Unity Version Control plugin supports Engine Versions 5.1 to 5.3](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
+[In Fab, the Unity Version Control plugin supports Engine Versions 5.0 to 5.5](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
 
- 1. Click on the "Free" or "Add to cart" button in the Marketplace page and complete the checkout process.*  
-[!["Free" and "Add to cart" buttons](Screenshots/Marketplace_FreeAddToCart.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
- 2. Click the "Open in Launcher" button  
-[!["Open in Launcher" button](Screenshots/Marketplace_OpenInLauncher.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
- 3. Click the "Install to Engine" button, select the Unreal Editor version for your project, then download and install the files.  
-[!["Install to Engine" button](Screenshots/Launcher_InstallToEngine.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
- 4. In your project, navigate to "Edit -> Plugins" and in "Installed" plugins, tick to enable "Unity Version Control", and restart the Unreal Editor  
+ 1. Click on the "Add to My Library" button in the Fab page and complete the checkout process.
+[!["Add to My Library" button in Fab](Screenshots/Fab_AddToMyLibary.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
+ 2. Click on the "Download" button below (or just open the Epic Games Launcher directly)
+[!["Download" button](Screenshots/Fab_Download.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
+ 3. Click the on "Epic Games Launcher" link at the bottom of the "Download" popup 
+[!["Download" window](Screenshots/Fab_EpicGamesLauncher.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
+ 4. In the Epic Games Launcher, in Unreal Engine -> Library -> "Fab Library" search "Unity Version Control" or "Plastic SCM"
+[!["Fab Library" in the Launcher](Screenshots/Launcher_FabLibrary.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
+ 5. Click the "Install to Engine" button, select the Engine version for your project, then install.  
+[!["Install to Engine" button](Screenshots/Launcher_InstallToEngine.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
+ 6. Open your project in Unreal, navigate to "Edit -> Plugins" and in "Installed" plugins, tick to enable "Unity Version Control", and restart the Editor  
 ![Enable the plugin in the Plugins Manager](Screenshots/PluginsManager_InstalledPlugins.png)
- 5. Navigate to "Revision Control -> Connect to Revision Control" and for the "Provider" select "UnityVersionControl"  
+ 7. Navigate to "Revision Control -> Connect to Revision Control"
 ![Source Control Connect](Screenshots/UEPlasticPlugin-SourceControlDisabled.png)
+ 8. And for the "Provider" select "UnityVersionControl" to override the older "Plastic SCM" integration
+![Source Control Connect - Select Provider - UnityVersionControl](Screenshots/UEPlasticPlugin-SelectProvider-UnityVersionControl.png)
 
 #### Install from releases in Github
 
@@ -148,7 +153,7 @@ Launch you Unreal project, look at the Source Control menu at the bottom-right
 Launch you Unreal project, click on the Source Control icon "Connect to Source"  
 ![Source Control Connect](Screenshots/UEPlasticPlugin-ConnectToSourceControl.png)
 
-Then select "Plastic SCM" plugin  
+Then select "Plastic SCM" (or "UnityVersionControl") plugin  
 ![Source Control Connect - Select Provider](Screenshots/UEPlasticPlugin-SelectProvider.png)
 
 #### Create a new workspace & repository directly from Unreal
