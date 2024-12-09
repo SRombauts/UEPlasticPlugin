@@ -88,21 +88,21 @@ They're easier for us to patch by applying a hotfix, in case a bug is raised and
 
 [In Fab, the Unity Version Control plugin supports Engine Versions 5.0 to 5.5](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
 
- 1. Click on the "Add to My Library" button in the Fab page and complete the checkout process.
+ 1. Click on the "Add to My Library" button in the Fab page and complete the checkout process.  
 [!["Add to My Library" button in Fab](Screenshots/Fab_AddToMyLibary.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
- 2. Click on the "Download" button below (or just open the Epic Games Launcher directly)
+ 2. Click on the "Download" button below (or just open the Epic Games Launcher directly)  
 [!["Download" button](Screenshots/Fab_Download.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
- 3. Click the on "Epic Games Launcher" link at the bottom of the "Download" popup 
+ 3. Click the on "Epic Games Launcher" link at the bottom of the "Download" popup  
 [!["Download" window](Screenshots/Fab_EpicGamesLauncher.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
- 4. In the Epic Games Launcher, in Unreal Engine -> Library -> "Fab Library" search "Unity Version Control" or "Plastic SCM"
+ 4. In the Epic Games Launcher, in Unreal Engine -> Library -> "Fab Library" search "Unity Version Control" or "Plastic SCM"  
 [!["Fab Library" in the Launcher](Screenshots/Launcher_FabLibrary.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
  5. Click the "Install to Engine" button, select the Engine version for your project, then install.  
 [!["Install to Engine" button](Screenshots/Launcher_InstallToEngine.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
  6. Open your project in Unreal, navigate to "Edit -> Plugins" and in "Installed" plugins, tick to enable "Unity Version Control", and restart the Editor  
 ![Enable the plugin in the Plugins Manager](Screenshots/PluginsManager_InstalledPlugins.png)
- 7. Navigate to "Revision Control -> Connect to Revision Control"
+ 7. Navigate to "Revision Control -> Connect to Revision Control"  
 ![Source Control Connect](Screenshots/UEPlasticPlugin-SourceControlDisabled.png)
- 8. And for the "Provider" select "UnityVersionControl" to override the older "Plastic SCM" integration
+ 8. And for the "Provider" select "UnityVersionControl" to override the older "Plastic SCM" integration  
 ![Source Control Connect - Select Provider - UnityVersionControl](Screenshots/UEPlasticPlugin-SelectProvider-UnityVersionControl.png)
 
 #### Install from releases in Github
@@ -160,6 +160,9 @@ Then select "Plastic SCM" (or "UnityVersionControl") plugin
 
 Source Control Login window, to create a new workspace/a new repository, click on "Initialize workspace" (example of a cloud repository):  
 ![Source Control Login window - create a new workspace on cloud](Screenshots/UEPlasticPlugin-CreateWorkspaceCloud.png)
+
+Note that for a @unity organization you also need to select a Unity Project to create the repository:  
+![Source Control Login window - create a new workspace on cloud](Screenshots/UEPlasticPlugin-CreateWorkspaceUnity.png)
 
 Or on a server running on premise, using ip:port:  
 ![Source Control Login window - create a new workspace on localhost](Screenshots/UEPlasticPlugin-CreateWorkspaceOnPremise.png)
