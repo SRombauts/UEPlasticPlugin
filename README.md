@@ -5,7 +5,7 @@ Unity Version Control (formerly Plastic SCM) plugin for Unreal Engine
 
 This is the **official [Unity Version Control (formerly Plastic SCM)](https://unity.com/solutions/version-control) plugin for Unreal Engine 5** (UE 5.0 to 5.5) with previous releases also [supporting UE4.27](https://github.com/PlasticSCM/UEPlasticPlugin/releases/tag/1.11.0).
 
-It is now [distributed in the Unreal Engine Marketplace as a Code Plugin, supporting Engine Versions 5.1 to 5.5 on Windows. ![Unity Version Control in the Unreal Engine Marketplace](Screenshots/Marketplace_UnityVersionControl.png)](https://www.unrealengine.com/marketplace/product/unity-version-control-plastic-scm)
+It is now [distributed in Fab in Tools & Plugins > Engine Tools, supporting Engine Versions 5.0 to 5.5 on Windows. ![Unity Version Control in Fab](Screenshots/Fab_UnityVersionControl.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
 
 As a general rule, the Marketplace and GitHub versions of the plugin will always be the most up-to-date and recent versions.
 They're easier for us to patch by applying a hotfix, in case a bug is raised and something broken must be fixed quickly.
