@@ -359,7 +359,7 @@ bool RunCheckConnection(FString& OutWorkspaceSelector, FString& OutBranchName, F
 	TArray<FString> Parameters;
 	if (PlasticSourceControlUtils::GetWorkspaceInfo(OutWorkspaceSelector, OutBranchName, OutRepositoryName, OutServerUrl, OutErrorMessages))
 	{
-		if ((FPlasticSourceControlModule::Get().GetProvider().GetPlasticScmVersion() >= PlasticSourceControlVersions::CheckConnection) && !IsUnityOrganization(OutServerUrl))
+		if ((FPlasticSourceControlModule::Get().GetProvider().GetPlasticScmVersion() >= PlasticSourceControlVersions::CheckConnectionRepServer))
 		{
 			Parameters.Add(OutServerUrl);
 		}
