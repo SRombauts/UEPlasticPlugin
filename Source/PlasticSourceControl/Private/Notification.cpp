@@ -121,7 +121,7 @@ void FNotification::DisplayFailure(const FSourceControlOperationBase& InOperatio
 	{
 		// If there are multiple messages, display the last one to not let the user with a notification starting with a "wait" or "in progress" message
 		const FText NotificationText = FText::Format(
-			LOCTEXT("PlasticSourceControlOperation_Failure", "Error: {0} operation failed!\n{1}"),
+			LOCTEXT("PlasticSourceControlOperation_FailureWithMessages", "Error: {0} operation failed!\n{1}"),
 			FText::FromName(InOperation.GetName()),
 			InOperation.GetResultInfo().ErrorMessages.Last()
 		);
