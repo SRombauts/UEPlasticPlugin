@@ -26,8 +26,8 @@ const TCHAR* FPlasticSourceControlState::ToString() const
 		case EWorkspaceState::Moved: return TEXT("Moved");
 		case EWorkspaceState::Copied: return TEXT("Copied");
 		case EWorkspaceState::Replaced: return TEXT("Replaced");
-		case EWorkspaceState::Deleted: return TEXT("Deleted");
-		case EWorkspaceState::LocallyDeleted: return TEXT("LocallyDeleted");
+		case EWorkspaceState::Deleted: return TEXT("Removed");
+		case EWorkspaceState::LocallyDeleted: return TEXT("Deleted locally");
 		case EWorkspaceState::Changed: return TEXT("Changed");
 		case EWorkspaceState::Conflicted: return TEXT("Conflicted");
 		case EWorkspaceState::Private: return TEXT("Private");
@@ -46,8 +46,8 @@ FText FPlasticSourceControlState::ToText() const
 	static const FText Moved = LOCTEXT("Moved", "Moved");
 	static const FText Copied = LOCTEXT("Copied", "Copied");
 	static const FText Replaced = LOCTEXT("Replaced", "Replaced");
-	static const FText Deleted = LOCTEXT("Deleted", "Deleted");
-	static const FText LocallyDeleted = LOCTEXT("LocallyDeleted", "LocallyDeleted");
+	static const FText Deleted = LOCTEXT("Deleted", "Removed");
+	static const FText LocallyDeleted = LOCTEXT("LocallyDeleted", "Deleted locally");
 	static const FText Changed = LOCTEXT("Changed", "Changed");
 	static const FText Conflicted = LOCTEXT("Conflicted", "Conflicted");
 	static const FText Private = LOCTEXT("Private", "Private");

@@ -1031,7 +1031,7 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenChangesetContex
 	Section.AddMenuEntry(
 		"DiffChangesets",
 		LOCTEXT("DiffChangesets", "Diff selected changesets"),
-		bDoubleSelection ? LOCTEXT("DiffChangesetTooltip", "Launch the Desktop application diff window showing changes between the two selected changesets.") : LOCTEXT("DoubleSelection", "Select a couple of changesets."),
+		bDoubleSelection ? LOCTEXT("DiffChangesetsTooltip", "Launch the Desktop application diff window showing changes between the two selected changesets.") : LOCTEXT("DoubleSelection", "Select a couple of changesets."),
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnDiffChangesetsClicked, SelectedChangesets),
@@ -1044,7 +1044,7 @@ TSharedPtr<SWidget> SPlasticSourceControlChangesetsWidget::OnOpenChangesetContex
 	Section.AddMenuEntry(
 		"DiffBranch",
 		bSingleBranchSelected ? FText::Format(LOCTEXT("DiffBranchDynamic", "Diff branch {0}"), FText::FromString(SelectedChangeset->Branch)) : LOCTEXT("DiffBranch", "Diff branch"),
-		bSingleBranchSelected ? LOCTEXT("DiffChangesetTooltip", "Launch the Desktop application diff window showing all changes in the selected branch.") : SelectASingleBranchTooltip,
+		bSingleBranchSelected ? LOCTEXT("DiffBranchTooltip", "Launch the Desktop application diff window showing all changes in the selected branch.") : SelectASingleBranchTooltip,
 		FSlateIcon(),
 		FUIAction(
 			FExecuteAction::CreateSP(this, &SPlasticSourceControlChangesetsWidget::OnDiffBranchClicked, SelectedChangeset),
