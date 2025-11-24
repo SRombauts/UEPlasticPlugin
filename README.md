@@ -3,7 +3,7 @@ Unity Version Control (formerly Plastic SCM) plugin for Unreal Engine
 
 [![release](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
 
-This is the **official [Unity Version Control (formerly Plastic SCM)](https://unity.com/solutions/version-control) plugin for Unreal Engine 5** (UE 5.0 to 5.6) with previous releases also [supporting UE4.27](https://github.com/PlasticSCM/UEPlasticPlugin/releases/tag/1.11.0).
+This is the **official [Unity Version Control (formerly Plastic SCM)](https://unity.com/solutions/version-control) plugin for Unreal Engine 5** (UE 5.0 to 5.7) with previous releases also [supporting UE4.27](https://github.com/PlasticSCM/UEPlasticPlugin/releases/tag/1.11.0).
 
 It is now [distributed in Fab in Tools & Plugins > Engine Tools, supporting Engine Versions 5.0 to 5.5 on Windows. ![Unity Version Control in Fab](Screenshots/Fab_UnityVersionControl.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
 
@@ -80,30 +80,30 @@ However the integrated version will always be lagging behind the latest release 
 - UE5.1 shipped with the version 1.6.2 with support for the new View Changelists window
 - UE5.2 & 5.3 shipped with the version 1.8.0 with support for the Shelves in the renamed View Changes window
 - UE5.4 & 5.5 shipped with the version 1.9.0 with a new View Branches window to create, switch to and merge branches.
-- UE5.6 shipped with the version 1.11.0 with the new View Changesets history, to switch to older changesets or update the workspace.
+- UE5.6 & 5.7 shipped with the version 1.11.0 with the new View Changesets history, to switch to older changesets or update the workspace.
 
 #### Install from Fab
 
 As a general rule, the Fab and GitHub versions of the plugin will always be the most up-to-date and recent versions.
 They're easier for us to patch by applying a hotfix, in case a bug is raised and something broken must be fixed quickly.
 
-[In Fab, the Unity Version Control plugin supports Engine Versions 5.0 to 5.5](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
+[In Fab, the Unity Version Control plugin supports all Engine Versions 5.x](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
 
- 1. Click on the "Add to My Library" button in the Fab page and complete the checkout process.  
+ 1. Click on the "Add to My Library" button in the Fab page and complete the checkout process.
 [!["Add to My Library" button in Fab](Screenshots/Fab_AddToMyLibary.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
- 2. Click on the "Download" button below (or just open the Epic Games Launcher directly)  
+ 2. Click on the "Download" button below (or just open the Epic Games Launcher directly)
 [!["Download" button](Screenshots/Fab_Download.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
- 3. Click the on "Epic Games Launcher" link at the bottom of the "Download" popup  
+ 3. Click the on "Epic Games Launcher" link at the bottom of the "Download" popup
 [!["Download" window](Screenshots/Fab_EpicGamesLauncher.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
- 4. In the Epic Games Launcher, in Unreal Engine -> Library -> "Fab Library" search "Unity Version Control" or "Plastic SCM"  
+ 4. In the Epic Games Launcher, in Unreal Engine -> Library -> "Fab Library" search "Unity Version Control" or "Plastic SCM"
 [!["Fab Library" in the Launcher](Screenshots/Launcher_FabLibrary.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
- 5. Click the "Install to Engine" button, select the Engine version for your project, then install.  
+ 5. Click the "Install to Engine" button, select the Engine version for your project, then install.
 [!["Install to Engine" button](Screenshots/Launcher_InstallToEngine.png)](https://www.fab.com/listings/42f9c431-d7a7-4e09-af55-fb4b896e9c97)
- 6. Open your project in Unreal, navigate to "Edit -> Plugins" and in "Installed" plugins, tick to enable "Unity Version Control", and restart the Editor  
+ 6. Open your project in Unreal, navigate to "Edit -> Plugins" and in "Installed" plugins, tick to enable "Unity Version Control", and restart the Editor
 ![Enable the plugin in the Plugins Manager](Screenshots/PluginsManager_InstalledPlugins.png)
- 7. Navigate to "Revision Control -> Connect to Revision Control"  
+ 7. Navigate to "Revision Control -> Connect to Revision Control"
 ![Source Control Connect](Screenshots/UEPlasticPlugin-SourceControlDisabled.png)
- 8. And for the "Provider" select "UnityVersionControl" to override the older "Plastic SCM" integration  
+ 8. And for the "Provider" select "UnityVersionControl" to override the older "Plastic SCM" integration
 ![Source Control Connect - Select Provider - UnityVersionControl](Screenshots/UEPlasticPlugin-SelectProvider-UnityVersionControl.png)
 
 #### Install from releases in Github
@@ -148,30 +148,30 @@ Start by [saving your connection credentials with the Unity Version Control GUI]
 
 #### Enable Source Control
 
-Launch you Unreal project, look at the Source Control menu at the bottom-right  
+Launch you Unreal project, look at the Source Control menu at the bottom-right
 ![Source Control Connect](Screenshots/UEPlasticPlugin-SourceControlDisabled.png)
 
-Launch you Unreal project, click on the Source Control icon "Connect to Source"  
+Launch you Unreal project, click on the Source Control icon "Connect to Source"
 ![Source Control Connect](Screenshots/UEPlasticPlugin-ConnectToSourceControl.png)
 
-Then select "Plastic SCM" (or "UnityVersionControl") plugin  
+Then select "Plastic SCM" (or "UnityVersionControl") plugin
 ![Source Control Connect - Select Provider](Screenshots/UEPlasticPlugin-SelectProvider.png)
 
 #### Create a new workspace & repository directly from Unreal
 
-Source Control Login window, to create a new workspace/a new repository, click on "Initialize workspace" (example of a cloud repository):  
+Source Control Login window, to create a new workspace/a new repository, click on "Initialize workspace" (example of a cloud repository):
 ![Source Control Login window - create a new workspace on cloud](Screenshots/UEPlasticPlugin-CreateWorkspaceCloud.png)
 
-Note that for a @unity organization you also need to select a Unity Project to create the repository:  
+Note that for a @unity organization you also need to select a Unity Project to create the repository:
 ![Source Control Login window - create a new workspace on cloud](Screenshots/UEPlasticPlugin-CreateWorkspaceUnity.png)
 
-Or on a server running on premise, using ip:port:  
+Or on a server running on premise, using ip:port:
 ![Source Control Login window - create a new workspace on localhost](Screenshots/UEPlasticPlugin-CreateWorkspaceOnPremise.png)
 
 This creates an appropriate ignore.conf file, add all relevant files to source control (.uproject, Config & Content subdirectories)
 and can also do the initial commit automatically at the end.
 
-Wait for this to succeed before accepting source control settings to not lock the UI & mess with the initialization!  
+Wait for this to succeed before accepting source control settings to not lock the UI & mess with the initialization!
 ![Source Control Login window - checking files in source control](Screenshots/UEPlasticPlugin-CheckinInProgress.png)
 
 #### Source Control settings
@@ -189,7 +189,7 @@ and are saved locally in `Saved\Config\WindowsEditor\SourceControlSettings.ini`.
 ##### Add an ignore.conf file
 
 If you have a project in Unity Version Control but without an ignore.conf file at the root of the workspace,
-you can use "Source Control" -> "Change Source Control Settings..." -> "Add a ignore.conf file" button to create a standard one:  
+you can use "Source Control" -> "Change Source Control Settings..." -> "Add a ignore.conf file" button to create a standard one:
 ![Source Control Login window - Add a ignore.conf file](Screenshots/UEPlasticPlugin-SourceControlSettings-AddIgnoreConfFile.png)
 
 ###### ignore.conf
@@ -340,47 +340,47 @@ Plastic SCM forums:
 
 ##### Unreal Engine 5 Revision Control Menu
 
-(UE5.1) Source Control Menu and status tooltip, extended with commands specific to Unity Version Control:  
+(UE5.1) Source Control Menu and status tooltip, extended with commands specific to Unity Version Control:
 ![Source Control Menu](Screenshots/UE5PlasticPlugin-SourceControlMenu.png)
 
-(UE5.2+) Revision Control Menu and status tooltip, extended with commands specific to Unity Version Control:  
+(UE5.2+) Revision Control Menu and status tooltip, extended with commands specific to Unity Version Control:
 ![Revision Control Menu](Screenshots/UE5PlasticPlugin-RevisionControlMenu.png)
 
-Each Asset Editor also provide some revision control operation, typically to Submit Content:  
+Each Asset Editor also provide some revision control operation, typically to Submit Content:
 ![Asset Tools Menu](Screenshots/UEPlasticPlugin-AssetToolsMenu-Diff.png)
 
-The Blueprint Editor also provide a toolbar drop-down to visual diff against a previous revision:  
+The Blueprint Editor also provide a toolbar drop-down to visual diff against a previous revision:
 ![Blueprint Toolbar Diff drop-down](Screenshots/UEPlasticPlugin-BlueprintToolbar-Diff.png)
 
 #### Revision Control Windows
 
-Using the Content Browser context revision control sub-menu, you can call in specific actions and windows:  
+Using the Content Browser context revision control sub-menu, you can call in specific actions and windows:
 ![Content Browser Context Menu](Screenshots/UEPlasticPlugin-ContentBrowser-ContextMenu-Diff.png)
 
 ##### Submit Files
 
-Submit Files to Revision Control window, to check-in selected assets directly (see also Changelists below):  
+Submit Files to Revision Control window, to check-in selected assets directly (see also Changelists below):
 ![Submit Files to Revision Control](Screenshots/UEPlasticPlugin-SubmitFiles.png)
 
 ##### View Changelists
 
 Changelists are the new way to group checked-out files by topic in Unreal Engine 5.0, to submit them in coherent batches.
-UE5.0 includes Validation checks to ensure there are no missing dependencies outside a changelist, and that all assets are saved on disk before submitting.  
+UE5.0 includes Validation checks to ensure there are no missing dependencies outside a changelist, and that all assets are saved on disk before submitting.
 ![Changelist Window](Screenshots/UEPlasticPlugin-Changelists.png)
 
 ##### File History
 
-File History window, to see the change-log of an asset:  
+File History window, to see the change-log of an asset:
 ![History of a file](Screenshots/UEPlasticPlugin-History.png)
 
 ##### Blueprint Diff
 
-Visual Diffing of different revision of a Blueprint:  
+Visual Diffing of different revision of a Blueprint:
 ![Blueprint Visual Diff](Screenshots/UEPlasticPlugin-BlueprintVisualDiff.png)
 
 ##### Material Diff
 
-Textual Diffing of a Material:  
+Textual Diffing of a Material:
 ![Material Diff](Screenshots/UEPlasticPlugin-MaterialDiff.png)
 
 #### Redirectors
@@ -390,10 +390,10 @@ so that other developers relying on its old name / location can still work with 
 
 This means, you end up with two files that you have to submit, even if by default they don't show up in the Content Browser.
 
-You can show them in the Content Browser using a dedicated filter:  
+You can show them in the Content Browser using a dedicated filter:
 ![Source Control - Show Redirectors](Screenshots/UE4PlasticPlugin-ShowRedirectors.png)
 
-You can also delete them recursively using the context menu "Fix Up Redirectors in Folder":  
+You can also delete them recursively using the context menu "Fix Up Redirectors in Folder":
 ![Source Control - Show Redirectors](Screenshots/UE4PlasticPlugin-FixUpRedirectorsInFolder.png)
 
 #### Detect Changes on other Branches
@@ -401,22 +401,22 @@ You can also delete them recursively using the context menu "Fix Up Redirectors 
 If you are making use of multiple branches, either for releases and patches, or for tasks or features,
 you can enable an option to check for changes in all other branches.
 
-Enable "Update Status" to also checks the history to detect changes on other branches:  
+Enable "Update Status" to also checks the history to detect changes on other branches:
 ![Source Control Settings](Screenshots/UEPlasticPlugin-SourceControlSettings.png)
 
-Tooltip in the Content Browser when an asset is already checked-out and Locked somewhere else:  
+Tooltip in the Content Browser when an asset is already checked-out and Locked somewhere else:
 ![Asset checked-out by someone else](Screenshots/UEPlasticPlugin-CheckedOutOther-Tooltip.png)
 
-Tooltip in the Content Browser when an asset has been modified in another branch:  
+Tooltip in the Content Browser when an asset has been modified in another branch:
 ![Asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-Tooltip.png)
 
-Tooltip in the Content Browser when an asset has a Retained Smart Lock in another branch:  
+Tooltip in the Content Browser when an asset has a Retained Smart Lock in another branch:
 ![Retained Lock in another branch](Screenshots/UEPlasticPlugin-SmartLocksRetained-Tooltip.png)
 
-Warning when trying to checkout an asset that has been modified in another branch:  
+Warning when trying to checkout an asset that has been modified in another branch:
 ![Warning on checkout for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnCheckout.png)
 
-Warning when trying to modify an asset that has been modified in another branch:  
+Warning when trying to modify an asset that has been modified in another branch:
 ![Warning on modification for an asset modified in another branch](Screenshots/UEPlasticPlugin-BranchModification-WarningOnModification.png)
 
 #### Branches
@@ -426,21 +426,21 @@ reloading assets and the current level as appropriate.
 
 To open it, use the "View Branches" menu item in the Revision Control menu, or click on the name of the current branch in the status bar.
 
-View Branches window:  
+View Branches window:
 ![View Branches window](Screenshots/UEPlasticPlugin-Branches-Menu.png)
 
 See the workflows sections below for a discussion about [task branches](#task-branches).
 
-Creating a new child branch:  
+Creating a new child branch:
 ![Create Branch Dialog](Screenshots/UEPlasticPlugin-CreateBranch-Dialog.png)
 
-Renaming an existing branch:  
+Renaming an existing branch:
 ![Rename Branch Dialog](Screenshots/UEPlasticPlugin-RenameBranch-Dialog.png)
 
-Merging a branch into the current one:  
+Merging a branch into the current one:
 ![Merge Branch Dialog](Screenshots/UEPlasticPlugin-MergeBranch-Dialog.png)
 
-Deleting the selected branches:  
+Deleting the selected branches:
 ![Delete Branches Dialog](Screenshots/UEPlasticPlugin-DeleteBranches-Dialog.png)
 
 ##### Changesets History
@@ -463,10 +463,10 @@ The plugin now offers full support for Smart Locks, with a new window to list an
 
 To open it, use the "View Locks" menu item in the Revision Control menu.
 
-View Locks window:  
+View Locks window:
 ![View Locks window](Screenshots/UEPlasticPlugin-Locks-Menu.png)
 
-Smart Locks administrator context menu to configure lock rules or unlock an asset:  
+Smart Locks administrator context menu to configure lock rules or unlock an asset:
 ![Smart Locks admin context menu](Screenshots/UEPlasticPlugin-SmartLocks-Menu.png)
 
 #### Merge conflicts on Blueprints
@@ -475,19 +475,19 @@ In case you ever use branches with binary assets without relying on exclusive ch
 you will encounter cases of merge conflicts on binary assets.
 You have to trigger the resolve in the Unity Version Control GUI, but then skip it without saving changes in order to let the Editor present you with a visual diff.
 
-Branch explorer showing the merge pending with an asset in conflict:  
+Branch explorer showing the merge pending with an asset in conflict:
 ![Merged branch with a pending conflict resolution](Screenshots/UE4PlasticPlugin-MergeBranch-Pending.png)
 
-Corresponding icon in the Content Browser (only showing after the resolved has been triggered in Unity Version Control):  
+Corresponding icon in the Content Browser (only showing after the resolved has been triggered in Unity Version Control):
 ![Merge Conflict](Screenshots/Icons/UEPlasticPlugin-NotAtHead.png)
 
-Right click on the asset in conflict to open the *Merge* Tool (just a conflict solver with 3-way Visual Diff, no merge):  
+Right click on the asset in conflict to open the *Merge* Tool (just a conflict solver with 3-way Visual Diff, no merge):
 ![Merge context menu](Screenshots/UEPlasticPlugin-ContextMenu-Merge.png)
 
-Visual diff of Blueprint properties in conflict:  
+Visual diff of Blueprint properties in conflict:
 ![Merge of Blueprint properties](Screenshots/UE4PlasticPlugin-MergeTool-Properties.png)
 
-Visual diff of a Blueprint Event Graph in conflict:  
+Visual diff of a Blueprint Event Graph in conflict:
 ![Merge of Blueprint Event Graph](Screenshots/UE4PlasticPlugin-MergeTool-EventGraph.png)
 
 #### Workflows
@@ -580,7 +580,7 @@ On Unity Version Control Cloud, you can just set-up lock rules like that:
 
 #### Configure Visual Diff of Blueprints from Unity Version Control GUI
 
-In "Preferences -> Diff tools" add a new config for uasset and move it up **before** the existing `$binary` one:  
+In "Preferences -> Diff tools" add a new config for uasset and move it up **before** the existing `$binary` one:
 ![Diff tools](Screenshots/UEPlasticPlugin-GUIDiffToolsUasset.png)
 
 The command line needs the quoted path to the UnrealEditor.exe, the quoted patch to your ".uproject" file, -diff, then the source & destination files variables also quoted
@@ -607,7 +607,7 @@ eg:
 
 This version here is the development version, so it always contains additional fixes, performance improvements or new features compared to the one integrated in Engine.
 
-### Version 1.12.1 2025/06/05 for UE 5.0 to 5.6
+### Version 1.12.2 2025/11/21 for UE 5.0 to 5.7
 
 [![releases](https://img.shields.io/github/release/PlasticSCM/UEPlasticPlugin.svg)](https://github.com/PlasticSCM/UEPlasticPlugin/releases)
 
